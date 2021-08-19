@@ -1,0 +1,4 @@
++ Add in sensible defines (uint64_t etc.)
++ Improve build process (Kbuild? nah, regular config.h files)
++ Automate booting and starting qemu etc. (make run)
++ Add in pmem/vmem routines (both .init and .text!)

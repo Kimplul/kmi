@@ -1,20 +1,22 @@
+#include <apos/link.lds.h>
 #include <vmap.h>
 
 OUTPUT_ARCH(riscv)
 ENTRY(_start)
 
 SECTIONS {
-	. = 0; /* no offset */
-	.init : {
+	. = ABSOLUTE(PM_KERN);
+	.init ALIGN(4K) : AT(0) {
 		*(.init.start);
 		*(.init.text);
 		*(.init.data);
 		. = ALIGN(4K);
 	}
 
-	.text ALIGN(VM_KERN) : AT(ADDR(.init) + SIZEOF(.init)) {
-		*(.init.start);
+	. = ABSOLUTE(VM_KERN);
+	.text ALIGN(4K) : AT(SIZEOF(.init)) {
 		*(.text.start);
-		*(.text);
+		*(.text.text);
+		*(.text.data);
 	}
 }
