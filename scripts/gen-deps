@@ -1,0 +1,43 @@
+#!/bin/sh
+
+gencommon () {
+	dep="build/${s%.*}${1}.d"
+	obj="build/${s%.*}${1}"
+	
+	mkdir -p $(dirname ${dep})
+
+	echo "${dep}:"		>> deps.mk
+	echo "include ${dep}"	>> deps.mk
+	echo "${obj}: ${s}"		>> deps.mk
+
+}
+genlink () {
+	gencommon ".ld"
+	echo "	\$(GENLINK) $< | \$(STRIPLINK) > \$@"	>> deps.mk
+}
+
+genrule () {
+	gencommon "${1}"
+	echo "	\$(COMPILE) -c \$< -o \$@"	>> deps.mk
+}
+
+case "${1}" in
+	--kern)
+		suffix=.k.o
+		func=genrule
+		;;
+	--init)
+		suffix=.i.o
+		func=genrule
+		;;
+	--link)
+		suffix=.ld
+		func=genlink
+		;;
+esac
+
+for s in ${2}
+do
+	${func} ${suffix}
+	echo ${obj}
+done
