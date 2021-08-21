@@ -18,6 +18,7 @@ OBJCOPY_FLAGS	?= -Obinary
 KERNEL_SOURCES	:=
 INIT_SOURCES	:=
 CLEANUP		:= build deps.mk kernel.* init.* apos.bin
+CLEANUP_CMD	:=
 
 include arch/$(ARCH)/source.mk
 
@@ -49,4 +50,5 @@ init.elf: $(INIT_OBJECTS) $(INIT_LD)
 	$(COMPILE) -T$(INIT_LD) $(INIT_OBJECTS) -o $@
 
 clean:
+	$(CLEANUP_CMD)
 	$(RM) -r $(CLEANUP)
