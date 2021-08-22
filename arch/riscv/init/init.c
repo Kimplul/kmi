@@ -1,6 +1,6 @@
-#include <stddef.h>
 #include <apos/init.h>
 #include <apos/sizes.h>
+#include <apos/types.h>
 #include <pages.h>
 #include <csr.h>
 #include <vmap.h>

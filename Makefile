@@ -15,14 +15,15 @@ CPP		:= cpp
 OBJCOPY		?= objcopy
 OBJCOPY_FLAGS	?= -Obinary
 
-KERNEL_SOURCES	:=
-INIT_SOURCES	:=
+COMMON_SOURCES	!= echo common/*.c
+KERNEL_SOURCES	:= $(COMMON_SOURCES)
+INIT_SOURCES	:= $(COMMON_SOURCES)
 CLEANUP		:= build deps.mk kernel.* init.* apos.bin
 CLEANUP_CMD	:=
 
 include arch/$(ARCH)/source.mk
 
-INCLUDE_FLAGS	:= -Iinclude -Iarch/$(ARCH)/include
+INCLUDE_FLAGS	:= -Iinclude -Iarch/$(ARCH)/include $(USE_FDT:y=-Idtc/libfdt)
 
 COMPILE		= $(CROSS_COMPILE)$(CC) $(CFLAGS) $(DEPFLAGS) $(INCLUDE_FLAGS)
 GENLINK		= $(CROSS_COMPILE)$(CPP) $(DEPFLAGS) $(INCLUDE_FLAGS)

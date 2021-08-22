@@ -1,0 +1,3 @@
+[submodule "dtc"]
+	path = dtc
+	url = git@github.com:dgibson/dtc.git

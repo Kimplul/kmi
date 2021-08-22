@@ -1,4 +1,8 @@
-+ Add in sensible defines (uint64_t etc.)
++ Add in sensible defines (uint64_t etc.) x
 + Improve build process (Kbuild? nah, regular config.h files)
-+ Automate booting and starting qemu etc. (make run)
++ Automate booting and starting qemu etc. (make run) (sort of)
 + Add in pmem/vmem routines (both .init and .text!)
+
++ Test string.c
++ Write the kernel lol
++ Test libfdt and see if it can be used to read memory geometry etc.

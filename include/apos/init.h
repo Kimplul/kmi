@@ -1,7 +1,7 @@
 #ifndef APOS_INIT_H
 #define APOS_INIT_H
 
-#include <apos/compiler_attributes.h>
+#include <apos/attrs.h>
 
 #define __init
 #define __initdata
