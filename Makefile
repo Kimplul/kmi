@@ -1,6 +1,6 @@
 DO		!= echo > deps.mk
 
-CFLAGS		= -fno-pie -ggdb3 -ffreestanding -nostdlib
+CFLAGS		= -fno-pie -ggdb3 -ffreestanding -nostdlib -std=c11 -Wall -Wextra -mcmodel=medany
 DEPFLAGS	= -MT $@ -MMD -MP -MF $@.d
 
 all: apos.bin
@@ -23,9 +23,11 @@ CLEANUP_CMD	:=
 
 include arch/$(ARCH)/source.mk
 
-INCLUDE_FLAGS	:= -Iinclude -Iarch/$(ARCH)/include $(USE_FDT:y=-Idtc/libfdt)
+INCLUDE_FLAGS	:= -I include -I arch/$(ARCH)/include\
+	-include config.h -include arch/$(ARCH)/config.h
 
 COMPILE		= $(CROSS_COMPILE)$(CC) $(CFLAGS) $(DEPFLAGS) $(INCLUDE_FLAGS)
+GENELF		= $(CROSS_COMPILE)$(CC) $(CFLAGS) $(INCLUDE_FLAGS)
 GENLINK		= $(CROSS_COMPILE)$(CPP) $(DEPFLAGS) $(INCLUDE_FLAGS)
 STRIPLINK	= sed -n '/^[^\#]/p'
 
@@ -45,10 +47,10 @@ apos.bin: kernel.elf init.elf
 	cat init.bin kernel.bin > $@
 
 kernel.elf: $(KERNEL_OBJECTS) $(KERNEL_LD)
-	$(COMPILE) -T$(KERNEL_LD) $(KERNEL_OBJECTS) -o $@
+	$(GENELF) -T $(KERNEL_LD) $(KERNEL_OBJECTS) -o $@
 
 init.elf: $(INIT_OBJECTS) $(INIT_LD)
-	$(COMPILE) -T$(INIT_LD) $(INIT_OBJECTS) -o $@
+	$(GENELF) -T $(INIT_LD) $(INIT_OBJECTS) -o $@
 
 clean:
 	$(CLEANUP_CMD)

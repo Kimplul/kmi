@@ -12,7 +12,4 @@
 #define VM_A (1 << 6)
 #define VM_D (1 << 7)
 
-#define VM_TOP (-1)
-#define VM_KERN (VM_TOP - SZ_1G)
-
 #endif /* APOS_RISCV_VMAP_H */

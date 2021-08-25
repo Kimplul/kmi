@@ -84,7 +84,7 @@ __weak int strncmp(const char *str1, const char *str2, size_t num)
 	const char *s1 = (const char *)str1;
 	const char *s2 = (const char *)str2;
 
-	while ((*(s1++) == *(s2++)) && *s1 && *s2 && num--) ;
+	while ((*(s1++) == *(s2++)) && *s1 && *s2 && --num) ;
 
 	return (int)(s1[-1] - s2[-1]);
 }
@@ -97,10 +97,11 @@ __weak char *strchr(const char *str, int chr)
 
 	while (num-- && *(s1--) != chr) ;
 
+	num++;
 	if (!num)
 		return 0;
 
-	return (char *)s1;
+	return (char *)(s1 + 1);
 }
 
 #undef strtok
@@ -134,23 +135,25 @@ __weak char *strstr(const char *str1, const char *str2)
 	size_t sl = strlen(str1);
 	size_t pl = strlen(str2);
 
-	const char *s1 = str1;
+	const unsigned char *s1 = (const unsigned char *)str1;
+	const unsigned char *haystack = (const unsigned char *)s1;
+	const unsigned char *needle = (const unsigned char *)str2;
 
 	for (size_t i = 0; i < 256; ++i)
 		table[i] = pl;
 
 	/* generate deltas */
 	for (size_t i = 0; i < pl - 1; ++i)
-		table[str2[i]] = pl - i - 1;
+		table[needle[i]] = pl - i - 1;
 
 	size_t skip = 0;
 	while (sl - skip >= pl) {
-		s1 = &str1[skip];
+		s1 = &haystack[skip];
 
-		if (!memcmp(s1, s2, pl))
+		if (!memcmp(s1, needle, pl))
 			return (char *)s1;
 
-		skip += table[str1[skip + pl - 1]];
+		skip += table[haystack[skip + pl - 1]];
 	}
 
 	return 0;
@@ -164,6 +167,7 @@ __weak char *strrchr(const char *str, int chr)
 
 	while (num-- && *(s1--) != chr) ;
 
+	num++;
 	if (!num)
 		return 0;
 
@@ -185,9 +189,9 @@ __weak char *strpbrk(const char *str1, const char *str2)
 __weak size_t strcspn(const char *str1, const char *str2)
 {
 	char table[256] = { 0 };
-	const char *s1 = str1;
-	const char *s2 = s1;
-	const char *t1 = str2;
+	const unsigned char *s1 = (const unsigned char *)str1;
+	const unsigned char *s2 = (const unsigned char *)s1;
+	const unsigned char *t1 = (const unsigned char *)str2;
 
 	/* populate table */
 	while (*(t1++))
@@ -206,9 +210,9 @@ __weak size_t strcspn(const char *str1, const char *str2)
 __weak size_t strspn(const char *str1, const char *str2)
 {
 	char table[256] = { 0 };
-	const char *s1 = str1;
-	const char *s2 = s1;
-	const char *t1 = str2;
+	const unsigned char *s1 = (const unsigned char *)str1;
+	const unsigned char *s2 = (const unsigned char *)s1;
+	const unsigned char *t1 = (const unsigned char *)str2;
 
 	/* populate table */
 	while (*(t1++))
@@ -260,12 +264,13 @@ __weak void *memchr(const void *ptr, int val, size_t num)
 	const char *p1 = (char *)ptr;
 	char c = (char)val;
 
-	while (num-- && *(p1--) != c) ;
+	while (num-- && *(p1++) != c) ;
 
+	num++;
 	if (!num)
 		return 0;
 
-	return (void *)p1;
+	return (void *)(p1 - 1);
 }
 
 #undef memcpy
@@ -301,7 +306,7 @@ __weak int memcmp(const void *ptr1, const void *ptr2, size_t num)
 	const char *p1 = (const char *)ptr1;
 	const char *p2 = (const char *)ptr2;
 
-	while ((*(p1++) == *(p2++)) && num--) ;
+	while ((*(p1++) == *(p2++)) && --num) ;
 
 	return (int)(p1[-1] - p2[-1]);
 }

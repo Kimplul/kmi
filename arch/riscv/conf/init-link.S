@@ -1,4 +1,3 @@
-#include <apos/link.lds.h>
 #include <vmap.h>
 
 OUTPUT_ARCH(riscv)

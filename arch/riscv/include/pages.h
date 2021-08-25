@@ -1,36 +1,40 @@
 #ifndef APOS_RISCV_PAGES_H
 #define APOS_RISCV_PAGES_H
 
-typedef char pagemask_t;
-typedef char lockbit_t;
+#include <apos/types.h>
 
-struct kilopages {
+typedef uint8_t pagemask_t;
+typedef uint8_t lockbit_t;
+/* assume riscv64 for now */
+typedef uint64_t pm_t;
+
+struct mm_kpages {
 	pagemask_t page[64];
 };
 
-struct megapages {
+struct mm_mpages {
 	lockbit_t lockbit[64];
 	pagemask_t empty[64];
 	pagemask_t full[64];
-	struct kilopages kilo[512];
+	struct mm_kpages kilo[512];
 };
 
 /* Sv39 */
-struct gigapages {
+struct mm_gpages {
 	lockbit_t lockbit[64];
 	pagemask_t empty[64];
 	pagemask_t full[64];
-	struct megapages mega[512];
+	struct mm_mpages mega[512];
 };
 
-struct terapages {
+struct mm_tpages {
 	lockbit_t lockbit[64];
 	pagemask_t empty[64];
 	pagemask_t full[64];
-	struct gigapages giga[512];
+	struct mm_gpages giga[512];
 };
 
-struct mm_pagearr_info {
+struct mm_ptinfo {
 	short tera_num;
 	struct terapages *tera_top;
 
