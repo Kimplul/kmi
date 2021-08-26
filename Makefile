@@ -1,6 +1,7 @@
 DO		!= echo > deps.mk
 
-CFLAGS		= -fno-pie -ggdb3 -ffreestanding -nostdlib -std=c11 -Wall -Wextra -mcmodel=medany
+DEBUGFLAGS	!= [ $(DEBUG) ] && echo "-g3 -DDEBUG" || echo "-O2"
+CFLAGS		= -fno-pie -ffreestanding -nostdlib -std=c11 -Wall -Wextra
 DEPFLAGS	= -MT $@ -MMD -MP -MF $@.d
 
 all: apos.bin
@@ -26,8 +27,8 @@ include arch/$(ARCH)/source.mk
 INCLUDE_FLAGS	:= -I include -I arch/$(ARCH)/include\
 	-include config.h -include arch/$(ARCH)/config.h
 
-COMPILE		= $(CROSS_COMPILE)$(CC) $(CFLAGS) $(DEPFLAGS) $(INCLUDE_FLAGS)
-GENELF		= $(CROSS_COMPILE)$(CC) $(CFLAGS) $(INCLUDE_FLAGS)
+COMPILE		= $(CROSS_COMPILE)$(CC) $(DEBUGFLAGS) $(CFLAGS) $(ARCH_FLAGS) $(DEPFLAGS) $(INCLUDE_FLAGS)
+GENELF		= $(CROSS_COMPILE)$(CC) $(DEBUGFLAGS) $(CFLAGS) $(ARCH_FLAGS) $(INCLUDE_FLAGS)
 GENLINK		= $(CROSS_COMPILE)$(CPP) $(DEPFLAGS) $(INCLUDE_FLAGS)
 STRIPLINK	= sed -n '/^[^\#]/p'
 

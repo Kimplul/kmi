@@ -7,7 +7,7 @@ INIT_SOURCES	+= $(INIT_LOCAL) $(INIT_FDT)
 
 CLEANUP_CMD	:= ./arch/riscv/conf/rmimage.sh
 
-USE_FDT		:= y
+ARCH_FLAGS	:= -mcmodel=medany
 
 run:
 	./arch/riscv/conf/mkimage.sh
