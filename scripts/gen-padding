@@ -1,0 +1,9 @@
+#!/bin/sh
+
+align="$1"
+filename="$2"
+
+filesize=$(stat -c "%s" "${filename}")
+padsize=$(echo "${filesize}" | awk "{print ${align} - (\$1 % ${align})}")
+
+dd if=/dev/zero ibs=1 count="${padsize}" >> "${filename}"

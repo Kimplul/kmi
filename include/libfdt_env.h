@@ -4,6 +4,7 @@
 
 #include <apos/types.h>
 #include <apos/string.h>
+#include <apos/bytes.h>
 
 typedef int16_t fdt16_t;
 typedef int32_t fdt32_t;

@@ -1,6 +1,7 @@
 DO		!= echo > deps.mk
 
-DEBUGFLAGS	!= [ $(DEBUG) ] && echo "-g3 -DDEBUG" || echo "-O2"
+# this could be done better
+DEBUGFLAGS	!= [ $(DEBUG) ] && echo "-Og -g3 -DDEBUG" || echo "-flto -O3"
 CFLAGS		= -fno-pie -ffreestanding -nostdlib -std=c11 -Wall -Wextra
 DEPFLAGS	= -MT $@ -MMD -MP -MF $@.d
 
@@ -45,6 +46,7 @@ include deps.mk
 apos.bin: kernel.elf init.elf
 	$(CROSS_COMPILE)$(OBJCOPY) $(OBJCOPY_FLAGS) kernel.elf kernel.bin
 	$(CROSS_COMPILE)$(OBJCOPY) $(OBJCOPY_FLAGS) init.elf init.bin
+	./scripts/gen-padding 4096 init.bin
 	cat init.bin kernel.bin > $@
 
 kernel.elf: $(KERNEL_OBJECTS) $(KERNEL_LD)

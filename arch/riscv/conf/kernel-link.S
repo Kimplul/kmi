@@ -7,7 +7,6 @@ SECTIONS {
 	. = ABSOLUTE(VM_KERN);
 	.text ALIGN(4K) : AT(0) {
 		*(.kernel.start);
-		*(.text);
-		. = ALIGN(4K);
+		*(.text*);
 	}
 }

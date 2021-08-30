@@ -1,6 +1,8 @@
 #ifndef APOS_TYPES_H
 #define APOS_TYPES_H
 
+#include <apos/builtin.h>
+
 typedef _Bool	bool;
 #define true	1
 #define false	0
@@ -10,7 +12,6 @@ typedef __WCHAR_TYPE__		wchar_t;
 typedef __WINT_TYPE__		wint_t;
 typedef __INTMAX_TYPE__		intmax_t;
 typedef __UINTMAX_TYPE__	uintmax_t;
-typedef __SIG_ATOMIC_TYPE__	sig_atomic_t;
 typedef __INT8_TYPE__		int8_t;
 typedef __INT16_TYPE__		int16_t;
 typedef __INT32_TYPE__		int32_t;
@@ -173,40 +174,6 @@ typedef intmax_t ssize_t;
 #define INTMAX_WIDTH		__INTMAX_WIDTH__
 #define UINTPTR_WIDTH		__INTPTR_WIDTH__
 #define UINTMAX_WIDTH		__INTMAX_WIDTH__
-
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-#define be16_to_cpu(x) __builtin_bswap16(x)
-#define be32_to_cpu(x) __builtin_bswap32(x)
-#define be64_to_cpu(x) __builtin_bswap64(x)
-
-#define cpu_to_be16(x) __builtin_bswap16(x)
-#define cpu_to_be32(x) __builtin_bswap32(x)
-#define cpu_to_be64(x) __builtin_bswap64(x)
-
-#define le16_to_cpu(x) (x)
-#define le32_to_cpu(x) (x)
-#define le64_to_cpu(x) (x)
-
-#define cpu_to_le16(x) (x)
-#define cpu_to_le32(x) (x)
-#define cpu_to_le64(x) (x)
-#else
-#define be16_to_cpu(x) (x)
-#define be32_to_cpu(x) (x)
-#define be64_to_cpu(x) (x)
-
-#define cpu_to_be16(x) (x)
-#define cpu_to_be32(x) (x)
-#define cpu_to_be64(x) (x)
-
-#define le16_to_cpu(x) __builtin_bswap16(x)
-#define le32_to_cpu(x) __builtin_bswap32(x)
-#define le64_to_cpu(x) __builtin_bswap64(x)
-
-#define cpu_to_le16(x) __builtin_bswap16(x)
-#define cpu_to_le32(x) __builtin_bswap32(x)
-#define cpu_to_le64(x) __builtin_bswap64(x)
-#endif
 
 #define NULL 0
 
