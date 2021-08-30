@@ -5,7 +5,6 @@ typedef _Bool	bool;
 #define true	1
 #define false	0
 
-typedef __SIZE_TYPE__		size_t;
 typedef __PTRDIFF_TYPE__	ptrdiff_t;
 typedef __WCHAR_TYPE__		wchar_t;
 typedef __WINT_TYPE__		wint_t;
@@ -38,6 +37,10 @@ typedef __UINT_FAST32_TYPE__	uint_fast32_t;
 typedef __UINT_FAST64_TYPE__	uint_fast64_t;
 typedef __INTPTR_TYPE__		intptr_t;
 typedef __UINTPTR_TYPE__	uintptr_t;
+
+/* sort of unconventional, but should be fine */
+typedef uintmax_t size_t;
+typedef intmax_t ssize_t;
 
 #define INT8_C		__INT8_C
 #define INT16_C		__INT16_C
