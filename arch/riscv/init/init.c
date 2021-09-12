@@ -3,6 +3,7 @@
 #include <apos/types.h>
 #include <apos/string.h>
 #include <apos/debug.h>
+#include <apos/pmem.h>
 #include <libfdt.h>
 #include <pages.h>
 #include <csr.h>
@@ -118,11 +119,19 @@ void init_debug(void *fdt)
 
 #endif
 
-void init(void *fdt)
+void __noreturn init(void *fdt)
 {
 	init_debug(fdt);
-	dbg("hello\n");
 
+	/* basic memory layout info */
 	struct mem_layout pmem = get_memlayout(fdt);
-	/* struct mm_ptinfo ptbl = create_pagetable(pmem); */
+
+	/* TODO: find first contiguous region */
+
+	/* generate pagetable at contiguous region */
+	populate_pmap(pmem.base, pmem.top - pmem.base, 0/* something */);
+
+	/* TODO: mark all used pages */
+	update_pmap(0/* TODO: figure out where in virtual memory the page map should be mapped */);
+	/* TODO: jump to kernel */
 }

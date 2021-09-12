@@ -18,16 +18,18 @@ genlink () {
 
 genrule () {
 	gencommon "${1}"
-	echo "	\$(COMPILE) -c \$< -o \$@"	>> deps.mk
+	echo "	\$(COMPILE) ${defs} -c \$< -o \$@"	>> deps.mk
 }
 
 case "${1}" in
 	--kern)
 		suffix=.k.o
+		defs=-DKERNEL
 		func=genrule
 		;;
 	--init)
 		suffix=.i.o
+		defs=-DINIT
 		func=genrule
 		;;
 	--link)

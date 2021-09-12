@@ -1,7 +1,7 @@
 DO		!= echo > deps.mk
 
 # this could be done better
-DEBUGFLAGS	!= [ $(DEBUG) ] && echo "-Og -g3 -DDEBUG" || echo "-flto -O3"
+DEBUGFLAGS	!= [ $(DEBUG) ] && echo "-Og -ggdb3 -DDEBUG" || echo "-flto -O2"
 CFLAGS		= -fno-pie -ffreestanding -nostdlib -std=c11 -Wall -Wextra
 DEPFLAGS	= -MT $@ -MMD -MP -MF $@.d
 
@@ -18,7 +18,7 @@ OBJCOPY		?= objcopy
 OBJCOPY_FLAGS	?= -Obinary
 
 COMMON_SOURCES	!= echo common/*.c
-KERNEL_SOURCES	:= $(COMMON_SOURCES)
+KERNEL_SOURCES	!= echo kernel/*.c $(COMMON_SOURCES)
 INIT_SOURCES	:= $(COMMON_SOURCES)
 CLEANUP		:= build deps.mk kernel.* init.* apos.bin
 CLEANUP_CMD	:=
@@ -28,8 +28,12 @@ include arch/$(ARCH)/source.mk
 INCLUDE_FLAGS	:= -I include -I arch/$(ARCH)/include\
 	-include config.h -include arch/$(ARCH)/config.h
 
-COMPILE		= $(CROSS_COMPILE)$(CC) $(DEBUGFLAGS) $(CFLAGS) $(ARCH_FLAGS) $(DEPFLAGS) $(INCLUDE_FLAGS)
-GENELF		= $(CROSS_COMPILE)$(CC) $(DEBUGFLAGS) $(CFLAGS) $(ARCH_FLAGS) $(INCLUDE_FLAGS)
+COMPILE		= $(CROSS_COMPILE)$(CC) $(DEBUGFLAGS)\
+		  $(CFLAGS) $(ARCH_FLAGS) $(DEPFLAGS) $(INCLUDE_FLAGS)
+
+GENELF		= $(CROSS_COMPILE)$(CC) $(DEBUGFLAGS)\
+		  $(CFLAGS) $(ARCH_FLAGS) $(INCLUDE_FLAGS)
+
 GENLINK		= $(CROSS_COMPILE)$(CPP) $(DEPFLAGS) $(INCLUDE_FLAGS)
 STRIPLINK	= sed -n '/^[^\#]/p'
 

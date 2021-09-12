@@ -174,6 +174,7 @@ static size_t __print_prefix(size_t base)
 	const char *hex = "0x";
 	const char *oct = "0";
 	const char *bin = "0b";
+	const char *empty = "";
 
 	const char *prefix;
 
@@ -183,6 +184,8 @@ static size_t __print_prefix(size_t base)
 		prefix = oct;
 	else if(base == 2)
 		prefix = bin;
+	else
+		prefix = empty;
 
 	for(; *prefix ; ++i)
 		__putchar(*prefix++);
