@@ -53,7 +53,7 @@ static struct mem_layout get_memlayout(void *fdt)
 	if (ci.size_cells == 2)
 		top = fdt64_to_cpu(*(fdt64_t *) mem_reg) + base;
 	else
-		top = fdt32_to_cpu(*(fdt64_t *) mem_reg) + base;
+		top = fdt32_to_cpu(*(fdt32_t *) mem_reg) + base;
 
 	struct mem_layout ret = { base, top };
 	return ret;

@@ -4,3 +4,4 @@
 *.elf
 *.ld
 deps.mk
+*.img
