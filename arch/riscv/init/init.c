@@ -73,17 +73,20 @@ static enum serial_dev_t serial_dev_enum(const char *dev_name)
 
 static void init_debug(void *fdt)
 {
-	int offset = fdt_path_offset(fdt, "/soc/uart");
+	int chosen_offset = fdt_path_offset(fdt, "/chosen");
+	const char *stdout = fdt_getprop(fdt, chosen_offset, "stdout-path", 0);
+
+	int stdout_offset = fdt_path_offset(fdt, stdout);
 
 	/* get serial device type */
-	const char *dev_name = (const char *)fdt_getprop(fdt, offset,
+	const char *dev_name = (const char *)fdt_getprop(fdt, stdout_offset,
 			"compatible", NULL);
 
 	enum serial_dev_t dev = serial_dev_enum(dev_name);
 
 	/* get serial device address */
-	struct cell_info ci = get_cellinfo(fdt, offset);
-	void *reg_ptr = (void *)fdt_getprop(fdt, offset, "reg", NULL);
+	struct cell_info ci = get_cellinfo(fdt, stdout_offset);
+	void *reg_ptr = (void *)fdt_getprop(fdt, stdout_offset, "reg", NULL);
 
 	void *uart_ptr = 0;
 	if (ci.addr_cells == 2)
