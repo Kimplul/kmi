@@ -1,7 +1,7 @@
 DO		!= echo > deps.mk
 
 # this could be done better
-DEBUGFLAGS	!= [ $(DEBUG) ] && echo "-Og -ggdb3 -DDEBUG" || echo "-flto -O2"
+DEBUGFLAGS	!= [ $(DEBUG) ] && echo "-O0 -ggdb3 -DDEBUG" || echo "-flto -O2"
 CFLAGS		= -fno-pie -ffreestanding -nostdlib -std=c11 -Wall -Wextra
 DEPFLAGS	= -MT $@ -MMD -MP -MF $@.d
 
@@ -60,5 +60,7 @@ init.elf: $(INIT_OBJECTS) $(INIT_LD)
 	$(GENELF) -T $(INIT_LD) $(INIT_OBJECTS) -o $@
 
 clean:
-	$(CLEANUP_CMD)
 	$(RM) -r $(CLEANUP)
+
+clean_run: clean
+	$(CLEANUP_CMD)

@@ -4,6 +4,7 @@
 #include <apos/string.h>
 #include <apos/debug.h>
 #include <apos/pmem.h>
+#include <apos/utils.h>
 #include <libfdt.h>
 #include <pages.h>
 #include <csr.h>
@@ -19,37 +20,17 @@ struct cell_info {
 	uint32_t addr_cells;
 };
 
-struct cell_info get_cellinfo(void *fdt, int offset)
+static struct cell_info get_cellinfo(void *fdt, int offset)
 {
-
-	fdt32_t *size_ptr = 0;
-	fdt32_t *addr_ptr = 0;
-
-	while (offset) {
-		size_ptr = (fdt32_t *) fdt_getprop(fdt, offset,
-				"#size-cells", NULL);
-
-		addr_ptr = (fdt32_t *) fdt_getprop(fdt, offset,
-				"#address-cells", NULL);
-
-		if (size_ptr && addr_ptr)
-			break;
-
-		/* dtc warns that this function is slow, but I don't care */
-		offset = fdt_parent_offset(fdt, offset);
-	}
-
-	struct cell_info ret = {0};
-
-	if (size_ptr && addr_ptr){
-		ret.size_cells = fdt32_to_cpu(*size_ptr);
-		ret.addr_cells = fdt32_to_cpu(*addr_ptr);
-	}
+	struct cell_info ret = {
+		fdt_size_cells(fdt, offset),
+		fdt_address_cells(fdt, offset)
+	};
 
 	return ret;
 }
 
-struct mem_layout get_memlayout(void *fdt)
+static struct mem_layout get_memlayout(void *fdt)
 {
 	struct cell_info ci = get_cellinfo(fdt, 0);
 
@@ -82,7 +63,7 @@ struct mem_layout get_memlayout(void *fdt)
 
 /* this should probably be improved in the future, possibly also moved
  * somewhere? */
-enum serial_dev_t serial_dev_enum(const char *dev_name)
+static enum serial_dev_t serial_dev_enum(const char *dev_name)
 {
 	if (strncmp("ns16550", dev_name, 7) == 0)
 		return NS16550A;
@@ -90,7 +71,7 @@ enum serial_dev_t serial_dev_enum(const char *dev_name)
 	return -1;
 }
 
-void init_debug(void *fdt)
+static void init_debug(void *fdt)
 {
 	int offset = fdt_path_offset(fdt, "/soc/uart");
 
@@ -114,14 +95,41 @@ void init_debug(void *fdt)
 }
 
 #else
-
 #define init_debug(...)
-
 #endif
+
+/* TODO: these */
+static pm_t get_kerneltop(void *fdt)
+{
+	return 0;
+}
+
+static pm_t get_initrdtop(void *fdt)
+{
+	return 0;
+}
+
+static pm_t get_fdttop(void *fdt)
+{
+	return 0;
+}
+
+static void setup_pmem(void *fdt)
+{
+	struct mem_layout pmem = get_memlayout(fdt);
+
+	pm_t kernel_top = get_kerneltop(fdt);
+	pm_t initrd_top = get_initrdtop(fdt);
+	pm_t fdt_top = get_fdttop(fdt);
+
+	pm_t top = MAX3(kernel_top, initrd_top, fdt_top);
+}
 
 void __noreturn init(void *fdt)
 {
 	init_debug(fdt);
+	dbg_fdt(fdt);
+	setup_pmem(fdt);
 
 	/* basic memory layout info */
 	struct mem_layout pmem = get_memlayout(fdt);

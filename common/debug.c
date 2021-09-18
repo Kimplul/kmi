@@ -154,7 +154,7 @@ static size_t __integral_val(ssize_t value, size_t base, size_t flags, bool prin
 #undef handle_type
 
 	if(base == 16)
-		c += c >= 9 ? 'a' - 10 : '0';
+		c += c > 9 ? 'a' - 10 : '0';
 	else
 		c += '0';
 
@@ -430,6 +430,7 @@ void dbg(const char *fmt, ...)
 		/* read actual specifier */
 		size_t base = 10;
 		size_t value = 0;
+		int i = -1;
 		const char *s = 0;
 		void *p = 0;
 		int *n = 0;
@@ -486,7 +487,11 @@ void dbg(const char *fmt, ...)
 
 			case 's':
 				s = va_arg(vl, const char *);
-				for(; *s ;){
+
+				if(__is_set(flags, PRECS_FLAG))
+					i = precision;
+
+				for(; *s && i--;){
 					__putchar(*s++);
 					chars_written++;
 				}

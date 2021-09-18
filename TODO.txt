@@ -6,3 +6,7 @@
 + Test string.c
 + Write the kernel lol
 + Test libfdt and see if it can be used to read memory geometry etc.
+
++ Jump to vmem
++ Mark fdt, reserved mem, kernel, init and initrd in vmem. Remember to remove
+init from vmem when jumping to vmem
