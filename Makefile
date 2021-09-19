@@ -15,6 +15,8 @@ CC		:= gcc
 AR		:= ar
 CPP		:= cpp
 OBJCOPY		?= objcopy
+
+# This makes sure .bss is loaded into the binary
 OBJCOPY_FLAGS	?= -Obinary --set-section-flags .bss=alloc,load,contents
 
 COMMON_SOURCES	!= echo common/*.c

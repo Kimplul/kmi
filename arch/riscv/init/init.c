@@ -131,6 +131,10 @@ static void setup_pmem(void *fdt)
 	dbg("initrd_top:\t%#lx\n", initrd_top);
 	dbg("kernel_top:\t%#lx\n", kernel_top);
 	dbg("fdt_top:\t%#lx\n", fdt_top);
+
+	populate_pmap(pmem.base, pmem.top - pmem.base, top + 1);
+
+	/* TODO: mark used pages */
 }
 
 void init(void *fdt)
@@ -139,12 +143,6 @@ void init(void *fdt)
 	dbg_fdt(fdt);
 	setup_pmem(fdt);
 
-	/* TODO: find first contiguous region */
-
-	/* generate pagetable at contiguous region */
-	/* populate_pmap(pmem.base, pmem.top - pmem.base, something); */
-
-	/* TODO: mark all used pages */
-	update_pmap(0/* TODO: figure out where in virtual memory the page map should be mapped */);
+	/* update_pmap(TODO: figure out where to place pmap in vmem); */
 	/* TODO: jump to kernel */
 }
