@@ -13,7 +13,14 @@ gencommon () {
 }
 genlink () {
 	gencommon ".ld"
-	echo "	\$(GENLINK) $< | \$(STRIPLINK) > \$@"	>> deps.mk
+	if [ "${init}" = "0" ] ; then
+		echo "	\$(GENLINK) $< | \$(STRIPLINK) > \$@"\
+		>> deps.mk;
+	else
+		echo "	\$(GENLINK) $< | \$(STRIPLINK) | \$(KERN_INFO) > \$@"\
+		>> deps.mk;
+	fi
+
 }
 
 genrule () {
@@ -32,10 +39,16 @@ case "${1}" in
 		defs=-DINIT
 		func=genrule
 		;;
-	--link)
+	--init-link)
 		suffix=.ld
+		init=1
 		func=genlink
 		;;
+
+	--kern-link)
+		suffix=.ld
+		init=0
+		func=genlink
 esac
 
 for s in ${2}

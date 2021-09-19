@@ -15,7 +15,7 @@ CC		:= gcc
 AR		:= ar
 CPP		:= cpp
 OBJCOPY		?= objcopy
-OBJCOPY_FLAGS	?= -Obinary
+OBJCOPY_FLAGS	?= -Obinary --set-section-flags .bss=alloc,load,contents
 
 COMMON_SOURCES	!= echo common/*.c
 KERNEL_SOURCES	!= echo kernel/*.c $(COMMON_SOURCES)
@@ -36,28 +36,33 @@ GENELF		= $(CROSS_COMPILE)$(CC) $(DEBUGFLAGS)\
 
 GENLINK		= $(CROSS_COMPILE)$(CPP) $(DEPFLAGS) $(INCLUDE_FLAGS)
 STRIPLINK	= sed -n '/^[^\#]/p'
+KERN_SIZE	= wc -c kernel.bin | cut -d ' ' -f 1
+KERN_INFO	= sed "s/<KERNEL_SIZE>/$$($(KERN_SIZE))/"
 
 KERNEL_LINK	:= arch/$(ARCH)/conf/kernel-link
 INIT_LINK	:= arch/$(ARCH)/conf/init-link
 
 KERNEL_OBJECTS	!= ./scripts/gen-deps --kern "$(KERNEL_SOURCES)"
 INIT_OBJECTS	!= ./scripts/gen-deps --init "$(INIT_SOURCES)"
-KERNEL_LD	!= ./scripts/gen-deps --link "$(KERNEL_LINK).S"
-INIT_LD		!= ./scripts/gen-deps --link "$(INIT_LINK).S"
+KERNEL_LD	!= ./scripts/gen-deps --kern-link "$(KERNEL_LINK).S"
+INIT_LD		!= ./scripts/gen-deps --init-link "$(INIT_LINK).S"
 
 include deps.mk
 
-apos.bin: kernel.elf init.elf
-	$(CROSS_COMPILE)$(OBJCOPY) $(OBJCOPY_FLAGS) kernel.elf kernel.bin
-	$(CROSS_COMPILE)$(OBJCOPY) $(OBJCOPY_FLAGS) init.elf init.bin
-	./scripts/gen-padding 4096 init.bin
+apos.bin: kernel.bin init.bin
 	cat init.bin kernel.bin > $@
 
 kernel.elf: $(KERNEL_OBJECTS) $(KERNEL_LD)
 	$(GENELF) -T $(KERNEL_LD) $(KERNEL_OBJECTS) -o $@
 
-init.elf: $(INIT_OBJECTS) $(INIT_LD)
+init.elf: kernel.bin $(INIT_OBJECTS) $(INIT_LD)
 	$(GENELF) -T $(INIT_LD) $(INIT_OBJECTS) -o $@
+
+kernel.bin: kernel.elf
+	$(CROSS_COMPILE)$(OBJCOPY) $(OBJCOPY_FLAGS) $< $@
+
+init.bin: init.elf
+	$(CROSS_COMPILE)$(OBJCOPY) $(OBJCOPY_FLAGS) $< $@
 
 clean:
 	$(RM) -r $(CLEANUP)

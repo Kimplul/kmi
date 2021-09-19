@@ -10,7 +10,7 @@
 #include <csr.h>
 #include <vmap.h>
 
-struct mem_layout {
+struct pmem_layout {
 	pm_t base;
 	pm_t top;
 };
@@ -28,9 +28,10 @@ static struct cell_info get_cellinfo(void *fdt, int offset)
 	};
 
 	return ret;
+
 }
 
-static struct mem_layout get_memlayout(void *fdt)
+static struct pmem_layout get_memlayout(void *fdt)
 {
 	struct cell_info ci = get_cellinfo(fdt, 0);
 
@@ -38,24 +39,17 @@ static struct mem_layout get_memlayout(void *fdt)
 	uint8_t *mem_reg =
 		(uint8_t *) fdt_getprop(fdt, mem_offset, "reg", NULL);
 
-	pm_t base;
 	/* if riscv128 comes around we will probably see addr_cells == 4, but
 	 * I'm not too concerned about it at the moment */
-	if (ci.addr_cells == 2) {
-		base = fdt64_to_cpu(*(fdt64_t *) mem_reg);
+	pm_t base = fdt_load_int_ptr(pm_t, ci.addr_cells, mem_reg);
+
+	if(ci.addr_cells == 2)
 		mem_reg += sizeof(fdt64_t);
-	} else {
-		base = fdt32_to_cpu(*(fdt32_t *) mem_reg);
-		mem_reg += sizeof(fdt32_t);
-	}
-
-	pm_t top;
-	if (ci.size_cells == 2)
-		top = fdt64_to_cpu(*(fdt64_t *) mem_reg) + base;
 	else
-		top = fdt32_to_cpu(*(fdt32_t *) mem_reg) + base;
+		mem_reg += sizeof(fdt32_t);
 
-	struct mem_layout ret = { base, top };
+	pm_t top = fdt_load_int_ptr(pm_t, ci.size_cells, mem_reg) + base;
+	struct pmem_layout ret = { base, top };
 	return ret;
 }
 
@@ -74,7 +68,8 @@ static enum serial_dev_t serial_dev_enum(const char *dev_name)
 static void init_debug(void *fdt)
 {
 	int chosen_offset = fdt_path_offset(fdt, "/chosen");
-	const char *stdout = fdt_getprop(fdt, chosen_offset, "stdout-path", 0);
+	const char *stdout = fdt_getprop(fdt, chosen_offset,
+			"stdout-path", NULL);
 
 	int stdout_offset = fdt_path_offset(fdt, stdout);
 
@@ -89,10 +84,7 @@ static void init_debug(void *fdt)
 	void *reg_ptr = (void *)fdt_getprop(fdt, stdout_offset, "reg", NULL);
 
 	void *uart_ptr = 0;
-	if (ci.addr_cells == 2)
-		uart_ptr = (void *)(pm_t)fdt64_to_cpu(*(fdt64_t *) reg_ptr);
-	else
-		uart_ptr = (void *)(pm_t)fdt32_to_cpu(*(fdt32_t *) reg_ptr);
+	uart_ptr = (void *)fdt_load_int_ptr(pm_t, ci.addr_cells, reg_ptr);
 
 	dbg_init(uart_ptr, dev);
 }
@@ -101,46 +93,56 @@ static void init_debug(void *fdt)
 #define init_debug(...)
 #endif
 
-/* TODO: these */
-static pm_t get_kerneltop(void *fdt)
+static pm_t get_kerneltop()
 {
-	return 0;
+	/* interesting, for some reason if I define these to be just char
+	 * pointers I get some wacky values. Not sure why that would be, but
+	 * this works. */
+	extern char __init_end[], __kernel_size[];
+	return (pm_t)__init_end + (pm_t)__kernel_size;
 }
 
 static pm_t get_initrdtop(void *fdt)
 {
-	return 0;
+	int chosen_offset = fdt_path_offset(fdt, "/chosen");
+	struct cell_info ci = get_cellinfo(fdt, chosen_offset);
+
+	void *initrd_end_ptr = (void *)fdt_getprop(fdt, chosen_offset,
+			"linux,initrd-end", NULL);
+
+	return fdt_load_int_ptr(pm_t, ci.addr_cells, initrd_end_ptr);
 }
 
 static pm_t get_fdttop(void *fdt)
 {
-	return 0;
+	const char *b = (const char *)fdt;
+	return (pm_t)(b + fdt_totalsize(fdt));
 }
 
 static void setup_pmem(void *fdt)
 {
-	struct mem_layout pmem = get_memlayout(fdt);
+	struct pmem_layout pmem = get_memlayout(fdt);
 
-	pm_t kernel_top = get_kerneltop(fdt);
 	pm_t initrd_top = get_initrdtop(fdt);
+	pm_t kernel_top = get_kerneltop();
 	pm_t fdt_top = get_fdttop(fdt);
 
 	pm_t top = MAX3(kernel_top, initrd_top, fdt_top);
+	dbg("initrd_top:\t%#lx\n", initrd_top);
+	dbg("kernel_top:\t%#lx\n", kernel_top);
+	dbg("fdt_top:\t%#lx\n", fdt_top);
 }
 
-void __noreturn init(void *fdt)
+void init(void *fdt)
 {
 	init_debug(fdt);
 	dbg_fdt(fdt);
 	setup_pmem(fdt);
 
-	/* basic memory layout info */
-	struct mem_layout pmem = get_memlayout(fdt);
-
 	/* TODO: find first contiguous region */
 
 	/* generate pagetable at contiguous region */
-	populate_pmap(pmem.base, pmem.top - pmem.base, 0/* something */);
+	/* populate_pmap(pmem.base, pmem.top - pmem.base, something); */
 
 	/* TODO: mark all used pages */
 	update_pmap(0/* TODO: figure out where in virtual memory the page map should be mapped */);
