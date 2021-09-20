@@ -93,12 +93,11 @@ __weak int strncmp(const char *str1, const char *str2, size_t num)
 __weak char *strchr(const char *str, int chr)
 {
 	const char *s1 = str;
-	size_t num = strlen(s1);
+	ssize_t num = strlen(s1);
 
 	while (num-- && *(s1--) != chr) ;
 
-	num++;
-	if (!num)
+	if (num < 0)
 		return 0;
 
 	return (char *)(s1 + 1);
@@ -162,16 +161,15 @@ __weak char *strstr(const char *str1, const char *str2)
 #undef strrchr
 __weak char *strrchr(const char *str, int chr)
 {
-	size_t num = strlen(str);
-	const char *s1 = str + num;
+	ssize_t num = strlen(str);
+	const char *s1 = (str + num) - 1;
 
 	while (num-- && *(s1--) != chr) ;
 
-	num++;
-	if (!num)
+	if (num < 0)
 		return 0;
 
-	return (char *)s1;
+	return (char *)(s1 + 1);
 }
 
 #undef strpbrk
@@ -262,12 +260,12 @@ __weak void *memset(void *ptr, int value, size_t num)
 __weak void *memchr(const void *ptr, int val, size_t num)
 {
 	const char *p1 = (char *)ptr;
+	ssize_t n = num;
 	char c = (char)val;
 
-	while (num-- && *(p1++) != c) ;
+	while (n-- && *(p1++) != c) ;
 
-	num++;
-	if (!num)
+	if (n < 0)
 		return 0;
 
 	return (void *)(p1 - 1);

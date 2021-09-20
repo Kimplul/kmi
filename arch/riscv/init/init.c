@@ -31,26 +31,40 @@ static struct cell_info get_cellinfo(void *fdt, int offset)
 
 }
 
+/* How "reg" is interpreted depends on the parent node */
+static struct cell_info get_reginfo(void *fdt, const char *path)
+{
+	const char *i = strrchr(path, '/');
+	if(!i)
+		return (struct cell_info){0, 0};
+
+	size_t baselen = i - path;
+	if(i == 0)
+		/* root node */
+		baselen = 1;
+
+	return get_cellinfo(fdt, fdt_path_offset_namelen(fdt, path, baselen));
+}
+
 static struct pmem_layout get_memlayout(void *fdt)
 {
-	struct cell_info ci = get_cellinfo(fdt, 0);
-
+	struct cell_info ci = get_reginfo(fdt, "/memory");
 	int mem_offset = fdt_path_offset(fdt, "/memory");
 	uint8_t *mem_reg =
 		(uint8_t *) fdt_getprop(fdt, mem_offset, "reg", NULL);
 
 	/* if riscv128 comes around we will probably see addr_cells == 4, but
 	 * I'm not too concerned about it at the moment */
-	pm_t base = fdt_load_int_ptr(pm_t, ci.addr_cells, mem_reg);
+	pm_t base = (pm_t)fdt_load_int_ptr(ci.addr_cells, mem_reg);
 
 	if(ci.addr_cells == 2)
 		mem_reg += sizeof(fdt64_t);
 	else
 		mem_reg += sizeof(fdt32_t);
 
-	pm_t top = fdt_load_int_ptr(pm_t, ci.size_cells, mem_reg) + base;
-	struct pmem_layout ret = { base, top };
-	return ret;
+	/* -1 because base is a legitimate memory address */
+	pm_t top = (pm_t)fdt_load_int_ptr(ci.size_cells, mem_reg) + base - 1;
+	return (struct pmem_layout){base, top};
 }
 
 #ifdef DEBUG
@@ -80,11 +94,11 @@ static void init_debug(void *fdt)
 	enum serial_dev_t dev = serial_dev_enum(dev_name);
 
 	/* get serial device address */
-	struct cell_info ci = get_cellinfo(fdt, stdout_offset);
+	struct cell_info ci = get_reginfo(fdt, stdout);
 	void *reg_ptr = (void *)fdt_getprop(fdt, stdout_offset, "reg", NULL);
 
 	void *uart_ptr = 0;
-	uart_ptr = (void *)fdt_load_int_ptr(pm_t, ci.addr_cells, reg_ptr);
+	uart_ptr = (void *)(pm_t)fdt_load_int_ptr(ci.addr_cells, reg_ptr);
 
 	dbg_init(uart_ptr, dev);
 }
@@ -110,7 +124,7 @@ static pm_t get_initrdtop(void *fdt)
 	void *initrd_end_ptr = (void *)fdt_getprop(fdt, chosen_offset,
 			"linux,initrd-end", NULL);
 
-	return fdt_load_int_ptr(pm_t, ci.addr_cells, initrd_end_ptr);
+	return (pm_t)fdt_load_int_ptr(ci.addr_cells, initrd_end_ptr);
 }
 
 static pm_t get_fdttop(void *fdt)
@@ -132,7 +146,9 @@ static void setup_pmem(void *fdt)
 	dbg("kernel_top:\t%#lx\n", kernel_top);
 	dbg("fdt_top:\t%#lx\n", fdt_top);
 
-	populate_pmap(pmem.base, pmem.top - pmem.base, top + 1);
+	/* riscv handles two byte boundaries better than one byte, so align
+	 * upwards */
+	populate_pmap(pmem.base, pmem.top - pmem.base, align_up(top + 1, 2));
 
 	/* TODO: mark used pages */
 }

@@ -11,3 +11,4 @@
 + Mark fdt, reserved mem, kernel, init and initrd in vmem. Remember to remove
 init from vmem when jumping to vmem
 + Figure out best way to tell the init how large out kernel is
++ Make code more robust, error checking etc
