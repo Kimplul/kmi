@@ -2,8 +2,9 @@
 #include <apos/string.h> /* memset */
 #include <apos/bits.h> /* __is_nset etc */
 
+/* NOTE: these are all for pnum_t, i.e. O0_SHIFT is from 0 */
 #if defined(O0_WIDTH)
-#define MM_O0_SHIFT (O0_WIDTH)
+#define MM_O0_SHIFT (0)
 #define MM_O0_WIDTH (1UL << (O0_WIDTH))
 #define MM_O0_SIZE  (1UL << MM_O0_SHIFT << PAGE_SHIFT)
 #else
@@ -13,7 +14,7 @@
 #endif
 
 #if defined(O1_WIDTH)
-#define MM_O1_SHIFT (MM_O0_SHIFT + (O1_WIDTH))
+#define MM_O1_SHIFT (MM_O0_SHIFT + (O0_WIDTH))
 #define MM_O1_WIDTH (1UL << (O1_WIDTH))
 #define MM_O1_SIZE  (1UL << MM_O1_SHIFT << PAGE_SHIFT)
 #else
@@ -23,7 +24,7 @@
 #endif
 
 #if defined(O2_WIDTH)
-#define MM_O2_SHIFT (MM_O1_SHIFT + (O2_WIDTH))
+#define MM_O2_SHIFT (MM_O1_SHIFT + (O1_WIDTH))
 #define MM_O2_WIDTH (1UL << (O2_WIDTH))
 #define MM_O2_SIZE  (1UL << MM_O2_SHIFT << PAGE_SHIFT)
 #else
@@ -33,7 +34,7 @@
 #endif
 
 #if defined(O3_WIDTH)
-#define MM_O3_SHIFT (MM_O2_SHIFT + (O3_WIDTH))
+#define MM_O3_SHIFT (MM_O2_SHIFT + (O2_WIDTH))
 #define MM_O3_WIDTH (1UL << (O3_WIDTH))
 #define MM_O3_SIZE  (1UL << MM_O3_SHIFT << PAGE_SHIFT)
 #else
@@ -43,7 +44,7 @@
 #endif
 
 #if defined(O4_WIDTH)
-#define MM_O4_SHIFT (MM_O3_SHIFT + (O4_WIDTH))
+#define MM_O4_SHIFT (MM_O3_SHIFT + (O3_WIDTH))
 #define MM_O4_SHIFT (1UL << (O4_WIDTH))
 #define MM_O4_SIZE  (1UL << MM_O4_SHIFT << PAGE_SHIFT)
 #else
@@ -53,7 +54,7 @@
 #endif
 
 #if defined(O5_WIDTH)
-#define MM_O5_SHIFT (MM_O4_SHIFT + (O5_WIDTH))
+#define MM_O5_SHIFT (MM_O4_SHIFT + (O4_WIDTH))
 #define MM_O5_WIDTH (1UL << (O5_WIDTH))
 #define MM_O5_SIZE  (1UL << MM_O5_SHIFT << PAGE_SHIFT)
 #else
@@ -63,7 +64,7 @@
 #endif
 
 #if defined(O6_WIDTH)
-#define MM_O6_SHIFT (MM_O5_SHIFT + (O6_WIDTH))
+#define MM_O6_SHIFT (MM_O5_SHIFT + (O5_WIDTH))
 #define MM_O6_WIDTH (1UL << (O6_WIDTH))
 #define MM_O6_SIZE  (1UL << MM_O6_SHIFT << PAGE_SHIFT)
 #else
@@ -73,7 +74,7 @@
 #endif
 
 #if defined(O7_WIDTH)
-#define MM_O7_SHIFT (MM_O6_SHIFT + (O7_WIDTH))
+#define MM_O7_SHIFT (MM_O6_SHIFT + (O6_WIDTH))
 #define MM_O7_WIDTH (1UL << (O7_WIDTH))
 #define MM_O7_SIZE  (1UL << MM_O7_SHIFT << PAGE_SHIFT)
 #else
@@ -83,7 +84,7 @@
 #endif
 
 #if defined(O8_WIDTH)
-#define MM_O8_SHIFT (MM_O7_SHIFT + (O8_WIDTH))
+#define MM_O8_SHIFT (MM_O7_SHIFT + (O7_WIDTH))
 #define MM_O8_WIDTH (1UL << (O8_WIDTH))
 #define MM_O8_SIZE  (1UL << MM_O8_SHIFT << PAGE_SHIFT)
 #else
@@ -93,7 +94,7 @@
 #endif
 
 #if defined(O9_WIDTH)
-#define MM_O9_SHIFT (MM_O8_SHIFT + (O9_WIDTH))
+#define MM_O9_SHIFT (MM_O8_SHIFT + (O8_WIDTH))
 #define MM_O9_WIDTH (1UL << (O9_WIDTH))
 #define MM_O9_SIZE  (1UL << MM_O9_SHIFT << PAGE_SHIFT)
 #else
@@ -212,7 +213,7 @@ struct mm_pmap_t {
 
 static struct mm_pmap_t *pmap = 0;
 
-static void __mark_free(mm_node_t * op, pnum_t pnum,
+static void __mark_free(mm_node_t * op, pnum_t pnum, enum mm_order_t tgt,
 	enum mm_order_t src, enum mm_order_t dst)
 {
 	size_t idx = pnum_to_index(pnum, src);
@@ -224,14 +225,16 @@ static void __mark_free(mm_node_t * op, pnum_t pnum,
 	}
 
 	struct mm_branch_t *o = (struct mm_branch_t *)op;
-	__mark_free(o->next[idx], pnum, src - 1, dst);
+	if(src != tgt)
+		__mark_free(o->next[idx], pnum, tgt, src - 1, dst);
+
 	/* freeing a page results in always clearing a full bit? */
 	__clear_nbit(o->full[__o_container(idx)], __o_bit(idx));
 }
 
 void free_page(enum mm_order_t order, paddr_t paddr)
 {
-	for (ssize_t i = MAX_ORDER; i >= order; --i) {
+	for (ssize_t i = MM_O0; i <= MAX_ORDER; ++i) {
 		if (!pmap->omap[i])
 			continue;
 
@@ -242,8 +245,9 @@ void free_page(enum mm_order_t order, paddr_t paddr)
 		for (size_t j = 0; j < omap->order; ++j)
 			__mark_free(omap->orders[j],
 				paddr_to_pnum(paddr - omap->base),
-				omap->order, j);
+				order, omap->order, j);
 
+		return;
 	}
 }
 
@@ -284,7 +288,7 @@ static bool __mark_used(mm_node_t * op, pnum_t pnum, enum mm_order_t tgt,
 
 void mark_used(enum mm_order_t order, paddr_t paddr)
 {
-	for (ssize_t i = MAX_ORDER; i >= MM_O0; --i) {
+	for (ssize_t i = MM_O0; i <= MAX_ORDER; ++i) {
 		if (!pmap->omap[i])
 			continue;
 
@@ -445,12 +449,30 @@ static paddr_t __populate_order(mm_node_t ** op, paddr_t cont,
 	return cont;
 }
 
+static paddr_t __probe_order(paddr_t cont, enum mm_order_t src, enum mm_order_t dst,
+		size_t num)
+{
+	if(src == dst){
+		cont += sizeof(struct mm_leaf_t);
+		cont += state_elems(num);
+		return cont;
+	}
+
+	cont += sizeof(struct mm_branch_t);
+	cont += state_elems(num);
+	cont += next_elems(num);
+
+	for(size_t i = 0; i < num; ++i)
+		cont = __probe_order(cont, src - 1, dst, __o_width(src - 1));
+
+	return cont;
+}
+
 static paddr_t __populate_omap(struct mm_omap_t **omap, paddr_t cont,
 	paddr_t base, size_t entries, enum mm_order_t order)
 {
 	struct mm_omap_t *lomap = (struct mm_omap_t *)
 		move_forward(cont, sizeof(struct mm_omap_t));
-
 	memset(lomap, 0, sizeof(struct mm_omap_t));
 
 	lomap->orders = (mm_node_t **) move_forward(cont,
@@ -467,9 +489,22 @@ static paddr_t __populate_omap(struct mm_omap_t **omap, paddr_t cont,
 	*omap = lomap;
 	return cont;
 }
-/* only call from init */
-void populate_pmap(paddr_t ram_base, size_t ram_size, paddr_t cont)
+
+static paddr_t __probe_omap(paddr_t cont, size_t entries, enum mm_order_t order)
 {
+	cont += sizeof(struct mm_omap_t);
+	cont += (order + 1) * sizeof(mm_node_t **);
+
+	for(size_t i = 0; i <= order; ++i)
+		cont = __probe_order(cont, order, i, entries);
+
+	return cont;
+}
+
+/* only call from init */
+paddr_t populate_pmap(paddr_t ram_base, size_t ram_size, paddr_t cont)
+{
+	paddr_t start = cont;
 	pmap = (struct mm_pmap_t *)move_forward(cont, sizeof(struct mm_pmap_t));
 	memset(pmap, 0, sizeof(struct mm_pmap_t));
 
@@ -486,6 +521,34 @@ void populate_pmap(paddr_t ram_base, size_t ram_size, paddr_t cont)
 		ram_left -= mm_sizes[i] * entries;
 		ram_region += (mm_sizes[i] * entries);
 	}
+
+	return cont - start;
+}
+
+/* not a huge fan of having a separate probe_pmap function as that seems like an
+ * easy way to cause weird bugs. Should always at least check that probe_pmap
+ * returns the same value as populate_pmap, or possibly even add in some method
+ * to combine the two? */
+paddr_t probe_pmap(paddr_t ram_base, size_t ram_size)
+{
+	paddr_t cont = 0;
+
+	cont += sizeof(struct mm_pmap_t);
+
+	paddr_t ram_region = ram_base;
+	size_t ram_left = ram_size;
+	for(ssize_t i = MAX_ORDER; i >= MM_O0; --i){
+		size_t entries = ram_left / mm_sizes[i];
+		if(entries == 0)
+			continue;
+
+		cont = __probe_omap(cont, entries, i);
+
+		ram_left -= mm_sizes[i] * entries;
+		ram_region += (mm_sizes[i] * entries);
+	}
+
+	return cont;
 }
 
 /* only call from kernel */

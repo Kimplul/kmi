@@ -12,4 +12,9 @@ typedef uint64_t pm_t;
 #define MM_GPAGE MM_O2
 #define MM_TPAGE MM_O3
 
+#define MM_KPAGE_SIZE SZ_4K
+#define MM_MPAGE_SIZE SZ_2M
+#define MM_GPAGE_SIZE SZ_1G
+#define MM_TPAGE_SIZE SZ_512G
+
 #endif /* APOS_RISCV_PAGES_H */

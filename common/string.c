@@ -251,7 +251,7 @@ __weak void *memset(void *ptr, int value, size_t num)
 	char c = value;
 
 	while (num--)
-		*(p--) = c;
+		*(p++) = c;
 
 	return ptr;
 }

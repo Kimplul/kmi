@@ -1,6 +1,6 @@
 #include <apos/sizes.h>
 #define PM_KERN		0x83800000
-#define PM_STACK_BASE	0x83900000
+#define PM_STACK_BASE	(PM_KERN + SZ_2M)
 #define PM_STACK_TOP	(PM_STACK_BASE + SZ_2M - 2)
 #define VM_KERN ((-1) - SZ_1G)
 

@@ -25,7 +25,8 @@ void mark_used(enum mm_order_t order, paddr_t paddr);
 paddr_t alloc_page(enum mm_order_t order, paddr_t offset);
 
 #if defined(INIT)
-void populate_pmap(paddr_t ram_base, size_t ram_size, paddr_t cont);
+paddr_t populate_pmap(paddr_t ram_base, size_t ram_size, paddr_t cont);
+paddr_t probe_pmap(paddr_t ram_base, size_t ram_size);
 #endif
 
 #if defined(KERNEL)

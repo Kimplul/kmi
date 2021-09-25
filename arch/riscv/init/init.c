@@ -127,10 +127,59 @@ static pm_t get_initrdtop(void *fdt)
 	return (pm_t)fdt_load_int_ptr(ci.addr_cells, initrd_end_ptr);
 }
 
+static pm_t get_initrdbase(void *fdt)
+{
+	int chosen_offset = fdt_path_offset(fdt, "/chosen");
+	struct cell_info ci = get_cellinfo(fdt, chosen_offset);
+
+	void *initrd_base_ptr = (void *)fdt_getprop(fdt, chosen_offset,
+			"linux,initrd-start", NULL);
+
+	return (pm_t)fdt_load_int_ptr(ci.addr_cells, initrd_base_ptr);
+}
+
 static pm_t get_fdttop(void *fdt)
 {
 	const char *b = (const char *)fdt;
 	return (pm_t)(b + fdt_totalsize(fdt));
+}
+
+static pm_t get_fdtbase(void *fdt)
+{
+	/* lol */
+	return (pm_t)fdt;
+}
+
+static void mark_area_used(pm_t base, pm_t top)
+{
+	size_t area_left = top - base;
+	while(area_left >= MM_TPAGE_SIZE){
+		mark_used(MM_TPAGE, base);
+		area_left -= MM_TPAGE_SIZE;
+		base += MM_TPAGE_SIZE;
+	}
+
+	while(area_left >= MM_GPAGE_SIZE){
+		mark_used(MM_GPAGE, base);
+		area_left -= MM_GPAGE_SIZE;
+		base += MM_GPAGE_SIZE;
+	}
+
+	while(area_left >= MM_MPAGE_SIZE){
+		mark_used(MM_MPAGE, base);
+		area_left -= MM_MPAGE_SIZE;
+		base += MM_MPAGE_SIZE;
+	}
+
+
+	while(area_left >= MM_KPAGE_SIZE){
+		mark_used(base, MM_KPAGE);
+		area_left -= MM_KPAGE_SIZE;
+		base += MM_KPAGE_SIZE;
+	}
+
+	if(area_left != 0)
+		mark_used(base, MM_KPAGE_SIZE);
 }
 
 static void setup_pmem(void *fdt)
@@ -148,14 +197,32 @@ static void setup_pmem(void *fdt)
 
 	/* TODO: check that pmap placement doesn't overwrite anything, such as
 	 * stack or go over top address of memory */
+	size_t probe_size = probe_pmap(pmem.base, pmem.top - pmem.base);
 	/* riscv handles two byte boundaries better than one byte, so align
 	 * upwards */
-	populate_pmap(pmem.base, pmem.top - pmem.base, align_up(top + 1, 2));
+	pm_t pmap_base = align_up(top + 1, 2);
+	size_t actual_size = populate_pmap(pmem.base, pmem.top - pmem.base,
+			pmap_base);
 
-	/* TODO: mark used pages */
+	/* TODO: not entirely sure what to do about this, probably give up trying to
+	 * boot? */
+	if(probe_size != actual_size){
+		dbg("BUG! probe_size (%#lx) != actual_size (%#lx)\n",
+				probe_size, actual_size);
+	}
 
-	/* mark init stack */
+	/* mark init stack, at the moment always mapped to 2M */
 	mark_used(PM_STACK_BASE, MM_MPAGE);
+
+	/* mark kernel, at the moment it is always mapped to a 2M partition */
+	mark_used(PM_KERN, MM_MPAGE);
+
+	/* mark fdt and initrd */
+	mark_area_used(get_initrdbase(fdt), initrd_top);
+	mark_area_used(get_fdtbase(fdt), fdt_top);
+
+	/* mark pmap */
+	mark_area_used(pmap_base, pmap_base + actual_size);
 }
 
 void init(void *fdt)
