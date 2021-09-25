@@ -112,8 +112,8 @@ static pm_t get_kerneltop()
 	/* interesting, for some reason if I define these to be just char
 	 * pointers I get some wacky values. Not sure why that would be, but
 	 * this works. */
-	extern char __init_end[], __kernel_size[];
-	return (pm_t)__init_end + (pm_t)__kernel_size;
+	extern char __init_end, __kernel_size;
+	return (pm_t)&__init_end + (pm_t)&__kernel_size;
 }
 
 static pm_t get_initrdtop(void *fdt)
@@ -146,11 +146,16 @@ static void setup_pmem(void *fdt)
 	dbg("kernel_top:\t%#lx\n", kernel_top);
 	dbg("fdt_top:\t%#lx\n", fdt_top);
 
+	/* TODO: check that pmap placement doesn't overwrite anything, such as
+	 * stack or go over top address of memory */
 	/* riscv handles two byte boundaries better than one byte, so align
 	 * upwards */
 	populate_pmap(pmem.base, pmem.top - pmem.base, align_up(top + 1, 2));
 
 	/* TODO: mark used pages */
+
+	/* mark init stack */
+	mark_used(PM_STACK_BASE, MM_MPAGE);
 }
 
 void init(void *fdt)

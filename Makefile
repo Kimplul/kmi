@@ -2,7 +2,7 @@ DO		!= echo > deps.mk
 
 # this could be done better
 DEBUGFLAGS	!= [ $(DEBUG) ] && echo "-O0 -ggdb3 -DDEBUG" || echo "-flto -O2"
-CFLAGS		= -fno-pie -ffreestanding -nostdlib -std=c11 -Wall -Wextra
+CFLAGS		= -fno-pie -ffreestanding -nostdlib -std=c17 -Wall -Wextra
 DEPFLAGS	= -MT $@ -MMD -MP -MF $@.d
 
 all: apos.bin
@@ -57,7 +57,9 @@ apos.bin: kernel.bin init.bin
 kernel.elf: $(KERNEL_OBJECTS) $(KERNEL_LD)
 	$(GENELF) -T $(KERNEL_LD) $(KERNEL_OBJECTS) -o $@
 
-init.elf: kernel.bin $(INIT_OBJECTS) $(INIT_LD)
+$(INIT_LD): kernel.bin
+
+init.elf: $(INIT_OBJECTS) $(INIT_LD)
 	$(GENELF) -T $(INIT_LD) $(INIT_OBJECTS) -o $@
 
 kernel.bin: kernel.elf
