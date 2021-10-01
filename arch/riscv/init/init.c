@@ -7,12 +7,12 @@
 #include <apos/utils.h>
 #include <libfdt.h>
 #include <pages.h>
+#include <vmem.h>
 #include <csr.h>
-#include <vmap.h>
 
 struct pmem_layout {
-	pm_t base;
-	pm_t top;
+	paddr_t base;
+	paddr_t top;
 };
 
 struct cell_info {
@@ -55,7 +55,7 @@ static struct pmem_layout get_memlayout(void *fdt)
 
 	/* if riscv128 comes around we will probably see addr_cells == 4, but
 	 * I'm not too concerned about it at the moment */
-	pm_t base = (pm_t)fdt_load_int_ptr(ci.addr_cells, mem_reg);
+	paddr_t base = (paddr_t)fdt_load_int_ptr(ci.addr_cells, mem_reg);
 
 	if(ci.addr_cells == 2)
 		mem_reg += sizeof(fdt64_t);
@@ -63,7 +63,7 @@ static struct pmem_layout get_memlayout(void *fdt)
 		mem_reg += sizeof(fdt32_t);
 
 	/* -1 because base is a legitimate memory address */
-	pm_t top = (pm_t)fdt_load_int_ptr(ci.size_cells, mem_reg) + base - 1;
+	paddr_t top = (paddr_t)fdt_load_int_ptr(ci.size_cells, mem_reg) + base - 1;
 	return (struct pmem_layout){base, top};
 }
 
@@ -79,6 +79,7 @@ static enum serial_dev_t serial_dev_enum(const char *dev_name)
 	return -1;
 }
 
+static void* uart_ptr_glbl = 0;
 static void init_debug(void *fdt)
 {
 	int chosen_offset = fdt_path_offset(fdt, "/chosen");
@@ -98,7 +99,8 @@ static void init_debug(void *fdt)
 	void *reg_ptr = (void *)fdt_getprop(fdt, stdout_offset, "reg", NULL);
 
 	void *uart_ptr = 0;
-	uart_ptr = (void *)(pm_t)fdt_load_int_ptr(ci.addr_cells, reg_ptr);
+	uart_ptr = (void *)(paddr_t)fdt_load_int_ptr(ci.addr_cells, reg_ptr);
+	uart_ptr_glbl = uart_ptr;
 
 	dbg_init(uart_ptr, dev);
 }
@@ -107,16 +109,16 @@ static void init_debug(void *fdt)
 #define init_debug(...)
 #endif
 
-static pm_t get_kerneltop()
+static paddr_t get_kerneltop()
 {
 	/* interesting, for some reason if I define these to be just char
 	 * pointers I get some wacky values. Not sure why that would be, but
 	 * this works. */
 	extern char __init_end, __kernel_size;
-	return (pm_t)&__init_end + (pm_t)&__kernel_size;
+	return (paddr_t)&__init_end + (paddr_t)&__kernel_size;
 }
 
-static pm_t get_initrdtop(void *fdt)
+static paddr_t get_initrdtop(void *fdt)
 {
 	int chosen_offset = fdt_path_offset(fdt, "/chosen");
 	struct cell_info ci = get_cellinfo(fdt, chosen_offset);
@@ -124,10 +126,10 @@ static pm_t get_initrdtop(void *fdt)
 	void *initrd_end_ptr = (void *)fdt_getprop(fdt, chosen_offset,
 			"linux,initrd-end", NULL);
 
-	return (pm_t)fdt_load_int_ptr(ci.addr_cells, initrd_end_ptr);
+	return (paddr_t)fdt_load_int_ptr(ci.addr_cells, initrd_end_ptr);
 }
 
-static pm_t get_initrdbase(void *fdt)
+static paddr_t get_initrdbase(void *fdt)
 {
 	int chosen_offset = fdt_path_offset(fdt, "/chosen");
 	struct cell_info ci = get_cellinfo(fdt, chosen_offset);
@@ -135,43 +137,26 @@ static pm_t get_initrdbase(void *fdt)
 	void *initrd_base_ptr = (void *)fdt_getprop(fdt, chosen_offset,
 			"linux,initrd-start", NULL);
 
-	return (pm_t)fdt_load_int_ptr(ci.addr_cells, initrd_base_ptr);
+	return (paddr_t)fdt_load_int_ptr(ci.addr_cells, initrd_base_ptr);
 }
 
-static pm_t get_fdttop(void *fdt)
+static paddr_t get_fdttop(void *fdt)
 {
 	const char *b = (const char *)fdt;
-	return (pm_t)(b + fdt_totalsize(fdt));
+	return (paddr_t)(b + fdt_totalsize(fdt));
 }
 
-static pm_t get_fdtbase(void *fdt)
+static paddr_t get_fdtbase(void *fdt)
 {
 	/* lol */
-	return (pm_t)fdt;
+	return (paddr_t)fdt;
 }
 
-static void mark_area_used(pm_t base, pm_t top)
+static void mark_area_used(paddr_t base, paddr_t top)
 {
 	size_t area_left = top - base;
-	while(area_left >= MM_TPAGE_SIZE){
-		mark_used(MM_TPAGE, base);
-		area_left -= MM_TPAGE_SIZE;
-		base += MM_TPAGE_SIZE;
-	}
-
-	while(area_left >= MM_GPAGE_SIZE){
-		mark_used(MM_GPAGE, base);
-		area_left -= MM_GPAGE_SIZE;
-		base += MM_GPAGE_SIZE;
-	}
-
-	while(area_left >= MM_MPAGE_SIZE){
-		mark_used(MM_MPAGE, base);
-		area_left -= MM_MPAGE_SIZE;
-		base += MM_MPAGE_SIZE;
-	}
-
-
+	/* TODO: add in a method to make sure that we use as large mappings as
+	 * possible. */
 	while(area_left >= MM_KPAGE_SIZE){
 		mark_used(base, MM_KPAGE);
 		area_left -= MM_KPAGE_SIZE;
@@ -182,15 +167,32 @@ static void mark_area_used(pm_t base, pm_t top)
 		mark_used(base, MM_KPAGE_SIZE);
 }
 
+static void mark_reserved_mem(void *fdt)
+{
+	int rmem_offset = fdt_path_offset(fdt, "/reserved-memory/mmode_resv0");
+	struct cell_info ci = get_reginfo(fdt, "/reserved-memory/mmode_resv0");
+	uint8_t *rmem_reg = (uint8_t *)fdt_getprop(fdt, rmem_offset, "reg", NULL);
+
+	paddr_t base = (paddr_t)fdt_load_int_ptr(ci.addr_cells, rmem_reg);
+
+	if(ci.addr_cells == 2)
+		rmem_reg += sizeof(fdt64_t);
+	else
+		rmem_reg += sizeof(fdt32_t);
+
+	paddr_t top = (paddr_t)fdt_load_int_ptr(ci.size_cells, rmem_reg) + base - 1;
+	mark_area_used(base, top);
+}
+
 static void setup_pmem(void *fdt)
 {
 	struct pmem_layout pmem = get_memlayout(fdt);
 
-	pm_t initrd_top = get_initrdtop(fdt);
-	pm_t kernel_top = get_kerneltop();
-	pm_t fdt_top = get_fdttop(fdt);
+	paddr_t initrd_top = get_initrdtop(fdt);
+	paddr_t kernel_top = get_kerneltop();
+	paddr_t fdt_top = get_fdttop(fdt);
 
-	pm_t top = MAX3(kernel_top, initrd_top, fdt_top);
+	paddr_t top = MAX3(kernel_top, initrd_top, fdt_top);
 	dbg("initrd_top:\t%#lx\n", initrd_top);
 	dbg("kernel_top:\t%#lx\n", kernel_top);
 	dbg("fdt_top:\t%#lx\n", fdt_top);
@@ -200,7 +202,7 @@ static void setup_pmem(void *fdt)
 	size_t probe_size = probe_pmap(pmem.base, pmem.top - pmem.base);
 	/* riscv handles two byte boundaries better than one byte, so align
 	 * upwards */
-	pm_t pmap_base = align_up(top + 1, 2);
+	paddr_t pmap_base = align_up(top + 1, 2);
 	size_t actual_size = populate_pmap(pmem.base, pmem.top - pmem.base,
 			pmap_base);
 
@@ -223,6 +225,51 @@ static void setup_pmem(void *fdt)
 
 	/* mark pmap */
 	mark_area_used(pmap_base, pmap_base + actual_size);
+
+	/* mark reserved mem */
+	mark_reserved_mem(fdt);
+}
+
+paddr_t move_kernel()
+{
+	extern char __init_end, __kernel_size;
+	paddr_t dst = alloc_page(MM_MPAGE, 0);
+	memmove((void *)dst, &__init_end, (size_t)&__kernel_size);
+
+	return dst;
+}
+
+struct vm_branch_t *prepare_vmem()
+{
+	paddr_t kernel_dst = move_kernel();
+
+	/* TODO: check if this actually works */
+	struct vm_branch_t *branch = (struct vm_branch_t *)alloc_page(MM_KPAGE, 0);
+	memset(branch, 0, sizeof(struct vm_branch_t));
+
+	/* TODO: check mapping flags, also iron out possible bugs etc in
+	 * map_vmem */
+	/* map kernel */
+	map_vmem(branch, kernel_dst, VM_KERN, VM_R | VM_W | VM_G | VM_X | VM_V, MM_MPAGE);
+
+	/* map init */
+	map_vmem(branch, PM_KERN, PM_KERN, VM_R | VM_W | VM_X | VM_V, MM_MPAGE);
+
+	/* map stack */
+	map_vmem(branch, PM_STACK_BASE, PM_STACK_BASE, VM_R | VM_W | VM_V, MM_MPAGE);
+
+	/* map debug VERY UGLY GLOBALS BAH */
+	map_vmem(branch, (paddr_t)uart_ptr_glbl, (paddr_t)uart_ptr_glbl, VM_R | VM_W | VM_V, MM_KPAGE);
+
+	/* TODO: map more stuff */
+
+	return branch;
+}
+
+void start_vmem(struct vm_branch_t *branch)
+{
+	/* assume Sv48 and ASID 0*/
+	csr_write(CSR_SATP, SATP_MODE_48 | (((paddr_t)(branch)) >> 12));
 }
 
 void init(void *fdt)
@@ -231,6 +278,10 @@ void init(void *fdt)
 	dbg_fdt(fdt);
 	setup_pmem(fdt);
 
+	struct vm_branch_t *branch = prepare_vmem();
+	start_vmem(branch);
+
 	/* update_pmap(TODO: figure out where to place pmap in vmem); */
-	/* TODO: jump to kernel */
+	void (*main)(void *uart) = (void (*)(void *))VM_KERN;
+	main(uart_ptr_glbl);
 }

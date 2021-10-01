@@ -1,7 +1,7 @@
-KERNEL_LOCAL	!= echo arch/riscv/kernel/*.[cS]
+KERNEL_LOCAL	!= echo arch/riscv/kernel/*.[cS] arch/riscv/common/*.[cS]
 KERNEL_SOURCES	+= $(KERNEL_LOCAL)
 
-INIT_LOCAL	!= echo arch/riscv/init/*.[cS]
+INIT_LOCAL	!= echo arch/riscv/init/*.[cS] arch/riscv/common/*.[cS]
 INIT_FDT	!= echo lib/fdt*.c
 INIT_SOURCES	+= $(INIT_LOCAL) $(INIT_FDT)
 

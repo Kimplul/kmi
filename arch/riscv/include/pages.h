@@ -2,10 +2,6 @@
 #define APOS_RISCV_PAGES_H
 
 #include <apos/types.h>
-#include <apos/pmem.h>
-
-/* assume riscv64 for now */
-typedef uint64_t pm_t;
 
 #define MM_KPAGE MM_O0
 #define MM_MPAGE MM_O1
@@ -16,5 +12,7 @@ typedef uint64_t pm_t;
 #define MM_MPAGE_SIZE SZ_2M
 #define MM_GPAGE_SIZE SZ_1G
 #define MM_TPAGE_SIZE SZ_512G
+
+typedef uint64_t paddr_t;
 
 #endif /* APOS_RISCV_PAGES_H */

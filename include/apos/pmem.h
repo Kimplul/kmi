@@ -1,6 +1,7 @@
 #ifndef APOS_PMEM_H
 #define APOS_PMEM_H
 
+#include <apos/mem.h>
 #include <apos/types.h>
 
 enum mm_order_t {

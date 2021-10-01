@@ -1,13 +1,8 @@
-#include <pages.h>
 #include <apos/main.h>
+#include <apos/debug.h>
 
-void yeet()
+void __main main(void *uart)
 {
-	int a = 23;
-}
-
-void __main main(struct mm_ptinfo *pageinfo)
-{
-	yeet();
-	while(1){};
+	dbg_init(uart, NS16550A);
+	dbg("Hello from (hopefully) virtual memory!\n");
 }
