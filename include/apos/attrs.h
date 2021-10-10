@@ -7,4 +7,6 @@
 #define __packed		__attribute__((packed))
 #define __weak			__attribute__((weak))
 
+#define __main __section(".kernel.start") __noinline
+
 #endif /* APOS_COMPILER_ATTRIBUTES_H */

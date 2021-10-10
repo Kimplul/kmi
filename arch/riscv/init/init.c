@@ -1,3 +1,5 @@
+/* TODO: cleanup :P */
+
 #include <apos/init.h>
 #include <apos/sizes.h>
 #include <apos/types.h>
@@ -79,7 +81,6 @@ static enum serial_dev_t serial_dev_enum(const char *dev_name)
 	return -1;
 }
 
-static void* uart_ptr_glbl = 0;
 static void init_debug(void *fdt)
 {
 	int chosen_offset = fdt_path_offset(fdt, "/chosen");
@@ -98,9 +99,7 @@ static void init_debug(void *fdt)
 	struct cell_info ci = get_reginfo(fdt, stdout);
 	void *reg_ptr = (void *)fdt_getprop(fdt, stdout_offset, "reg", NULL);
 
-	void *uart_ptr = 0;
-	uart_ptr = (void *)(paddr_t)fdt_load_int_ptr(ci.addr_cells, reg_ptr);
-	uart_ptr_glbl = uart_ptr;
+	void *uart_ptr = (void *)(paddr_t)fdt_load_int_ptr(ci.addr_cells, reg_ptr);
 
 	dbg_init(uart_ptr, dev);
 }
@@ -258,18 +257,39 @@ struct vm_branch_t *prepare_vmem()
 	/* map stack */
 	map_vmem(branch, PM_STACK_BASE, PM_STACK_BASE, VM_R | VM_W | VM_V, MM_MPAGE);
 
-	/* map debug VERY UGLY GLOBALS BAH */
-	map_vmem(branch, (paddr_t)uart_ptr_glbl, (paddr_t)uart_ptr_glbl, VM_R | VM_W | VM_V, MM_KPAGE);
-
-	/* TODO: map more stuff */
-
+	/* TODO: map more stuff? */
 	return branch;
 }
 
 void start_vmem(struct vm_branch_t *branch)
 {
 	/* assume Sv48 and ASID 0*/
+	/* TODO: get ASID from CPU id
+	 * TODO: more cores lol
+	 */
 	csr_write(CSR_SATP, SATP_MODE_48 | (((paddr_t)(branch)) >> 12));
+}
+
+struct init_data_t populate_initdata(void *fdt, struct vm_branch_t *branch)
+{
+	extern char __init_start, __init_end;
+
+	struct init_data_t d = {0};
+	d.init_base = (paddr_t)&__init_start;
+	d.init_top = (paddr_t)&__init_end;
+
+	d.initrd_base = get_initrdbase(fdt);
+	d.initrd_top = get_initrdtop(fdt);
+
+	d.fdt_base = get_fdtbase(fdt);
+	d.fdt_top = get_fdttop(fdt);
+
+	d.stack_base = PM_STACK_BASE;
+	d.stack_top = PM_STACK_TOP;
+
+	d.kernel_vm_base = branch;
+
+	return d;
 }
 
 void init(void *fdt)
@@ -278,10 +298,12 @@ void init(void *fdt)
 	dbg_fdt(fdt);
 	setup_pmem(fdt);
 
+
 	struct vm_branch_t *branch = prepare_vmem();
+	struct init_data_t d = populate_initdata(fdt, branch);
 	start_vmem(branch);
 
 	/* update_pmap(TODO: figure out where to place pmap in vmem); */
-	void (*main)(void *uart) = (void (*)(void *))VM_KERN;
-	main(uart_ptr_glbl);
+	void (*main)(struct init_data_t) = (void (*)(struct init_data_t))VM_KERN;
+	main(d);
 }

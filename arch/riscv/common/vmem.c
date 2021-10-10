@@ -3,10 +3,6 @@
 #include <pages.h>
 #include <vmem.h>
 
-extern const size_t mm_shifts[10];
-extern const size_t mm_widths[10];
-extern const size_t mm_sizes[10];
-
 #define pte_ppn(pte) (((paddr_t)(pte)) >> 10)
 #define pte_flags(pte) (((paddr_t)(pte)) & 0xff)
 #define to_pte(p, f) ((paddr_to_pnum(p) << 10) + (f))

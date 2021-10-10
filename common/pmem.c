@@ -24,10 +24,6 @@
 #define foreach_not_used_page(var, start, order)\
 	__foreach_page(var, start, var->entries, used, NEG)
 
-extern const size_t mm_shifts[10];
-extern const size_t mm_widths[10];
-extern const size_t mm_sizes[10];
-
 typedef uint32_t mm_info_t;
 typedef void mm_node_t;
 

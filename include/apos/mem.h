@@ -127,4 +127,9 @@
 
 #define __o_container(idx) ((idx) / MM_OINFO_WIDTH)
 #define __o_bit(idx) ((idx) & (MM_OINFO_WIDTH - 1))
+
+extern const size_t mm_shifts[10];
+extern const size_t mm_widths[10];
+extern const size_t mm_sizes[10];
+
 #endif /* APOS_MEM_H */
