@@ -39,7 +39,7 @@ struct mm_branch_t {
 };
 
 struct mm_omap_t {
-	paddr_t base;
+	pm_t base;
 	mm_node_t **orders;
 	enum mm_order_t order;
 };
@@ -69,7 +69,7 @@ static void __mark_free(mm_node_t * op, pnum_t pnum, enum mm_order_t tgt,
 	__clear_nbit(o->full[__o_container(idx)], __o_bit(idx));
 }
 
-void free_page(enum mm_order_t order, paddr_t paddr)
+void free_page(enum mm_order_t order, pm_t paddr)
 {
 	for (ssize_t i = MM_O0; i <= MAX_ORDER; ++i) {
 		if (!pmap->omap[i])
@@ -81,7 +81,7 @@ void free_page(enum mm_order_t order, paddr_t paddr)
 
 		for (size_t j = 0; j < omap->order; ++j)
 			__mark_free(omap->orders[j],
-				paddr_to_pnum(paddr - omap->base),
+				pm_to_pnum(paddr - omap->base),
 				order, omap->order, j);
 
 		return;
@@ -123,7 +123,7 @@ static bool __mark_used(mm_node_t * op, pnum_t pnum, enum mm_order_t tgt,
 	return false;
 }
 
-void mark_used(enum mm_order_t order, paddr_t paddr)
+void mark_used(enum mm_order_t order, pm_t paddr)
 {
 	for (ssize_t i = MM_O0; i <= MAX_ORDER; ++i) {
 		if (!pmap->omap[i])
@@ -135,7 +135,7 @@ void mark_used(enum mm_order_t order, paddr_t paddr)
 
 		for (size_t j = 0; j <= omap->order; ++j)
 			__mark_used(omap->orders[j],
-				paddr_to_pnum(paddr - omap->base),
+				pm_to_pnum(paddr - omap->base),
 				order, omap->order, j);
 
 		return;
@@ -173,13 +173,13 @@ static pnum_t __enum_order(mm_node_t * op, pnum_t offset,
 	return -1;
 }
 
-paddr_t alloc_page(enum mm_order_t order, paddr_t offset)
+pm_t alloc_page(enum mm_order_t order, pm_t offset)
 {
 	if (order > MAX_ORDER)
 		return 0;
 
 	pnum_t pnum = -1;
-	paddr_t base = 0;
+	pm_t base = 0;
 	struct mm_omap_t *omap;
 	for (size_t i = order; i <= MAX_ORDER; ++i) {
 		if (!pmap->omap[i])
@@ -190,7 +190,7 @@ paddr_t alloc_page(enum mm_order_t order, paddr_t offset)
 			base = offset - omap->base;
 
 		pnum = __enum_order(omap->orders[order],
-			paddr_to_pnum(base), omap->order, order);
+			pm_to_pnum(base), omap->order, order);
 
 		if (!(pnum < 0))
 			break;
@@ -199,14 +199,14 @@ paddr_t alloc_page(enum mm_order_t order, paddr_t offset)
 	if (pnum < 0)
 		return 0;
 
-	paddr_t paddr = pnum_to_paddr(pnum) + omap->base;
+	pm_t paddr = pnum_to_paddr(pnum) + omap->base;
 	mark_used(order, paddr);
 	return paddr;
 }
 
 
 
-static void __update_order(mm_node_t * op, paddr_t base, paddr_t offset,
+static void __update_order(mm_node_t * op, pm_t base, pm_t offset,
 	enum mm_order_t src, enum mm_order_t dst)
 {
 	if (src == dst) {
@@ -226,7 +226,7 @@ static void __update_order(mm_node_t * op, paddr_t base, paddr_t offset,
 	o->next = (mm_node_t **) move_paddr(o->next, base, offset);
 }
 
-static void __update_omap(struct mm_omap_t *omap, paddr_t base, paddr_t offset)
+static void __update_omap(struct mm_omap_t *omap, pm_t base, pm_t offset)
 {
 	for (size_t i = MM_O0; i <= omap->order; ++i) {
 		__update_order(omap->orders[i], base, offset, omap->order, i);
@@ -237,9 +237,9 @@ static void __update_omap(struct mm_omap_t *omap, paddr_t base, paddr_t offset)
 	omap->orders = (mm_node_t **) move_paddr(omap->orders, base, offset);
 }
 
-void update_pmap(paddr_t offset)
+void update_pmap(pm_t offset)
 {
-	paddr_t base = (paddr_t) pmap;
+	pm_t base = (pm_t) pmap;
 	for (size_t i = 0; i <= MAX_ORDER; ++i) {
 		if (!pmap->omap[i])
 			continue;
@@ -253,7 +253,7 @@ void update_pmap(paddr_t offset)
 }
 
 /* unfortunate that populating the mm info is so complicated */
-static paddr_t __populate_order(mm_node_t ** op, paddr_t cont,
+static pm_t __populate_order(mm_node_t ** op, pm_t cont,
 	enum mm_order_t src, enum mm_order_t dst, size_t num)
 {
 	if (src == dst) {
@@ -286,7 +286,7 @@ static paddr_t __populate_order(mm_node_t ** op, paddr_t cont,
 	return cont;
 }
 
-static paddr_t __probe_order(paddr_t cont, enum mm_order_t src, enum mm_order_t dst,
+static pm_t __probe_order(pm_t cont, enum mm_order_t src, enum mm_order_t dst,
 		size_t num)
 {
 	if(src == dst){
@@ -305,8 +305,8 @@ static paddr_t __probe_order(paddr_t cont, enum mm_order_t src, enum mm_order_t 
 	return cont;
 }
 
-static paddr_t __populate_omap(struct mm_omap_t **omap, paddr_t cont,
-	paddr_t base, size_t entries, enum mm_order_t order)
+static pm_t __populate_omap(struct mm_omap_t **omap, pm_t cont,
+	pm_t base, size_t entries, enum mm_order_t order)
 {
 	struct mm_omap_t *lomap = (struct mm_omap_t *)
 		move_forward(cont, sizeof(struct mm_omap_t));
@@ -327,7 +327,7 @@ static paddr_t __populate_omap(struct mm_omap_t **omap, paddr_t cont,
 	return cont;
 }
 
-static paddr_t __probe_omap(paddr_t cont, size_t entries, enum mm_order_t order)
+static pm_t __probe_omap(pm_t cont, size_t entries, enum mm_order_t order)
 {
 	cont += sizeof(struct mm_omap_t);
 	cont += (order + 1) * sizeof(mm_node_t **);
@@ -339,13 +339,13 @@ static paddr_t __probe_omap(paddr_t cont, size_t entries, enum mm_order_t order)
 }
 
 /* only call from init */
-paddr_t populate_pmap(paddr_t ram_base, size_t ram_size, paddr_t cont)
+pm_t populate_pmap(pm_t ram_base, size_t ram_size, pm_t cont)
 {
-	paddr_t start = cont;
+	pm_t start = cont;
 	pmap = (struct mm_pmap_t *)move_forward(cont, sizeof(struct mm_pmap_t));
 	memset(pmap, 0, sizeof(struct mm_pmap_t));
 
-	paddr_t ram_region = ram_base;
+	pm_t ram_region = ram_base;
 	size_t ram_left = ram_size;
 	for (ssize_t i = MAX_ORDER; i >= MM_O0; --i) {
 		size_t entries = ram_left / mm_sizes[i];
@@ -366,13 +366,13 @@ paddr_t populate_pmap(paddr_t ram_base, size_t ram_size, paddr_t cont)
  * easy way to cause weird bugs. Should always at least check that probe_pmap
  * returns the same value as populate_pmap, or possibly even add in some method
  * to combine the two? */
-paddr_t probe_pmap(paddr_t ram_base, size_t ram_size)
+pm_t probe_pmap(pm_t ram_base, size_t ram_size)
 {
-	paddr_t cont = 0;
+	pm_t cont = 0;
 
 	cont += sizeof(struct mm_pmap_t);
 
-	paddr_t ram_region = ram_base;
+	pm_t ram_region = ram_base;
 	size_t ram_left = ram_size;
 	for(ssize_t i = MAX_ORDER; i >= MM_O0; --i){
 		size_t entries = ram_left / mm_sizes[i];

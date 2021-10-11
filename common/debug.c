@@ -83,7 +83,7 @@ struct dbg_info_t dbg_from_fdt(void *fdt)
 	struct cell_info_t ci = get_reginfo(fdt, stdout);
 	void *reg_ptr = (void *)fdt_getprop(fdt, stdout_offset, "reg", NULL);
 
-	void *dbg_ptr = (void *)(paddr_t)fdt_load_int_ptr(ci.addr_cells, reg_ptr);
+	void *dbg_ptr = (void *)(pm_t)fdt_load_int_ptr(ci.addr_cells, reg_ptr);
 
 	return (struct dbg_info_t){dbg_ptr, dev};
 }

@@ -12,12 +12,12 @@
 #include <vmem.h>
 #include <csr.h>
 
-struct pmem_layout_t {
-	paddr_t base;
-	paddr_t top;
+struct pm_layout_t {
+	pm_t base;
+	pm_t top;
 };
 
-static struct pmem_layout_t get_memlayout(void *fdt)
+static struct pm_layout_t get_memlayout(void *fdt)
 {
 	struct cell_info_t ci = get_reginfo(fdt, "/memory");
 	int mem_offset = fdt_path_offset(fdt, "/memory");
@@ -26,7 +26,7 @@ static struct pmem_layout_t get_memlayout(void *fdt)
 
 	/* if riscv128 comes around we will probably see addr_cells == 4, but
 	 * I'm not too concerned about it at the moment */
-	paddr_t base = (paddr_t)fdt_load_int_ptr(ci.addr_cells, mem_reg);
+	pm_t base = (pm_t)fdt_load_int_ptr(ci.addr_cells, mem_reg);
 
 	if(ci.addr_cells == 2)
 		mem_reg += sizeof(fdt64_t);
@@ -34,8 +34,8 @@ static struct pmem_layout_t get_memlayout(void *fdt)
 		mem_reg += sizeof(fdt32_t);
 
 	/* -1 because base is a legitimate memory address */
-	paddr_t top = (paddr_t)fdt_load_int_ptr(ci.size_cells, mem_reg) + base - 1;
-	return (struct pmem_layout_t){base, top};
+	pm_t top = (pm_t)fdt_load_int_ptr(ci.size_cells, mem_reg) + base - 1;
+	return (struct pm_layout_t){base, top};
 }
 
 #ifdef DEBUG
@@ -50,16 +50,16 @@ static void init_debug(void *fdt)
 #define init_debug(...)
 #endif
 
-static paddr_t get_kerneltop()
+static pm_t get_kerneltop()
 {
 	/* interesting, for some reason if I define these to be just char
 	 * pointers I get some wacky values. Not sure why that would be, but
 	 * this works. */
 	extern char __init_end, __kernel_size;
-	return (paddr_t)&__init_end + (paddr_t)&__kernel_size;
+	return (pm_t)&__init_end + (pm_t)&__kernel_size;
 }
 
-static paddr_t get_initrdtop(void *fdt)
+static pm_t get_initrdtop(void *fdt)
 {
 	int chosen_offset = fdt_path_offset(fdt, "/chosen");
 	struct cell_info_t ci = get_cellinfo(fdt, chosen_offset);
@@ -67,10 +67,10 @@ static paddr_t get_initrdtop(void *fdt)
 	void *initrd_end_ptr = (void *)fdt_getprop(fdt, chosen_offset,
 			"linux,initrd-end", NULL);
 
-	return (paddr_t)fdt_load_int_ptr(ci.addr_cells, initrd_end_ptr);
+	return (pm_t)fdt_load_int_ptr(ci.addr_cells, initrd_end_ptr);
 }
 
-static paddr_t get_initrdbase(void *fdt)
+static pm_t get_initrdbase(void *fdt)
 {
 	int chosen_offset = fdt_path_offset(fdt, "/chosen");
 	struct cell_info_t ci = get_cellinfo(fdt, chosen_offset);
@@ -78,22 +78,22 @@ static paddr_t get_initrdbase(void *fdt)
 	void *initrd_base_ptr = (void *)fdt_getprop(fdt, chosen_offset,
 			"linux,initrd-start", NULL);
 
-	return (paddr_t)fdt_load_int_ptr(ci.addr_cells, initrd_base_ptr);
+	return (pm_t)fdt_load_int_ptr(ci.addr_cells, initrd_base_ptr);
 }
 
-static paddr_t get_fdttop(void *fdt)
+static pm_t get_fdttop(void *fdt)
 {
 	const char *b = (const char *)fdt;
-	return (paddr_t)(b + fdt_totalsize(fdt));
+	return (pm_t)(b + fdt_totalsize(fdt));
 }
 
-static paddr_t get_fdtbase(void *fdt)
+static pm_t get_fdtbase(void *fdt)
 {
 	/* lol */
-	return (paddr_t)fdt;
+	return (pm_t)fdt;
 }
 
-static void mark_area_used(paddr_t base, paddr_t top)
+static void mark_area_used(pm_t base, pm_t top)
 {
 	size_t area_left = top - base;
 	/* TODO: add in a method to make sure that we use as large mappings as
@@ -114,26 +114,26 @@ static void mark_reserved_mem(void *fdt)
 	struct cell_info_t ci = get_reginfo(fdt, "/reserved-memory/mmode_resv0");
 	uint8_t *rmem_reg = (uint8_t *)fdt_getprop(fdt, rmem_offset, "reg", NULL);
 
-	paddr_t base = (paddr_t)fdt_load_int_ptr(ci.addr_cells, rmem_reg);
+	pm_t base = (pm_t)fdt_load_int_ptr(ci.addr_cells, rmem_reg);
 
 	if(ci.addr_cells == 2)
 		rmem_reg += sizeof(fdt64_t);
 	else
 		rmem_reg += sizeof(fdt32_t);
 
-	paddr_t top = (paddr_t)fdt_load_int_ptr(ci.size_cells, rmem_reg) + base - 1;
+	pm_t top = (pm_t)fdt_load_int_ptr(ci.size_cells, rmem_reg) + base - 1;
 	mark_area_used(base, top);
 }
 
 static void setup_pmem(void *fdt)
 {
-	struct pmem_layout_t pmem = get_memlayout(fdt);
+	struct pm_layout_t pmem = get_memlayout(fdt);
 
-	paddr_t initrd_top = get_initrdtop(fdt);
-	paddr_t kernel_top = get_kerneltop();
-	paddr_t fdt_top = get_fdttop(fdt);
+	pm_t initrd_top = get_initrdtop(fdt);
+	pm_t kernel_top = get_kerneltop();
+	pm_t fdt_top = get_fdttop(fdt);
 
-	paddr_t top = MAX3(kernel_top, initrd_top, fdt_top);
+	pm_t top = MAX3(kernel_top, initrd_top, fdt_top);
 	dbg("initrd_top:\t%#lx\n", initrd_top);
 	dbg("kernel_top:\t%#lx\n", kernel_top);
 	dbg("fdt_top:\t%#lx\n", fdt_top);
@@ -143,7 +143,7 @@ static void setup_pmem(void *fdt)
 	size_t probe_size = probe_pmap(pmem.base, pmem.top - pmem.base);
 	/* riscv handles two byte boundaries better than one byte, so align
 	 * upwards */
-	paddr_t pmap_base = align_up(top + 1, 2);
+	pm_t pmap_base = align_up(top + 1, 2);
 	size_t actual_size = populate_pmap(pmem.base, pmem.top - pmem.base,
 			pmap_base);
 
@@ -171,10 +171,10 @@ static void setup_pmem(void *fdt)
 	mark_reserved_mem(fdt);
 }
 
-paddr_t move_kernel()
+pm_t move_kernel()
 {
 	extern char __init_end, __kernel_size;
-	paddr_t dst = alloc_page(MM_MPAGE, 0);
+	pm_t dst = alloc_page(MM_MPAGE, 0);
 	memmove((void *)dst, &__init_end, (size_t)&__kernel_size);
 
 	return dst;
@@ -182,7 +182,7 @@ paddr_t move_kernel()
 
 struct vm_branch_t *prepare_vmem()
 {
-	paddr_t kernel_dst = move_kernel();
+	pm_t kernel_dst = move_kernel();
 
 	/* TODO: check if this actually works */
 	struct vm_branch_t *branch = (struct vm_branch_t *)alloc_page(MM_KPAGE, 0);
@@ -209,7 +209,7 @@ void start_vmem(struct vm_branch_t *branch)
 	/* TODO: get ASID from CPU id
 	 * TODO: more cores lol
 	 */
-	csr_write(CSR_SATP, SATP_MODE_48 | (((paddr_t)(branch)) >> 12));
+	csr_write(CSR_SATP, SATP_MODE_48 | (((pm_t)(branch)) >> 12));
 }
 
 struct init_data_t populate_initdata(void *fdt, struct vm_branch_t *branch)
@@ -217,8 +217,8 @@ struct init_data_t populate_initdata(void *fdt, struct vm_branch_t *branch)
 	extern char __init_start, __init_end;
 
 	struct init_data_t d = {0};
-	d.init_base = (paddr_t)&__init_start;
-	d.init_top = (paddr_t)&__init_end;
+	d.init_base = (pm_t)&__init_start;
+	d.init_top = (pm_t)&__init_end;
 
 	d.initrd_base = get_initrdbase(fdt);
 	d.initrd_top = get_initrdtop(fdt);

@@ -13,6 +13,6 @@
 #define MM_GPAGE_SIZE SZ_1G
 #define MM_TPAGE_SIZE SZ_512G
 
-typedef uint64_t paddr_t;
+typedef uint64_t pm_t;
 
 #endif /* APOS_RISCV_PAGES_H */

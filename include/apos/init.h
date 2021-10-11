@@ -4,24 +4,24 @@
 #include <apos/pmem.h>
 
 struct init_data_t {
-	paddr_t init_base;
-	paddr_t init_top;
+	pm_t init_base;
+	pm_t init_top;
 
-	paddr_t initrd_base;
-	paddr_t initrd_top;
+	pm_t initrd_base;
+	pm_t initrd_top;
 
-	paddr_t fdt_base;
-	paddr_t fdt_top;
+	pm_t fdt_base;
+	pm_t fdt_top;
 
-	paddr_t stack_base;
-	paddr_t stack_top;
+	pm_t stack_base;
+	pm_t stack_top;
 
 	struct vm_branch_t *kernel_vm_base;
 
 	/*
 	   TODO: is this necessary?
-	   paddr_t pmap_base;
-	   paddr_t pmap_top;
+	   pm_t pmap_base;
+	   pm_t pmap_top;
 	*/
 };
 

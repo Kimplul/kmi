@@ -17,17 +17,17 @@ enum mm_order_t {
 	MM_O9,
 };
 
-typedef size_t paddr_t;
+typedef size_t pm_t;
 typedef ssize_t pnum_t;
 
-void update_pmap(paddr_t offset);
-void free_page(enum mm_order_t order, paddr_t paddr);
-void mark_used(enum mm_order_t order, paddr_t paddr);
-paddr_t alloc_page(enum mm_order_t order, paddr_t offset);
+void update_pmap(pm_t offset);
+void free_page(enum mm_order_t order, pm_t paddr);
+void mark_used(enum mm_order_t order, pm_t paddr);
+pm_t alloc_page(enum mm_order_t order, pm_t offset);
 
 #if defined(INIT)
-paddr_t populate_pmap(paddr_t ram_base, size_t ram_size, paddr_t cont);
-paddr_t probe_pmap(paddr_t ram_base, size_t ram_size);
+pm_t populate_pmap(pm_t ram_base, size_t ram_size, pm_t cont);
+pm_t probe_pmap(pm_t ram_base, size_t ram_size);
 #endif
 
 #if defined(KERNEL)

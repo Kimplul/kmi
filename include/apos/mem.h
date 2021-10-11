@@ -107,13 +107,13 @@
 #define MM_OINFO_WIDTH (sizeof(mm_info_t) * 8)
 
 #define pnum_to_index(pnum, order) (((pnum) >> __o_offset(order)) & (__o_width(order) - 1))
-#define paddr_to_index(paddr, order) (pnum_to_index(paddr_to_pnum(paddr), (order)))
-#define paddr_to_pnum(paddr) ((paddr) >> PAGE_SHIFT)
+#define pm_to_index(paddr, order) (pnum_to_index(pm_to_pnum(paddr), (order)))
+#define pm_to_pnum(paddr) ((paddr) >> PAGE_SHIFT)
 #define pnum_to_paddr(pnum) ((pnum) << PAGE_SHIFT)
 
 #define move_forward(var, num) (((var) += (num)) - (num))
 
-#define move_paddr(paddr, base, offset) ((((paddr_t)(paddr)) - (base)) + (offset))
+#define move_paddr(paddr, base, offset) ((((pm_t)(paddr)) - (base)) + (offset))
 #define num_elems(num) (((num) + MM_OINFO_WIDTH - 1) / MM_OINFO_WIDTH)
 #define num_indexes(num) ((num) / MM_OINFO_WIDTH)
 #define index_elems(num) ((num) / MM_OINFO_WIDTH)
