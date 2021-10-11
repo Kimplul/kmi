@@ -12,45 +12,14 @@
 #include <vmem.h>
 #include <csr.h>
 
-struct pmem_layout {
+struct pmem_layout_t {
 	paddr_t base;
 	paddr_t top;
 };
 
-struct cell_info {
-	uint32_t size_cells;
-	uint32_t addr_cells;
-};
-
-static struct cell_info get_cellinfo(void *fdt, int offset)
+static struct pmem_layout_t get_memlayout(void *fdt)
 {
-	struct cell_info ret = {
-		fdt_size_cells(fdt, offset),
-		fdt_address_cells(fdt, offset)
-	};
-
-	return ret;
-
-}
-
-/* How "reg" is interpreted depends on the parent node */
-static struct cell_info get_reginfo(void *fdt, const char *path)
-{
-	const char *i = strrchr(path, '/');
-	if(!i)
-		return (struct cell_info){0, 0};
-
-	size_t baselen = i - path;
-	if(i == 0)
-		/* root node */
-		baselen = 1;
-
-	return get_cellinfo(fdt, fdt_path_offset_namelen(fdt, path, baselen));
-}
-
-static struct pmem_layout get_memlayout(void *fdt)
-{
-	struct cell_info ci = get_reginfo(fdt, "/memory");
+	struct cell_info_t ci = get_reginfo(fdt, "/memory");
 	int mem_offset = fdt_path_offset(fdt, "/memory");
 	uint8_t *mem_reg =
 		(uint8_t *) fdt_getprop(fdt, mem_offset, "reg", NULL);
@@ -66,42 +35,15 @@ static struct pmem_layout get_memlayout(void *fdt)
 
 	/* -1 because base is a legitimate memory address */
 	paddr_t top = (paddr_t)fdt_load_int_ptr(ci.size_cells, mem_reg) + base - 1;
-	return (struct pmem_layout){base, top};
+	return (struct pmem_layout_t){base, top};
 }
 
 #ifdef DEBUG
 
-/* this should probably be improved in the future, possibly also moved
- * somewhere? */
-static enum serial_dev_t serial_dev_enum(const char *dev_name)
-{
-	if (strncmp("ns16550", dev_name, 7) == 0)
-		return NS16550A;
-
-	return -1;
-}
-
 static void init_debug(void *fdt)
 {
-	int chosen_offset = fdt_path_offset(fdt, "/chosen");
-	const char *stdout = fdt_getprop(fdt, chosen_offset,
-			"stdout-path", NULL);
-
-	int stdout_offset = fdt_path_offset(fdt, stdout);
-
-	/* get serial device type */
-	const char *dev_name = (const char *)fdt_getprop(fdt, stdout_offset,
-			"compatible", NULL);
-
-	enum serial_dev_t dev = serial_dev_enum(dev_name);
-
-	/* get serial device address */
-	struct cell_info ci = get_reginfo(fdt, stdout);
-	void *reg_ptr = (void *)fdt_getprop(fdt, stdout_offset, "reg", NULL);
-
-	void *uart_ptr = (void *)(paddr_t)fdt_load_int_ptr(ci.addr_cells, reg_ptr);
-
-	dbg_init(uart_ptr, dev);
+	struct dbg_info_t dbg = dbg_from_fdt(fdt);
+	dbg_init(dbg.dbg_ptr, dbg.dev);
 }
 
 #else
@@ -120,7 +62,7 @@ static paddr_t get_kerneltop()
 static paddr_t get_initrdtop(void *fdt)
 {
 	int chosen_offset = fdt_path_offset(fdt, "/chosen");
-	struct cell_info ci = get_cellinfo(fdt, chosen_offset);
+	struct cell_info_t ci = get_cellinfo(fdt, chosen_offset);
 
 	void *initrd_end_ptr = (void *)fdt_getprop(fdt, chosen_offset,
 			"linux,initrd-end", NULL);
@@ -131,7 +73,7 @@ static paddr_t get_initrdtop(void *fdt)
 static paddr_t get_initrdbase(void *fdt)
 {
 	int chosen_offset = fdt_path_offset(fdt, "/chosen");
-	struct cell_info ci = get_cellinfo(fdt, chosen_offset);
+	struct cell_info_t ci = get_cellinfo(fdt, chosen_offset);
 
 	void *initrd_base_ptr = (void *)fdt_getprop(fdt, chosen_offset,
 			"linux,initrd-start", NULL);
@@ -169,7 +111,7 @@ static void mark_area_used(paddr_t base, paddr_t top)
 static void mark_reserved_mem(void *fdt)
 {
 	int rmem_offset = fdt_path_offset(fdt, "/reserved-memory/mmode_resv0");
-	struct cell_info ci = get_reginfo(fdt, "/reserved-memory/mmode_resv0");
+	struct cell_info_t ci = get_reginfo(fdt, "/reserved-memory/mmode_resv0");
 	uint8_t *rmem_reg = (uint8_t *)fdt_getprop(fdt, rmem_offset, "reg", NULL);
 
 	paddr_t base = (paddr_t)fdt_load_int_ptr(ci.addr_cells, rmem_reg);
@@ -185,7 +127,7 @@ static void mark_reserved_mem(void *fdt)
 
 static void setup_pmem(void *fdt)
 {
-	struct pmem_layout pmem = get_memlayout(fdt);
+	struct pmem_layout_t pmem = get_memlayout(fdt);
 
 	paddr_t initrd_top = get_initrdtop(fdt);
 	paddr_t kernel_top = get_kerneltop();

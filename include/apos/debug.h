@@ -9,8 +9,14 @@ enum serial_dev_t {
 	NS16550A,
 };
 
+struct dbg_info_t {
+	void *dbg_ptr;
+	enum serial_dev_t dev;
+};
+
 void __fmt(1, 2) dbg(const char *fmt, ...);
 void dbg_init(void *pt, enum serial_dev_t dev);
+struct dbg_info_t dbg_from_fdt(void *fdt);
 
 #else
 

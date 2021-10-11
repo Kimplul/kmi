@@ -1,6 +1,8 @@
 #include <apos/types.h>
 #include <apos/debug.h>
 #include <apos/bits.h>
+#include <apos/pmem.h>
+#include <libfdt.h>
 #include <stdarg.h>
 
 #ifdef DEBUG
@@ -54,6 +56,36 @@ static void __putchar(char c)
 	while(__serial_tx_empty() == 0);
 
 	port->data = c;
+}
+
+static enum serial_dev_t serial_dev_enum(const char *dev_name)
+{
+	if (strncmp("ns16550", dev_name, 7) == 0)
+		return NS16550A;
+
+	return -1;
+}
+
+struct dbg_info_t dbg_from_fdt(void *fdt)
+{
+	int chosen_offset = fdt_path_offset(fdt, "/chosen");
+	const char *stdout = fdt_getprop(fdt, chosen_offset, "stdout-path", NULL);
+
+	int stdout_offset = fdt_path_offset(fdt, stdout);
+
+	/* get serial device type */
+	const char *dev_name = (const char *)fdt_getprop(fdt, stdout_offset,
+			"compatible", NULL);
+
+	enum serial_dev_t dev = serial_dev_enum(dev_name);
+
+	/* get serial device address */
+	struct cell_info_t ci = get_reginfo(fdt, stdout);
+	void *reg_ptr = (void *)fdt_getprop(fdt, stdout_offset, "reg", NULL);
+
+	void *dbg_ptr = (void *)(paddr_t)fdt_load_int_ptr(ci.addr_cells, reg_ptr);
+
+	return (struct dbg_info_t){dbg_ptr, dev};
 }
 
 void dbg_init(void *pt, enum serial_dev_t dev)

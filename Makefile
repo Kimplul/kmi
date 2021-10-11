@@ -19,7 +19,7 @@ OBJCOPY		?= objcopy
 # This makes sure .bss is loaded into the binary
 OBJCOPY_FLAGS	?= -Obinary --set-section-flags .bss=alloc,load,contents
 
-COMMON_SOURCES	!= echo common/*.c
+COMMON_SOURCES	!= echo common/*.c lib/fdt*.c
 KERNEL_SOURCES	!= echo kernel/*.c $(COMMON_SOURCES)
 INIT_SOURCES	:= $(COMMON_SOURCES)
 CLEANUP		:= build deps.mk kernel.* init.* apos.bin
