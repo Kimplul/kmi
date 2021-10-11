@@ -1,8 +1,6 @@
 #ifndef APOS_TYPES_H
 #define APOS_TYPES_H
 
-#include <apos/builtin.h>
-
 typedef _Bool	bool;
 #define true	1
 #define false	0

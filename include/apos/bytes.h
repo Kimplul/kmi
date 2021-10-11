@@ -2,6 +2,7 @@
 #define APOS_BYTES_H
 
 #include <apos/types.h>
+#include <apos/builtin.h>
 
 uint16_t __bswap16(uint16_t u);
 uint32_t __bswap32(uint32_t u);

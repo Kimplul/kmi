@@ -1,5 +1,6 @@
 #include <apos/debug.h>
 #include <apos/init.h>
+#include <apos/vmem.h>
 
 void __main main(struct init_data_t d)
 {
@@ -14,6 +15,7 @@ void __main main(struct init_data_t d)
 
 	/* functionality that should be implemented:
 	 * figure out best continuous run of memory (pmap etc)
-	 * arbitrary mapping and kernel mapping (memory)
+	 * arbitrary user and kernel mapping (memory)
+	 * vm to pm
 	 */
 }

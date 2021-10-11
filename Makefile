@@ -7,6 +7,7 @@ DEPFLAGS	= -MT $@ -MMD -MP -MF $@.d
 
 all: apos.bin
 
+# default values, overwrite if/when needed
 ARCH		?= riscv
 CROSS_COMPILE	?= riscv64-unknown-elf-
 

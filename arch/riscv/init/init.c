@@ -6,10 +6,10 @@
 #include <apos/string.h>
 #include <apos/debug.h>
 #include <apos/pmem.h>
+#include <apos/vmem.h>
 #include <apos/utils.h>
 #include <libfdt.h>
 #include <pages.h>
-#include <vmem.h>
 #include <csr.h>
 
 struct pm_layout_t {
@@ -125,8 +125,38 @@ static void mark_reserved_mem(void *fdt)
 	mark_area_used(base, top);
 }
 
+static void init_pmem(void *fdt)
+{
+	enum mm_mode_t mmode = get_mmode(fdt);
+
+	size_t max_order = 0;
+	size_t order_width = 9;
+	switch(mmode){
+		case Sv32:
+			max_order = 1;
+			order_width = 10;
+			break;
+
+		case Sv39:
+			max_order = 2;
+			break;
+
+		case Sv48:
+			max_order = 3;
+			break;
+	};
+
+	size_t widths[10] = {0};
+	for(size_t i = 0; i <= max_order; ++i)
+		widths[i] = order_width;
+
+	init_mem(max_order, widths, 12);
+}
+
 static void setup_pmem(void *fdt)
 {
+	init_pmem(fdt);
+
 	struct pm_layout_t pmem = get_memlayout(fdt);
 
 	pm_t initrd_top = get_initrdtop(fdt);
@@ -203,13 +233,21 @@ struct vm_branch_t *prepare_vmem()
 	return branch;
 }
 
-void start_vmem(struct vm_branch_t *branch)
+void start_vmem(void *fdt, struct vm_branch_t *branch)
 {
-	/* assume Sv48 and ASID 0*/
-	/* TODO: get ASID from CPU id
-	 * TODO: more cores lol
-	 */
-	csr_write(CSR_SATP, SATP_MODE_48 | (((pm_t)(branch)) >> 12));
+	/* TODO: get ASID from CPU id */
+
+	/* TODO: probably unnecessary optimisations but this could be cached? */
+	enum mm_mode_t m = get_mmode(fdt);
+
+	if(m == Sv32)
+		csr_write(CSR_SATP, SATP_MODE_Sv32 | pm_to_pnum((pm_t)(branch)));
+	else if (m == Sv39)
+		csr_write(CSR_SATP, SATP_MODE_Sv39 | pm_to_pnum((pm_t)(branch)));
+	else
+		csr_write(CSR_SATP, SATP_MODE_Sv48 | pm_to_pnum((pm_t)(branch)));
+
+	/* Sv57 && Sv64 in the future? */
 }
 
 struct init_data_t populate_initdata(void *fdt, struct vm_branch_t *branch)
@@ -240,10 +278,9 @@ void init(void *fdt)
 	dbg_fdt(fdt);
 	setup_pmem(fdt);
 
-
 	struct vm_branch_t *branch = prepare_vmem();
 	struct init_data_t d = populate_initdata(fdt, branch);
-	start_vmem(branch);
+	start_vmem(fdt, branch);
 
 	/* update_pmap(TODO: figure out where to place pmap in vmem); */
 	void (*main)(struct init_data_t) = (void (*)(struct init_data_t))VM_KERN;

@@ -71,7 +71,7 @@ static void __mark_free(mm_node_t * op, pnum_t pnum, enum mm_order_t tgt,
 
 void free_page(enum mm_order_t order, pm_t paddr)
 {
-	for (ssize_t i = MM_O0; i <= MAX_ORDER; ++i) {
+	for (size_t i = MM_O0; i <= __mm_max_order; ++i) {
 		if (!pmap->omap[i])
 			continue;
 
@@ -125,7 +125,7 @@ static bool __mark_used(mm_node_t * op, pnum_t pnum, enum mm_order_t tgt,
 
 void mark_used(enum mm_order_t order, pm_t paddr)
 {
-	for (ssize_t i = MM_O0; i <= MAX_ORDER; ++i) {
+	for (size_t i = MM_O0; i <= __mm_max_order; ++i) {
 		if (!pmap->omap[i])
 			continue;
 
@@ -175,13 +175,13 @@ static pnum_t __enum_order(mm_node_t * op, pnum_t offset,
 
 pm_t alloc_page(enum mm_order_t order, pm_t offset)
 {
-	if (order > MAX_ORDER)
+	if (order > __mm_max_order)
 		return 0;
 
 	pnum_t pnum = -1;
 	pm_t base = 0;
 	struct mm_omap_t *omap;
-	for (size_t i = order; i <= MAX_ORDER; ++i) {
+	for (size_t i = order; i <= __mm_max_order; ++i) {
 		if (!pmap->omap[i])
 			continue;
 
@@ -240,7 +240,7 @@ static void __update_omap(struct mm_omap_t *omap, pm_t base, pm_t offset)
 void update_pmap(pm_t offset)
 {
 	pm_t base = (pm_t) pmap;
-	for (size_t i = 0; i <= MAX_ORDER; ++i) {
+	for (size_t i = 0; i <= __mm_max_order; ++i) {
 		if (!pmap->omap[i])
 			continue;
 
@@ -347,16 +347,16 @@ pm_t populate_pmap(pm_t ram_base, size_t ram_size, pm_t cont)
 
 	pm_t ram_region = ram_base;
 	size_t ram_left = ram_size;
-	for (ssize_t i = MAX_ORDER; i >= MM_O0; --i) {
-		size_t entries = ram_left / mm_sizes[i];
+	for (ssize_t i = __mm_max_order; i >= MM_O0; --i) {
+		size_t entries = ram_left / __mm_sizes[i];
 		if (entries == 0)
 			continue;
 
 		cont = __populate_omap(&pmap->omap[i], cont,
 			ram_region, entries, i);
 
-		ram_left -= mm_sizes[i] * entries;
-		ram_region += (mm_sizes[i] * entries);
+		ram_left -= __mm_sizes[i] * entries;
+		ram_region += (__mm_sizes[i] * entries);
 	}
 
 	return cont - start;
@@ -374,15 +374,15 @@ pm_t probe_pmap(pm_t ram_base, size_t ram_size)
 
 	pm_t ram_region = ram_base;
 	size_t ram_left = ram_size;
-	for(ssize_t i = MAX_ORDER; i >= MM_O0; --i){
-		size_t entries = ram_left / mm_sizes[i];
+	for(ssize_t i = __mm_max_order; i >= MM_O0; --i){
+		size_t entries = ram_left / __mm_sizes[i];
 		if(entries == 0)
 			continue;
 
 		cont = __probe_omap(cont, entries, i);
 
-		ram_left -= mm_sizes[i] * entries;
-		ram_region += (mm_sizes[i] * entries);
+		ram_left -= __mm_sizes[i] * entries;
+		ram_region += (__mm_sizes[i] * entries);
 	}
 
 	return cont;

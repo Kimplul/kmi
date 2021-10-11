@@ -1,7 +1,7 @@
 #include <apos/string.h>
 #include <apos/pmem.h>
+#include <apos/vmem.h>
 #include <pages.h>
-#include <vmem.h>
 
 #define pte_ppn(pte) (((pm_t)(pte)) >> 10)
 #define pte_flags(pte) (((pm_t)(pte)) & 0xff)
@@ -13,7 +13,7 @@ void map_vmem(struct vm_branch_t *branch,
 		pm_t paddr, vm_t vaddr,
 		uint8_t flags, enum mm_order_t order)
 {
-	enum mm_order_t top = MAX_ORDER;
+	enum mm_order_t top = __mm_max_order;
 	while(top != order){
 		size_t idx = pm_to_index(vaddr, top);
 
@@ -44,4 +44,30 @@ void unmap_vmem(struct vm_branch_t *branch,
 		free_page(order, pte_addr(branch->leaf[idx]));
 
 	branch->leaf[idx] = 0;
+}
+
+vm_t map_vregion(struct vm_branch_t *branch, pm_t base, pm_t top, vm_t start, vm_t end)
+{
+	/* TODO: figure out how to find first suitable memory region */
+
+	/* find first free page, iterate forward until we either fit the whole
+	 * physical region or hit a used page
+	 *
+	 * continue until we hit end?
+	 */
+}
+
+void unmap_vregion(struct vm_branch_t *branch, pm_t base, pm_t top)
+{
+	/* TODO */
+}
+
+vm_t map_vsize(struct vm_branch_t *branch, size_t size)
+{
+	/* TODO */
+}
+
+void unmap_vsize(struct vm_branch_t *branch, size_t size)
+{
+	/* TODO */
 }

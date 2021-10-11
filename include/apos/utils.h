@@ -11,6 +11,9 @@
 #define MIN4(a, b, c, d) (MIN3(a, b, c) <= MIN3(b, c, d) ? MIN3(a, b, c) : MIN3(b, c, d))
 /* etc... */
 
+#define GLUE2(x, y) x##y
+#define GLUE(x, y) GLUE2(x, y)
+
 #include <apos/types.h>
 
 static inline size_t align_up(size_t val, size_t a)

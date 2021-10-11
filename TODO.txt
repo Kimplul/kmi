@@ -7,9 +7,12 @@
 + Write the kernel lol
 + Test libfdt and see if it can be used to read memory geometry etc.
 
-+ Jump to vmem
++ Jump to vmem x
 + Mark fdt, reserved mem, kernel, init and initrd in vmem. Remember to remove
 init from vmem when jumping to vmem
-+ Figure out best way to tell the init how large out kernel is
++ Figure out best way to tell the init how large out kernel is x~
 + Make code more robust, error checking etc
-+ Make all physical memory addresses use the same typedef
++ Make all physical memory addresses use the same typedef x
+
++ should I consider passing more pointers around rather than return structures?
++ should probably come up with some kind of general error handling scheme?

@@ -1,7 +1,6 @@
 #ifndef APOS_RISCV_VMAP_H
 #define APOS_RISCV_VMAP_H
 
-#include <apos/sizes.h>
 #include <apos/types.h>
 #include <apos/attrs.h>
 
@@ -18,12 +17,5 @@ typedef size_t vm_t;
 struct __packed vm_branch_t {
 	struct vm_branch_t *leaf[512];
 };
-
-void map_vmem(struct vm_branch_t *branch,
-		pm_t paddr, vm_t vaddr,
-		uint8_t flags, enum mm_order_t order);
-
-void unmap_vmem(struct vm_branch_t *branch, vm_t vaddr, enum mm_order_t order);
-
 
 #endif /* APOS_RISCV_VMAP_H */

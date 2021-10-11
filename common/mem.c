@@ -1,40 +1,47 @@
 #include <apos/types.h>
 #include <apos/mem.h>
+#include <libfdt.h>
 
-const size_t mm_shifts[10] = {
-	MM_O0_SHIFT,
-	MM_O1_SHIFT,
-	MM_O2_SHIFT,
-	MM_O3_SHIFT,
-	MM_O4_SHIFT,
-	MM_O6_SHIFT,
-	MM_O7_SHIFT,
-	MM_O8_SHIFT,
-	MM_O9_SHIFT,
-};
+size_t __mm_shifts[10];
+size_t __mm_widths[10];
+size_t __mm_sizes[10];
+size_t __mm_page_shift;
+size_t __mm_max_order;
 
-const size_t mm_widths[10] = {
-	MM_O0_WIDTH,
-	MM_O1_WIDTH,
-	MM_O2_WIDTH,
-	MM_O3_WIDTH,
-	MM_O4_WIDTH,
-	MM_O5_WIDTH,
-	MM_O6_WIDTH,
-	MM_O7_WIDTH,
-	MM_O8_WIDTH,
-	MM_O9_WIDTH,
-};
+void init_mem(size_t max_order, size_t widths[10], size_t page_shift)
+{
+	__mm_max_order = max_order;
+	__mm_page_shift = page_shift;
 
-const size_t mm_sizes[10] = {
-	MM_O0_SIZE,
-	MM_O1_SIZE,
-	MM_O2_SIZE,
-	MM_O3_SIZE,
-	MM_O4_SIZE,
-	MM_O5_SIZE,
-	MM_O6_SIZE,
-	MM_O7_SIZE,
-	MM_O8_SIZE,
-	MM_O9_SIZE,
-};
+	__mm_shifts[0] = 0;
+	__mm_widths[0] = 1 << widths[0];
+	__mm_sizes[0]  = 1 << __mm_page_shift;
+
+	for(size_t i = 0; i <= __mm_max_order; ++i){
+		__mm_widths[i] = 1 << widths[i];
+		__mm_shifts[i] = __mm_shifts[i - 1] + __mm_widths[i - 1];
+		__mm_sizes[i] = 1 << __mm_shifts[i] << __mm_page_shift;
+	}
+}
+
+enum mm_mode_t get_mmode(void *fdt)
+{
+	int mmu_offset = fdt_path_offset(fdt, "/cpus/cpu");
+	const char *mmu = fdt_getprop(fdt, mmu_offset, "mmu-type", NULL);
+
+	if(strncmp("riscv,sv48", mmu, 10) == 0)
+		return Sv48;
+
+	if(strncmp("riscv,sv39", mmu, 10) == 0)
+		return Sv39;
+
+	if(strncmp("riscv,sv32", mmu, 10) == 0)
+		return Sv32;
+
+	/* fdt is missing mmu-type for some reason, but we can probably use
+	 * these values as fallback */
+	if(__riscv_xlen == 32)
+		return Sv32;
+	else
+		return Sv39;
+}
