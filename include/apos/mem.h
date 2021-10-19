@@ -4,12 +4,6 @@
 #include <apos/utils.h>
 #include <pages.h>
 
-enum mm_mode_t {
-	Sv48,
-	Sv39,
-	Sv32,
-};
-
 #define MM_OINFO_WIDTH (sizeof(mm_info_t) * 8)
 
 #define pnum_to_index(pnum, order) (((pnum) >> __o_offset(order)) & (__o_width(order) - 1))
@@ -29,6 +23,7 @@ enum mm_mode_t {
 
 #define __o_offset(order) (__mm_shifts[order])
 #define __o_width(order) (__mm_widths[order])
+#define __o_size(order) (__mm_sizes[order])
 #define __o_elems(order) (__mm_widths[order] / MM_OINFO_WIDTH)
 
 #define __o_container(idx) ((idx) / MM_OINFO_WIDTH)

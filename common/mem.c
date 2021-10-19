@@ -1,5 +1,6 @@
 #include <apos/types.h>
 #include <apos/mem.h>
+#include <apos/vmem.h>
 #include <libfdt.h>
 
 size_t __mm_shifts[10];

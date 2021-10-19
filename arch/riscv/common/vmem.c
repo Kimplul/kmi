@@ -10,16 +10,16 @@
 
 /* probably not actually this simple, right? */
 void map_vmem(struct vm_branch_t *branch,
-		pm_t paddr, vm_t vaddr,
-		uint8_t flags, enum mm_order_t order)
+		pm_t paddr, vm_t vaddr, uint8_t flags, enum mm_order_t order)
 {
 	enum mm_order_t top = __mm_max_order;
-	while(top != order){
+	while (top != order) {
 		size_t idx = pm_to_index(vaddr, top);
 
-		if(!branch->leaf[idx]){
+		if (!branch->leaf[idx]) {
 			pm_t new_leaf = alloc_page(MM_KPAGE, 0);
-			branch->leaf[idx] = (struct vm_branch_t *)to_pte(new_leaf, VM_V);
+			branch->leaf[idx] =
+				(struct vm_branch_t *)to_pte(new_leaf, VM_V);
 			memset((void *)new_leaf, 0, sizeof(struct vm_branch_t));
 		}
 
@@ -31,43 +31,16 @@ void map_vmem(struct vm_branch_t *branch,
 	branch->leaf[idx] = (struct vm_branch_t *)to_pte(paddr, flags);
 }
 
-void unmap_vmem(struct vm_branch_t *branch,
-		vm_t vaddr, enum mm_order_t order)
+void unmap_vmem(struct vm_branch_t *branch, vm_t vaddr, enum mm_order_t order)
 {
-	while(order){
+	while (order) {
 		size_t idx = pm_to_index(vaddr, order);
 		branch = (struct vm_branch_t *)pte_addr(branch->leaf[idx]);
 	}
 
 	size_t idx = pm_to_index(vaddr, order);
-	if(branch->leaf[idx])
+	if (branch->leaf[idx])
 		free_page(order, pte_addr(branch->leaf[idx]));
 
 	branch->leaf[idx] = 0;
-}
-
-vm_t map_vregion(struct vm_branch_t *branch, pm_t base, pm_t top, vm_t start, vm_t end)
-{
-	/* TODO: figure out how to find first suitable memory region */
-
-	/* find first free page, iterate forward until we either fit the whole
-	 * physical region or hit a used page
-	 *
-	 * continue until we hit end?
-	 */
-}
-
-void unmap_vregion(struct vm_branch_t *branch, pm_t base, pm_t top)
-{
-	/* TODO */
-}
-
-vm_t map_vsize(struct vm_branch_t *branch, size_t size)
-{
-	/* TODO */
-}
-
-void unmap_vsize(struct vm_branch_t *branch, size_t size)
-{
-	/* TODO */
 }

@@ -1,6 +1,8 @@
 #ifndef APOS_VMEM_H
 #define APOS_VMEM_H
 
+#include <apos/pmem.h>
+
 /* arch-specific data */
 #include <vmem.h>
 
@@ -14,19 +16,16 @@
  * (un)map_vsize: map unknown physical region to unknown virtual region
  */
 
+/* defined by arch */
 void map_vmem(struct vm_branch_t *branch,
 		pm_t paddr, vm_t vaddr,
 		uint8_t flags, enum mm_order_t order);
 
 void unmap_vmem(struct vm_branch_t *branch, vm_t vaddr, enum mm_order_t order);
 
-#define map_kvregion(b, pb, pt) map_vregion(b, pb, pt, VMEM_BASE, VMEM_TOP);
-#define map_uvregion(b, pb, pt) map_vregion(b, pb, pt, UMEM_BASE, UMEM_TOP);
 
-vm_t map_vregion(struct vm_branch_t *branch, pm_t base, pm_t top, vm_t start, vm_t end);
-void unmap_vregion(struct vm_branch_t *branch, pm_t base, pm_t top);
-
-vm_t map_vsize(struct vm_branch_t *branch, size_t size);
-void unmap_vsize(struct vm_branch_t *branch, size_t size);
+vm_t map_vregion(struct vm_branch_t *branch, pm_t base, vm_t start, size_t size,
+		uint8_t flags);
+void unmap_vregion(struct vm_branch_t *branch, vm_t start);
 
 #endif /* APOS_VMEM_H */
