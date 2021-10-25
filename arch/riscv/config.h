@@ -10,3 +10,6 @@
 #define PM_STACK_BASE	(PM_KERN + SZ_2M)
 #define PM_STACK_TOP	(PM_STACK_BASE + SZ_2M - 2)
 #define VM_KERN		(-SZ_1G)
+#define TMP_PTE		(-SZ_2G)
+#define ROOT_PTE	(0)
+#define ROOT_REGION	(SZ_4K)

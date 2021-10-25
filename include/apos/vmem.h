@@ -28,4 +28,12 @@ vm_t map_vregion(struct vm_branch_t *branch, pm_t base, vm_t start, size_t size,
 		uint8_t flags);
 void unmap_vregion(struct vm_branch_t *branch, vm_t start);
 
+void init_vmem(struct vm_branch_t *branch, vm_t tmp_pte);
+
+#if defined(KERNEL)
+void arch_init_vmem(struct vm_branch_t *branch, vm_t tmp_pte);
+#else
+struct vm_branch_t *arch_get_tmp_pte(struct vm_branch_t *branch);
+#endif
+
 #endif /* APOS_VMEM_H */

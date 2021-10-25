@@ -33,22 +33,22 @@ struct mm_block_region_t {
 	struct mm_block_t *first;
 };
 
-static struct mm_block_region_t *root_region = 0;
-/* a block represents free regions */
+static struct mm_block_region_t *root_region = (struct mm_block_region_t *)ROOT_REGION;
 static struct mm_block_t *root_block = 0;
 
 #define NODE_REGION(x) ((struct mm_block_region_t *)(((vm_t)x) & (__mm_page_shift - 1)))
+#define NEXT_BLOCK() ((struct mm_block_region_t *)\
+((region_counter * __o_size(MM_O0)) + ROOT_PTE))
 
+/* TODO: mark all used regions, also blocks */
 static struct mm_block_t *get_free_block(struct vm_branch_t *branch)
 {
 	struct mm_block_region_t *region = root_region;
 	size_t region_counter = 1;
-	for(;region; region = region->next){
+	for(; region; region = region->next){
 		if(region->next == 0){
 			pm_t next_pa = alloc_page(MM_O0, 0);
-			struct mm_block_region_t *next_va =
-				(struct mm_block_region_t *)
-				(region_counter * __o_size(MM_O0));
+			struct mm_block_region_t *next_va = NEXT_BLOCK();
 
 			map_vmem(branch, next_pa, (vm_t)next_va,
 					VM_W | VM_R | VM_V, MM_O0);
@@ -71,15 +71,23 @@ static struct mm_block_t *get_free_block(struct vm_branch_t *branch)
 				return &block[i];
 			}
 		}
+
+		region_counter++;
 	}
 
 	return 0;
 }
 
-void init_vmem(struct vm_branch_t *branch)
+void init_vmem(struct vm_branch_t *branch, vm_t tmp_pte)
 {
+#if defined(KERNEL)
+	arch_init_vmem(branch, tmp_pte);
+#else
+	(void)tmp_pte;
+#endif
+
 	pm_t first_block = alloc_page(MM_O0, 0);
-	map_vmem(branch, first_block, 0, VM_W | VM_R | VM_V, MM_O0);
+	map_vmem(branch, first_block, (vm_t)root_region, VM_W | VM_R | VM_V, MM_O0);
 	memset(root_region, 0, __o_size(MM_O0));
 
 	root_region->max_blocks = (__o_size(MM_O0) - sizeof(struct mm_block_region_t))

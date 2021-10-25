@@ -16,3 +16,5 @@ init from vmem when jumping to vmem
 
 + should I consider passing more pointers around rather than return structures?
 + should probably come up with some kind of general error handling scheme?
+
++ Fix unmap/map_vmem when called from virtual memory

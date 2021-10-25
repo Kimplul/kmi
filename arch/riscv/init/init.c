@@ -17,6 +17,12 @@ struct pm_layout_t {
 	pm_t top;
 };
 
+struct pm_orders_t {
+	size_t max_order;
+	size_t bits[10];
+	size_t page_shift;
+};
+
 static struct pm_layout_t get_memlayout(void *fdt)
 {
 	struct cell_info_t ci = get_reginfo(fdt, "/memory");
@@ -125,16 +131,16 @@ static void mark_reserved_mem(void *fdt)
 	mark_area_used(base, top);
 }
 
-static void init_pmem(void *fdt)
+static struct pm_orders_t init_pmem(void *fdt)
 {
 	enum mm_mode_t mmode = get_mmode(fdt);
 
 	size_t max_order = 0;
-	size_t order_width = 9;
+	size_t order_bits = 9;
 	switch(mmode){
 		case Sv32:
 			max_order = 1;
-			order_width = 10;
+			order_bits = 10;
 			break;
 
 		case Sv39:
@@ -146,17 +152,21 @@ static void init_pmem(void *fdt)
 			break;
 	};
 
-	size_t widths[10] = {0};
+	size_t bits[10] = {0};
 	for(size_t i = 0; i <= max_order; ++i)
-		widths[i] = order_width;
+		bits[i] = order_bits;
 
-	init_mem(max_order, widths, 12);
+	init_mem(max_order, bits, 12);
+
+	struct pm_orders_t ret = {max_order, {0}, 12};
+	for(size_t i = 0; i <= __mm_max_order; ++i)
+		ret.bits[i] = bits[i];
+
+	return ret;
 }
 
-static void setup_pmem(void *fdt)
+static struct pm_layout_t setup_pmem(void *fdt)
 {
-	init_pmem(fdt);
-
 	struct pm_layout_t pmem = get_memlayout(fdt);
 
 	pm_t initrd_top = get_initrdtop(fdt);
@@ -199,6 +209,8 @@ static void setup_pmem(void *fdt)
 
 	/* mark reserved mem */
 	mark_reserved_mem(fdt);
+
+	return (struct pm_layout_t){.base = pmap_base, .top = actual_size + pmap_base};
 }
 
 pm_t move_kernel()
@@ -229,8 +241,25 @@ struct vm_branch_t *prepare_vmem()
 	/* map stack */
 	map_vmem(branch, PM_STACK_BASE, PM_STACK_BASE, VM_R | VM_W | VM_V, MM_MPAGE);
 
+	/* map root pte */
+	map_vmem(branch, (pm_t)branch, ROOT_PTE, VM_R | VM_W | VM_V, MM_KPAGE);
+
+	map_vmem(branch, 0x10000000, 0x10000000, VM_R | VM_W | VM_V, MM_KPAGE);
+
 	/* TODO: map more stuff? */
 	return branch;
+}
+
+static vm_t prepare_tmp_pte(struct vm_branch_t *branch)
+{
+	/* make sure the TMP_PTE is mapped to *something* */
+	map_vmem(branch, 0, TMP_PTE, VM_R | VM_W | VM_V, MM_KPAGE);
+
+	struct vm_branch_t *tmp_pte = arch_get_tmp_pte(branch);
+
+	vm_t addr = TMP_PTE + MM_KPAGE_SIZE;
+	map_vmem(branch, (vm_t)tmp_pte, addr, VM_R | VM_W | VM_V, MM_KPAGE);
+	return addr;
 }
 
 void start_vmem(void *fdt, struct vm_branch_t *branch)
@@ -250,7 +279,10 @@ void start_vmem(void *fdt, struct vm_branch_t *branch)
 	/* Sv57 && Sv64 in the future? */
 }
 
-struct init_data_t populate_initdata(void *fdt, struct vm_branch_t *branch)
+struct init_data_t populate_initdata(void *fdt, struct pm_orders_t o,
+		struct pm_layout_t p,
+		struct vm_branch_t *b,
+		vm_t v)
 {
 	extern char __init_start, __init_end;
 
@@ -261,13 +293,29 @@ struct init_data_t populate_initdata(void *fdt, struct vm_branch_t *branch)
 	d.initrd_base = get_initrdbase(fdt);
 	d.initrd_top = get_initrdtop(fdt);
 
+	d.pmap_base = p.base;
+	d.pmap_top = p.top;
+
 	d.fdt_base = get_fdtbase(fdt);
 	d.fdt_top = get_fdttop(fdt);
 
 	d.stack_base = PM_STACK_BASE;
 	d.stack_top = PM_STACK_TOP;
 
-	d.kernel_vm_base = branch;
+	d.kernel_vm_base = b;
+	d.tmp_pte = v;
+
+	d.max_order = o.max_order;
+	for(size_t i = 0; i <= __mm_max_order; ++i)
+		d.bits[i] = o.bits[i];
+	d.page_shift = o.page_shift;
+
+	/* initialize pmap in vmem */
+	pm_t addr = p.base;
+	while(addr < p.top){
+		map_vmem(b, addr, addr, VM_R | VM_W | VM_V, MM_MPAGE);
+		addr += MM_MPAGE_SIZE;
+	}
 
 	return d;
 }
@@ -276,11 +324,13 @@ void init(void *fdt)
 {
 	init_debug(fdt);
 	dbg_fdt(fdt);
-	setup_pmem(fdt);
 
-	struct vm_branch_t *branch = prepare_vmem();
-	struct init_data_t d = populate_initdata(fdt, branch);
-	start_vmem(fdt, branch);
+	struct pm_orders_t o = init_pmem(fdt);
+	struct pm_layout_t p = setup_pmem(fdt);
+	struct vm_branch_t *b = prepare_vmem();
+	vm_t v = prepare_tmp_pte(b);
+	struct init_data_t d = populate_initdata(fdt, o, p, b, v);
+	start_vmem(fdt, b);
 
 	/* update_pmap(TODO: figure out where to place pmap in vmem); */
 	void (*main)(struct init_data_t) = (void (*)(struct init_data_t))VM_KERN;
