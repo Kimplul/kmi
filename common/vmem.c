@@ -90,15 +90,19 @@ void init_vmem(struct vm_branch_t *branch, vm_t tmp_pte)
 	map_vmem(branch, first_block, (vm_t)root_region, VM_W | VM_R | VM_V, MM_O0);
 	memset(root_region, 0, __o_size(MM_O0));
 
+	/* apparently I'm overwriting some memory here which is fucking up
+	 * things elsewhere, specifically some PTE. Really should come up with
+	 * some sensible address mappings, as everything is at the moment sort
+	 * of hither and tither. */
 	root_region->max_blocks = (__o_size(MM_O0) - sizeof(struct mm_block_region_t))
 		/ sizeof(struct mm_block_t);
-	root_region->first = (struct mm_block_t *)sizeof(struct mm_block_t);
+	root_region->first = (struct mm_block_t *)((vm_t)root_region + sizeof(struct mm_block_t));
 	root_block = root_region->first;
 
 	root_block->start = __o_size(MM_O0);
 	/* TODO: add in UMEM_TOP or something */
 	root_block->end = -1;
-	root_block->status = USED;
+	root_block->status = FREE;
 }
 
 
@@ -185,10 +189,13 @@ vm_t map_vregion(struct vm_branch_t *branch, pm_t base, vm_t start, size_t size,
 
 		if(node->status == FREE && node->end >= start + size){
 			gobble_block(branch, node, start, start + size);
-			break;
+			goto found;
 		}
 	}
 
+	return 0;
+
+found:
 	for(; size >= __o_size(MM_O0); size -= __o_size(MM_O0)){
 		map_vmem(branch, start, base, flags, MM_O0);
 		start += __o_size(MM_O0);

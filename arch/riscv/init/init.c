@@ -244,8 +244,6 @@ struct vm_branch_t *prepare_vmem()
 	/* map root pte */
 	map_vmem(branch, (pm_t)branch, ROOT_PTE, VM_R | VM_W | VM_V, MM_KPAGE);
 
-	map_vmem(branch, 0x10000000, 0x10000000, VM_R | VM_W | VM_V, MM_KPAGE);
-
 	/* TODO: map more stuff? */
 	return branch;
 }
@@ -276,6 +274,7 @@ void start_vmem(void *fdt, struct vm_branch_t *branch)
 	else
 		csr_write(CSR_SATP, SATP_MODE_Sv48 | pm_to_pnum((pm_t)(branch)));
 
+	__asm__ ("sfence.vma" : : : "memory");
 	/* Sv57 && Sv64 in the future? */
 }
 

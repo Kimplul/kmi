@@ -8,6 +8,8 @@
 static void kernel_dbg(void *fdt)
 {
 	struct dbg_info_t dbg = dbg_from_fdt(fdt);
+	map_vmem(ROOT_PTE, (pm_t)dbg.dbg_ptr, (vm_t)dbg.dbg_ptr,
+			VM_R | VM_W | VM_V, MM_KPAGE);
 	dbg_init(dbg.dbg_ptr, dbg.dev);
 }
 
@@ -17,14 +19,11 @@ static void kernel_dbg(void *fdt)
 
 static void map_fdt(struct vm_branch_t *branch, vm_t fdt_base, vm_t fdt_top)
 {
-	map_vregion(branch, fdt_base, 0, fdt_top - fdt_base, VM_R | VM_W |VM_V);
+	map_vregion(branch, fdt_base, fdt_base, fdt_top - fdt_base, VM_R | VM_W |VM_V);
 }
 
 void __main main(struct init_data_t d)
 {
-	/* feck */
-	dbg_init(0x10000000, NS16550A);
-	dbg("test\n");
 	init_pmap((void *)d.pmap_base);
 	init_mem(d.max_order, d.bits, d.page_shift);
 	init_vmem(ROOT_PTE, d.tmp_pte);
@@ -32,6 +31,7 @@ void __main main(struct init_data_t d)
 	/* TODO: mark kernel area as used */
 	map_fdt(ROOT_PTE, d.fdt_base, d.fdt_top);
 	kernel_dbg((void *)d.fdt_base);
+	dbg("test\n");
 	/* TODO: approximate order of business:
 	 * setup debugging in vmem (requires mapping fdt)
 	 * free unnecessary init
