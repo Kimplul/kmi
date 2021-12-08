@@ -1,0 +1,1 @@
+#define optional_pause()

@@ -1,0 +1,83 @@
+Ideas for actually working virtual mappings:
+
+1. Define sensible memory areas, to start with for Sv39 and then that can
+probably be extended to Sv48 etc.
+
+Something like this for Sv39:
+
+Offset		| Size		| Purpose
+------------------------------------------------
+-242 GiB	| 256 GiB	| Userspace
+------------------------------------------------
+-246 GiB	| 4 GiB		| Direct mapping
+-254 GiB	| 8 GiB		| vmemmap
+-255 GiB	| 1 GiB		| Kernel IO
+-256 GiB	| 1 GiB		| Kernel
+
+Sv48:
+
+Offset		| Size		| Purpose
+------------------------------------------------
+-58368 GiB	| 65536 GiB	| Userspace
+------------------------------------------------
+-60416 GiB	| 2048 GiB	| Direct mapping
+-64512 GiB	| 4096 GiB	| vmemmap
+-65024 GiB	| 512 GiB	| Kernel IO
+-65536 GiB	| 512 GiB	| Kernel
+
+Note that tera/giga/etc pages have to be aligned to their corresponding size.
+This means that these areas will probably have to be mapped with 2M pages, which
+is fine but would've been cool to use top-level PTE's to keep context switch
+latencies down.
+
+(Note: Direct mapping can be something like
+ inline static __va(pm_t pa)
+ {
+	if (__dma_bottom >= pa || __dma_top <= pa)
+		remap_dma(pa);
+	return pa + __dma_bottom;
+ }
+ ...)
+
+PTE's can be kept in vmemmap, and the Direct mapping can overlap.
+
+2. Come up with a somewhat sensible virtual memory management system. Linux uses
+rb_trees, which might be a good idea, although I should figure out how to handle
+both acuiring and freeing them quickly.
+
+Maybe keep two separate trees, one for free and one for mapped regions? Free
+regions should be ordered by size, to quickly find the best suitable size.
+Used/mapped regions should be ordered by address, to quickly find the correct
+region.
+
+struct rb_free_node {
+	union {
+		size_t size;
+		vm_t address;
+	};
+
+	struct rb_free_node *pair;
+	struct rb_free_node *left;
+	struct rb_free_node *right;
+};
+
+struct rb_used_node {
+	vm_t address;
+	size_t size;
+
+	struct rb_used_node *left;
+	struct rb_used_node *right;
+};
+
+My idea: Have two trees made of rb_free_node, one ordered by size and one
+ordered by address, with the *pair pointer pointing to the corresponding node in
+the other tree.
+
+When allocating, search up the most suitable free area in the tree ordered by
+size, and do the required node modifications.
+(remove node completely, split area one or twice, mirror in other tree)
+
+When freeing, search up the address in the used area, after which insert it into
+the free trees and remove it from the used tree. After that, merge adjacent
+memory areas in the free trees? Could be done reasonably efficiently, should
+start up a test implementation, like with pmem.

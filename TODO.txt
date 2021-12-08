@@ -18,3 +18,5 @@ init from vmem when jumping to vmem
 + should probably come up with some kind of general error handling scheme?
 
 + Fix unmap/map_vmem when called from virtual memory
+
++ Investigate GCC/Clang builtin atomic operations?

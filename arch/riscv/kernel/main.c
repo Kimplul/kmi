@@ -2,6 +2,7 @@
 #include <apos/init.h>
 #include <apos/vmem.h>
 #include <apos/mem.h>
+#include <apos/lock.h>
 
 #ifdef DEBUG
 
