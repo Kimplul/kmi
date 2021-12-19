@@ -66,28 +66,6 @@ static pm_t get_kerneltop()
 	return (pm_t)&__kernel_end;
 }
 
-static pm_t get_initrdtop(void *fdt)
-{
-	int chosen_offset = fdt_path_offset(fdt, "/chosen");
-	struct cell_info_t ci = get_cellinfo(fdt, chosen_offset);
-
-	void *initrd_end_ptr = (void *)fdt_getprop(fdt, chosen_offset,
-			"linux,initrd-end", NULL);
-
-	return (pm_t)fdt_load_int_ptr(ci.addr_cells, initrd_end_ptr);
-}
-
-static pm_t get_initrdbase(void *fdt)
-{
-	int chosen_offset = fdt_path_offset(fdt, "/chosen");
-	struct cell_info_t ci = get_cellinfo(fdt, chosen_offset);
-
-	void *initrd_base_ptr = (void *)fdt_getprop(fdt, chosen_offset,
-			"linux,initrd-start", NULL);
-
-	return (pm_t)fdt_load_int_ptr(ci.addr_cells, initrd_base_ptr);
-}
-
 static pm_t get_fdttop(void *fdt)
 {
 	const char *b = (const char *)fdt;
@@ -290,15 +268,16 @@ static void init_proc(void *fdt, struct vm_branch_t *b)
 	t->stack = alloc_uvmem(t, SZ_2M, VM_V | VM_R | VM_W);
 	/* if it needs heap, it'll ask for it */
 
-	move_init(fdt, (void *)t->bin, sz);
+	move_init(fdt, (void *)t->bin);
 	jump_to_userspace(t, 0, 0);
 }
 
 void __main main(void *fdt)
 {
 	init_dbg(fdt);
-	struct vm_branch_t *b = init_vmem(fdt);
+	dbg_fdt(fdt);
 
+	struct vm_branch_t *b = init_vmem(fdt);
 	init_mem_blocks();
 	init_irq(fdt);
 	init_proc(fdt, b);

@@ -25,6 +25,8 @@
 #define container_of(ptr, type, member) \
 	((type *)((char *)(ptr) - offsetof(type, member)))
 
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+
 #include <apos/types.h>
 
 static inline size_t align_up(size_t val, size_t a)
@@ -47,5 +49,30 @@ static inline size_t align_down(size_t val, size_t a)
 
 	return val - (val % a);
 }
+
+static inline size_t asciinum(char c)
+{
+	if(c >= '0' && c <= '9')
+		return c - '0';
+	else if(c >= 'A' && c <= 'F')
+		return c - 'A' + 10;
+	else if(c >= 'a' && c <= 'f')
+		return c - 'a' + 10;
+	else
+		return 0;
+}
+
+static inline size_t convnum(const char *c, size_t len, size_t base)
+{
+	size_t multiplier = 1;
+	size_t sum = 0;
+	for(size_t i = 0; i < len; ++i){
+		sum += asciinum(c[len - 1 - i]) * multiplier;
+		multiplier *= base;
+	}
+
+	return sum;
+}
+
 
 #endif /* APOS_UTILS_H */

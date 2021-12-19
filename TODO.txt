@@ -4,3 +4,5 @@
 + Create sensible thread handling
 + Add in init process loading
 + Make sure vmap is in 4K increments or whatever
++ Remove/converge convnum and debugging __atoi
++ Create actual init program
