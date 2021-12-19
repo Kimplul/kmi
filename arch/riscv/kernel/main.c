@@ -20,6 +20,7 @@ static void kernel_dbg(void *fdt)
 
 static void map_fdt(struct vm_branch_t *branch, vm_t fdt_base, vm_t fdt_top)
 {
+	/* TODO: fix this shit */
 	map_vregion(branch, fdt_base, fdt_base, fdt_top - fdt_base, VM_R | VM_W |VM_V);
 }
 

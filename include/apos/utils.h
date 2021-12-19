@@ -14,10 +14,24 @@
 #define GLUE2(x, y) x##y
 #define GLUE(x, y) GLUE2(x, y)
 
+#include <apos/builtin.h>
+
+#if __has_builtin(__builtin_offsetof)
+#define offsetof(type, member) __builtin_offsetof(type, member)
+#else
+#define offsetof(type, member) ((size_t)&((type *)0)->member)
+#endif
+
+#define container_of(ptr, type, member) \
+	((type *)((char *)(ptr) - offsetof(type, member)))
+
 #include <apos/types.h>
 
 static inline size_t align_up(size_t val, size_t a)
 {
+	if(!a)
+		return val;
+
 	size_t rem = val % a;
 
 	if (rem == 0)
@@ -28,6 +42,9 @@ static inline size_t align_up(size_t val, size_t a)
 
 static inline size_t align_down(size_t val, size_t a)
 {
+	if(!a)
+		return val;
+
 	return val - (val % a);
 }
 

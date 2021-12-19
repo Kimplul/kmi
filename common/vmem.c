@@ -1,275 +1,291 @@
 #include <apos/vmem.h>
-#include <apos/pmem.h>
-#include <apos/mem.h>
-#include <apos/string.h>
+#include <apos/mem_nodes.h>
 
-/* new idea, not implemented:
- * region(free) -> region(not free) -> region(free) -> region(free) ...
+#define mark_region_used(r) ((r) = 1)
+#define mark_region_unused(r) ((r) = 0)
+#define is_region_used(r) (r)
+
+static struct sp_root free_regions = (struct sp_root){0};
+static struct sp_root used_regions = (struct sp_root){0};
+
+/* pretty major slowdown when we get to some really massive numbers, not
+ * entirely sure why. Will need to check up on this at some point, have I
+ * somehow managed to come up with a _very_ bad situation for my sp_trees?
  *
- * each region comes right after the next, would at least be pretty quick to 
- * merge free blocks?
+ * EDIT: apparently, yeah. Max depth of 106 with a million entries, interesting.
+ * I guess since in this scenario all sizes are 1, and I just shove everything
+ * to the right? Maybe?
+ *
+ * EDIT upon EDIT: yeah, when taking the start position of the region into
+ * account we get a much more sensible max depth of 39 for 5 million entries.
+ * Seems I have found a weakness in sp_trees :D
+ *
+ * Duplicate entries don't work well with any trees, I think. Good to know,
+ * maybe not even anything with sp_trees but more a weakness of binary trees in
+ * general?
  */
-
-enum mm_block_status_t {
-	FREE, USED
-};
-
-struct mm_block_region_t;
-
-/* linked list for now because I'm shit at coding */
-struct mm_block_t {
-	enum mm_block_status_t status;
-	vm_t start;
-	vm_t end;
-	struct mm_block_t *next;
-	struct mm_block_t *prev;
-};
-
-struct mm_block_region_t {
-	vm_t vaddr;
-	size_t blocks;
-	size_t max_blocks;
-	struct mm_block_region_t *next;
-	struct mm_block_t *first;
-};
-
-static struct mm_block_region_t *root_region = (struct mm_block_region_t *)ROOT_REGION;
-static struct mm_block_t *root_block = 0;
-
-#define NODE_REGION(x) ((struct mm_block_region_t *)(((vm_t)x) & (__mm_page_shift - 1)))
-#define NEXT_BLOCK() ((struct mm_block_region_t *)\
-((region_counter * __o_size(MM_O0)) + ROOT_PTE))
-
-/* TODO: mark all used regions, also blocks */
-static struct mm_block_t *get_free_block(struct vm_branch_t *branch)
+static struct sp_mem *sp_free_insert_region(struct sp_mem *m)
 {
-	struct mm_block_region_t *region = root_region;
-	size_t region_counter = 1;
-	for(; region; region = region->next){
-		if(region->next == 0){
-			pm_t next_pa = alloc_page(MM_O0, 0);
-			struct mm_block_region_t *next_va = NEXT_BLOCK();
+	struct sp_node *n = sp_root(free_regions), *p = NULL;
+	size_t start = m->start;
+	size_t size = m->end - m->start;
+	enum sp_dir d = LEFT;
 
-			map_vmem(branch, next_pa, (vm_t)next_va,
-					VM_W | VM_R | VM_V, MM_O0);
+	m->sp_n = (struct sp_node){0};
 
-			memset(next_va, 0, __o_size(MM_O0));
-			next_va->max_blocks =
-				(__o_size(MM_O0) - sizeof(struct mm_block_region_t))
-				/ sizeof(struct mm_block_t);
+	while(n){
+		struct sp_mem *t = mem_container(n);
+		size_t nsize = t->end - t->start;
+		p = n;
 
-			region->next = next_va;
+		if(size < nsize){
+			n = sp_left(n);
+			d = LEFT;
 		}
 
-		if(region->blocks == region->max_blocks)
-			continue;
-
-		struct mm_block_t *block = region->first;
-		for(size_t i = 0; i < region->max_blocks; ++i){
-			if(block[i].start == 0 && block[i].end == 0){
-				NODE_REGION(&block[i])->blocks++;
-				return &block[i];
-			}
+		else if(size > nsize) {
+			n = sp_right(n);
+			d = RIGHT;
 		}
 
-		region_counter++;
+		else if (start < t->start){
+			n = sp_left(n);
+			d = LEFT;
+		}
+
+		else {
+			n = sp_right(n);
+			d = RIGHT;
+		}
+	}
+
+	if(sp_root(free_regions))
+		sp_insert(&sp_root(free_regions), p, &m->sp_n, d);
+	else
+		sp_root(free_regions) = &m->sp_n;
+
+	return m;
+}
+
+static struct sp_mem *sp_used_insert_region(struct sp_mem *m)
+{
+	struct sp_node *n = sp_root(used_regions), *p = NULL;
+	vm_t start = m->start;
+	enum sp_dir d = LEFT;
+
+	m->sp_n = (struct sp_node){0};
+
+	while(n){
+		struct sp_mem *t = mem_container(n);
+
+		p = n;
+
+		if(start < t->start){
+			n = sp_left(n);
+			d = LEFT;
+		}
+
+		else {
+			/* we should never encounter a situation where start =
+			 * t->start */
+			n = sp_right(n);
+			d = RIGHT;
+		}
+	}
+
+	if(sp_root(used_regions))
+		sp_insert(&sp_root(used_regions), p, &m->sp_n, d);
+	else
+		sp_root(used_regions) = &m->sp_n;
+
+	return m;
+}
+
+int sp_mem_init(size_t arena_size)
+{
+	struct sp_mem *m = get_mem_node();
+	m->end = arena_size;
+	sp_free_insert_region(m);
+
+	return 0;
+}
+
+static void __sp_mem_destroy(struct sp_node *n)
+{
+	if(!n)
+		return;
+
+	__sp_mem_destroy(sp_left(n));
+	__sp_mem_destroy(sp_right(n));
+
+	struct sp_mem *m = mem_container(n);
+	free_mem_node(m);
+}
+
+void sp_mem_destroy()
+{
+	__sp_mem_destroy(sp_root(free_regions));
+	__sp_mem_destroy(sp_root(used_regions));
+}
+
+/* interestingly this is now the main bottleneck :D
+ *
+ * eh, it's not a massive thing I guess, maybe the code could be a bit quicker
+ * but I mean 10 000 000 memory allocations in 20 s is good enough for now
+ * */
+static struct sp_mem *sp_used_find(vm_t start)
+{
+	struct sp_node *n = sp_root(used_regions);
+	while(n){
+		struct sp_mem *t = mem_container(n);
+		if(start == t->start)
+			return t;
+
+		if(start < t->start)
+			n = sp_left(n);
+		else
+			n = sp_right(n);
 	}
 
 	return 0;
 }
 
-void init_vmem(struct vm_branch_t *branch, vm_t tmp_pte)
+static struct sp_mem *sp_mem_create_region(vm_t start, vm_t end,
+		struct sp_mem *prev, struct sp_mem *next)
 {
-#if defined(KERNEL)
-	arch_init_vmem(branch, tmp_pte);
-#else
-	(void)tmp_pte;
-#endif
-
-	pm_t first_block = alloc_page(MM_O0, 0);
-	map_vmem(branch, first_block, (vm_t)root_region, VM_W | VM_R | VM_V, MM_O0);
-	memset(root_region, 0, __o_size(MM_O0));
-
-	/* apparently I'm overwriting some memory here which is fucking up
-	 * things elsewhere, specifically some PTE. Really should come up with
-	 * some sensible address mappings, as everything is at the moment sort
-	 * of hither and tither. */
-	root_region->max_blocks = (__o_size(MM_O0) - sizeof(struct mm_block_region_t))
-		/ sizeof(struct mm_block_t);
-	root_region->first = (struct mm_block_t *)((vm_t)root_region + sizeof(struct mm_block_t));
-	root_block = root_region->first;
-
-	root_block->start = __o_size(MM_O0);
-	/* TODO: add in UMEM_TOP or something */
-	root_block->end = -1;
-	root_block->status = FREE;
+	struct sp_mem *m = get_mem_node();
+	m->start = start;
+	m->end = end;
+	m->prev = prev;
+	m->next = next;
+	return m;
 }
 
-
-/* ... new_node -> node ... */
-static void insert_before(struct vm_branch_t *branch, struct mm_block_t *node, vm_t split)
+static struct sp_mem *sp_free_find_first(size_t size, size_t alignment)
 {
-	struct mm_block_t *new_node = get_free_block(branch);
+	struct sp_node *n = sp_root(free_regions);
+	while(n){
+		struct sp_mem *t = mem_container(n);
+		size_t nsize = t->end - align_up(t->start, alignment);
 
-	new_node->start = node->start;
-	new_node->end = split;
+		if(size <= nsize)
+			return t;
 
-	node->start = split;
-
-	struct mm_block_t *prev = node->prev;
-	new_node->next = node;
-	new_node->prev = prev;
-	prev->next = new_node;
-	node->prev = new_node;
-}
-
-/* ... node -> new_node ... */
-static void insert_after(struct vm_branch_t *branch, struct mm_block_t *node, vm_t split)
-{
-	struct mm_block_t *new_node = get_free_block(branch);
-
-	new_node->start = split;
-	new_node->end = node->end;
-
-	node->end = split;
-
-	struct mm_block_t *next = node->next;
-	new_node->next = next;
-	new_node->prev = node;
-	next->prev = new_node;
-	node->next = new_node;
-}
-
-static void gobble_block(struct vm_branch_t *branch, struct mm_block_t *node,
-		vm_t start, vm_t end)
-{
-	node->status = USED;
-
-	/* ... node ... */
-	if(node->start == start && node->end == end)
-		return;
-
-	/* ... node -> new_node ... */
-	if(node->start == start && node->end >= end){
-		insert_after(branch, node, end);
-		struct mm_block_t *new = node->next;
-
-		new->status = FREE;
-		return;
-	}
-
-	/* ... new_node -> node ...*/
-	if(node->start < start && node->end == end){
-		insert_before(branch, node, start);
-		struct mm_block_t *new = node->prev;
-
-		new->status = FREE;
-		return;
-	}
-
-	/* ... new_node1 -> node -> new_node2 .. */
-	insert_before(branch, node, start);
-	struct mm_block_t *prev = node->prev;
-
-	insert_after(branch, node, end);
-	struct mm_block_t *next = node->next;
-
-	prev->status = FREE;
-	next->status = FREE;
-}
-
-/* only map with 4K blocks to keep it simple for now */
-vm_t map_vregion(struct vm_branch_t *branch, pm_t base, vm_t start, size_t size,
-		uint8_t flags)
-{
-	struct mm_block_t *node = root_block;
-	for(; node; node = node->next){
-		if(node->start > start)
-			return 0;
-
-		if(node->status == FREE && node->end >= start + size){
-			gobble_block(branch, node, start, start + size);
-			goto found;
-		}
+		n = sp_right(n);
 	}
 
 	return 0;
+}
 
-found:
-	for(; size >= __o_size(MM_O0); size -= __o_size(MM_O0)){
-		map_vmem(branch, start, base, flags, MM_O0);
-		start += __o_size(MM_O0);
-		base += __o_size(MM_O0);
+/* apparently Linux doesn't necessarily give a shit about mmap hints, so I'll
+ * just ignore them for now. Note that alloc_region should only be used when
+ * mmap is called with MAP_ANON, all other situations should be handled in some
+ * fs server */
+vm_t alloc_region(size_t size, size_t alignment)
+{
+	struct sp_mem *m = sp_free_find_first(size, alignment);
+	if(!m)
+		return 0;
+
+	sp_remove(&sp_root(free_regions), &m->sp_n);
+
+	vm_t aligned_start = align_up(m->start, alignment);
+
+	vm_t pre_start = m->start;
+	vm_t pre_end = aligned_start;
+
+	vm_t start = pre_end;
+	vm_t end = aligned_start + size;
+
+	vm_t post_start = end;
+	vm_t post_end = m->end;
+
+	if(pre_start != pre_end){
+		struct sp_mem *n = sp_mem_create_region(pre_start, pre_end, m->prev, m);
+		m->prev = n;
+		if(n->prev)
+			n->prev->next = n;
+
+		sp_free_insert_region(n);
 	}
 
+	if(post_start != post_end){
+		struct sp_mem *n = sp_mem_create_region(post_start, post_end, m, m->next);
+		m->next = n;
+		if(n->next)
+			n->next->prev = n;
+
+		sp_free_insert_region(n);
+	}
+
+	m->end = end;
+	m->start = start;
+	mark_region_used(m->flags);
+	sp_used_insert_region(m);
 	return start;
 }
 
-static void free_block(struct mm_block_t *node)
+static void __sp_try_coalesce_prev(struct sp_mem *m)
 {
-	struct mm_block_t *prev = node->prev;
-	struct mm_block_t *next = node->next;
+	while(m){
+		if(!m || is_region_used(m->flags))
+			return;
 
-	if(prev->status == FREE && next->status == FREE){
-		/* merge all three blocks */
-		prev->end = next->end;
-		prev->next = next->next;
-		next->next->prev = prev;
+		struct sp_mem *p = m->prev;
+		if(!p || is_region_used(p->flags))
+			return;
 
-		node->start = 0;
-		node->end = 0;
+		m->start = p->start;
+		m->prev = p->prev;
 
-		next->start = 0;
-		next->end = 0;
+		if(m->prev)
+			m->prev->next = m;
 
-		NODE_REGION(node)->blocks--;
-		NODE_REGION(next)->blocks--;
-		return;
+		sp_remove(&sp_root(free_regions), &p->sp_n);
+		free_mem_node(p);
+
+		m = m->prev;
 	}
-
-	if(prev->status == FREE){
-		prev->end = node->end;
-		prev->next = next;
-		next->prev = prev;
-
-		node->start = 0;
-		node->end = 0;
-
-		NODE_REGION(node)->blocks--;
-		return;
-	}
-
-	if(next->status == FREE){
-		next->start = node->start;
-		next->prev = prev;
-		prev->next = next;
-
-		node->start = 0;
-		node->end = 0;
-
-		NODE_REGION(node)->blocks--;
-		return;
-	}
-
-	node->status = FREE;
 }
 
-void unmap_vregion(struct vm_branch_t *branch, vm_t start)
+static void __sp_try_coalesce_next(struct sp_mem *m)
 {
-	size_t size = 0;
-	struct mm_block_t *node = root_block;
-	for(; node; node = node->next){
-		/* if node->start == start status should be USED in all cases,
-		 * but let's just go with this
-		 */
-		if(node->status == USED && node->start == start){
-			size = node->end - node->start;
-			free_block(node);
-		}
-	}
+	while(m){
+		if(!m || is_region_used(m->flags))
+			return;
 
-	for(; size >= __o_size(MM_O0); size -= __o_size(MM_O0)){
-		unmap_vmem(branch, start, MM_O0);
-		start += __o_size(MM_O0);
+		struct sp_mem *n = m->next;
+		if(!n || is_region_used(n->flags))
+			return;
+
+		m->end = n->end;
+		m->next = n->next;
+
+		if(m->next)
+			m->next->prev = m;
+
+		sp_remove(&sp_root(free_regions), &n->sp_n);
+		free_mem_node(n);
+
+		m = m->next;
 	}
+}
+
+static void sp_mem_try_coalesce(struct sp_mem *m)
+{
+	__sp_try_coalesce_prev(m);
+	__sp_try_coalesce_next(m);
+}
+
+void free_region(vm_t start)
+{
+	struct sp_mem *m = sp_used_find(start);
+	if(!m)
+		return;
+
+	sp_remove(&sp_root(used_regions), &m->sp_n);
+	mark_region_unused(m->flags);
+
+	sp_mem_try_coalesce(m);
+	sp_free_insert_region(m);
 }

@@ -39,4 +39,7 @@ extern size_t __mm_max_order;
 void init_mem(size_t max_order, size_t shifts[10], size_t page_shift);
 enum mm_mode_t get_mmode(void *fdt);
 
+#define BASE_PAGE_SIZE (__o_size(BASE_PAGE))
+#define BASE_PAGE (MM_O0)
+
 #endif /* APOS_MEM_H */
