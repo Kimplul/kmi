@@ -1,0 +1,3 @@
+Each thread should obviously have a thread control block (tcb) which lives in
+kernelspace and has pointers to virtual memory allocations, along with PID and
+other required data. That's about what I can come up with at the moment.

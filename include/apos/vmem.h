@@ -1,11 +1,14 @@
 #ifndef APOS_VMEM_H
 #define APOS_VMEM_H
 
+struct sp_mem;
+
 /* arch-specific data */
 #include <vmem.h>
 
 /* common */
 #include <apos/pmem.h>
+#include <apos/tcb.h>
 #include <apos/sp_tree.h>
 
 struct sp_mem {
@@ -24,6 +27,7 @@ struct sp_mem {
 	container_of(ptr, struct sp_mem, sp_n)
 
 
+
 /* general overview of the different functions:
  * (un)map_vmem: map one known page of physical memory to one known page of
  * virtual memory
@@ -35,16 +39,14 @@ struct sp_mem {
  */
 
 /* defined by arch */
-void map_vmem(struct vm_branch_t *branch,
-		pm_t paddr, vm_t vaddr,
-		uint8_t flags, enum mm_order_t order);
+int sp_mem_init(struct sp_reg_root *r, size_t nums);
 
-void unmap_vmem(struct vm_branch_t *branch, vm_t vaddr, enum mm_order_t order);
+vm_t alloc_uvmem(struct tcb *r, size_t s, uint8_t flags);
+void free_uvmem(struct tcb *r, vm_t a);
 
+vm_t map_fill_region(struct vm_branch_t *b, vm_t start, size_t bytes, uint8_t flags);
 
-vm_t map_vregion(struct vm_branch_t *branch, pm_t base, vm_t start, size_t size,
-		uint8_t flags);
-void unmap_vregion(struct vm_branch_t *branch, vm_t start);
+size_t uvmem_size();
+void set_uvmem_size(size_t s);
 
-void init_vmem(struct vm_branch_t *branch, vm_t tmp_pte);
 #endif /* APOS_VMEM_H */

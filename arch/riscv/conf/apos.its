@@ -7,7 +7,7 @@
 	images {
 		kernel {
 			description = "Garbaggio";
-			data = /incbin/("../../../apos.bin");
+			data = /incbin/("../../../kernel.bin");
 			type = "kernel";
 			arch = "riscv";
 			os = "apos";

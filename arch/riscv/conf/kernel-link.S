@@ -2,10 +2,10 @@ OUTPUT_ARCH(riscv)
 ENTRY(main)
 
 SECTIONS {
-	. = ABSOLUTE(VM_KERN);
+	. = ABSOLUTE(PM_KERN);
 	__kernel_start = .;
 
-	.text ALIGN(4K) : AT(0) {
+	.text : AT(0) {
 		*(.kernel.start);
 		*(.text*);
 	}

@@ -138,7 +138,7 @@ struct sp_mem *get_mem_node()
 			return __find_free_block(r);
 		}
 
-		n = n->left;
+		n = sp_left(n);
 	}
 
 	/* we need to allocate a new region */

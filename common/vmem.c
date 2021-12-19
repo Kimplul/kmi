@@ -1,3 +1,4 @@
+#include <vmem.h>
 #include <apos/vmem.h>
 #include <apos/mem_nodes.h>
 
@@ -5,8 +6,7 @@
 #define mark_region_unused(r) ((r) = 0)
 #define is_region_used(r) (r)
 
-static struct sp_root free_regions = (struct sp_root){0};
-static struct sp_root used_regions = (struct sp_root){0};
+static size_t __uvmem_size = 0;
 
 /* pretty major slowdown when we get to some really massive numbers, not
  * entirely sure why. Will need to check up on this at some point, have I
@@ -24,9 +24,9 @@ static struct sp_root used_regions = (struct sp_root){0};
  * maybe not even anything with sp_trees but more a weakness of binary trees in
  * general?
  */
-static struct sp_mem *sp_free_insert_region(struct sp_mem *m)
+static struct sp_mem *sp_free_insert_region(struct sp_reg_root *r, struct sp_mem *m)
 {
-	struct sp_node *n = sp_root(free_regions), *p = NULL;
+	struct sp_node *n = sp_root(r->free_regions), *p = NULL;
 	size_t start = m->start;
 	size_t size = m->end - m->start;
 	enum sp_dir d = LEFT;
@@ -59,17 +59,17 @@ static struct sp_mem *sp_free_insert_region(struct sp_mem *m)
 		}
 	}
 
-	if(sp_root(free_regions))
-		sp_insert(&sp_root(free_regions), p, &m->sp_n, d);
+	if(sp_root(r->free_regions))
+		sp_insert(&sp_root(r->free_regions), p, &m->sp_n, d);
 	else
-		sp_root(free_regions) = &m->sp_n;
+		sp_root(r->free_regions) = &m->sp_n;
 
 	return m;
 }
 
-static struct sp_mem *sp_used_insert_region(struct sp_mem *m)
+static struct sp_mem *sp_used_insert_region(struct sp_reg_root *r, struct sp_mem *m)
 {
-	struct sp_node *n = sp_root(used_regions), *p = NULL;
+	struct sp_node *n = sp_root(r->used_regions), *p = NULL;
 	vm_t start = m->start;
 	enum sp_dir d = LEFT;
 
@@ -93,19 +93,19 @@ static struct sp_mem *sp_used_insert_region(struct sp_mem *m)
 		}
 	}
 
-	if(sp_root(used_regions))
-		sp_insert(&sp_root(used_regions), p, &m->sp_n, d);
+	if(sp_root(r->used_regions))
+		sp_insert(&sp_root(r->used_regions), p, &m->sp_n, d);
 	else
-		sp_root(used_regions) = &m->sp_n;
+		sp_root(r->used_regions) = &m->sp_n;
 
 	return m;
 }
 
-int sp_mem_init(size_t arena_size)
+int sp_mem_init(struct sp_reg_root *r, size_t arena_size)
 {
 	struct sp_mem *m = get_mem_node();
 	m->end = arena_size;
-	sp_free_insert_region(m);
+	sp_free_insert_region(r, m);
 
 	return 0;
 }
@@ -122,10 +122,10 @@ static void __sp_mem_destroy(struct sp_node *n)
 	free_mem_node(m);
 }
 
-void sp_mem_destroy()
+void sp_mem_destroy(struct sp_reg_root *r)
 {
-	__sp_mem_destroy(sp_root(free_regions));
-	__sp_mem_destroy(sp_root(used_regions));
+	__sp_mem_destroy(sp_root(r->free_regions));
+	__sp_mem_destroy(sp_root(r->used_regions));
 }
 
 /* interestingly this is now the main bottleneck :D
@@ -133,9 +133,9 @@ void sp_mem_destroy()
  * eh, it's not a massive thing I guess, maybe the code could be a bit quicker
  * but I mean 10 000 000 memory allocations in 20 s is good enough for now
  * */
-static struct sp_mem *sp_used_find(vm_t start)
+static struct sp_mem *sp_used_find(struct sp_reg_root *r, vm_t start)
 {
-	struct sp_node *n = sp_root(used_regions);
+	struct sp_node *n = sp_root(r->used_regions);
 	while(n){
 		struct sp_mem *t = mem_container(n);
 		if(start == t->start)
@@ -161,9 +161,9 @@ static struct sp_mem *sp_mem_create_region(vm_t start, vm_t end,
 	return m;
 }
 
-static struct sp_mem *sp_free_find_first(size_t size, size_t alignment)
+static struct sp_mem *sp_free_find_first(struct sp_reg_root *r, size_t size, size_t alignment)
 {
-	struct sp_node *n = sp_root(free_regions);
+	struct sp_node *n = sp_root(r->free_regions);
 	while(n){
 		struct sp_mem *t = mem_container(n);
 		size_t nsize = t->end - align_up(t->start, alignment);
@@ -181,13 +181,13 @@ static struct sp_mem *sp_free_find_first(size_t size, size_t alignment)
  * just ignore them for now. Note that alloc_region should only be used when
  * mmap is called with MAP_ANON, all other situations should be handled in some
  * fs server */
-vm_t alloc_region(size_t size, size_t alignment)
+vm_t alloc_region(struct sp_reg_root *r, size_t size, size_t alignment)
 {
-	struct sp_mem *m = sp_free_find_first(size, alignment);
+	struct sp_mem *m = sp_free_find_first(r, size, alignment);
 	if(!m)
 		return 0;
 
-	sp_remove(&sp_root(free_regions), &m->sp_n);
+	sp_remove(&sp_root(r->free_regions), &m->sp_n);
 
 	vm_t aligned_start = align_up(m->start, alignment);
 
@@ -206,7 +206,7 @@ vm_t alloc_region(size_t size, size_t alignment)
 		if(n->prev)
 			n->prev->next = n;
 
-		sp_free_insert_region(n);
+		sp_free_insert_region(r, n);
 	}
 
 	if(post_start != post_end){
@@ -215,17 +215,17 @@ vm_t alloc_region(size_t size, size_t alignment)
 		if(n->next)
 			n->next->prev = n;
 
-		sp_free_insert_region(n);
+		sp_free_insert_region(r, n);
 	}
 
 	m->end = end;
 	m->start = start;
 	mark_region_used(m->flags);
-	sp_used_insert_region(m);
+	sp_used_insert_region(r, m);
 	return start;
 }
 
-static void __sp_try_coalesce_prev(struct sp_mem *m)
+static void __sp_try_coalesce_prev(struct sp_reg_root *r, struct sp_mem *m)
 {
 	while(m){
 		if(!m || is_region_used(m->flags))
@@ -241,14 +241,14 @@ static void __sp_try_coalesce_prev(struct sp_mem *m)
 		if(m->prev)
 			m->prev->next = m;
 
-		sp_remove(&sp_root(free_regions), &p->sp_n);
+		sp_remove(&sp_root(r->free_regions), &p->sp_n);
 		free_mem_node(p);
 
 		m = m->prev;
 	}
 }
 
-static void __sp_try_coalesce_next(struct sp_mem *m)
+static void __sp_try_coalesce_next(struct sp_reg_root *r, struct sp_mem *m)
 {
 	while(m){
 		if(!m || is_region_used(m->flags))
@@ -264,28 +264,62 @@ static void __sp_try_coalesce_next(struct sp_mem *m)
 		if(m->next)
 			m->next->prev = m;
 
-		sp_remove(&sp_root(free_regions), &n->sp_n);
+		sp_remove(&sp_root(r->free_regions), &n->sp_n);
 		free_mem_node(n);
 
 		m = m->next;
 	}
 }
 
-static void sp_mem_try_coalesce(struct sp_mem *m)
+static void sp_mem_try_coalesce(struct sp_reg_root *r, struct sp_mem *m)
 {
-	__sp_try_coalesce_prev(m);
-	__sp_try_coalesce_next(m);
+	__sp_try_coalesce_prev(r, m);
+	__sp_try_coalesce_next(r, m);
 }
 
-void free_region(vm_t start)
+void free_region(struct sp_reg_root *r, vm_t start)
 {
-	struct sp_mem *m = sp_used_find(start);
+	struct sp_mem *m = sp_used_find(r, start);
 	if(!m)
 		return;
 
-	sp_remove(&sp_root(used_regions), &m->sp_n);
+	sp_remove(&sp_root(r->used_regions), &m->sp_n);
 	mark_region_unused(m->flags);
 
-	sp_mem_try_coalesce(m);
-	sp_free_insert_region(m);
+	sp_mem_try_coalesce(r, m);
+	sp_free_insert_region(r, m);
+}
+
+void set_uvmem_size(size_t s)
+{
+	__uvmem_size = s;
+}
+
+size_t uvmem_size()
+{
+	return __uvmem_size;
+}
+
+vm_t map_fill_region(struct vm_branch_t *b, vm_t start, size_t bytes, uint8_t flags)
+{
+	size_t pages = bytes / BASE_PAGE_SIZE;
+	pm_t offset = 0;
+	for(size_t i = 0; i < pages; ++i){
+		offset = alloc_page(BASE_PAGE, offset);
+		map_vmem(b, offset, start + i * BASE_PAGE_SIZE, flags, BASE_PAGE);
+	}
+
+	return start;
+}
+
+vm_t alloc_uvmem(struct tcb *t, size_t s, uint8_t flags)
+{
+	size_t sa = align_up(s, BASE_PAGE_SIZE);
+	vm_t v = alloc_region(&t->sp_r, sa, 0);
+	return map_fill_region(t->b_r, v, sa, flags);
+}
+
+void free_uvmem(struct tcb *t, vm_t a)
+{
+	free_region(&t->sp_r, a);
 }

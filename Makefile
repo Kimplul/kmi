@@ -5,7 +5,7 @@ DEBUGFLAGS	!= [ $(RELEASE) ] && echo "-flto -O2" || echo "-O0 -ggdb3 -DDEBUG"
 CFLAGS		= -fno-pie -ffreestanding -nostdlib -std=c17 -Wall -Wextra
 DEPFLAGS	= -MT $@ -MMD -MP -MF $@.d
 
-all: apos.bin
+all: kernel.bin
 
 # default values, overwrite if/when needed
 ARCH		?= riscv
@@ -20,10 +20,8 @@ OBJCOPY		?= objcopy
 # This makes sure .bss is loaded into the binary
 OBJCOPY_FLAGS	?= -Obinary --set-section-flags .bss=alloc,load,contents
 
-COMMON_SOURCES	!= echo common/*.c lib/fdt*.c
-KERNEL_SOURCES	!= echo kernel/*.c $(COMMON_SOURCES)
-INIT_SOURCES	:= $(COMMON_SOURCES)
-CLEANUP		:= build deps.mk kernel.* init.* apos.bin
+KERNEL_SOURCES	!= echo common/*.c lib/*.c
+CLEANUP		:= build deps.mk kernel.* apos.bin
 CLEANUP_CMD	:=
 
 include arch/$(ARCH)/source.mk
@@ -43,30 +41,18 @@ KERN_SIZE	= wc -c kernel.bin | cut -d ' ' -f 1
 KERN_INFO	= sed "s/<KERNEL_SIZE>/$$($(KERN_SIZE))/"
 
 KERNEL_LINK	:= arch/$(ARCH)/conf/kernel-link
-INIT_LINK	:= arch/$(ARCH)/conf/init-link
 
-KERNEL_OBJECTS	!= ./scripts/gen-deps --kern "$(KERNEL_SOURCES)"
-INIT_OBJECTS	!= ./scripts/gen-deps --init "$(INIT_SOURCES)"
-KERNEL_LD	!= ./scripts/gen-deps --kern-link "$(KERNEL_LINK).S"
-INIT_LD		!= ./scripts/gen-deps --init-link "$(INIT_LINK).S"
+KERNEL_OBJECTS	!= ./scripts/gen-deps --compile "$(KERNEL_SOURCES)"
+KERNEL_LD	!= ./scripts/gen-deps --link "$(KERNEL_LINK).S"
 
 include deps.mk
-
-apos.bin: kernel.bin init.bin
-	cat init.bin kernel.bin > $@
 
 kernel.elf: $(KERNEL_OBJECTS) $(KERNEL_LD)
 	$(GENELF) -T $(KERNEL_LD) $(KERNEL_OBJECTS) -o $@
 
 $(INIT_LD): kernel.bin
 
-init.elf: $(INIT_OBJECTS) $(INIT_LD)
-	$(GENELF) -T $(INIT_LD) $(INIT_OBJECTS) -o $@
-
 kernel.bin: kernel.elf
-	$(CROSS_COMPILE)$(OBJCOPY) $(OBJCOPY_FLAGS) $< $@
-
-init.bin: init.elf
 	$(CROSS_COMPILE)$(OBJCOPY) $(OBJCOPY_FLAGS) $< $@
 
 clean:

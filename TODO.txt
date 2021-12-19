@@ -1,22 +1,6 @@
-+ Add in sensible defines (uint64_t etc.) x
-+ Improve build process (Kbuild? nah, regular config.h files)
-+ Automate booting and starting qemu etc. (make run) (sort of)
-+ Add in pmem/vmem routines (both .init and .text!)
-
-+ Test string.c
-+ Write the kernel lol
-+ Test libfdt and see if it can be used to read memory geometry etc.
-
-+ Jump to vmem x
-+ Mark fdt, reserved mem, kernel, init and initrd in vmem. Remember to remove
-init from vmem when jumping to vmem
-+ Figure out best way to tell the init how large out kernel is x~
-+ Make code more robust, error checking etc
-+ Make all physical memory addresses use the same typedef x
-
-+ should I consider passing more pointers around rather than return structures?
-+ should probably come up with some kind of general error handling scheme?
-
-+ Fix unmap/map_vmem when called from virtual memory
-
 + Investigate GCC/Clang builtin atomic operations?
+
++ Add in mapping the same memory to two different processes
++ Create sensible thread handling
++ Add in init process loading
++ Make sure vmap is in 4K increments or whatever

@@ -25,13 +25,7 @@ void free_page(enum mm_order_t order, pm_t paddr);
 void mark_used(enum mm_order_t order, pm_t paddr);
 pm_t alloc_page(enum mm_order_t order, pm_t offset);
 
-#if defined(INIT)
 pm_t populate_pmap(pm_t ram_base, size_t ram_size, pm_t cont);
 pm_t probe_pmap(pm_t ram_base, size_t ram_size);
-#endif
-
-#if defined(KERNEL)
-void init_pmap(void *p);
-#endif
 
 #endif /* APOS_PMEM_H */
