@@ -259,14 +259,16 @@ static void init_proc(void *fdt, struct vm_branch_t *b)
 	t->pid = 0;
 	t->tid = 0;
 	threads_insert(t);
-	sp_mem_init(&t->sp_r, uvmem_size());
+	sp_mem_init(&t->sp_r, -uvmem_size(), uvmem_size() - 1);
 
 	/* binary itself */
 	size_t sz = align_up(get_init_size(fdt), BASE_PAGE_SIZE);
-	t->bin = alloc_uvmem(t, sz, VM_V | VM_X);
+	t->bin = alloc_uvmem(t, sz, VM_V | VM_X | VM_R | VM_W | VM_U);
 	/* stack */
-	t->stack = alloc_uvmem(t, SZ_2M, VM_V | VM_R | VM_W);
+	t->stack = alloc_uvmem(t, SZ_2M, VM_V | VM_R | VM_W | VM_U);
 	/* if it needs heap, it'll ask for it */
+
+	__asm__ ("sfence.vma" : : : "memory");
 
 	move_init(fdt, (void *)t->bin);
 	jump_to_userspace(t, 0, 0);
@@ -277,6 +279,8 @@ void __main main(void *fdt)
 	init_dbg(fdt);
 	dbg_fdt(fdt);
 
+	/* allow supervisor code to touch user data */
+	csr_set(CSR_SSTATUS, SSTATUS_SUM);
 	struct vm_branch_t *b = init_vmem(fdt);
 	init_mem_blocks();
 	init_irq(fdt);

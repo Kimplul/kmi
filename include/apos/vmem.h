@@ -39,7 +39,7 @@ struct sp_mem {
  */
 
 /* defined by arch */
-int sp_mem_init(struct sp_reg_root *r, size_t nums);
+int sp_mem_init(struct sp_reg_root *r, vm_t start, size_t nums);
 
 vm_t alloc_uvmem(struct tcb *r, size_t s, uint8_t flags);
 void free_uvmem(struct tcb *r, vm_t a);

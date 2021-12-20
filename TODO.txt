@@ -6,3 +6,5 @@
 + Make sure vmap is in 4K increments or whatever
 + Remove/converge convnum and debugging __atoi
 + Create actual init program
+	+ That will need some kind of linking info, say, `place .text etc above
+	0xffffffadsadsad` or whatever. Should be doable, let's see.

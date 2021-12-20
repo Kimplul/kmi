@@ -101,10 +101,11 @@ static struct sp_mem *sp_used_insert_region(struct sp_reg_root *r, struct sp_mem
 	return m;
 }
 
-int sp_mem_init(struct sp_reg_root *r, size_t arena_size)
+int sp_mem_init(struct sp_reg_root *r, vm_t start, size_t arena_size)
 {
 	struct sp_mem *m = get_mem_node();
-	m->end = arena_size;
+	m->start = start;
+	m->end = start + arena_size;
 	sp_free_insert_region(r, m);
 
 	return 0;

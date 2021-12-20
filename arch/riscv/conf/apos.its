@@ -7,7 +7,7 @@
 	images {
 		kernel {
 			description = "Garbaggio";
-			data = /incbin/("../../../kernel.bin");
+			data = /incbin/("../../../apos.bin");
 			type = "kernel";
 			arch = "riscv";
 			os = "apos";
@@ -21,7 +21,7 @@
 
 		initrd {
 			description = "Gargabbio initrd";
-			data = /incbin/("initrd.txt");
+			data = /incbin/("initrd");
 			type = "ramdisk";
 			arch = "riscv";
 			os = "apos";

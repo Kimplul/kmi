@@ -75,7 +75,7 @@ pm_t get_initrdbase(void *fdt)
 }
 
 static char init_n[] = "init";
-static size_t init_nlen = ARRAY_SIZE(init_n);
+static size_t init_nlen = ARRAY_SIZE(init_n) - 1; /* ignore trailing NULL */
 
 size_t get_init_size(void *fdt)
 {

@@ -11,6 +11,11 @@
 #define pte_addr(pte) (pnum_to_paddr(pte_ppn(pte)))
 #define vm_to_index(a, o) (pm_to_index(a, o))
 
+void mod_vmem(struct vm_branch_t *branch, vm_t vaddr, uint8_t flags, enum mm_order_t order)
+{
+	/* todo */
+}
+
 void map_vmem(struct vm_branch_t *branch,
 		pm_t paddr, vm_t vaddr, uint8_t flags, enum mm_order_t order)
 {

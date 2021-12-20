@@ -3,7 +3,6 @@
 
 #include <apos/types.h>
 #include <apos/attrs.h>
-#include <apos/pmem.h>
 
 #define VM_V (1 << 0)
 #define VM_R (1 << 1)
@@ -24,12 +23,5 @@ typedef size_t vm_t;
 struct __packed vm_branch_t {
 	struct vm_branch_t *leaf[512];
 };
-
-
-void map_vmem(struct vm_branch_t *b,
-		pm_t paddr, vm_t vaddr, uint8_t flags, enum mm_order_t order);
-
-void unmap_vmem(struct vm_branch_t *b,
-		vm_t vaddr, enum mm_order_t order);
 
 #endif /* APOS_RISCV_VMAP_H */
