@@ -1,6 +1,7 @@
 #include <apos/debug.h>
 #include <apos/vmem.h>
 #include <apos/pmem.h>
+#include <apos/utils.h>
 #include <apos/types.h>
 #include <apos/mem.h>
 #include <apos/lock.h>
@@ -54,7 +55,7 @@ static struct pm_layout_t get_memlayout(void *fdt)
 
 	/* -1 because base is a legitimate memory address */
 	pm_t top = (pm_t)fdt_load_int_ptr(ci.size_cells, mem_reg) + base - 1;
-	return (struct pm_layout_t){__va(base), __va(top)};
+	return (struct pm_layout_t){(size_t)__va(base), (size_t)__va(top)};
 }
 
 static pm_t get_kerneltop()
@@ -161,10 +162,12 @@ static struct pm_layout_t setup_pmem(void *fdt)
 
 static struct pm_orders_t init_pmem(void *fdt)
 {
-	enum mm_mode_t mmode = get_mmode(fdt);
+	/* bad idea for now */
+	/* enum mm_mode_t mmode = get_mmode(fdt); */
 
 	size_t max_order = 0;
 	size_t order_bits = 9;
+	enum mm_mode_t mmode = Sv39;
 	switch(mmode){
 		case Sv32:
 			max_order = 1;
@@ -193,15 +196,20 @@ static struct pm_orders_t init_pmem(void *fdt)
 	return ret;
 }
 
-static void populate_root_branch(struct vm_branch_t *b, size_t mul)
+/* assume Sv39 for now */
+#define to_pte(a, f) (((a) >> 12) << 10 | (f))
+static void populate_root_branch(struct vm_branch_t *b)
 {
-	for(size_t i = 0; i <= (MM_KPAGE_SIZE / sizeof(size_t))/2; ++i)
-		b->leaf[i] = (struct vm_branch_t *)(mul * i | VM_V | VM_R | VM_W | VM_X | VM_G);
+	size_t flags = VM_V | VM_R | VM_W | VM_X | VM_G;
+	for(size_t i = 256; i < 512; ++i)
+		b->leaf[i] = (struct vm_branch_t *)to_pte(RAM_BASE + SZ_1G * (i - 256), flags);
 }
 
 static void start_vmem(struct vm_branch_t *branch, enum mm_mode_t m)
 {
 	/* TODO: get ASID from CPU id */
+
+	branch = (struct vm_branch_t *)__pa(branch);
 
 	if(m == Sv32)
 		csr_write(CSR_SATP, SATP_MODE_Sv32 | pm_to_pnum((pm_t)(branch)));
@@ -216,35 +224,15 @@ static void start_vmem(struct vm_branch_t *branch, enum mm_mode_t m)
 
 static struct vm_branch_t *init_vmem(void *fdt)
 {
-	struct pm_orders_t o = init_pmem(fdt);
+	init_pmem(fdt);
 	setup_pmem(fdt);
 
 	struct vm_branch_t *b = (struct vm_branch_t *)alloc_page(MM_KPAGE, 0);
 	memset(b, 0, sizeof(struct vm_branch_t));
 
-	enum mm_mode_t mm = Sv48;
-	size_t mul = 0;
-	switch(o.max_order){
-		case 3: /* Sv48 */
-			mm = Sv48;
-			mul = 1UL << 37;
-			break;
-
-		case 2: /* Sv39 */
-			mm = Sv39;
-			mul = 1UL << 28;
-			break;
-
-		case 1: /* Sv32 */
-			mm = Sv32;
-			mul = 1UL << 20;
-			break;
-	}
-
-	set_uvmem_size(mul);
-	populate_root_branch(b, uvmem_size());
-	/* jump to vmem */
-	start_vmem(b, mm);
+	populate_root_branch(b);
+	/* update which memory branch to use */
+	start_vmem(b, Sv39);
 	return b;
 }
 
@@ -259,7 +247,8 @@ static void init_proc(void *fdt, struct vm_branch_t *b)
 	t->pid = 0;
 	t->tid = 0;
 	threads_insert(t);
-	sp_mem_init(&t->sp_r, -uvmem_size(), uvmem_size() - 1);
+	/* first page reserved to avoid issues with null pointers being legal*/
+	sp_mem_init(&t->sp_r, SZ_4K, SZ_256G);
 
 	/* binary itself */
 	size_t sz = align_up(get_init_size(fdt), BASE_PAGE_SIZE);
@@ -274,8 +263,26 @@ static void init_proc(void *fdt, struct vm_branch_t *b)
 	jump_to_userspace(t, 0, 0);
 }
 
+#define __va_reg(reg)\
+{\
+	vm_t reg = 0;\
+	__asm__("mv %0, " QUOTE(reg) : "=r" (reg) :: );\
+	reg = (vm_t)__va(reg);\
+	__asm__("mv " QUOTE(reg) ", %0" :: "rK" (reg) : );\
+}
+
+static void update_stack()
+{
+	__va_reg(sp);
+	__va_reg(gp);
+}
+
 void __main main(void *fdt)
 {
+	__va_reg(sp);
+	__va_reg(fp);
+	__va_reg(gp);
+
 	/* correct fdt pointer */
 	fdt = (void *)__va(fdt);
 	init_dbg(fdt);

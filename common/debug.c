@@ -1,6 +1,7 @@
 #include <apos/types.h>
 #include <apos/debug.h>
 #include <apos/bits.h>
+#include <apos/vmem.h>
 #include <apos/pmem.h>
 #include <libfdt.h>
 #include <stdarg.h>

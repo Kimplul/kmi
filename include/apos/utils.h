@@ -14,6 +14,9 @@
 #define GLUE2(x, y) x##y
 #define GLUE(x, y) GLUE2(x, y)
 
+#define QUOTE2(x) #x
+#define QUOTE(x) QUOTE2(x)
+
 #include <apos/builtin.h>
 
 #if __has_builtin(__builtin_offsetof)

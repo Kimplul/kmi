@@ -11,6 +11,8 @@ struct __packed init_vmem {
 
 struct init_vmem *root_branch;
 
+#define to_pte(a, f) (((a) >> 12) << 10 | (f))
+
 /* assume Sv39 for now */
 void init_vmem()
 {
@@ -23,12 +25,13 @@ void init_vmem()
 
 	/* direct mapping (temp) */
 	for(size_t i = 0; i < 256; ++i)
-		root_branch->leaf[i] = (int *)((1UL << 28) * i | flags);
+		root_branch->leaf[i] = (int*)to_pte(SZ_1G * i, flags);
 
 	/* kernel (also sort of direct mapping) */
 	/* FIXME set up actually correct addressing retard */
+	flags |= VM_G;
 	for(size_t i = 256; i < 512; ++i)
-	root_branch->leaf[256] = (int *)(((RAM_BASE >> 12) << 10) | flags);
+		root_branch->leaf[i] = (int *)to_pte(RAM_BASE + SZ_1G * (i - 256), flags);
 
 	csr_write(CSR_SATP, SATP_MODE_Sv39 | ((size_t)root_branch >> 12));
 }

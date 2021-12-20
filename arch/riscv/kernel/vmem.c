@@ -4,11 +4,12 @@
 #include <apos/mem.h>
 #include <apos/debug.h>
 #include <pages.h>
+#include <vmem.h>
 
 #define pte_ppn(pte) (((pm_t)(pte)) >> 10)
 #define pte_flags(pte) (((pm_t)(pte)) & 0xff)
-#define to_pte(p, f) ((pm_to_pnum(p) << 10) + (f))
-#define pte_addr(pte) (pnum_to_paddr(pte_ppn(pte)))
+#define to_pte(p, f) ((pm_to_pnum((pm_t)__pa(p)) << 10) | (f))
+#define pte_addr(pte) __va(pnum_to_paddr(pte_ppn(pte)))
 #define vm_to_index(a, o) (pm_to_index(a, o))
 
 void mod_vmem(struct vm_branch_t *branch, vm_t vaddr, uint8_t flags, enum mm_order_t order)
@@ -51,7 +52,7 @@ void unmap_vmem(struct vm_branch_t *branch, vm_t vaddr, enum mm_order_t order)
 
 	size_t idx = pm_to_index(vaddr, order);
 	if (branch->leaf[idx])
-		free_page(order, pte_addr(branch->leaf[idx]));
+		free_page(order, (pm_t)pte_addr(branch->leaf[idx]));
 
 	branch->leaf[idx] = 0;
 }
