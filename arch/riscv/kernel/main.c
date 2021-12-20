@@ -54,7 +54,7 @@ static struct pm_layout_t get_memlayout(void *fdt)
 
 	/* -1 because base is a legitimate memory address */
 	pm_t top = (pm_t)fdt_load_int_ptr(ci.size_cells, mem_reg) + base - 1;
-	return (struct pm_layout_t){base, top};
+	return (struct pm_layout_t){__va(base), __va(top)};
 }
 
 static pm_t get_kerneltop()
@@ -276,6 +276,8 @@ static void init_proc(void *fdt, struct vm_branch_t *b)
 
 void __main main(void *fdt)
 {
+	/* correct fdt pointer */
+	fdt = (void *)__va(fdt);
 	init_dbg(fdt);
 	dbg_fdt(fdt);
 

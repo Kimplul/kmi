@@ -14,6 +14,10 @@ Offset		| Size		| Purpose
 -255 GiB	| 1 GiB		| Kernel IO
 -256 GiB	| 1 GiB		| Kernel
 
+(alternate scheme: Kernel vmem is itself a direct mapping?)
+(first 256KiB page reserved for whatever, next 256KiB reserved for kernel vma,
+ next 512KiB reserved for kernel pma?)
+
 Sv48:
 
 Offset		| Size		| Purpose

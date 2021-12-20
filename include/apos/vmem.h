@@ -26,7 +26,8 @@ struct sp_mem {
 #define mem_container(ptr)\
 	container_of(ptr, struct sp_mem, sp_n)
 
-
+#define __va(x) (((char *)(x)) + VM_DMAP - RAM_BASE)
+#define __pa(x) (((char *)(x)) + RAM_BASE - VM_DMAP)
 
 /* general overview of the different functions:
  * (un)map_vmem: map one known page of physical memory to one known page of

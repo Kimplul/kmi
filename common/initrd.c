@@ -1,4 +1,5 @@
 #include <apos/initrd.h>
+#include <apos/vmem.h>
 #include <apos/string.h>
 #include <apos/utils.h>
 #include <apos/attrs.h>
@@ -60,7 +61,8 @@ pm_t get_initrdtop(void *fdt)
 	void *initrd_end_ptr = (void *)fdt_getprop(fdt, chosen_offset,
 			"linux,initrd-end", NULL);
 
-	return (pm_t)fdt_load_int_ptr(ci.addr_cells, initrd_end_ptr);
+	/* fdt is only aware of physical memory pointers */
+	return (pm_t)__va(fdt_load_int_ptr(ci.addr_cells, initrd_end_ptr));
 }
 
 pm_t get_initrdbase(void *fdt)
@@ -71,7 +73,7 @@ pm_t get_initrdbase(void *fdt)
 	void *initrd_base_ptr = (void *)fdt_getprop(fdt, chosen_offset,
 			"linux,initrd-start", NULL);
 
-	return (pm_t)fdt_load_int_ptr(ci.addr_cells, initrd_base_ptr);
+	return (pm_t)__va(fdt_load_int_ptr(ci.addr_cells, initrd_base_ptr));
 }
 
 static char init_n[] = "init";

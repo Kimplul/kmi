@@ -51,6 +51,8 @@ INIT_LD		!= ./scripts/gen-deps --link "$(INIT_LINK).S"
 
 include deps.mk
 
+$(INIT_LD): kernel.bin
+
 init.elf: $(INIT_OBJECTS) $(INIT_LD)
 	$(GENELF) -T $(INIT_LD) $(INIT_OBJECTS) -o $@
 

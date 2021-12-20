@@ -1,5 +1,5 @@
 OUTPUT_ARCH(riscv)
-ENTRY(main)
+ENTRY(init)
 
 SECTIONS {
 	. = ABSOLUTE(PM_KERN);
@@ -27,4 +27,5 @@ SECTIONS {
 	}
 
 	__init_end = . ;
+	__kernel_size = <KERNEL_SIZE>;
 }

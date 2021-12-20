@@ -8,5 +8,6 @@
 #define __weak			__attribute__((weak))
 
 #define __main __section(".kernel.start") __noinline
+#define __init __section(".init.start") __noinline
 
 #endif /* APOS_COMPILER_ATTRIBUTES_H */
