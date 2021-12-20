@@ -11,25 +11,43 @@ gencommon () {
 	echo "${obj}: ${s}"		>> deps.mk
 
 }
-
 genlink () {
 	gencommon ".ld"
-	echo "	\$(GENLINK) $< | \$(STRIPLINK) | \$(KERN_INFO) > \$@"\
+	if [ "${init}" = "0" ] ; then
+		echo "	\$(GENLINK) $< | \$(STRIPLINK) > \$@"\
 		>> deps.mk;
+	else
+		echo "	\$(GENLINK) $< | \$(STRIPLINK) | \$(KERN_INFO) > \$@"\
+		>> deps.mk;
+	fi
+
 }
 
 genrule () {
 	gencommon "${1}"
-	echo "	\$(COMPILE)  -c \$< -o \$@"	>> deps.mk
+	echo "	\$(COMPILE) ${defs} -c \$< -o \$@"	>> deps.mk
 }
 
 case "${1}" in
-	--compile)
-		suffix=.o
+	--kern)
+		suffix=.k.o
+		defs=-DKERNEL
 		func=genrule
 		;;
-	--link)
+	--init)
+		suffix=.i.o
+		defs=-DINIT
+		func=genrule
+		;;
+	--init-link)
 		suffix=.ld
+		init=1
+		func=genlink
+		;;
+
+	--kern-link)
+		suffix=.ld
+		init=0
 		func=genlink
 esac
 
