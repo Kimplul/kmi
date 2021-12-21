@@ -29,6 +29,7 @@
 	((type *)((char *)(ptr) - offsetof(type, member)))
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+#define ALIGNED(x, a) ((x) % a == 0)
 
 #include <apos/types.h>
 

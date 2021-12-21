@@ -6,5 +6,13 @@
 + Make sure vmap is in 4K increments or whatever
 + Remove/converge convnum and debugging __atoi
 + Create actual init program
-	+ That will need some kind of linking info, say, `place .text etc above
-	0xffffffadsadsad` or whatever. Should be doable, let's see.
+
++ Add in (attempting) to map into specific region of memory, see phone for
+details dumbass
++ Primarily memory should be allocated to a process through mmap-like
+functionality, but brk/sbrk can probably still be emulated. If s/brk maps memory
+that's later attempted to mmap, it fails, and vice versa. Apparently should be
+acceptable by Unix standards.
++ Alignment can maybe still be used, though more in the sense of using larger
+pages? YES, CHECK common/vmem.c:map_fill_region! Should be implemented there as
+well

@@ -165,8 +165,9 @@ static struct sp_mem *sp_mem_create_region(vm_t start, vm_t end,
 	return m;
 }
 
-static struct sp_mem *sp_free_find_first(struct sp_reg_root *r, size_t size)
+static struct sp_mem *sp_free_find_first(struct sp_reg_root *r, size_t size, size_t *align)
 {
+	*align = 0;
 	struct sp_node *n = sp_root(r->free_regions);
 	while(n){
 		struct sp_mem *t = mem_container(n);
@@ -181,6 +182,52 @@ static struct sp_mem *sp_free_find_first(struct sp_reg_root *r, size_t size)
 	return 0;
 }
 
+/* TODO: should probably check if this actually works :D seems to do, but that's
+ * just from really quick checking */
+static size_t po_align(size_t s)
+{
+	for(size_t o = __mm_max_order; o > 0; --o){
+		if(s >= __o_size(o))
+			return __o_size(o);
+	}
+
+	return 0;
+}
+
+/* should probably document this a bit better but in short, look for the "best"
+ * free block, meaning one that is hopefully aligned so as to allow us to later
+ * map it to higher order pages. If no block is found such that that is
+ * possible, also keep track of the smallest block that we found that the region
+ * still fits in, unaligned. If none of these criteria are met, a NULL is
+ * returned. Note that this does not check *all* possible memory blocks, only
+ * going up in increasing size so as to save time. */
+static struct sp_mem *sp_find_free_best(struct sp_reg_root *r, size_t size, size_t *align)
+{
+	*align = 0;
+	size_t offset = __page(po_align(__addr(size)));
+	struct sp_mem *quick_best = 0;
+	struct sp_node *n = sp_root(r->free_regions);
+	while(n){
+		struct sp_mem *t = mem_container(n);
+		vm_t start = align_up(t->start, offset);
+
+		size_t qsize = t->end - t->start;
+		size_t bsize = t->end - start;
+
+		if(!quick_best && size <= qsize)
+			quick_best = t;
+
+		if(size <= bsize){
+			*align = start - t->start;
+			return t;
+		}
+
+		n = sp_right(n);
+	}
+
+	return quick_best;
+}
+
 /* apparently Linux doesn't necessarily give a shit about mmap hints, so I'll
  * just ignore them for now. Note that alloc_region should only be used when
  * mmap is called with MAP_ANON, all other situations should be handled in some
@@ -190,17 +237,32 @@ vm_t alloc_region(struct sp_reg_root *r,
 {
 	*actual_size = align_up(size, BASE_PAGE_SIZE);
 	size_t pages = __page(*actual_size);
-	struct sp_mem *m = sp_free_find_first(r, pages);
+
+	/* find best fitting, alignment etc. */
+	size_t align = 0;
+	struct sp_mem *m = sp_find_free_best(r, pages, &align);
 	if(!m)
 		return 0;
 
 	sp_remove(&sp_root(r->free_regions), &m->sp_n);
 
-	vm_t start = m->start;
-	vm_t end = m->start + pages;
+	vm_t pre_start = m->start;
+	vm_t pre_end = pre_start + align;
+
+	vm_t start = pre_end;
+	vm_t end = start + pages;
 
 	vm_t post_start = end;
 	vm_t post_end = m->end;
+
+	if(pre_start != pre_end){
+		struct sp_mem *n = sp_mem_create_region(pre_start, pre_end, m->prev, m);
+		m->prev = n;
+		if(n->prev)
+			n->prev->next = n;
+
+		sp_free_insert_region(r, n);
+	}
 
 	if(post_start != post_end){
 		struct sp_mem *n = sp_mem_create_region(post_start, post_end, m, m->next);
@@ -297,6 +359,7 @@ size_t uvmem_size()
 	return __uvmem_size;
 }
 
+/* TODO: add in ability to notice when a page can be mapped to a higher order */
 vm_t map_fill_region(struct vm_branch_t *b, vm_t start, size_t bytes, uint8_t flags)
 {
 	size_t pages = bytes / BASE_PAGE_SIZE;
