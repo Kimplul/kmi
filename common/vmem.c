@@ -103,6 +103,9 @@ static struct sp_mem *sp_used_insert_region(struct sp_reg_root *r, struct sp_mem
 
 int sp_mem_init(struct sp_reg_root *r, vm_t start, size_t arena_size)
 {
+	/* convert bytes to pages */
+	start = __page(start);
+	arena_size = __page(arena_size);
 	struct sp_mem *m = get_mem_node();
 	m->start = start;
 	m->end = start + arena_size;
@@ -162,12 +165,12 @@ static struct sp_mem *sp_mem_create_region(vm_t start, vm_t end,
 	return m;
 }
 
-static struct sp_mem *sp_free_find_first(struct sp_reg_root *r, size_t size, size_t alignment)
+static struct sp_mem *sp_free_find_first(struct sp_reg_root *r, size_t size)
 {
 	struct sp_node *n = sp_root(r->free_regions);
 	while(n){
 		struct sp_mem *t = mem_container(n);
-		size_t nsize = t->end - align_up(t->start, alignment);
+		size_t nsize = t->end - t->start;
 
 		if(size <= nsize)
 			return t;
@@ -182,33 +185,22 @@ static struct sp_mem *sp_free_find_first(struct sp_reg_root *r, size_t size, siz
  * just ignore them for now. Note that alloc_region should only be used when
  * mmap is called with MAP_ANON, all other situations should be handled in some
  * fs server */
-vm_t alloc_region(struct sp_reg_root *r, size_t size, size_t alignment)
+vm_t alloc_region(struct sp_reg_root *r,
+		size_t size, size_t *actual_size)
 {
-	struct sp_mem *m = sp_free_find_first(r, size, alignment);
+	*actual_size = align_up(size, BASE_PAGE_SIZE);
+	size_t pages = __page(*actual_size);
+	struct sp_mem *m = sp_free_find_first(r, pages);
 	if(!m)
 		return 0;
 
 	sp_remove(&sp_root(r->free_regions), &m->sp_n);
 
-	vm_t aligned_start = align_up(m->start, alignment);
-
-	vm_t pre_start = m->start;
-	vm_t pre_end = aligned_start;
-
-	vm_t start = pre_end;
-	vm_t end = aligned_start + size;
+	vm_t start = m->start;
+	vm_t end = m->start + pages;
 
 	vm_t post_start = end;
 	vm_t post_end = m->end;
-
-	if(pre_start != pre_end){
-		struct sp_mem *n = sp_mem_create_region(pre_start, pre_end, m->prev, m);
-		m->prev = n;
-		if(n->prev)
-			n->prev->next = n;
-
-		sp_free_insert_region(r, n);
-	}
 
 	if(post_start != post_end){
 		struct sp_mem *n = sp_mem_create_region(post_start, post_end, m, m->next);
@@ -223,7 +215,7 @@ vm_t alloc_region(struct sp_reg_root *r, size_t size, size_t alignment)
 	m->start = start;
 	mark_region_used(m->flags);
 	sp_used_insert_region(r, m);
-	return start;
+	return __addr(start);
 }
 
 static void __sp_try_coalesce_prev(struct sp_reg_root *r, struct sp_mem *m)
@@ -280,7 +272,11 @@ static void sp_mem_try_coalesce(struct sp_reg_root *r, struct sp_mem *m)
 
 void free_region(struct sp_reg_root *r, vm_t start)
 {
-	struct sp_mem *m = sp_used_find(r, start);
+	/* addr not aligned to page boundary, corrupted or incorrect pointer */
+	if(start != __addr(__page(start)))
+		return;
+
+	struct sp_mem *m = sp_used_find(r, __page(start));
 	if(!m)
 		return;
 
@@ -315,9 +311,8 @@ vm_t map_fill_region(struct vm_branch_t *b, vm_t start, size_t bytes, uint8_t fl
 
 vm_t alloc_uvmem(struct tcb *t, size_t s, uint8_t flags)
 {
-	size_t sa = align_up(s, BASE_PAGE_SIZE);
-	vm_t v = alloc_region(&t->sp_r, sa, 0);
-	return map_fill_region(t->b_r, v, sa, flags);
+	vm_t v = alloc_region(&t->sp_r, s, &s);
+	return map_fill_region(t->b_r, v, s, flags);
 }
 
 void free_uvmem(struct tcb *t, vm_t a)

@@ -28,15 +28,12 @@ struct sp_mem {
 
 #define __va(x) (((char *)(x)) + VM_DMAP - RAM_BASE)
 #define __pa(x) (((char *)(x)) + RAM_BASE - VM_DMAP)
+#define __page(x) ((x) / BASE_PAGE_SIZE)
+#define __addr(x) ((x) * BASE_PAGE_SIZE)
 
 /* general overview of the different functions:
- * (un)map_vmem: map one known page of physical memory to one known page of
- * virtual memory
- *
- * (un)map_vregion: map known physical region to unknown virtual region within
- * start and end
- *
- * (un)map_vsize: map unknown physical region to unknown virtual region
+ * internally they all work with pages, but they are called and return usable
+ * addresses, though within page bounds of course.
  */
 
 /* defined by arch */

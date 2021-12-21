@@ -23,6 +23,7 @@ struct tcb {
 	id_t tid;
 
 	vm_t stack;
+	vm_t heap;
 	vm_t bin;
 
 	struct vm_branch_t *b_r;

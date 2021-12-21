@@ -251,12 +251,14 @@ static void init_proc(void *fdt, struct vm_branch_t *b)
 	sp_mem_init(&t->sp_r, SZ_4K, SZ_256G);
 
 	/* binary itself */
-	size_t sz = align_up(get_init_size(fdt), BASE_PAGE_SIZE);
+	size_t sz = get_init_size(fdt);
+	/* these need to be fixed and actually map the addresses that the ELF
+	 * binary wants, instead of willy nilly */
 	t->bin = alloc_uvmem(t, sz, VM_V | VM_X | VM_R | VM_W | VM_U);
 	/* stack */
 	t->stack = alloc_uvmem(t, SZ_2M, VM_V | VM_R | VM_W | VM_U);
-	/* if it needs heap, it'll ask for it */
 
+	/* should probably wrap this in like tlb_flush_all() or something */
 	__asm__ ("sfence.vma" : : : "memory");
 
 	move_init(fdt, (void *)t->bin);
