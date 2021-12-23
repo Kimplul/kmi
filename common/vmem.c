@@ -165,23 +165,6 @@ static struct sp_mem *sp_mem_create_region(vm_t start, vm_t end,
 	return m;
 }
 
-static struct sp_mem *sp_free_find_first(struct sp_reg_root *r, size_t size, size_t *align)
-{
-	*align = 0;
-	struct sp_node *n = sp_root(r->free_regions);
-	while(n){
-		struct sp_mem *t = mem_container(n);
-		size_t nsize = t->end - t->start;
-
-		if(size <= nsize)
-			return t;
-
-		n = sp_right(n);
-	}
-
-	return 0;
-}
-
 /* TODO: should probably check if this actually works :D seems to do, but that's
  * just from really quick checking */
 static size_t po_align(size_t s)

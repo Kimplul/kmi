@@ -40,8 +40,10 @@ struct sp_mem {
 void map_vmem(struct vm_branch_t *branch,
 		pm_t paddr, vm_t vaddr, uint8_t flags, enum mm_order_t order);
 
-void unmap_vmem(struct vm_branch_t *branch,
-		vm_t vaddr, enum mm_order_t order);
+void unmap_vmem(struct vm_branch_t *branch, vm_t vaddr);
+int mod_vmem(struct vm_branch_t *branch, vm_t vaddr, pm_t paddr, uint8_t flags);
+int stat_vmem(struct vm_branch_t *branch, vm_t vaddr, pm_t *paddr,
+		enum mm_order_t *order, uint8_t *flags);
 
 int sp_mem_init(struct sp_reg_root *r, vm_t start, size_t nums);
 
