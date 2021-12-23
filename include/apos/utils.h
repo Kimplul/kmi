@@ -1,6 +1,8 @@
 #ifndef APOS_UTILS_H
 #define APOS_UTILS_H
 
+#define ABS(a) (a < 0 ? -a : a)
+
 #define MAX(a, b) ((a) >= (b) ? (a) : (b))
 #define MAX3(a, b, c) (MAX(a, b) >= MAX(b, c) ? MAX(a, b) : MAX(b, c))
 #define MAX4(a, b, c, d) (MAX3(a, b, c) >= MAX3(b, c, d) ? MAX3(a, b, c) : MAX3(b, c, d))

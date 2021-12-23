@@ -177,6 +177,32 @@ static size_t po_align(size_t s)
 	return 0;
 }
 
+static struct sp_mem *sp_find_used_closest(struct sp_reg_root *r, vm_t start)
+{
+	struct sp_mem *closest = 0;
+	size_t md = (size_t)(-1);
+	struct sp_node *n = sp_root(r->used_regions);
+	while(n){
+		struct sp_mem *t = mem_container(n);
+		size_t d = ABS((ssize_t)start - (ssize_t)t->start);
+
+		if(d == 0) /* exact match */
+			return t;
+
+		if(d < md){ /* closest so far */
+			closest = t;
+			md = d;
+		}
+
+		if(start < t->start)
+			n = sp_left(n);
+		else
+			n = sp_right(n);
+	}
+
+	return closest;
+}
+
 /* should probably document this a bit better but in short, look for the "best"
  * free block, meaning one that is hopefully aligned so as to allow us to later
  * map it to higher order pages. If no block is found such that that is
@@ -211,6 +237,41 @@ static struct sp_mem *sp_find_free_best(struct sp_reg_root *r, size_t size, size
 	return quick_best;
 }
 
+static size_t sp_use_region(struct sp_reg_root *r, struct sp_mem *m,
+		size_t pages, size_t align)
+{
+	sp_remove(&sp_root(r->free_regions), &m->sp_n);
+
+	vm_t pre_start = m->start;
+	vm_t pre_end = pre_start + align;
+	
+	vm_t start = pre_end;
+	vm_t end = start + pages;
+
+	vm_t post_start = end;
+	vm_t post_end = m->end;
+
+	if(pre_start != pre_end){
+		struct sp_mem *n = sp_mem_create_region(pre_start, pre_end, m->prev, m);
+		m->prev = n;
+		if(n->prev)
+			n->prev->next = n;
+	}
+
+	if(post_start != post_end){
+		struct sp_mem *n = sp_mem_create_region(post_start, post_end, m, m->next);
+		m->next = n;
+		if(n->next)
+			n->next->prev = n;
+	}
+
+	m->end = end;
+	m->start = start;
+	mark_region_used(m->flags);
+	sp_used_insert_region(r, m);
+	return __addr(start);
+}
+
 /* apparently Linux doesn't necessarily give a shit about mmap hints, so I'll
  * just ignore them for now. Note that alloc_region should only be used when
  * mmap is called with MAP_ANON, all other situations should be handled in some
@@ -227,40 +288,39 @@ vm_t alloc_region(struct sp_reg_root *r,
 	if(!m)
 		return 0;
 
-	sp_remove(&sp_root(r->free_regions), &m->sp_n);
+	return sp_use_region(r, m, pages, align);
+}
 
-	vm_t pre_start = m->start;
-	vm_t pre_end = pre_start + align;
 
-	vm_t start = pre_end;
-	vm_t end = start + pages;
+vm_t alloc_fixed_region(struct sp_reg_root *r,
+		vm_t start, size_t size, size_t *actual_size)
+{
+	*actual_size = align_up(size, BASE_PAGE_SIZE);
+	size_t pages = __page(*actual_size);
+	start = __page(start);
 
-	vm_t post_start = end;
-	vm_t post_end = m->end;
+	struct sp_mem *m = sp_find_used_closest(r, start);
+	if(!m)
+		return 0;
 
-	if(pre_start != pre_end){
-		struct sp_mem *n = sp_mem_create_region(pre_start, pre_end, m->prev, m);
-		m->prev = n;
-		if(n->prev)
-			n->prev->next = n;
-
-		sp_free_insert_region(r, n);
+	/* locate actual region where start is between the region start and end */
+	while(!((m->start <= start) && (start <= m->end))){
+		if(start < m->start)
+			m = m->next;
+		else
+			m = m->prev;
 	}
 
-	if(post_start != post_end){
-		struct sp_mem *n = sp_mem_create_region(post_start, post_end, m, m->next);
-		m->next = n;
-		if(n->next)
-			n->next->prev = n;
+	/* if region is already in use, forget it */
+	if(is_region_used(m->flags))
+		return 0;
 
-		sp_free_insert_region(r, n);
-	}
+	/* region is too small */
+	if(start + pages > m->end)
+		return 0;
 
-	m->end = end;
-	m->start = start;
-	mark_region_used(m->flags);
-	sp_used_insert_region(r, m);
-	return __addr(start);
+	/* actually start marking region used */
+	return sp_use_region(r, m, pages, start - m->start);
 }
 
 static void __sp_try_coalesce_prev(struct sp_reg_root *r, struct sp_mem *m)
