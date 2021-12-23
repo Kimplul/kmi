@@ -1,6 +1,6 @@
-#include <vmem.h>
 #include <apos/vmem.h>
 #include <apos/mem_nodes.h>
+#include <vmem.h>
 
 #define mark_region_used(r) ((r) = 1)
 #define mark_region_unused(r) ((r) = 0)
@@ -342,14 +342,35 @@ size_t uvmem_size()
 	return __uvmem_size;
 }
 
-/* TODO: add in ability to notice when a page can be mapped to a higher order */
+/* assuming start is chosen to start on an aligned border, this should choose
+ * the 'optimal' fit for the mapping.
+ *
+ * NOTE: not actually optimal, this doesn't bother to go through possible
+ * permutations etc. which would be slow and I don't want to implement it.
+ */
 vm_t map_fill_region(struct vm_branch_t *b, vm_t start, size_t bytes, uint8_t flags)
 {
-	size_t pages = bytes / BASE_PAGE_SIZE;
 	pm_t offset = 0;
-	for(size_t i = 0; i < pages; ++i){
-		offset = alloc_page(BASE_PAGE, offset);
-		map_vmem(b, offset, start + i * BASE_PAGE_SIZE, flags, BASE_PAGE);
+	pm_t runner = start;
+	size_t pages = __pages(bytes);
+	enum mm_order_t top = __mm_max_order;
+
+	for(; pages; top--){
+		size_t o_size = __o_size(top);
+		size_t o_pages = __pages(o_size);
+
+		if(!aligned(runner, o_size))
+			continue;
+
+		while(pages > o_pages){
+			offset = alloc_page(top, offset);
+			if(!offset)
+				break;
+
+			map_vmem(b, offset, runner, flags, top);
+			pages -= o_pages;
+			runner += o_size;
+		}
 	}
 
 	return start;

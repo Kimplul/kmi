@@ -54,6 +54,14 @@ static inline size_t align_down(size_t val, size_t a)
 	return val - (val % a);
 }
 
+static inline bool aligned(size_t val, size_t a)
+{
+	if (!a)
+		return true;
+
+	return val % a == 0;
+}
+
 static inline size_t asciinum(char c)
 {
 	if(c >= '0' && c <= '9')

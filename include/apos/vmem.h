@@ -30,6 +30,8 @@ struct sp_mem {
 #define __pa(x) (((char *)(x)) + RAM_BASE - VM_DMAP)
 #define __page(x) ((x) / BASE_PAGE_SIZE)
 #define __addr(x) ((x) * BASE_PAGE_SIZE)
+#define __pages(x) (__page(x))
+#define __bytes(x) (__addr(x))
 
 /* general overview of the different functions:
  * internally they all work with pages, but they are called and return usable

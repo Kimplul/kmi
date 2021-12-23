@@ -83,7 +83,7 @@ static void __destroy_branch(struct vm_branch_t *b)
 		return;
 
 	for(size_t i = 0; i < BASE_PAGE_SIZE / sizeof(pm_t); ++i){
-		if(is_branch(b->leaf[i]));
+		if(is_branch(b->leaf[i]))
 			__destroy_branch((struct vm_branch_t *)pte_addr(b->leaf[i]));
 
 		free_page(MM_KPAGE, (pm_t)pte_addr(b->leaf[i]));
