@@ -256,6 +256,8 @@ static size_t sp_use_region(struct sp_reg_root *r, struct sp_mem *m,
 		m->prev = n;
 		if(n->prev)
 			n->prev->next = n;
+
+		sp_free_insert_region(r, n);
 	}
 
 	if(post_start != post_end){
@@ -263,6 +265,8 @@ static size_t sp_use_region(struct sp_reg_root *r, struct sp_mem *m,
 		m->next = n;
 		if(n->next)
 			n->next->prev = n;
+
+		sp_free_insert_region(r, n);
 	}
 
 	m->end = end;
@@ -411,25 +415,31 @@ size_t uvmem_size()
 vm_t map_fill_region(struct vm_branch_t *b, vm_t start, size_t bytes, uint8_t flags)
 {
 	pm_t offset = 0;
-	pm_t runner = start;
+	pm_t runner = __page(start);
 	size_t pages = __pages(bytes);
 	enum mm_order_t top = __mm_max_order;
+
+	/* actual start might not be the same as the user specified start */
+	start = __addr(runner);
 
 	for(; pages; top--){
 		size_t o_size = __o_size(top);
 		size_t o_pages = __pages(o_size);
 
-		if(!aligned(runner, o_size))
+		/* NULL does pass this check, so technically all NULL pages are
+		 * aligned, but they're caught in the while expr so this should
+		 * work even if someone tries to map NULL */
+		if(!aligned(runner, o_pages))
 			continue;
 
-		while(pages > o_pages){
+		while(pages >= o_pages){
 			offset = alloc_page(top, offset);
 			if(!offset)
 				break;
 
-			map_vmem(b, offset, runner, flags, top);
+			map_vmem(b, offset, __addr(runner), flags, top);
 			pages -= o_pages;
-			runner += o_size;
+			runner += o_pages;
 		}
 	}
 

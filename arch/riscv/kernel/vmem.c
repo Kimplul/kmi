@@ -97,11 +97,6 @@ void map_vmem(struct vm_branch_t *branch,
 	while (top != order) {
 		size_t idx = vm_to_index(vaddr, top);
 
-		if (is_branch(branch->leaf[idx])){
-			__destroy_branch(branch->leaf[idx]);
-			branch->leaf[idx] = 0;
-		}
-
 		if (!branch->leaf[idx])
 			branch->leaf[idx] = __create_leaf();
 
@@ -111,6 +106,9 @@ void map_vmem(struct vm_branch_t *branch,
 	}
 
 	size_t idx = vm_to_index(vaddr, top);
+	if (is_branch(branch->leaf[idx])) /* something has gone terribly wrong */
+		__destroy_branch(branch->leaf[idx]);
+
 	branch->leaf[idx] = (struct vm_branch_t *)to_pte(paddr, flags);
 }
 
