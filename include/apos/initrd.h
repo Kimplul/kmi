@@ -3,9 +3,10 @@
 
 #include <apos/types.h>
 #include <apos/pmem.h>
+#include <apos/vmem.h>
 
 size_t get_init_size(void *fdt);
-void move_init(void *fdt, void *target);
+vm_t get_init_base(void *fdt);
 
 pm_t get_initrdtop(void *fdt);
 pm_t get_initrdbase(void *fdt);

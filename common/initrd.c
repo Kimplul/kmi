@@ -86,6 +86,14 @@ size_t get_init_size(void *fdt)
 	return convnum(cp->c_filesize, 8, 16);
 }
 
+vm_t get_init_base(void *fdt)
+{
+	char *c = (char *)get_initrdbase(fdt);
+	struct cpio_header *cp = find_file(c, init_n, init_nlen);
+	size_t name_len = convnum(cp->c_namesize, 8, 16);
+	return ((vm_t)cp) + align_up(sizeof(struct cpio_header) + name_len, 4);
+}
+
 void move_init(void *fdt, void *target)
 {
 	char *c = (char *)get_initrdbase(fdt);

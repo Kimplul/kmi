@@ -299,8 +299,11 @@ vm_t alloc_region(struct sp_reg_root *r,
 vm_t alloc_fixed_region(struct sp_reg_root *r,
 		vm_t start, size_t size, size_t *actual_size)
 {
-	*actual_size = align_up(size, BASE_PAGE_SIZE);
-	size_t pages = __page(*actual_size);
+	size_t asize = align_up(size, BASE_PAGE_SIZE);
+	if(actual_size)
+		*actual_size = asize;
+
+	size_t pages = __page(asize);
 	start = __page(start);
 
 	struct sp_mem *m = sp_find_used_closest(r, start);
@@ -309,7 +312,7 @@ vm_t alloc_fixed_region(struct sp_reg_root *r,
 
 	/* locate actual region where start is between the region start and end */
 	while(!((m->start <= start) && (start <= m->end))){
-		if(start < m->start)
+		if(start > m->start)
 			m = m->next;
 		else
 			m = m->prev;

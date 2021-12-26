@@ -252,17 +252,13 @@ static void init_proc(void *fdt, struct vm_branch_t *b)
 
 	/* binary itself */
 	size_t sz = get_init_size(fdt);
-	/* these need to be fixed and actually map the addresses that the ELF
-	 * binary wants, instead of willy nilly */
-	t->bin = alloc_uvmem(t, sz, VM_V | VM_X | VM_R | VM_W | VM_U);
-	/* stack */
+	/* stack (?) */
 	t->stack = alloc_uvmem(t, SZ_2M, VM_V | VM_R | VM_W | VM_U);
 
 	/* should probably wrap this in like tlb_flush_all() or something */
 	__asm__ ("sfence.vma" : : : "memory");
 
-	move_init(fdt, (void *)t->bin);
-	jump_to_userspace(t, 0, 0);
+	jump_to_userspace(t, get_init_base(fdt), 0, 0);
 }
 
 #define __va_reg(reg)\
@@ -292,6 +288,9 @@ void __main main(void *fdt)
 
 	/* allow supervisor code to touch user data */
 	csr_set(CSR_SSTATUS, SSTATUS_SUM);
+	/* maybe this is too early but mark that we want to jump to user mode
+	 * eventually*/
+	csr_clear(CSR_SSTATUS, SSTATUS_SPP);
 	struct vm_branch_t *b = init_vmem(fdt);
 	init_mem_blocks();
 	init_irq(fdt);

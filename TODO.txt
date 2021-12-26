@@ -3,9 +3,9 @@
 + Add in mapping the same memory to two different processes
 + Create sensible thread handling
 + Add in init process loading
-+ Make sure vmap is in 4K increments or whatever
++ Make sure vmap is in 4K increments or whatever (fuck it, sure)
 + Remove/converge convnum and debugging __atoi
-+ Create actual init program
++ Create actual init program (meh, sort of)
 
 + Add in (attempting) to map into specific region of memory, see phone for
 details dumbass

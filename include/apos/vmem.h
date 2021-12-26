@@ -30,7 +30,7 @@ struct sp_mem {
 #define __pa(x) (((char *)(x)) + RAM_BASE - VM_DMAP)
 #define __page(x) ((x) / BASE_PAGE_SIZE)
 #define __addr(x) ((x) * BASE_PAGE_SIZE)
-#define __pages(x) (__page(x))
+#define __pages(x) (aligned((x), BASE_PAGE_SIZE) ? __page((x)) : __page((x) + BASE_PAGE_SIZE))
 #define __bytes(x) (__addr(x))
 
 /* general overview of the different functions:
@@ -49,7 +49,11 @@ int stat_vmem(struct vm_branch_t *branch, vm_t vaddr, pm_t *paddr,
 
 int sp_mem_init(struct sp_reg_root *r, vm_t start, size_t nums);
 
-vm_t alloc_uvmem(struct tcb *r, size_t s, uint8_t flags);
+vm_t alloc_region(struct sp_reg_root *r, size_t size, size_t *actual_size);
+vm_t alloc_fixed_region(struct sp_reg_root *r, vm_t start, size_t size, size_t *actual_size);
+void free_region(struct sp_reg_root *r, vm_t start);
+
+vm_t alloc_uvmem(struct tcb *r, size_t size, uint8_t flags);
 void free_uvmem(struct tcb *r, vm_t a);
 
 vm_t map_fill_region(struct vm_branch_t *b, vm_t start, size_t bytes, uint8_t flags);

@@ -39,6 +39,7 @@
 
 /* status CSR bits */
 #define SSTATUS_SUM		(1 << 18)
+#define SSTATUS_SPP		(1 << 8)
 
 /* directly lifted from Linux:/arch/riscv/include/asm/asm.h:9-13 */
 #ifdef __ASSEMBLY__

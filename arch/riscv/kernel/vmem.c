@@ -19,7 +19,8 @@
 static pm_t *__find_vmem(struct vm_branch_t *b, vm_t v, enum mm_order_t *o)
 {
 	enum mm_order_t top = __mm_max_order;
-	*o = MM_O0;
+	if(o)
+		*o = MM_O0;
 	do {
 		size_t idx = vm_to_index(v, top);
 		pm_t pte = (pm_t)b->leaf[idx];
@@ -59,7 +60,7 @@ int stat_vmem(struct vm_branch_t *branch, vm_t vaddr, pm_t *paddr,
 	pm_t *pte = __find_vmem(branch, vaddr, order);
 	if(pte){
 		if(paddr)
-			*paddr = pte_paddr(*pte);
+			*paddr = (pm_t)pte_addr(*pte);
 
 		if(flags)
 			*flags = pte_flags(*pte);

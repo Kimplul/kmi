@@ -33,6 +33,8 @@
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 #define ALIGNED(x, a) ((x) % a == 0)
 
+#define ptradd(x, y) (((vm_t)(x)) + ((vm_t)(y)))
+
 #include <apos/types.h>
 
 static inline size_t align_up(size_t val, size_t a)
