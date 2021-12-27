@@ -19,6 +19,8 @@
 #define QUOTE2(x) #x
 #define QUOTE(x) QUOTE2(x)
 
+#define UNUSED(x) ((void)(x))
+
 #include <apos/builtin.h>
 
 #if __has_builtin(__builtin_offsetof)

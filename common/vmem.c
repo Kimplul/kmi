@@ -449,10 +449,16 @@ vm_t map_fill_region(struct vm_branch_t *b, vm_t start, size_t bytes, uint8_t fl
 	return start;
 }
 
-vm_t alloc_uvmem(struct tcb *t, size_t s, uint8_t flags)
+vm_t alloc_uvmem(struct tcb *t, size_t size, uint8_t flags)
 {
-	vm_t v = alloc_region(&t->sp_r, s, &s);
-	return map_fill_region(t->b_r, v, s, flags);
+	vm_t v = alloc_region(&t->sp_r, size, &size);
+	return map_fill_region(t->b_r, v, size, flags);
+}
+
+vm_t alloc_fixed_uvmem(struct tcb *t, vm_t start, size_t size, uint8_t flags)
+{
+	vm_t v = alloc_fixed_region(&t->sp_r, start, size, &size);
+	return map_fill_region(t->b_r, v, size, flags);
 }
 
 void free_uvmem(struct tcb *t, vm_t a)

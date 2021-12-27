@@ -20,7 +20,7 @@ OBJCOPY		?= objcopy
 # This makes sure .bss is loaded into the binary
 OBJCOPY_FLAGS	?= -Obinary --set-section-flags .bss=alloc,load,contents
 
-KERNEL_SOURCES	!= echo common/*.c lib/*.c
+KERNEL_SOURCES	!= echo common/*.c common/uapi/*.c lib/*.c
 CLEANUP		:= build deps.mk kernel.* init.* apos.bin
 CLEANUP_CMD	:=
 INIT_SOURCES	:=

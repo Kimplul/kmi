@@ -54,6 +54,7 @@ vm_t alloc_fixed_region(struct sp_reg_root *r, vm_t start, size_t size, size_t *
 void free_region(struct sp_reg_root *r, vm_t start);
 
 vm_t alloc_uvmem(struct tcb *r, size_t size, uint8_t flags);
+vm_t alloc_fixed_uvmem(struct tcb *r, vm_t start, size_t size, uint8_t flags);
 void free_uvmem(struct tcb *r, vm_t a);
 
 vm_t map_fill_region(struct vm_branch_t *b, vm_t start, size_t bytes, uint8_t flags);

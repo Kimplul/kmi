@@ -4,6 +4,7 @@
 struct tcb;
 struct sp_reg_root;
 
+#include <tcb.h>
 #include <vmem.h>
 #include <apos/vmem.h>
 #include <apos/types.h>
@@ -18,18 +19,20 @@ struct sp_reg_root {
 
 struct tcb {
 	struct sp_node sp_n;
+	struct sp_reg_root sp_r;
+	struct arch_tcbd tcbd;
 
 	id_t pid;
 	id_t tid;
 
+	vm_t callback;
 	vm_t stack;
-	vm_t heap;
-	vm_t bin;
 
 	struct vm_branch_t *b_r;
-	struct sp_reg_root sp_r;
 };
 
 void threads_insert(struct tcb *t);
+struct tcb *cur_tcb();
+struct tcb *get_tcb(id_t tid);
 
 #endif /* APOS_TCB_H */

@@ -16,3 +16,6 @@ acceptable by Unix standards.
 + Alignment can maybe still be used, though more in the sense of using larger
 pages? YES, CHECK common/vmem.c:map_fill_region! Should be implemented there as
 well
++ check elf.c "skip while testing" comment, remove when sufficiently pleased
+with the system. Christ, what a terrible way to develop software :D
++ Start working on syscalls etc.

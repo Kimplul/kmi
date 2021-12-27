@@ -144,7 +144,7 @@ static struct pm_layout_t setup_pmem(void *fdt)
 	/* mark init stack, at the moment always mapped to 2M */
 	mark_used(PM_STACK_BASE, MM_MPAGE);
 
-	/* mark kernel, at the moment it is always mapped to a 2M partition */
+	/* mark kernel, at the moment with a 2M partition */
 	mark_used(PM_KERN, MM_MPAGE);
 
 	/* mark fdt and initrd */
@@ -267,12 +267,6 @@ static void init_proc(void *fdt, struct vm_branch_t *b)
 	__asm__("mv %0, " QUOTE(reg) : "=r" (reg) :: );\
 	reg = (vm_t)__va(reg);\
 	__asm__("mv " QUOTE(reg) ", %0" :: "rK" (reg) : );\
-}
-
-static void update_stack()
-{
-	__va_reg(sp);
-	__va_reg(gp);
 }
 
 void __main main(void *fdt)

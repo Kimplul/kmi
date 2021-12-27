@@ -3,6 +3,7 @@
 #include <apos/sp_tree.h>
 
 static struct sp_root t_root = (struct sp_root){0};
+static struct tcb *__tcb_cache[MAX_CPUS] = {0};
 
 #define tcb_container(x) \
 	container_of(x, struct tcb, sp_n)
@@ -52,4 +53,19 @@ struct tcb *threads_find(id_t tid)
 	}
 
 	return 0;
+}
+
+struct tcb *get_tcb(id_t pid)
+{
+	/* TODO: figure out how exactly thread IDs are related to process IDs,
+	 * and figure out mapping between them. */
+	return 0;
+}
+
+struct tcb *cur_tcb()
+{
+	/* TODO: probably keep an array of processor ID's somewhere where each
+	 * ID has a corresponding 'currently executing thread ID' field, and
+	 * reutrn that. */
+	return __tcb_cache[cpu_id()];
 }
