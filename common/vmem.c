@@ -182,6 +182,9 @@ static struct sp_mem *sp_find_used_closest(struct sp_reg_root *r, vm_t start)
 	struct sp_mem *closest = 0;
 	size_t md = (size_t)(-1);
 	struct sp_node *n = sp_root(r->used_regions);
+	if(!n)
+		return mem_container(sp_root(r->free_regions));
+
 	while(n){
 		struct sp_mem *t = mem_container(n);
 		size_t d = ABS((ssize_t)start - (ssize_t)t->start);
@@ -415,12 +418,12 @@ size_t uvmem_size()
  * NOTE: not actually optimal, this doesn't bother to go through possible
  * permutations etc. which would be slow and I don't want to implement it.
  */
-vm_t map_fill_region(struct vm_branch_t *b, vm_t start, size_t bytes, uint8_t flags)
+vm_t map_fill_region(struct vm_branch *b, vm_t start, size_t bytes, uint8_t flags)
 {
 	pm_t offset = 0;
 	pm_t runner = __page(start);
 	size_t pages = __pages(bytes);
-	enum mm_order_t top = __mm_max_order;
+	enum mm_order top = __mm_max_order;
 
 	/* actual start might not be the same as the user specified start */
 	start = __addr(runner);

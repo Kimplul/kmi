@@ -39,13 +39,22 @@ struct sp_mem {
  */
 
 /* defined by arch */
-void map_vmem(struct vm_branch_t *branch,
-		pm_t paddr, vm_t vaddr, uint8_t flags, enum mm_order_t order);
+void map_vmem(struct vm_branch *branch,
+		pm_t paddr, vm_t vaddr, uint8_t flags, enum mm_order order);
 
-void unmap_vmem(struct vm_branch_t *branch, vm_t vaddr);
-int mod_vmem(struct vm_branch_t *branch, vm_t vaddr, pm_t paddr, uint8_t flags);
-int stat_vmem(struct vm_branch_t *branch, vm_t vaddr, pm_t *paddr,
-		enum mm_order_t *order, uint8_t *flags);
+void unmap_vmem(struct vm_branch *branch, vm_t vaddr);
+int mod_vmem(struct vm_branch *branch, vm_t vaddr, pm_t paddr, uint8_t flags);
+int stat_vmem(struct vm_branch *branch, vm_t vaddr, pm_t *paddr,
+		enum mm_order *order, uint8_t *flags);
+
+int setup_kernel_io(struct vm_branch *b, vm_t paddr);
+void populate_root_branch(struct vm_branch *b);
+struct vm_branch *init_vmem(void *fdt);
+
+void flush_tlb();
+void flush_tlb_all();
+
+/* defined in common */
 
 int sp_mem_init(struct sp_reg_root *r, vm_t start, size_t nums);
 
@@ -57,7 +66,7 @@ vm_t alloc_uvmem(struct tcb *r, size_t size, uint8_t flags);
 vm_t alloc_fixed_uvmem(struct tcb *r, vm_t start, size_t size, uint8_t flags);
 void free_uvmem(struct tcb *r, vm_t a);
 
-vm_t map_fill_region(struct vm_branch_t *b, vm_t start, size_t bytes, uint8_t flags);
+vm_t map_fill_region(struct vm_branch *b, vm_t start, size_t bytes, uint8_t flags);
 
 size_t uvmem_size();
 void set_uvmem_size(size_t s);

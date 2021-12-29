@@ -1,8 +1,8 @@
 OUTPUT_ARCH(riscv)
-ENTRY(init)
+ENTRY(_start)
 
 SECTIONS {
-	. = ABSOLUTE(PM_KERN);
+	. = ABSOLUTE(PM_KERN_BASE);
 	__init_start = .;
 
 	/* objcopy only copies these three sections (as far as I'm aware) into the

@@ -1,9 +1,13 @@
 #include <apos/irq.h>
 #include <csr.h>
 
-void irq_handler()
+void init_irq(void *fdt)
 {
+	UNUSED(fdt);
+}
 
+void handle_irq()
+{
 }
 
 /* very simple for now */

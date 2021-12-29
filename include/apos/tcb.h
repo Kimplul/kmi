@@ -31,7 +31,7 @@ struct tcb {
 
 	vm_t entry;
 
-	struct vm_branch_t *b_r;
+	struct vm_branch *b_r;
 };
 
 void threads_insert(struct tcb *t);

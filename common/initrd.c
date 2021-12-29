@@ -56,7 +56,7 @@ static struct cpio_header *find_file(char *c, char* fname, size_t fname_len)
 pm_t get_initrdtop(void *fdt)
 {
 	int chosen_offset = fdt_path_offset(fdt, "/chosen");
-	struct cell_info_t ci = get_cellinfo(fdt, chosen_offset);
+	struct cell_info ci = get_cellinfo(fdt, chosen_offset);
 
 	void *initrd_end_ptr = (void *)fdt_getprop(fdt, chosen_offset,
 			"linux,initrd-end", NULL);
@@ -68,7 +68,7 @@ pm_t get_initrdtop(void *fdt)
 pm_t get_initrdbase(void *fdt)
 {
 	int chosen_offset = fdt_path_offset(fdt, "/chosen");
-	struct cell_info_t ci = get_cellinfo(fdt, chosen_offset);
+	struct cell_info ci = get_cellinfo(fdt, chosen_offset);
 
 	void *initrd_base_ptr = (void *)fdt_getprop(fdt, chosen_offset,
 			"linux,initrd-start", NULL);

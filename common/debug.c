@@ -59,7 +59,7 @@ static void __putchar(char c)
 	port->data = c;
 }
 
-static enum serial_dev_t serial_dev_enum(const char *dev_name)
+static enum serial_dev serial_dev_enum(const char *dev_name)
 {
 	if (strncmp("ns16550", dev_name, 7) == 0)
 		return NS16550A;
@@ -67,7 +67,7 @@ static enum serial_dev_t serial_dev_enum(const char *dev_name)
 	return -1;
 }
 
-struct dbg_info_t dbg_from_fdt(void *fdt)
+struct dbg_info dbg_from_fdt(void *fdt)
 {
 	int chosen_offset = fdt_path_offset(fdt, "/chosen");
 	const char *stdout = fdt_getprop(fdt, chosen_offset, "stdout-path", NULL);
@@ -78,22 +78,22 @@ struct dbg_info_t dbg_from_fdt(void *fdt)
 	const char *dev_name = (const char *)fdt_getprop(fdt, stdout_offset,
 			"compatible", NULL);
 
-	enum serial_dev_t dev = serial_dev_enum(dev_name);
+	enum serial_dev dev = serial_dev_enum(dev_name);
 
 	/* get serial device address */
-	struct cell_info_t ci = get_reginfo(fdt, stdout);
+	struct cell_info ci = get_reginfo(fdt, stdout);
 	void *reg_ptr = (void *)fdt_getprop(fdt, stdout_offset, "reg", NULL);
 
-	void *dbg_ptr = (void *)(pm_t)fdt_load_int_ptr(ci.addr_cells, reg_ptr);
+	pm_t dbg_ptr = (pm_t)fdt_load_int_ptr(ci.addr_cells, reg_ptr);
 
-	return (struct dbg_info_t){dbg_ptr, dev};
+	return (struct dbg_info){dbg_ptr, dev};
 }
 
-void dbg_init(void *pt, enum serial_dev_t dev)
+void setup_dbg(vm_t pt, enum serial_dev dev)
 {
 	switch (dev) {
 		case NS16550A:
-			port = pt;
+			port = (struct ns16550a *)pt;
 			break;
 	}
 

@@ -67,3 +67,8 @@ struct tcb *cur_tcb()
 {
 	return __tcb_cache[cpu_id()];
 }
+
+void set_tcb(struct tcb *t)
+{
+	__tcb_cache[cpu_id()] = t;
+}

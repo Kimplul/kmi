@@ -1,6 +1,9 @@
 #include <apos/pmem.h>
+#include <apos/debug.h>
+#include <apos/initrd.h>
 #include <apos/string.h> /* memset */
 #include <apos/bits.h> /* __is_nset etc */
+#include <libfdt.h>
 
 /* NOTE: these are all for pnum_t, i.e. O0_SHIFT is from 0 */
 #define __foreach_page(var, start, end, attr, neg)\
@@ -41,7 +44,7 @@ struct mm_branch_t {
 struct mm_omap_t {
 	pm_t base;
 	mm_node_t **orders;
-	enum mm_order_t order;
+	enum mm_order order;
 };
 
 struct mm_pmap_t {
@@ -50,8 +53,8 @@ struct mm_pmap_t {
 
 static struct mm_pmap_t *pmap = 0;
 
-static void __mark_free(mm_node_t * op, pnum_t pnum, enum mm_order_t tgt,
-	enum mm_order_t src, enum mm_order_t dst)
+static void __mark_free(mm_node_t * op, pnum_t pnum, enum mm_order tgt,
+	enum mm_order src, enum mm_order dst)
 {
 	size_t idx = pnum_to_index(pnum, src);
 
@@ -69,7 +72,7 @@ static void __mark_free(mm_node_t * op, pnum_t pnum, enum mm_order_t tgt,
 	__clear_nbit(o->full[__o_container(idx)], __o_bit(idx));
 }
 
-void free_page(enum mm_order_t order, pm_t paddr)
+void free_page(enum mm_order order, pm_t paddr)
 {
 	for (size_t i = MM_O0; i <= __mm_max_order; ++i) {
 		if (!pmap->omap[i])
@@ -88,8 +91,8 @@ void free_page(enum mm_order_t order, pm_t paddr)
 	}
 }
 
-static bool __mark_used(mm_node_t * op, pnum_t pnum, enum mm_order_t tgt,
-	enum mm_order_t src, enum mm_order_t dst)
+static bool __mark_used(mm_node_t * op, pnum_t pnum, enum mm_order tgt,
+	enum mm_order src, enum mm_order dst)
 {
 	size_t idx = pnum_to_index(pnum, src);
 
@@ -123,7 +126,7 @@ static bool __mark_used(mm_node_t * op, pnum_t pnum, enum mm_order_t tgt,
 	return false;
 }
 
-void mark_used(enum mm_order_t order, pm_t paddr)
+void mark_used(enum mm_order order, pm_t paddr)
 {
 	for (size_t i = MM_O0; i <= __mm_max_order; ++i) {
 		if (!pmap->omap[i])
@@ -143,7 +146,7 @@ void mark_used(enum mm_order_t order, pm_t paddr)
 }
 
 static pnum_t __enum_order(mm_node_t * op, pnum_t offset,
-	enum mm_order_t src, enum mm_order_t dst)
+	enum mm_order src, enum mm_order dst)
 {
 	size_t idx = pnum_to_index(offset, src);
 
@@ -173,7 +176,7 @@ static pnum_t __enum_order(mm_node_t * op, pnum_t offset,
 	return -1;
 }
 
-pm_t alloc_page(enum mm_order_t order, pm_t offset)
+pm_t alloc_page(enum mm_order order, pm_t offset)
 {
 	if (order > __mm_max_order)
 		return 0;
@@ -204,57 +207,9 @@ pm_t alloc_page(enum mm_order_t order, pm_t offset)
 	return paddr;
 }
 
-
-
-static void __update_order(mm_node_t * op, pm_t base, pm_t offset,
-	enum mm_order_t src, enum mm_order_t dst)
-{
-	if (src == dst) {
-		struct mm_leaf_t *o = (struct mm_leaf_t *)op;
-		o->used = (mm_info_t *) move_paddr(o->used, base, offset);
-		return;
-	}
-
-	struct mm_branch_t *o = (struct mm_branch_t *)op;
-	o->full = (mm_info_t *) move_paddr(o->full, base, offset);
-	for (size_t i = 0; i < o->entries; ++i) {
-		__update_order(o->next[i], base, offset, src - 1, dst);
-		o->next[i] =
-			(mm_node_t **) move_paddr(o->next[i], base, offset);
-	}
-
-	o->next = (mm_node_t **) move_paddr(o->next, base, offset);
-}
-
-static void __update_omap(struct mm_omap_t *omap, pm_t base, pm_t offset)
-{
-	for (size_t i = MM_O0; i <= omap->order; ++i) {
-		__update_order(omap->orders[i], base, offset, omap->order, i);
-		omap->orders[i] =
-			(mm_node_t *) move_paddr(omap->orders[i], base, offset);
-	}
-
-	omap->orders = (mm_node_t **) move_paddr(omap->orders, base, offset);
-}
-
-void update_pmap(pm_t offset)
-{
-	pm_t base = (pm_t) pmap;
-	for (size_t i = 0; i <= __mm_max_order; ++i) {
-		if (!pmap->omap[i])
-			continue;
-
-		__update_omap(pmap->omap[i], base, offset);
-		pmap->omap[i] = (struct mm_omap_t *)move_paddr(pmap->omap[i],
-			base, offset);
-	}
-
-	pmap = (struct mm_pmap_t *)move_paddr(pmap, base, offset);
-}
-
 /* unfortunate that populating the mm info is so complicated */
 static pm_t __populate_order(mm_node_t ** op, pm_t cont,
-	enum mm_order_t src, enum mm_order_t dst, size_t num)
+	enum mm_order src, enum mm_order dst, size_t num)
 {
 	if (src == dst) {
 		struct mm_leaf_t *o = (struct mm_leaf_t *)
@@ -286,7 +241,7 @@ static pm_t __populate_order(mm_node_t ** op, pm_t cont,
 	return cont;
 }
 
-static pm_t __probe_order(pm_t cont, enum mm_order_t src, enum mm_order_t dst,
+static pm_t __probe_order(pm_t cont, enum mm_order src, enum mm_order dst,
 		size_t num)
 {
 	if(src == dst){
@@ -306,7 +261,7 @@ static pm_t __probe_order(pm_t cont, enum mm_order_t src, enum mm_order_t dst,
 }
 
 static pm_t __populate_omap(struct mm_omap_t **omap, pm_t cont,
-	pm_t base, size_t entries, enum mm_order_t order)
+	pm_t base, size_t entries, enum mm_order order)
 {
 	struct mm_omap_t *lomap = (struct mm_omap_t *)
 		move_forward(cont, sizeof(struct mm_omap_t));
@@ -327,7 +282,7 @@ static pm_t __populate_omap(struct mm_omap_t **omap, pm_t cont,
 	return cont;
 }
 
-static pm_t __probe_omap(pm_t cont, size_t entries, enum mm_order_t order)
+static pm_t __probe_omap(pm_t cont, size_t entries, enum mm_order order)
 {
 	cont += sizeof(struct mm_omap_t);
 	cont += (order + 1) * sizeof(mm_node_t **);
@@ -388,8 +343,104 @@ pm_t probe_pmap(pm_t ram_base, size_t ram_size)
 	return cont;
 }
 
-/* only call from kernel */
-void init_pmap(void *p)
+static void mark_area_used(pm_t base, pm_t top)
 {
-	pmap = (struct mm_pmap_t *)p;
+	size_t area_left = top - base;
+	pm_t runner = base;
+	while(area_left >= BASE_PAGE_SIZE){
+		mark_used(BASE_PAGE, runner);
+		runner += BASE_PAGE_SIZE;
+		area_left -= BASE_PAGE_SIZE;
+	}
+
+	if(area_left != 0)
+		mark_used(BASE_PAGE, runner);
+}
+
+static void mark_reserved_mem(void *fdt)
+{
+	int rmem_offset = fdt_path_offset(fdt, "/reserved-memory/mmode_resv0");
+	struct cell_info ci = get_reginfo(fdt, "/reserved-memory/mmode_resv0");
+	uint8_t *rmem_reg = (uint8_t *)fdt_getprop(fdt, rmem_offset, "reg", NULL);
+
+	pm_t base = (pm_t)fdt_load_int_ptr(ci.addr_cells, rmem_reg);
+
+	if(ci.addr_cells == 2)
+		rmem_reg += sizeof(fdt64_t);
+	else
+		rmem_reg += sizeof(fdt32_t);
+
+	pm_t top = (pm_t)fdt_load_int_ptr(ci.size_cells, rmem_reg) + base;
+	mark_area_used((pm_t)__va(base), (pm_t)__va(top));
+}
+
+static pm_t get_ramtop(void *fdt)
+{
+	struct cell_info ci = get_reginfo(fdt, "/memory");
+	int mem_offset = fdt_path_offset(fdt, "/memory");
+	uint8_t *mem_reg = (uint8_t *)fdt_getprop(fdt, mem_offset, "reg", NULL);
+
+	pm_t base = (pm_t)fdt_load_int_ptr(ci.addr_cells, mem_reg);
+
+	if(ci.addr_cells == 2)
+		mem_reg += sizeof(fdt64_t);
+	else
+		mem_reg += sizeof(fdt32_t);
+
+	return (pm_t)fdt_load_int_ptr(ci.size_cells, mem_reg) + base;
+}
+
+static pm_t get_fdttop(void *fdt)
+{
+	const char *b = (const char *)fdt;
+	return (pm_t)(b + fdt_totalsize(fdt));
+}
+
+static pm_t get_fdtbase(void *fdt)
+{
+	/* lol */
+	return (pm_t)fdt;
+}
+
+void init_pmem(void *fdt)
+{
+	size_t max_order = 0;
+	size_t base_bits = 0;
+	size_t bits[ORDERS_NUM] = {0};
+	arch_pmem_conf(fdt, &max_order, &base_bits, bits);
+	init_mem(max_order, bits, base_bits);
+
+	pm_t ram_size = get_ramtop(fdt) - RAM_BASE;
+	pm_t ram_base = (pm_t)__va(RAM_BASE);
+
+	pm_t initrd_top = get_initrdtop(fdt);
+	pm_t fdt_top = get_fdttop(fdt);
+
+	/* find probably most suitable contiguous region of ram for our physical
+	 * ram map */
+	pm_t pmap_base = align_up(MAX(initrd_top, fdt_top), sizeof(int));
+
+	size_t probe_size = probe_pmap(ram_base, ram_size);
+	size_t actual_size = populate_pmap(ram_base, ram_size, pmap_base);
+
+	if(probe_size != actual_size)
+		dbg("BUG! probe_size (%#lx) != actual_size (%#lx)\n",
+				probe_size, actual_size);
+
+	/* mark init stack, this should be unmapped once we get to executing
+	 * processes */
+	mark_area_used((pm_t)__va(PM_STACK_BASE), (pm_t)__va(PM_STACK_TOP));
+
+	/* mark kernel */
+	mark_area_used((pm_t)__va(PM_KERN_BASE), (pm_t)__va(PM_KERN_TOP));
+
+	/* mark fdt and initrd */
+	mark_area_used(get_initrdbase(fdt), initrd_top);
+	mark_area_used(get_fdtbase(fdt), fdt_top);
+
+	/* mark pmap */
+	mark_area_used(pmap_base, pmap_base + actual_size);
+
+	/* mark reserved mem */
+	mark_reserved_mem(fdt);
 }

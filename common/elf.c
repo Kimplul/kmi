@@ -72,9 +72,9 @@ static vm_t __prepare_proc(struct tcb *t, uint8_t ei_c, vm_t elf)
 }
 
 /* sets up all memory regions etc, returns the entry address */
-vm_t prepare_proc(struct tcb *t, vm_t p)
+vm_t load_elf(struct tcb *t, vm_t b)
 {
-	struct elf_ident *i = (struct elf_ident *)p;
+	struct elf_ident *i = (struct elf_ident *)b;
 	if(i->ei_magic != cpu_to_be32(EI_MAGIC))
 		return 0;
 
@@ -82,5 +82,5 @@ vm_t prepare_proc(struct tcb *t, vm_t p)
 			return 0;
 
 	/* more sanity checks? */
-	return __prepare_proc(t, i->ei_class, p);
+	return __prepare_proc(t, i->ei_class, b);
 }

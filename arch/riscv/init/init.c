@@ -1,6 +1,7 @@
 #include <apos/types.h>
 #include <apos/attrs.h>
 #include <apos/utils.h>
+#include <apos/vmem.h>
 #include <vmem.h>
 #include <csr.h>
 
@@ -14,29 +15,24 @@ struct init_vmem *root_branch;
 #define to_pte(a, f) (((a) >> 12) << 10 | (f))
 
 /* assume Sv39 for now */
-void init_vmem()
+void init_bootmem()
 {
 	size_t flags = VM_V | VM_X | VM_R | VM_W;
 
 	extern char *__init_start;
 	root_branch = (struct init_vmem *)align_down((size_t)&__init_start - SZ_4K, SZ_4K);
-	for(size_t i = 0; i < 512; ++i)
-		root_branch->leaf[i] = 0;
 
 	/* direct mapping (temp) */
-	for(size_t i = 0; i < 256; ++i)
+	for(size_t i = 0; i < CSTACK_PAGE; ++i)
 		root_branch->leaf[i] = (int*)to_pte(SZ_1G * i, flags);
 
 	/* kernel (also sort of direct mapping) */
-	/* FIXME set up actually correct addressing retard */
 	flags |= VM_G;
-	for(size_t i = 256; i < 511; ++i)
+	for(size_t i = KSTART_PAGE; i < IO_PAGE; ++i)
 		root_branch->leaf[i] = (int *)to_pte(RAM_BASE + SZ_1G * (i - 256), flags);
 
-	/* kernel IO, map to 0 for now, should be made more robust in the future */
-	/* same goes for the equivalent piece of code over in kernel/main.c,
-	 * which btw should really get refactored, it's a mess */
-	root_branch->leaf[511] = (int *)to_pte(0, flags);
+	/* kernel IO, map to 0 for now, will be updated in the future */
+	root_branch->leaf[IO_PAGE] = (int *)to_pte(0, flags);
 
 	csr_write(CSR_SATP, SATP_MODE_Sv39 | ((size_t)root_branch >> 12));
 }
@@ -53,11 +49,22 @@ void move_kernel()
 		dst[i] = src[i];
 }
 
-void __init init(void *fdt)
+#define __va_reg(reg)\
+{\
+	vm_t reg = 0;\
+	__asm__("mv %0, " QUOTE(reg) : "=r" (reg) :: );\
+	reg = (vm_t)__va(reg);\
+	__asm__("mv " QUOTE(reg) ", %0" :: "rK" (reg) : );\
+}
+
+void init(void *fdt)
 {
 	extern char *__init_end;
 	void (*kernel_main)(void *fdt) = (void (*)(void *))(VM_KERN);
-	init_vmem();
+	init_bootmem();
 	move_kernel();
-	kernel_main(fdt);
+	__va_reg(sp);
+	__va_reg(fp);
+	__va_reg(gp);
+	kernel_main(__va(fdt));
 }

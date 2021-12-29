@@ -13,15 +13,15 @@
 #define VM_A (1 << 6)
 #define VM_D (1 << 7)
 
-enum mm_mode_t {
+enum mm_mode {
 	Sv48,
 	Sv39,
 	Sv32,
 };
 
 typedef size_t vm_t;
-struct __packed vm_branch_t {
-	struct vm_branch_t *leaf[512];
+struct __packed vm_branch {
+	struct vm_branch *leaf[512];
 };
 
 #endif /* APOS_RISCV_VMAP_H */

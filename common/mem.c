@@ -24,25 +24,3 @@ void init_mem(size_t max_order, size_t bits[10], size_t page_shift)
 		__mm_sizes[i] = 1UL << __mm_shifts[i] << __mm_page_shift;
 	}
 }
-
-enum mm_mode_t get_mmode(void *fdt)
-{
-	int mmu_offset = fdt_path_offset(fdt, "/cpus/cpu");
-	const char *mmu = fdt_getprop(fdt, mmu_offset, "mmu-type", NULL);
-
-	if(strncmp("riscv,sv48", mmu, 10) == 0)
-		return Sv48;
-
-	if(strncmp("riscv,sv39", mmu, 10) == 0)
-		return Sv39;
-
-	if(strncmp("riscv,sv32", mmu, 10) == 0)
-		return Sv32;
-
-	/* fdt is missing mmu-type for some reason, but we can probably use
-	 * these values as fallback */
-	if(__riscv_xlen == 32)
-		return Sv32;
-	else
-		return Sv39;
-}
