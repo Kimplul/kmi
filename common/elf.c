@@ -15,7 +15,7 @@ static void __map_exec(struct tcb *t, vm_t bin, uint8_t ei_c, vm_t phstart, size
 		size_t vsz = program_header_prop(ei_c, runner, p_memsz);
 
 		vm_t start = 0;
-		if(!(start = alloc_fixed_region(&t->sp_r, va, vsz, 0)))
+		if(!(start = alloc_fixed_region(&t->sp_r, va, vsz, &vsz)))
 				return; /* out of memory or something */
 
 		uint8_t vflags = VM_V | VM_U;
@@ -36,6 +36,9 @@ static void __map_exec(struct tcb *t, vm_t bin, uint8_t ei_c, vm_t phstart, size
 		memcpy((void *)va, (void *)vo, vfz);
 
 		/* skip while testing
+		 * TODO: also fix, this fixes only the first region. Create new
+		 * function?
+		 *
 		pm_t paddr = 0;
 		stat_vmem(t->b_r, va, &paddr, 0, 0);
 		mod_vmem(t->b_r, va, paddr, vflags);

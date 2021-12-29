@@ -30,7 +30,7 @@ struct pm_orders_t {
 static void init_dbg(void *fdt)
 {
 	struct dbg_info_t dbg = dbg_from_fdt(fdt);
-	dbg_init(dbg.dbg_ptr, dbg.dev);
+	dbg_init(dbg.dbg_ptr + (-SZ_1G), dbg.dev);
 }
 
 #else
@@ -201,8 +201,11 @@ static struct pm_orders_t init_pmem(void *fdt)
 static void populate_root_branch(struct vm_branch_t *b)
 {
 	size_t flags = VM_V | VM_R | VM_W | VM_X | VM_G;
-	for(size_t i = 256; i < 512; ++i)
+	for(size_t i = 256; i < 511; ++i)
 		b->leaf[i] = (struct vm_branch_t *)to_pte(RAM_BASE + SZ_1G * (i - 256), flags);
+
+	/* very lazy, should be ashamed, yes */
+	b->leaf[511] = (struct vm_branch_t *)to_pte(0, flags);
 }
 
 static void start_vmem(struct vm_branch_t *branch, enum mm_mode_t m)
@@ -247,13 +250,16 @@ static void init_proc(void *fdt, struct vm_branch_t *b)
 	t->pid = 0;
 	t->tid = 0;
 	threads_insert(t);
-	/* first page reserved to avoid issues with null pointers being legal*/
-	sp_mem_init(&t->sp_r, SZ_4K, SZ_256G);
+	/* first page reserved to avoid issues with null pointers being legal */
+	/* last gig page (assuming Sv39) reserved for call stack */
+	sp_mem_init(&t->sp_r, SZ_4K, SZ_256G - SZ_1G);
 
-	/* binary itself */
-	size_t sz = get_init_size(fdt);
-	/* stack (?) */
-	t->stack = alloc_uvmem(t, SZ_2M, VM_V | VM_R | VM_W | VM_U);
+	/* stack (should probably be set up to allow for configuration
+	 * parameters to be passed) */
+	t->proc_stack = alloc_uvmem(t, SZ_2M, VM_V | VM_R | VM_W | VM_U);
+	/* if need be, the call stack can later be expanded, but this init
+	 * program uses it like this. */
+	t->call_stack = setup_call_stack(t, SZ_256G - SZ_1G + SZ_2M, SZ_2M);
 
 	/* should probably wrap this in like tlb_flush_all() or something */
 	__asm__ ("sfence.vma" : : : "memory");
@@ -269,7 +275,7 @@ static void init_proc(void *fdt, struct vm_branch_t *b)
 	__asm__("mv " QUOTE(reg) ", %0" :: "rK" (reg) : );\
 }
 
-void __main main(void *fdt)
+void __main arch_main(void *fdt)
 {
 	__va_reg(sp);
 	__va_reg(fp);

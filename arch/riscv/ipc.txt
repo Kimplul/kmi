@@ -1,0 +1,7 @@
+Current idea: Have a bunch of servers that allow IPC requests. Each IPC request
+to a server temporarily maps the server's address space etc. into the calling
+functions address space, except for the callstack. Callstack should be a bunch
+of 4K pages, so they can easily be mapped to be unreachable by deeper nested
+server calls, whereas the normal stack can be mapped to higher order pages to
+save a little bit of memory access latency when the client is operating
+normally.

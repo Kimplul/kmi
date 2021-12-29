@@ -26,7 +26,10 @@ struct tcb {
 	id_t tid;
 
 	vm_t callback;
-	vm_t stack;
+	vm_t proc_stack;
+	vm_t call_stack;
+
+	vm_t entry;
 
 	struct vm_branch_t *b_r;
 };

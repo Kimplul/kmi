@@ -30,8 +30,13 @@ void init_vmem()
 	/* kernel (also sort of direct mapping) */
 	/* FIXME set up actually correct addressing retard */
 	flags |= VM_G;
-	for(size_t i = 256; i < 512; ++i)
+	for(size_t i = 256; i < 511; ++i)
 		root_branch->leaf[i] = (int *)to_pte(RAM_BASE + SZ_1G * (i - 256), flags);
+
+	/* kernel IO, map to 0 for now, should be made more robust in the future */
+	/* same goes for the equivalent piece of code over in kernel/main.c,
+	 * which btw should really get refactored, it's a mess */
+	root_branch->leaf[511] = (int *)to_pte(0, flags);
 
 	csr_write(CSR_SATP, SATP_MODE_Sv39 | ((size_t)root_branch >> 12));
 }

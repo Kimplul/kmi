@@ -1,4 +1,5 @@
 #include <apos/tcb.h>
+#include <apos/cpu.h>
 #include <apos/utils.h>
 #include <apos/sp_tree.h>
 
@@ -64,8 +65,5 @@ struct tcb *get_tcb(id_t pid)
 
 struct tcb *cur_tcb()
 {
-	/* TODO: probably keep an array of processor ID's somewhere where each
-	 * ID has a corresponding 'currently executing thread ID' field, and
-	 * reutrn that. */
 	return __tcb_cache[cpu_id()];
 }

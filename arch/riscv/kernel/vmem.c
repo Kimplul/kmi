@@ -120,3 +120,13 @@ void unmap_vmem(struct vm_branch_t *branch, vm_t vaddr)
 	if(pte)
 		*pte = 0;
 }
+
+void flush_tlb(id_t cpu_id)
+{
+	__asm__("sfence.vma %0\n" :: "rk" (cpu_id) : "memory");
+}
+
+void flush_tlb_all()
+{
+	__asm__("sfence.vma\n" ::: "memory");
+}

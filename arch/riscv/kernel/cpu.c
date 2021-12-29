@@ -1,6 +1,6 @@
 #include <apos/cpu.h>
 
-unsigned cpu_id()
+id_t cpu_id()
 {
 	return 0; /* VERY MUCH TEMP */
 }

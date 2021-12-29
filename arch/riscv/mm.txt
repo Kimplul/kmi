@@ -18,6 +18,12 @@ Offset		| Size		| Purpose
 (first 256KiB page reserved for whatever, next 256KiB reserved for kernel vma,
  next 512KiB reserved for kernel pma?)
 
+Sv39, final answer:
+
+First 255 pages are userspace (uvmem), page 255 is reserved for callstack.
+Following 255 pages are reserved for kernel 'direct mapping', and the 512th page
+is reserved for kernel IO.
+
 Sv48:
 
 Offset		| Size		| Purpose

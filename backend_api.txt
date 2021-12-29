@@ -1,0 +1,21 @@
+Some functionality the different arch backends should support
+
++ cpu_id() - return the ID of the current process executing the code, with
+regular indexing (0 - MAX_CPUS), that is.
+
++ map_vpage() - map one page according to the specs given.
++ stat_vpage() - get info about mapping at virtual address.
++ mod_vpage() - modify mapping at virtual address.
++ unmap_vpage() - unmap page at virtual address.
+
++ flush_tlb() - flush TLB cache for running cpu.
++ flush_tlb_all() - flush all TLC caches. (note, flush_tlb is allowed to just
+		call flush_tlb_all if the arch doesn't support per-cpu
+		flushing.)
++ flush_tlb_region() - ??? maybe?
+
++ enable_irq() - enable interrupts
++ disable_irq() - disable interrupts
+
++ probably more stuff, just not entirely sure what parts should go where yet.
++ the backend also has to define a memory layout, of course.
