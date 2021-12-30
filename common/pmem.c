@@ -1,4 +1,5 @@
 #include <apos/pmem.h>
+#include <apos/dev.h>
 #include <apos/debug.h>
 #include <apos/initrd.h>
 #include <apos/string.h> /* memset */
@@ -72,6 +73,7 @@ static void __mark_free(mm_node_t * op, pnum_t pnum, enum mm_order tgt,
 	__clear_nbit(o->full[__o_container(idx)], __o_bit(idx));
 }
 
+/* this could probably use an int for status, but eh */
 void free_page(enum mm_order order, pm_t paddr)
 {
 	for (size_t i = MM_O0; i <= __mm_max_order; ++i) {
@@ -443,4 +445,6 @@ void init_pmem(void *fdt)
 
 	/* mark reserved mem */
 	mark_reserved_mem(fdt);
+
+	init_devmem((pm_t)__pa(ram_base), (pm_t)__pa(ram_base + ram_size));
 }

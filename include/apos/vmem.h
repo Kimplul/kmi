@@ -43,6 +43,7 @@ void map_vmem(struct vm_branch *branch,
 		pm_t paddr, vm_t vaddr, uint8_t flags, enum mm_order order);
 
 void unmap_vmem(struct vm_branch *branch, vm_t vaddr);
+
 int mod_vmem(struct vm_branch *branch, vm_t vaddr, pm_t paddr, uint8_t flags);
 int stat_vmem(struct vm_branch *branch, vm_t vaddr, pm_t *paddr,
 		enum mm_order *order, uint8_t *flags);
@@ -66,9 +67,23 @@ vm_t alloc_uvmem(struct tcb *r, size_t size, uint8_t flags);
 vm_t alloc_fixed_uvmem(struct tcb *r, vm_t start, size_t size, uint8_t flags);
 void free_uvmem(struct tcb *r, vm_t a);
 
-vm_t map_fill_region(struct vm_branch *b, vm_t start, size_t bytes, uint8_t flags);
+vm_t map_fill_region(struct vm_branch *b,
+		int (*vmem_handler)(struct vm_branch *, pm_t *, vm_t, uint8_t, enum mm_order),
+		pm_t offset, vm_t start, size_t bytes, uint8_t flags);
+
+#define map_allocd_region(b, start, bytes, flags)\
+	map_fill_region(b, &alloc_mem_wrapper, 0, start, bytes, flags)
+
+#define unmap_freed_region(b, start, bytes)\
+	map_fill_region(b, &free_mem_wrapper, 0, start, bytes, 0)
+
+int alloc_mem_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr, uint8_t flags, enum mm_order order);
+int free_mem_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr, uint8_t flags, enum mm_order order);
 
 size_t uvmem_size();
 void set_uvmem_size(size_t s);
+
+/* not entirely sure if this is clean enough, but it'll do for now. */
+struct sp_mem *sp_used_find(struct sp_reg_root *r, vm_t start);
 
 #endif /* APOS_VMEM_H */

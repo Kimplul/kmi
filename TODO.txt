@@ -19,3 +19,13 @@ well
 + check elf.c "skip while testing" comment, remove when sufficiently pleased
 with the system. Christ, what a terrible way to develop software :D
 + Start working on syscalls etc.
+
++ NUMA is probably fairly easy to setup, just add more pmaps I guess, although
+it does sort of mess with the current device memory setup, which assumes there
+is only one memory region and everything below/above it is device memory
+regions. Not entirely sure how to handle that situation, i.e. is it safe to
+assume all devices are below the first NUMA node? No clue.
+
++ The dev interface can be abused, if a program decides to spam through all
+memory addresses the system will probably run out of memory. Not sure if it's
+worh doing anything to.

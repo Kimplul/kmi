@@ -137,7 +137,7 @@ void sp_mem_destroy(struct sp_reg_root *r)
  * eh, it's not a massive thing I guess, maybe the code could be a bit quicker
  * but I mean 10 000 000 memory allocations in 20 s is good enough for now
  * */
-static struct sp_mem *sp_used_find(struct sp_reg_root *r, vm_t start)
+struct sp_mem *sp_used_find(struct sp_reg_root *r, vm_t start)
 {
 	struct sp_node *n = sp_root(r->used_regions);
 	while(n){
@@ -388,7 +388,7 @@ static void sp_mem_try_coalesce(struct sp_reg_root *r, struct sp_mem *m)
 void free_region(struct sp_reg_root *r, vm_t start)
 {
 	/* addr not aligned to page boundary, corrupted or incorrect pointer */
-	if(start != __addr(__page(start)))
+	if(!aligned(start, BASE_PAGE_SIZE))
 		return;
 
 	struct sp_mem *m = sp_used_find(r, __page(start));
@@ -418,9 +418,10 @@ size_t uvmem_size()
  * NOTE: not actually optimal, this doesn't bother to go through possible
  * permutations etc. which would be slow and I don't want to implement it.
  */
-vm_t map_fill_region(struct vm_branch *b, vm_t start, size_t bytes, uint8_t flags)
+vm_t map_fill_region(struct vm_branch *b,
+		int (*vmem_handler)(struct vm_branch *, pm_t *, vm_t, uint8_t, enum mm_order),
+		pm_t offset, vm_t start, size_t bytes, uint8_t flags)
 {
-	pm_t offset = 0;
 	pm_t runner = __page(start);
 	size_t pages = __pages(bytes);
 	enum mm_order top = __mm_max_order;
@@ -439,11 +440,13 @@ vm_t map_fill_region(struct vm_branch *b, vm_t start, size_t bytes, uint8_t flag
 			continue;
 
 		while(pages >= o_pages){
-			offset = alloc_page(top, offset);
-			if(!offset)
+			int res = vmem_handler(b, &offset, __addr(runner), flags, top);
+			if(res > 0)
 				break;
 
-			map_vmem(b, offset, __addr(runner), flags, top);
+			if(res < 0)
+				return 0;
+
 			pages -= o_pages;
 			runner += o_pages;
 		}
@@ -452,19 +455,51 @@ vm_t map_fill_region(struct vm_branch *b, vm_t start, size_t bytes, uint8_t flag
 	return start;
 }
 
+int alloc_mem_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr, uint8_t flags, enum mm_order order)
+{
+	*offset = alloc_page(order, *offset);
+	if(!*offset)
+		return 1; /* try again */
+
+	map_vmem(b, *offset, vaddr, flags, order);
+	return 0;
+}
+
+int free_mem_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr, uint8_t flags, enum mm_order order)
+{
+	UNUSED(flags); UNUSED(offset);
+
+	pm_t paddr = 0;
+	enum mm_order v_order = 0;
+	stat_vmem(b, vaddr, &paddr, &v_order, 0);
+	if(order != v_order)
+		return -1;
+
+	unmap_vmem(b, vaddr);
+	free_page(order, paddr);
+	return 0;
+}
+
 vm_t alloc_uvmem(struct tcb *t, size_t size, uint8_t flags)
 {
 	vm_t v = alloc_region(&t->sp_r, size, &size);
-	return map_fill_region(t->b_r, v, size, flags);
+	return map_allocd_region(t->b_r, v, size, flags);
 }
 
 vm_t alloc_fixed_uvmem(struct tcb *t, vm_t start, size_t size, uint8_t flags)
 {
 	vm_t v = alloc_fixed_region(&t->sp_r, start, size, &size);
-	return map_fill_region(t->b_r, v, size, flags);
+	return map_allocd_region(t->b_r, v, size, flags);
 }
 
-void free_uvmem(struct tcb *t, vm_t a)
+void free_uvmem(struct tcb *t, vm_t va)
 {
-	free_region(&t->sp_r, a);
+	struct sp_mem *m = sp_used_find(&t->sp_r, va);
+	if(!m)
+		return;
+
+	pm_t pa = __addr(m->end - m->start);
+
+	free_region(&t->sp_r, va);
+	unmap_freed_region(t->b_r, va, pa);
 }

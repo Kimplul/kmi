@@ -3,9 +3,31 @@
 #include <apos/bytes.h>
 #include <apos/string.h>
 
+static uint8_t __elf_to_uvflags(uint8_t elf_flags)
+{
+	uint8_t uvflags = VM_V | VM_U;
+	if(elf_flags & PF_X)
+		uvflags |= VM_X;
+
+	if(elf_flags & PF_W)
+		uvflags |= VM_W;
+
+	if(elf_flags & PF_R)
+		uvflags |= VM_R;
+
+	return uvflags;
+}
+
+/* useful bit of info: all segments are sorted in ascending order of p_vaddr */
 static void __map_exec(struct tcb *t, vm_t bin, uint8_t ei_c, vm_t phstart, size_t phnum, size_t phsize)
 {
 	/* TODO: take alignment into consideration? */
+	/* TODO: take overlapping memory regions into account, probably mostly
+	 * by keeping track of previously allocated area and seeing if the
+	 * segment fits into it */
+	/* TODO: check if p_memsz is larger than p_filesz, the segment should be
+	 * filled with zeroes. */
+	/* TODO: in general, make this a low more clean. */
 	vm_t runner = phstart;
 	for(size_t i = 0; i < phnum; ++i, runner += phsize){
 		if(program_header_prop(ei_c, runner, p_type) != PT_LOAD)
@@ -14,41 +36,35 @@ static void __map_exec(struct tcb *t, vm_t bin, uint8_t ei_c, vm_t phstart, size
 		vm_t va = program_header_prop(ei_c, runner, p_vaddr);
 		size_t vsz = program_header_prop(ei_c, runner, p_memsz);
 
-		vm_t start = 0;
-		if(!(start = alloc_fixed_region(&t->sp_r, va, vsz, &vsz)))
+		vm_t start = alloc_fixed_region(&t->sp_r, va, vsz, &vsz);
+		if(!start)
 				return; /* out of memory or something */
 
-		uint8_t vflags = VM_V | VM_U;
-		uint8_t bflags = program_header_prop(ei_c, runner, p_flags);
-		if(bflags & PF_X)
-			vflags |= VM_X;
+		uint8_t elf_flags = program_header_prop(ei_c, runner, p_flags);
+		uint8_t uvflags = __elf_to_uvflags(elf_flags);
 
-		if(bflags & PF_W)
-			vflags |= VM_W;
-
-		if(bflags & PF_R)
-			vflags |= VM_R;
-
-		map_fill_region(t->b_r, start, vsz, VM_V | VM_X | VM_R | VM_W | VM_U);
+		map_allocd_region(t->b_r, start, vsz, VM_V | VM_X | VM_R | VM_W | VM_U);
 
 		vm_t vo = bin + program_header_prop(ei_c, runner, p_offset);
 		vm_t vfz = program_header_prop(ei_c, runner, p_filesz);
 		memcpy((void *)va, (void *)vo, vfz);
 
 		/* skip while testing
-		 * TODO: also fix, this fixes only the first region. Create new
+		 * TODO: also fix, this modifies only the first region. Create new
 		 * function?
 		 *
 		pm_t paddr = 0;
 		stat_vmem(t->b_r, va, &paddr, 0, 0);
-		mod_vmem(t->b_r, va, paddr, vflags);
+		mod_vmem(t->b_r, va, paddr, uvflags);
 		*/
 	}
 }
 
 static vm_t __map_dyn(struct tcb *t, vm_t bin, uint8_t ei_c, vm_t phstart, size_t phnum, size_t phsize)
 {
-	/* TODO */
+	/* TODO: this path should only be taken when no PT_INTERP is defined, as
+	 * making sure ld is loaded should be done in userspace. Maybe a bit
+	 * hacky, I know.*/
 }
 
 static vm_t __prepare_proc(struct tcb *t, uint8_t ei_c, vm_t elf)
