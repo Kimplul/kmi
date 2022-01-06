@@ -1,6 +1,7 @@
 #!/bin/sh
 
 gencommon () {
+	lint="build/${s%.*}${1}.l"
 	dep="build/${s%.*}${1}.d"
 	obj="build/${s%.*}${1}"
 	
@@ -9,7 +10,6 @@ gencommon () {
 	echo "${dep}:"		>> deps.mk
 	echo "include ${dep}"	>> deps.mk
 	echo "${obj}: ${s}"		>> deps.mk
-
 }
 
 genlink () {
@@ -21,6 +21,9 @@ genlink () {
 genrule () {
 	gencommon "${1}"
 	echo "	\$(COMPILE)  -c \$< -o \$@"	>> deps.mk
+
+	echo "${lint}: ${s}"		>> deps.mk
+	echo "	\$(LINT) -c \$<"	>> deps.mk
 }
 
 case "${1}" in

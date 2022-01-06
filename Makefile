@@ -3,6 +3,7 @@ DO		!= echo > deps.mk
 # this could be done better
 DEBUGFLAGS	!= [ $(RELEASE) ] && echo "-flto -O2" || echo "-O0 -ggdb3 -DDEBUG"
 CFLAGS		= -fno-pie -ffreestanding -nostdlib -std=c17 -Wall -Wextra
+LINTFLAGS	= -fsyntax-only
 DEPFLAGS	= -MT $@ -MMD -MP -MF $@.d
 
 all: apos.bin
@@ -33,6 +34,9 @@ INCLUDE_FLAGS	:= -I include -I arch/$(ARCH)/include\
 COMPILE		= $(CROSS_COMPILE)$(CC) $(DEBUGFLAGS)\
 		  $(CFLAGS) $(ARCH_FLAGS) $(DEPFLAGS) $(INCLUDE_FLAGS)
 
+LINT		= $(CROSS_COMPILE)$(CC) $(DEBUGFLAGS)\
+		  $(CFLAGS) $(ARCH_FLAGS) $(LINTFLAGS) $(INCLUDE_FLAGS)
+
 GENELF		= $(CROSS_COMPILE)$(CC) $(DEBUGFLAGS)\
 		  $(CFLAGS) $(ARCH_FLAGS) $(INCLUDE_FLAGS)
 
@@ -52,6 +56,8 @@ INIT_LD		!= ./scripts/gen-deps --link "$(INIT_LINK).S"
 include deps.mk
 
 $(INIT_LD): kernel.bin
+
+lint: $(INIT_OBJECTS:.o=.o.l) $(KERNEL_OBJECTS:.o=.o.l)
 
 init.elf: $(INIT_OBJECTS) $(INIT_LD)
 	$(GENELF) -T $(INIT_LD) $(INIT_OBJECTS) -o $@
