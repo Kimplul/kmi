@@ -1,0 +1,16 @@
+Alright, so my general idea of creating/killing threads is as follows:
+
+When a new thread is spawned, it happens through fork, so the new thread gets a
+new thread ID but keeps the process ID of the parent process. The new thread is
+added to a doubly linked list of thread IDs with the same common process ID.
+When a thread is promoted to a process, the process ID becomes that thread ID
+(helps with finding threads and corresponding process IDs). Should check that no
+other process is using that ID, but it should be exeedingly rare if not
+impossible. (can't think of how you would launch 4B threads on one machine but I
+guess that's not impossible?)
+
+All threads share a common (struct vm_branch), and only when a thread is
+elevated to a process is a new one allocated. Only when the last thread in a
+process is released is the memory released. Will still need to figure out
+exactly how device memory should be freed, since it's handled globally instead
+of per thread atm.

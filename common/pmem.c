@@ -1,3 +1,4 @@
+#include <apos/mem_nodes.h>
 #include <apos/pmem.h>
 #include <apos/dev.h>
 #include <apos/debug.h>
@@ -426,7 +427,7 @@ void init_pmem(void *fdt)
 	size_t actual_size = populate_pmap(ram_base, ram_size, pmap_base);
 
 	if(probe_size != actual_size)
-		dbg("BUG! probe_size (%#lx) != actual_size (%#lx)\n",
+		bug("probe_size (%#lx) != actual_size (%#lx)\n",
 				probe_size, actual_size);
 
 	/* mark init stack, this should be unmapped once we get to executing
@@ -434,7 +435,8 @@ void init_pmem(void *fdt)
 	mark_area_used((pm_t)__va(PM_STACK_BASE), (pm_t)__va(PM_STACK_TOP));
 
 	/* mark kernel */
-	mark_area_used((pm_t)__va(PM_KERN_BASE), (pm_t)__va(PM_KERN_TOP));
+	/* this could be made more explicit, I suppose. */
+	mark_area_used(VM_KERN, VM_KERN + PM_KERN_SIZE);
 
 	/* mark fdt and initrd */
 	mark_area_used(get_initrdbase(fdt), initrd_top);
@@ -445,6 +447,8 @@ void init_pmem(void *fdt)
 
 	/* mark reserved mem */
 	mark_reserved_mem(fdt);
+
+	init_mem_blocks();
 
 	init_devmem((pm_t)__pa(ram_base), (pm_t)__pa(ram_base + ram_size));
 }

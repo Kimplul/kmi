@@ -29,3 +29,19 @@ assume all devices are below the first NUMA node? No clue.
 + The dev interface can be abused, if a program decides to spam through all
 memory addresses the system will probably run out of memory. Not sure if it's
 worh doing anything to.
+
++ TLS. Can this be done completely in userspace?
+
+!!! CURRENT:
+
++ Separate vmem and devmem to have a common 'backend', like mem_nodes or
+whatever, would probably make it a bit more clean-feeling.
++ Add in interrupt handling and start testing jumping back and forth.
++ Add in better tcb handling, mainly creating linked lists with all threads
+under a common process ID.
+
+!!! FUTURE:
++ Cache locality?
++ When mapping some other address space into your own, I could keep a maximum
+used address of the guest address space and only map so many pages, which could
+be better for cache locality.

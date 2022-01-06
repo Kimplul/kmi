@@ -1,13 +1,21 @@
 #include <apos/irq.h>
+#include <apos/attrs.h>
+#include <apos/debug.h>
 #include <csr.h>
 
 void init_irq(void *fdt)
 {
 	UNUSED(fdt);
+	csr_write(CSR_STVEC, &handle_irq);
+	
+	long s = 0;
+	csr_read(CSR_SIE, s);
+	info("CSR_SIE: %lx\n", s);
 }
 
-void handle_irq()
+__aligned(4) void handle_irq()
 {
+	while(1);
 }
 
 /* very simple for now */

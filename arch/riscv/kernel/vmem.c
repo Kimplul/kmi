@@ -177,6 +177,6 @@ int setup_kernel_io(struct vm_branch *b, vm_t paddr)
 	/* assume Sv39 for now */
 	pm_t gigapage = paddr / MM_GPAGE_SIZE;
 	b->leaf[IO_PAGE] = (struct vm_branch *)to_pte(gigapage, VM_V | VM_R | VM_W);
-	return 0;
+	return -SZ_1G + paddr - (gigapage * MM_GPAGE_SIZE);
 }
 #endif

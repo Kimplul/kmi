@@ -41,7 +41,6 @@ void __main main(void *fdt)
 	arch_setup(fdt);
 
 	init_pmem(fdt);
-	init_mem_blocks();
 	struct vm_branch *b = init_vmem(fdt);
 
 	/* start up debugging in kernel IO */
