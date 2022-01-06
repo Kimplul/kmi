@@ -1,25 +1,30 @@
 DO		!= echo > deps.mk
 
 # this could be done better
-DEBUGFLAGS	!= [ $(RELEASE) ] && echo "-flto -O2" || echo "-O0 -ggdb3 -DDEBUG"
-CFLAGS		= -fno-pie -ffreestanding -nostdlib -std=c17 -Wall -Wextra
-LINTFLAGS	= -fsyntax-only
+DEBUGFLAGS	!= [ $(RELEASE) ] \
+			&& echo "-flto -O2" \
+			|| echo "-O0 -ggdb3 -DDEBUG"
+
+CFLAGS		= -ffreestanding -nostdlib -std=c17 -Wall -Wextra
 DEPFLAGS	= -MT $@ -MMD -MP -MF $@.d
+LINTFLAGS	= -fsyntax-only
+PREPROCESS	= -E
+LINKFLAGS	=
 
 all: apos.bin
 
 # default values, overwrite if/when needed
-ARCH		?= riscv
-CROSS_COMPILE	?= riscv64-unknown-elf-
+ARCH		?= riscv64
+CROSS_COMPILE	?= $(ARCH)-unknown-elf
 
-# Common programs
-CC		:= gcc
-AR		:= ar
-CPP		:= cpp
-OBJCOPY		?= objcopy
+OBJCOPY		!= [ $(LLVM) ] \
+			&& echo llvm-objcopy \
+		   	|| echo $(CROSS_COMPILE)-objcopy
 
-# This makes sure .bss is loaded into the binary
-OBJCOPY_FLAGS	?= -Obinary --set-section-flags .bss=alloc,load,contents
+COMPILER	!= [ $(LLVM) ] \
+			&& echo clang --target="$(CROSS_COMPILE)" \
+			|| echo $(CROSS_COMPILE)-gcc
+
 
 KERNEL_SOURCES	!= echo common/*.c common/uapi/*.c lib/*.c
 CLEANUP		:= build deps.mk kernel.* init.* apos.bin
@@ -31,16 +36,19 @@ include arch/$(ARCH)/source.mk
 INCLUDE_FLAGS	:= -I include -I arch/$(ARCH)/include\
 	-include config.h -include arch/$(ARCH)/config.h
 
-COMPILE		= $(CROSS_COMPILE)$(CC) $(DEBUGFLAGS)\
+# This makes sure .bss is loaded into the binary
+OBJCOPY_FLAGS	?= -Obinary --set-section-flags .bss=alloc,load,contents
+
+COMPILE		= $(COMPILER) $(DEBUGFLAGS)\
 		  $(CFLAGS) $(ARCH_FLAGS) $(DEPFLAGS) $(INCLUDE_FLAGS)
 
-LINT		= $(CROSS_COMPILE)$(CC) $(DEBUGFLAGS)\
+LINT		= $(COMPILER) $(DEBUGFLAGS)\
 		  $(CFLAGS) $(ARCH_FLAGS) $(LINTFLAGS) $(INCLUDE_FLAGS)
 
-GENELF		= $(CROSS_COMPILE)$(CC) $(DEBUGFLAGS)\
-		  $(CFLAGS) $(ARCH_FLAGS) $(INCLUDE_FLAGS)
+GENELF		= $(COMPILER) $(DEBUGFLAGS)\
+		  $(CFLAGS) $(ARCH_FLAGS) $(LINKFLAGS) $(INCLUDE_FLAGS)
 
-GENLINK		= $(CROSS_COMPILE)$(CPP) $(DEPFLAGS) $(INCLUDE_FLAGS)
+GENLINK		= $(COMPILER) $(PREPROCESS) $(DEPFLAGS) $(INCLUDE_FLAGS)
 STRIPLINK	= sed -n '/^[^\#]/p'
 KERN_SIZE	= wc -c kernel.bin | cut -d ' ' -f 1
 KERN_INFO	= sed "s/<KERNEL_SIZE>/$$($(KERN_SIZE))/"
@@ -66,10 +74,10 @@ kernel.elf: $(KERNEL_OBJECTS) $(KERNEL_LD)
 	$(GENELF) -T $(KERNEL_LD) $(KERNEL_OBJECTS) -o $@
 
 init.bin: init.elf
-	$(CROSS_COMPILE)$(OBJCOPY) $(OBJCOPY_FLAGS) $< $@
+	$(OBJCOPY) $(OBJCOPY_FLAGS) $< $@
 
 kernel.bin: kernel.elf
-	$(CROSS_COMPILE)$(OBJCOPY) $(OBJCOPY_FLAGS) $< $@
+	$(OBJCOPY) $(OBJCOPY_FLAGS) $< $@
 
 apos.bin: init.bin kernel.bin
 	cat init.bin kernel.bin > apos.bin

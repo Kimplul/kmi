@@ -31,7 +31,7 @@
 
 #define EM_RISCV		0xf3
 
-__packed struct elf_ident {
+struct __packed elf_ident {
 	uint32_t ei_magic;
 	uint8_t ei_class;
 	uint8_t ei_data;
@@ -41,7 +41,7 @@ __packed struct elf_ident {
 	uint8_t ei_pad[7];
 };
 
-__packed struct elf32_header {
+struct __packed elf32_header {
 	struct elf_ident e_ident;
 	uint16_t e_type;
 	uint16_t e_machine;
@@ -58,7 +58,7 @@ __packed struct elf32_header {
 	uint16_t e_shstrndx;
 };
 
-__packed struct elf64_header {
+struct __packed elf64_header {
 	struct elf_ident e_ident;
 	uint16_t e_type;
 	uint16_t e_machine;
@@ -92,7 +92,7 @@ __packed struct elf64_header {
 #define PF_W			(1 << 1)
 #define PF_R			(1 << 2)
 
-__packed struct program32_header {
+struct __packed program32_header {
 	uint32_t p_type;
 	uint32_t p_offset;
 	uint32_t p_vaddr;
@@ -103,7 +103,7 @@ __packed struct program32_header {
 	uint32_t p_align;
 };
 
-__packed struct program64_header {
+struct __packed program64_header {
 	uint32_t p_type;
 	uint32_t p_flags;
 	uint64_t p_offset;
@@ -146,7 +146,7 @@ __packed struct program64_header {
 #define SHF_MASKOS		0x0ff00000
 #define SHF_MASKPROC		0xf0000000
 
-__packed struct section32_header {
+struct __packed section32_header {
 	uint32_t sh_name;
 	uint32_t sh_type;
 	uint32_t sh_flags;
@@ -159,7 +159,7 @@ __packed struct section32_header {
 	uint32_t sh_entsize;
 };
 
-__packed struct section64_header {
+struct __packed section64_header {
 	uint32_t sh_name;
 	uint32_t sh_type;
 	uint64_t sh_flags;

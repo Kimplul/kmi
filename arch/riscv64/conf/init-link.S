@@ -23,7 +23,7 @@ SECTIONS {
 	}
 
 	.bss : {
-		*(.bss*) *(COMMON)
+		*(.sbss*) *(.bss*) *(COMMON)
 	}
 
 	__init_end = . ;

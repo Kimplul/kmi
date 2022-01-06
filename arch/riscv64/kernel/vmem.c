@@ -125,12 +125,12 @@ void unmap_vmem(struct vm_branch *branch, vm_t vaddr)
 
 void flush_tlb()
 {
-	__asm__("sfence.vma %0\n" :: "rk" (cpu_id()) : "memory");
+	__asm__ volatile ("sfence.vma %0\n" :: "r" (cpu_id()) : "memory");
 }
 
 void flush_tlb_all()
 {
-	__asm__("sfence.vma\n" ::: "memory");
+	__asm__ volatile ("sfence.vma\n" ::: "memory");
 }
 
 static void start_vmem(struct vm_branch *branch, enum mm_mode m)

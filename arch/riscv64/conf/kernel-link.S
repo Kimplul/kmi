@@ -19,7 +19,7 @@ SECTIONS {
 	}
 
 	.bss : {
-		*(.bss*) *(COMMON)
+		*(.sbss*) *(.bss*) *(COMMON)
 	}
 
 	__kernel_end = .;

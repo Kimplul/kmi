@@ -49,15 +49,15 @@
 #endif
 
 #define csr_read(csr, res)\
-	__asm__ ("csrr %0, " __ASM_STR(csr) : "=r" (res) : : "memory")
+	__asm__ volatile ("csrr %0, " __ASM_STR(csr) : "=r" (res) : : "memory")
 
 #define csr_write(csr, val)\
-	__asm__ ("csrw " __ASM_STR(csr) ", %0" : : "rK" (val) : "memory")
+	__asm__ volatile ("csrw " __ASM_STR(csr) ", %0" : : "r" (val) : "memory")
 
 #define csr_set(csr, val)\
-	__asm__ ("csrs " __ASM_STR(csr) ", %0" : : "rK" (val) : "memory")
+	__asm__ volatile ("csrs " __ASM_STR(csr) ", %0" : : "r" (val) : "memory")
 
 #define csr_clear(csr, val)\
-	__asm__ ("csrc " __ASM_STR(csr) ", %0" : : "rK" (val) : "memory")
+	__asm__ volatile ("csrc " __ASM_STR(csr) ", %0" : : "r" (val) : "memory")
 
 #endif /* APOS_CSR_H */

@@ -6,7 +6,7 @@
 #include <libfdt.h>
 
 /* GNU cpio, use POSIX 'newc' format */
-__packed struct cpio_header {
+struct __packed cpio_header {
 	char c_magic[6];
 	char c_ino[8];
 	char c_mode[8];
