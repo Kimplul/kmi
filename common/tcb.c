@@ -9,11 +9,11 @@ static struct tcb *__tcb_cache[MAX_CPUS] = {0};
 #define tcb_container(x) \
 	container_of(x, struct tcb, sp_n)
 
-void threads_insert(struct tcb *t)
+stat_t threads_insert(struct tcb *t)
 {
 	if(!sp_root(t_root)){
 		sp_root(t_root) = &t->sp_n;
-		return;
+		return OK;
 	}
 
 	struct sp_node *n = sp_root(t_root), *p = NULL;
@@ -35,6 +35,7 @@ void threads_insert(struct tcb *t)
 	}
 
 	sp_insert(&sp_root(t_root), p, &t->sp_n, d);
+	return OK;
 }
 
 struct tcb *threads_find(id_t tid)

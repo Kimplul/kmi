@@ -22,7 +22,7 @@ struct tcb {
 	struct vm_branch *b_r;
 };
 
-void threads_insert(struct tcb *t);
+stat_t threads_insert(struct tcb *t);
 struct tcb *cur_tcb();
 struct tcb *get_tcb(id_t tid);
 

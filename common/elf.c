@@ -54,8 +54,8 @@ static void __map_exec(struct tcb *t, vm_t bin, uint8_t ei_c, vm_t phstart, size
 		 * function?
 		 *
 		pm_t paddr = 0;
-		stat_vmem(t->b_r, va, &paddr, 0, 0);
-		mod_vmem(t->b_r, va, paddr, uvflags);
+		stat_vpage(t->b_r, va, &paddr, 0, 0);
+		mod_vpage(t->b_r, va, paddr, uvflags);
 		*/
 	}
 }

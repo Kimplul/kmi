@@ -420,9 +420,8 @@ size_t uvmem_size()
  * NOTE: not actually optimal, this doesn't bother to go through possible
  * permutations etc. which would be slow and I don't want to implement it.
  */
-vm_t map_fill_region(struct vm_branch *b,
-		stat_t (*vmem_handler)(struct vm_branch *, pm_t *, vm_t, uint8_t, enum mm_order),
-		pm_t offset, vm_t start, size_t bytes, uint8_t flags)
+vm_t map_fill_region(struct vm_branch *b, mem_region_callback_t *mem_handler,
+		pm_t offset, vm_t start, size_t bytes, vmflags_t flags)
 {
 	pm_t runner = __page(start);
 	size_t pages = __pages(bytes);
@@ -442,7 +441,7 @@ vm_t map_fill_region(struct vm_branch *b,
 			continue;
 
 		while(pages >= o_pages){
-			int res = vmem_handler(b, &offset, __addr(runner), flags, top);
+			stat_t res = mem_handler(b, &offset, __addr(runner), flags, top);
 			if(res > 0)
 				break;
 

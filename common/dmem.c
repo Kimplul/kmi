@@ -26,27 +26,27 @@ stat_t init_devmem(pm_t ram_base, pm_t ram_top)
 	return OK;
 }
 
-stat_t dev_alloc_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr, uint8_t flags, enum mm_order order)
+stat_t dev_alloc_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr, vmflags_t flags, enum mm_order order)
 {
-	map_vmem(b, *offset, vaddr, flags, order);
+	map_vpage(b, *offset, vaddr, flags, order);
 	*offset += __o_size(order);
 	return 0;
 }
 
-stat_t dev_free_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr, uint8_t flags, enum mm_order order)
+stat_t dev_free_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr, vmflags_t flags, enum mm_order order)
 {
 	UNUSED(offset); UNUSED(flags);
 	pm_t paddr = 0;
 	enum mm_order v_order = 0;
-	stat_vmem(b, vaddr, &paddr, &v_order, 0);
+	stat_vpage(b, vaddr, &paddr, &v_order, 0);
 	if(order != v_order)
 		return -1;
 
-	unmap_vmem(b, vaddr);
+	unmap_vpage(b, vaddr);
 	return 0;
 }
 
-vm_t alloc_devmem(struct tcb *t, pm_t dev_start, size_t bytes, uint8_t flags)
+vm_t alloc_devmem(struct tcb *t, pm_t dev_start, size_t bytes, vmflags_t flags)
 {
 	vm_t region = 0;
 	if(dev_start < __pre_top)
@@ -64,7 +64,7 @@ vm_t alloc_devmem(struct tcb *t, pm_t dev_start, size_t bytes, uint8_t flags)
 stat_t free_devmem(struct tcb *t, vm_t dev_start)
 {
 	pm_t dev_paddr = 0;
-	stat_vmem(t->b_r, dev_start, &dev_paddr, 0, 0);
+	stat_vpage(t->b_r, dev_start, &dev_paddr, 0, 0);
 
 	if(dev_paddr >= __pre_top && dev_paddr <= __post_base)
 		return ERR_ADDR;

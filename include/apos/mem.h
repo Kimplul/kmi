@@ -3,7 +3,6 @@
 
 #include <apos/utils.h>
 #include <apos/types.h>
-#include <pages.h>
 
 #define MM_OINFO_WIDTH (sizeof(mm_info_t) * 8)
 

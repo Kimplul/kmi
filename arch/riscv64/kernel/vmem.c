@@ -4,6 +4,7 @@
 #include <apos/mem.h>
 #include <apos/debug.h>
 #include <arch/cpu.h>
+#include <pages.h>
 #include <csr.h>
 
 #define pte_ppn(pte) (((pm_t)(pte)) >> 10)
@@ -41,21 +42,21 @@ static pm_t *__find_vmem(struct vm_branch *b, vm_t v, enum mm_order *o)
 	return 0;
 }
 
-int mod_vmem(struct vm_branch *branch, vm_t vaddr, pm_t paddr, uint8_t flags)
+stat_t mod_vpage(struct vm_branch *branch, vm_t vaddr, pm_t paddr, vmflags_t flags)
 {
 	pm_t *pte = __find_vmem(branch, vaddr, 0);
 	if(pte){
 		*pte = to_pte((pm_t)__pa(paddr), flags);
-		return 0;
+		return OK;
 	}
 
-	return -1;
+	return ERR_NF;
 }
 
 /* huh, should probably add status flags etc. to all my API functions. Damn, I'm
  * lazy. */
-int stat_vmem(struct vm_branch *branch, vm_t vaddr, pm_t *paddr,
-		enum mm_order *order, uint8_t *flags)
+stat_t stat_vpage(struct vm_branch *branch, vm_t vaddr, pm_t *paddr,
+		enum mm_order *order, vmflags_t *flags)
 {
 	pm_t *pte = __find_vmem(branch, vaddr, order);
 	if(pte){
@@ -65,10 +66,10 @@ int stat_vmem(struct vm_branch *branch, vm_t vaddr, pm_t *paddr,
 		if(flags)
 			*flags = pte_flags(*pte);
 
-		return 0;
+		return OK;
 	}
 
-	return -1;
+	return ERR_NF;
 }
 
 static struct vm_branch *__create_leaf()
@@ -91,8 +92,8 @@ static void __destroy_branch(struct vm_branch *b)
 	}
 }
 
-void map_vmem(struct vm_branch *branch,
-		pm_t paddr, vm_t vaddr, uint8_t flags, enum mm_order order)
+stat_t map_vpage(struct vm_branch *branch,
+		pm_t paddr, vm_t vaddr, vmflags_t flags, enum mm_order order)
 {
 	enum mm_order top = __mm_max_order;
 	while (top != order) {
@@ -107,18 +108,23 @@ void map_vmem(struct vm_branch *branch,
 	}
 
 	size_t idx = vm_to_index(vaddr, top);
-	if (is_branch(branch->leaf[idx])) /* something has gone terribly wrong */
+	if (is_branch(branch->leaf[idx])) /* something has gone terribly wrong? */
 		__destroy_branch(branch->leaf[idx]);
 
 	branch->leaf[idx] = (struct vm_branch *)to_pte((pm_t)__pa(paddr), flags);
+	return OK;
 }
 
-void unmap_vmem(struct vm_branch *branch, vm_t vaddr)
+stat_t unmap_vpage(struct vm_branch *branch, vm_t vaddr)
 {
 
 	pm_t *pte = __find_vmem(branch, vaddr, 0);
-	if(pte)
+	if(pte){
 		*pte = 0;
+		return OK;
+	}
+
+	return ERR_NF;
 }
 
 void flush_tlb()

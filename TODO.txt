@@ -45,3 +45,4 @@ under a common process ID.
 + When mapping some other address space into your own, I could keep a maximum
 used address of the guest address space and only map so many pages, which could
 be better for cache locality.
++ Assert? Not sure how to handle a kernel panic at the moment, I guess just die?
