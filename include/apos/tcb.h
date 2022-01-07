@@ -7,7 +7,7 @@
 
 struct tcb {
 	struct sp_node sp_n;
-	struct sp_reg_root sp_r;
+	struct mem_region_root sp_r;
 	struct arch_tcbd tcbd;
 
 	id_t pid;

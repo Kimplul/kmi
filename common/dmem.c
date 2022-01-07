@@ -1,7 +1,7 @@
 #include <apos/dmem.h>
 
-static struct sp_reg_root pre_ram = {0};
-static struct sp_reg_root post_ram = {0};
+static struct mem_region_root pre_ram = {0};
+static struct mem_region_root post_ram = {0};
 pm_t __pre_base = 0;
 pm_t __pre_top = 0;
 pm_t __post_base = 0;
@@ -20,8 +20,8 @@ stat_t init_devmem(pm_t ram_base, pm_t ram_top)
 	size_t pre_pages = __pages(__pre_top);
 	size_t post_pages = __pages(__post_top) - __pages(__post_base);
 
-	sp_mem_init(&pre_ram, __pre_base, pre_pages);
-	sp_mem_init(&post_ram, __post_base, post_pages);
+	init_region(&pre_ram, __pre_base, pre_pages);
+	init_region(&post_ram, __post_base, post_pages);
 
 	return OK;
 }
@@ -30,7 +30,7 @@ stat_t dev_alloc_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr, vmflags_
 {
 	map_vpage(b, *offset, vaddr, flags, order);
 	*offset += __o_size(order);
-	return 0;
+	return OK;
 }
 
 stat_t dev_free_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr, vmflags_t flags, enum mm_order order)
@@ -40,10 +40,10 @@ stat_t dev_free_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr, vmflags_t
 	enum mm_order v_order = 0;
 	stat_vpage(b, vaddr, &paddr, &v_order, 0);
 	if(order != v_order)
-		return -1;
+		return REGION_TRY_AGAIN;
 
 	unmap_vpage(b, vaddr);
-	return 0;
+	return OK;
 }
 
 vm_t alloc_devmem(struct tcb *t, pm_t dev_start, size_t bytes, vmflags_t flags)
@@ -69,12 +69,12 @@ stat_t free_devmem(struct tcb *t, vm_t dev_start)
 	if(dev_paddr >= __pre_top && dev_paddr <= __post_base)
 		return ERR_ADDR;
 
-	struct sp_mem *m = 0;
+	struct mem_region *m = 0;
 	if(dev_paddr < __pre_top)
-		m = sp_used_find(&pre_ram, dev_paddr);
+		m = find_used_region(&pre_ram, dev_paddr);
 	
 	if(dev_paddr > __post_base)
-		m = sp_used_find(&post_ram, dev_paddr);
+		m = find_used_region(&post_ram, dev_paddr);
 
 	if(!m)
 		return ERR_NF;

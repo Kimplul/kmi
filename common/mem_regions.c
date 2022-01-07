@@ -5,9 +5,7 @@
 
 #define mark_region_used(r) ((r) = 1)
 #define mark_region_unused(r) ((r) = 0)
-#define is_region_used(r) (r)
-
-static size_t __uvmem_size = 0;
+#define region_used(r) (r)
 
 /* pretty major slowdown when we get to some really massive numbers, not
  * entirely sure why. Will need to check up on this at some point, have I
@@ -25,7 +23,7 @@ static size_t __uvmem_size = 0;
  * maybe not even anything with sp_trees but more a weakness of binary trees in
  * general?
  */
-static struct sp_mem *sp_free_insert_region(struct sp_reg_root *r, struct sp_mem *m)
+static struct mem_region *insert_free_region(struct mem_region_root *r, struct mem_region *m)
 {
 	struct sp_node *n = sp_root(r->free_regions), *p = NULL;
 	size_t start = m->start;
@@ -35,7 +33,7 @@ static struct sp_mem *sp_free_insert_region(struct sp_reg_root *r, struct sp_mem
 	m->sp_n = (struct sp_node){0};
 
 	while(n){
-		struct sp_mem *t = mem_container(n);
+		struct mem_region *t = mem_container(n);
 		size_t nsize = t->end - t->start;
 		p = n;
 
@@ -68,7 +66,7 @@ static struct sp_mem *sp_free_insert_region(struct sp_reg_root *r, struct sp_mem
 	return m;
 }
 
-static struct sp_mem *sp_used_insert_region(struct sp_reg_root *r, struct sp_mem *m)
+static struct mem_region *insert_used_region(struct mem_region_root *r, struct mem_region *m)
 {
 	struct sp_node *n = sp_root(r->used_regions), *p = NULL;
 	vm_t start = m->start;
@@ -77,7 +75,7 @@ static struct sp_mem *sp_used_insert_region(struct sp_reg_root *r, struct sp_mem
 	m->sp_n = (struct sp_node){0};
 
 	while(n){
-		struct sp_mem *t = mem_container(n);
+		struct mem_region *t = mem_container(n);
 
 		p = n;
 
@@ -102,35 +100,35 @@ static struct sp_mem *sp_used_insert_region(struct sp_reg_root *r, struct sp_mem
 	return m;
 }
 
-stat_t sp_mem_init(struct sp_reg_root *r, vm_t start, size_t arena_size)
+stat_t init_region(struct mem_region_root *r, vm_t start, size_t arena_size)
 {
 	/* convert bytes to pages */
 	start = __page(start);
 	arena_size = __page(arena_size);
-	struct sp_mem *m = get_mem_node();
+	struct mem_region *m = get_mem_node();
 	m->start = start;
 	m->end = start + arena_size;
-	sp_free_insert_region(r, m);
+	insert_free_region(r, m);
 
 	return OK;
 }
 
-static void __sp_mem_destroy(struct sp_node *n)
+static void __destroy_region(struct sp_node *n)
 {
 	if(!n)
 		return;
 
-	__sp_mem_destroy(sp_left(n));
-	__sp_mem_destroy(sp_right(n));
+	__destroy_region(sp_left(n));
+	__destroy_region(sp_right(n));
 
-	struct sp_mem *m = mem_container(n);
+	struct mem_region *m = mem_container(n);
 	free_mem_node(m);
 }
 
-void sp_mem_destroy(struct sp_reg_root *r)
+void destroy_region(struct mem_region_root *r)
 {
-	__sp_mem_destroy(sp_root(r->free_regions));
-	__sp_mem_destroy(sp_root(r->used_regions));
+	__destroy_region(sp_root(r->free_regions));
+	__destroy_region(sp_root(r->used_regions));
 }
 
 /* interestingly this is now the main bottleneck :D
@@ -138,11 +136,11 @@ void sp_mem_destroy(struct sp_reg_root *r)
  * eh, it's not a massive thing I guess, maybe the code could be a bit quicker
  * but I mean 10 000 000 memory allocations in 20 s is good enough for now
  * */
-struct sp_mem *sp_used_find(struct sp_reg_root *r, vm_t start)
+struct mem_region *find_used_region(struct mem_region_root *r, vm_t start)
 {
 	struct sp_node *n = sp_root(r->used_regions);
 	while(n){
-		struct sp_mem *t = mem_container(n);
+		struct mem_region *t = mem_container(n);
 		if(start == t->start)
 			return t;
 
@@ -155,10 +153,10 @@ struct sp_mem *sp_used_find(struct sp_reg_root *r, vm_t start)
 	return 0;
 }
 
-static struct sp_mem *sp_mem_create_region(vm_t start, vm_t end,
-		struct sp_mem *prev, struct sp_mem *next)
+static struct mem_region *create_region(vm_t start, vm_t end,
+		struct mem_region *prev, struct mem_region *next)
 {
-	struct sp_mem *m = get_mem_node();
+	struct mem_region *m = get_mem_node();
 	m->start = start;
 	m->end = end;
 	m->prev = prev;
@@ -178,16 +176,16 @@ static size_t po_align(size_t s)
 	return 0;
 }
 
-struct sp_mem *sp_find_used_closest(struct sp_reg_root *r, vm_t start)
+struct mem_region *find_closest_used_region(struct mem_region_root *r, vm_t start)
 {
-	struct sp_mem *closest = 0;
+	struct mem_region *closest = 0;
 	size_t md = (size_t)(-1);
 	struct sp_node *n = sp_root(r->used_regions);
 	if(!n)
 		return mem_container(sp_root(r->free_regions));
 
 	while(n){
-		struct sp_mem *t = mem_container(n);
+		struct mem_region *t = mem_container(n);
 		size_t d = ABS((ssize_t)start - (ssize_t)t->start);
 
 		if(d == 0) /* exact match */
@@ -214,14 +212,14 @@ struct sp_mem *sp_find_used_closest(struct sp_reg_root *r, vm_t start)
  * still fits in, unaligned. If none of these criteria are met, a NULL is
  * returned. Note that this does not check *all* possible memory blocks, only
  * going up in increasing size so as to save time. */
-struct sp_mem *sp_find_free(struct sp_reg_root *r, size_t size, size_t *align)
+struct mem_region *find_free_region(struct mem_region_root *r, size_t size, size_t *align)
 {
 	*align = 0;
 	size_t offset = __page(po_align(__addr(size)));
-	struct sp_mem *quick_best = 0;
+	struct mem_region *quick_best = 0;
 	struct sp_node *n = sp_root(r->free_regions);
 	while(n){
-		struct sp_mem *t = mem_container(n);
+		struct mem_region *t = mem_container(n);
 		vm_t start = align_up(t->start, offset);
 
 		size_t qsize = t->end - t->start;
@@ -241,7 +239,7 @@ struct sp_mem *sp_find_free(struct sp_reg_root *r, size_t size, size_t *align)
 	return quick_best;
 }
 
-static size_t sp_use_region(struct sp_reg_root *r, struct sp_mem *m,
+static vm_t partition_region(struct mem_region_root *r, struct mem_region *m,
 		size_t pages, size_t align)
 {
 	sp_remove(&sp_root(r->free_regions), &m->sp_n);
@@ -256,27 +254,27 @@ static size_t sp_use_region(struct sp_reg_root *r, struct sp_mem *m,
 	vm_t post_end = m->end;
 
 	if(pre_start != pre_end){
-		struct sp_mem *n = sp_mem_create_region(pre_start, pre_end, m->prev, m);
+		struct mem_region *n = create_region(pre_start, pre_end, m->prev, m);
 		m->prev = n;
 		if(n->prev)
 			n->prev->next = n;
 
-		sp_free_insert_region(r, n);
+		insert_free_region(r, n);
 	}
 
 	if(post_start != post_end){
-		struct sp_mem *n = sp_mem_create_region(post_start, post_end, m, m->next);
+		struct mem_region *n = create_region(post_start, post_end, m, m->next);
 		m->next = n;
 		if(n->next)
 			n->next->prev = n;
 
-		sp_free_insert_region(r, n);
+		insert_free_region(r, n);
 	}
 
 	m->end = end;
 	m->start = start;
 	mark_region_used(m->flags);
-	sp_used_insert_region(r, m);
+	insert_used_region(r, m);
 	return __addr(start);
 }
 
@@ -284,7 +282,7 @@ static size_t sp_use_region(struct sp_reg_root *r, struct sp_mem *m,
  * just ignore them for now. Note that alloc_region should only be used when
  * mmap is called with MAP_ANON, all other situations should be handled in some
  * fs server */
-vm_t alloc_region(struct sp_reg_root *r,
+vm_t alloc_region(struct mem_region_root *r,
 		size_t size, size_t *actual_size)
 {
 	*actual_size = align_up(size, BASE_PAGE_SIZE);
@@ -292,15 +290,15 @@ vm_t alloc_region(struct sp_reg_root *r,
 
 	/* find best fitting, alignment etc. */
 	size_t align = 0;
-	struct sp_mem *m = sp_find_free(r, pages, &align);
+	struct mem_region *m = find_free_region(r, pages, &align);
 	if(!m)
 		return 0;
 
-	return sp_use_region(r, m, pages, align);
+	return partition_region(r, m, pages, align);
 }
 
 
-vm_t alloc_fixed_region(struct sp_reg_root *r,
+vm_t alloc_fixed_region(struct mem_region_root *r,
 		vm_t start, size_t size, size_t *actual_size)
 {
 	size_t asize = align_up(size, BASE_PAGE_SIZE);
@@ -310,7 +308,7 @@ vm_t alloc_fixed_region(struct sp_reg_root *r,
 	size_t pages = __page(asize);
 	start = __page(start);
 
-	struct sp_mem *m = sp_find_used_closest(r, start);
+	struct mem_region *m = find_closest_used_region(r, start);
 	if(!m)
 		return 0;
 
@@ -323,7 +321,7 @@ vm_t alloc_fixed_region(struct sp_reg_root *r,
 	}
 
 	/* if region is already in use, forget it */
-	if(is_region_used(m->flags))
+	if(region_used(m->flags))
 		return 0;
 
 	/* region is too small */
@@ -331,17 +329,17 @@ vm_t alloc_fixed_region(struct sp_reg_root *r,
 		return 0;
 
 	/* actually start marking region used */
-	return sp_use_region(r, m, pages, start - m->start);
+	return partition_region(r, m, pages, start - m->start);
 }
 
-static void __sp_try_coalesce_prev(struct sp_reg_root *r, struct sp_mem *m)
+static void __try_coalesce_prev(struct mem_region_root *r, struct mem_region *m)
 {
 	while(m){
-		if(!m || is_region_used(m->flags))
+		if(!m || region_used(m->flags))
 			return;
 
-		struct sp_mem *p = m->prev;
-		if(!p || is_region_used(p->flags))
+		struct mem_region *p = m->prev;
+		if(!p || region_used(p->flags))
 			return;
 
 		m->start = p->start;
@@ -357,14 +355,14 @@ static void __sp_try_coalesce_prev(struct sp_reg_root *r, struct sp_mem *m)
 	}
 }
 
-static void __sp_try_coalesce_next(struct sp_reg_root *r, struct sp_mem *m)
+static void __try_coalesce_next(struct mem_region_root *r, struct mem_region *m)
 {
 	while(m){
-		if(!m || is_region_used(m->flags))
+		if(!m || region_used(m->flags))
 			return;
 
-		struct sp_mem *n = m->next;
-		if(!n || is_region_used(n->flags))
+		struct mem_region *n = m->next;
+		if(!n || region_used(n->flags))
 			return;
 
 		m->end = n->end;
@@ -380,38 +378,28 @@ static void __sp_try_coalesce_next(struct sp_reg_root *r, struct sp_mem *m)
 	}
 }
 
-static void sp_mem_try_coalesce(struct sp_reg_root *r, struct sp_mem *m)
+static void try_coalesce_regions(struct mem_region_root *r, struct mem_region *m)
 {
-	__sp_try_coalesce_prev(r, m);
-	__sp_try_coalesce_next(r, m);
+	__try_coalesce_prev(r, m);
+	__try_coalesce_next(r, m);
 }
 
-stat_t free_region(struct sp_reg_root *r, vm_t start)
+stat_t free_region(struct mem_region_root *r, vm_t start)
 {
 	/* addr not aligned to page boundary, corrupted or incorrect pointer */
 	if(!aligned(start, BASE_PAGE_SIZE))
 		return ERR_ALIGN;
 
-	struct sp_mem *m = sp_used_find(r, __page(start));
+	struct mem_region *m = find_used_region(r, __page(start));
 	if(!m)
 		return ERR_NF;
 
 	sp_remove(&sp_root(r->used_regions), &m->sp_n);
 	mark_region_unused(m->flags);
 
-	sp_mem_try_coalesce(r, m);
-	sp_free_insert_region(r, m);
+	try_coalesce_regions(r, m);
+	insert_free_region(r, m);
 	return OK;
-}
-
-void set_uvmem_size(size_t s)
-{
-	__uvmem_size = s;
-}
-
-size_t uvmem_size()
-{
-	return __uvmem_size;
 }
 
 /* assuming start is chosen to start on an aligned border, this should choose
@@ -420,7 +408,7 @@ size_t uvmem_size()
  * NOTE: not actually optimal, this doesn't bother to go through possible
  * permutations etc. which would be slow and I don't want to implement it.
  */
-vm_t map_fill_region(struct vm_branch *b, mem_region_callback_t *mem_handler,
+vm_t map_fill_region(struct vm_branch *b, region_callback_t *mem_handler,
 		pm_t offset, vm_t start, size_t bytes, vmflags_t flags)
 {
 	pm_t runner = __page(start);

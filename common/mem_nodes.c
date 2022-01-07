@@ -10,7 +10,7 @@ enum block_status {
 
 struct block_wrapper {
 	enum block_status status;
-	struct sp_mem n;
+	struct mem_region n;
 };
 
 struct block_region {
@@ -64,7 +64,7 @@ void destroy_mem_blocks()
 	__destroy_mem_block(sp_root(root_region));
 }
 
-static struct sp_mem *__find_free_block(struct block_region *h)
+static struct mem_region *__find_free_block(struct block_region *h)
 {
 	struct block_wrapper *w = region_to_array(h);
 	for(size_t i = 0; i < MAX_BLOCKS; ++i){
@@ -124,7 +124,7 @@ static void __update_regions(struct block_region *r)
 	__region_insert(r);
 }
 
-struct sp_mem *get_mem_node()
+struct mem_region *get_mem_node()
 {
 	struct sp_node *n = sp_root(root_region);
 
@@ -149,7 +149,7 @@ struct sp_mem *get_mem_node()
 	return __find_free_block(r);
 }
 
-void free_mem_node(struct sp_mem *m)
+void free_mem_node(struct mem_region *m)
 {
 	struct block_wrapper *w = block_container(m);
 	w->status = FREE;
