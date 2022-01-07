@@ -3,8 +3,8 @@
 #include <apos/proc.h>
 #include <apos/debug.h>
 #include <apos/vmem.h>
-#include <apos/arch.h>
-#include <apos/irq.h>
+#include <arch/arch.h>
+#include <arch/irq.h>
 #include <libfdt.h>
 
 #ifdef DEBUG

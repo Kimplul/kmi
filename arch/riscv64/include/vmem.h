@@ -19,7 +19,6 @@ enum mm_mode {
 	Sv32,
 };
 
-typedef size_t vm_t;
 struct __packed vm_branch {
 	struct vm_branch *leaf[512];
 };

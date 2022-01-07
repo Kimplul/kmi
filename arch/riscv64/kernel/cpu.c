@@ -1,4 +1,4 @@
-#include <apos/cpu.h>
+#include <arch/cpu.h>
 
 id_t cpu_id()
 {

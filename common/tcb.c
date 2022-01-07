@@ -1,7 +1,7 @@
 #include <apos/tcb.h>
-#include <apos/cpu.h>
 #include <apos/utils.h>
 #include <apos/sp_tree.h>
+#include <arch/cpu.h>
 
 static struct sp_root t_root = (struct sp_root){0};
 static struct tcb *__tcb_cache[MAX_CPUS] = {0};

@@ -3,9 +3,7 @@
 #include <apos/vmem.h>
 #include <apos/mem.h>
 #include <apos/debug.h>
-#include <apos/cpu.h>
-#include <pages.h>
-#include <vmem.h>
+#include <arch/cpu.h>
 #include <csr.h>
 
 #define pte_ppn(pte) (((pm_t)(pte)) >> 10)

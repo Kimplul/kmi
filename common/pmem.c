@@ -1,6 +1,6 @@
 #include <apos/mem_nodes.h>
 #include <apos/pmem.h>
-#include <apos/dev.h>
+#include <apos/dmem.h>
 #include <apos/debug.h>
 #include <apos/initrd.h>
 #include <apos/string.h> /* memset */

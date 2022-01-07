@@ -1,8 +1,6 @@
 #ifndef APOS_RISCV_PAGES_H
 #define APOS_RISCV_PAGES_H
 
-#include <apos/types.h>
-
 #define MM_KPAGE MM_O0
 #define MM_MPAGE MM_O1
 #define MM_GPAGE MM_O2
@@ -12,7 +10,5 @@
 #define MM_MPAGE_SIZE SZ_2M
 #define MM_GPAGE_SIZE SZ_1G
 #define MM_TPAGE_SIZE SZ_512G
-
-typedef uint64_t pm_t;
 
 #endif /* APOS_RISCV_PAGES_H */

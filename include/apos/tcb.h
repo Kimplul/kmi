@@ -1,21 +1,9 @@
 #ifndef APOS_TCB_H
 #define APOS_TCB_H
 
-struct tcb;
-struct sp_reg_root;
-
-#include <tcb.h>
-#include <vmem.h>
-#include <apos/vmem.h>
+#include <apos/mem_regions.h>
 #include <apos/types.h>
-#include <apos/sp_tree.h>
-
-typedef size_t id_t;
-
-struct sp_reg_root {
-	struct sp_root free_regions;
-	struct sp_root used_regions;
-};
+#include <tcb.h> /* arch-specific data */
 
 struct tcb {
 	struct sp_node sp_n;

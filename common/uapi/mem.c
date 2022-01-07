@@ -1,7 +1,7 @@
-#include <apos/dev.h>
 #include <apos/uapi.h>
 #include <apos/utils.h>
 #include <apos/vmem.h>
+#include <apos/dmem.h>
 
 vm_t sys_req_mem(vm_t size, vm_t flags, vm_t u0, vm_t u1)
 {

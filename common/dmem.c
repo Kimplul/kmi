@@ -1,5 +1,4 @@
-#include <apos/dev.h>
-#include <apos/vmem.h>
+#include <apos/dmem.h>
 
 static struct sp_reg_root pre_ram = {0};
 static struct sp_reg_root post_ram = {0};
@@ -8,7 +7,7 @@ pm_t __pre_top = 0;
 pm_t __post_base = 0;
 pm_t __post_top = 0;
 
-void init_devmem(pm_t ram_base, pm_t ram_top)
+stat_t init_devmem(pm_t ram_base, pm_t ram_top)
 {
 	pm_t mem_top = (pm_t)-1;
 
@@ -23,16 +22,18 @@ void init_devmem(pm_t ram_base, pm_t ram_top)
 
 	sp_mem_init(&pre_ram, __pre_base, pre_pages);
 	sp_mem_init(&post_ram, __post_base, post_pages);
+
+	return OK;
 }
 
-static int dev_alloc_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr, uint8_t flags, enum mm_order order)
+stat_t dev_alloc_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr, uint8_t flags, enum mm_order order)
 {
 	map_vmem(b, *offset, vaddr, flags, order);
 	*offset += __o_size(order);
 	return 0;
 }
 
-static int dev_free_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr, uint8_t flags, enum mm_order order)
+stat_t dev_free_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr, uint8_t flags, enum mm_order order)
 {
 	UNUSED(offset); UNUSED(flags);
 	pm_t paddr = 0;
@@ -60,13 +61,13 @@ vm_t alloc_devmem(struct tcb *t, pm_t dev_start, size_t bytes, uint8_t flags)
 	return map_fill_region(t->b_r, &dev_alloc_wrapper, dev_start, region, bytes, flags);
 }
 
-void free_devmem(struct tcb *t, vm_t dev_start)
+stat_t free_devmem(struct tcb *t, vm_t dev_start)
 {
 	pm_t dev_paddr = 0;
 	stat_vmem(t->b_r, dev_start, &dev_paddr, 0, 0);
 
 	if(dev_paddr >= __pre_top && dev_paddr <= __post_base)
-		return;
+		return ERR_ADDR;
 
 	struct sp_mem *m = 0;
 	if(dev_paddr < __pre_top)
@@ -76,7 +77,7 @@ void free_devmem(struct tcb *t, vm_t dev_start)
 		m = sp_used_find(&post_ram, dev_paddr);
 
 	if(!m)
-		return;
+		return ERR_NF;
 
 	size_t region_size = __addr(m->end - m->start);
 	map_fill_region(t->b_r, &dev_free_wrapper, dev_paddr, dev_start, region_size, 0);
@@ -86,4 +87,6 @@ void free_devmem(struct tcb *t, vm_t dev_start)
 
 	if(dev_paddr > __post_base)
 		free_region(&post_ram, dev_paddr);
+
+	return OK;
 }

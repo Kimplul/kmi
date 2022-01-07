@@ -3,6 +3,7 @@
 #include <apos/string.h>
 #include <apos/initrd.h>
 #include <apos/proc.h>
+#include <arch/arch.h>
 
 /* TODO: add error checking */
 static vm_t setup_call_stack(struct tcb *t, size_t bytes)
@@ -34,7 +35,7 @@ void init_proc(void *fdt, struct vm_branch *b)
 
 	threads_insert(t);
 
-	sp_mem_init(&t->sp_r, UVMEM_START, UVMEM_END);
+	init_uvmem(t, UVMEM_START, UVMEM_END);
 
 	/* the binary gets to choose first what memory regions it requires */
 	t->entry = load_elf(t, get_init_base(fdt));

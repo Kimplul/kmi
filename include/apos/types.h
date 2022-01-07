@@ -175,4 +175,21 @@ typedef intmax_t ssize_t;
 
 #define NULL 0
 
+/* some common types used throughout the kernel */
+typedef int_fast8_t stat_t;
+typedef uint_fast32_t id_t;
+typedef uint_fast8_t mflags_t;
+
+/* error types (should this go somewhere else? */
+/* negative error codes are reserved for general usage, positive error codes are
+ * allowed to be function-specific. */
+enum {
+	ERR_ADDR = -3,	/* illegal address */
+	ERR_ALIGN = -2,	/* wrong alignment */
+	ERR_NF = -1,	/* not found */
+	OK = 0,		/* OK */
+};
+
+#include <types.h> /* arch-specific type definitions (pm_t/vm_t etc) */
+
 #endif /* APOS_TYPES_H */

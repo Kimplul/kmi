@@ -2,6 +2,7 @@
 #define APOS_MEM_H
 
 #include <apos/utils.h>
+#include <apos/types.h>
 #include <pages.h>
 
 #define MM_OINFO_WIDTH (sizeof(mm_info_t) * 8)
@@ -29,6 +30,14 @@
 #define __o_container(idx) ((idx) / MM_OINFO_WIDTH)
 #define __o_bit(idx) ((idx) & (MM_OINFO_WIDTH - 1))
 
+#define __va(x) (((char *)(x)) + VM_DMAP - RAM_BASE)
+#define __pa(x) (((char *)(x)) + RAM_BASE - VM_DMAP)
+#define __page(x) ((x) / BASE_PAGE_SIZE)
+#define __addr(x) ((x) * BASE_PAGE_SIZE)
+#define __pages(x) (aligned((x), BASE_PAGE_SIZE) ? __page((x)) : __page((x) + BASE_PAGE_SIZE))
+#define __bytes(x) (__addr(x))
+
+
 extern size_t __mm_shifts[10];
 extern size_t __mm_widths[10];
 extern size_t __mm_sizes[10];
@@ -36,6 +45,21 @@ extern size_t __mm_sizes[10];
 extern size_t __mm_page_shift;
 extern size_t __mm_max_order;
 
+#define ORDERS_NUM 10
+enum mm_order {
+	MM_O0,
+	MM_O1,
+	MM_O2,
+	MM_O3,
+	MM_O4,
+	MM_O5,
+	MM_O6,
+	MM_O7,
+	MM_O8,
+	MM_O9,
+};
+
+typedef ssize_t pnum_t;
 void init_mem(size_t max_order, size_t shifts[10], size_t page_shift);
 enum mm_mode get_mmode(void *fdt);
 

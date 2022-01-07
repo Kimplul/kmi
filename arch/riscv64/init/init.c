@@ -61,12 +61,12 @@ void init(void *fdt)
 {
 	extern char *__init_end;
 	extern void jump_to_kernel(void *k, void *fdt);
-	void (*kernel_main)(void *fdt) = (void (*)(void *))(VM_KERN);
+
 	init_bootmem();
 	move_kernel();
 	__va_reg(sp);
 	__va_reg(fp);
 	__va_reg(gp);
+
 	jump_to_kernel((void *)VM_KERN, __va(fdt));
-	//kernel_main(__va(fdt));
 }
