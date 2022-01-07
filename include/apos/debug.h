@@ -3,6 +3,7 @@
 
 #include <apos/attrs.h>
 #include <apos/pmem.h>
+#include <arch/vmem.h>
 
 #ifdef DEBUG
 enum serial_dev {
@@ -10,13 +11,14 @@ enum serial_dev {
 	NS16550A,
 };
 
-struct dbg_info {
-	pm_t dbg_ptr;
-	enum serial_dev dev;
-};
-
 void __fmt(1, 2) dbg(const char *fmt, ...);
+
+void init_dbg(void *fdt);
+
+void setup_dmap_dbg();
+void setup_io_dbg(struct vm_branch *b);
 void setup_dbg(pm_t pt, enum serial_dev dev);
+
 struct dbg_info dbg_from_fdt(void *fdt);
 
 #define COMMON_FORMAT "[%s] %s:%d\n\t"
@@ -31,6 +33,10 @@ struct dbg_info dbg_from_fdt(void *fdt);
 #define dbg(...)
 #define dbg_init(...)
 #define dbg_from_fdt(...)
+
+#define init_dbg(...)
+#define setup_dmap_dbg(...)
+#define setup_io_dbg(...)
 
 #define bug(...)
 #define warn(...)

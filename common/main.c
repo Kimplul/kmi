@@ -7,30 +7,6 @@
 #include <arch/irq.h>
 #include <libfdt.h>
 
-#ifdef DEBUG
-static struct dbg_info dbg_info = (struct dbg_info){0};
-
-static void init_dbg(void *fdt)
-{
-	dbg_info = dbg_from_fdt(fdt);
-}
-
-static void setup_dmap_dbg()
-{
-	setup_dbg(dbg_info.dbg_ptr, dbg_info.dev);
-}
-
-static void setup_io_dbg(struct vm_branch *b)
-{
-	vm_t io_ptr = setup_kernel_io(b, dbg_info.dbg_ptr);
-	setup_dbg(io_ptr, dbg_info.dev);
-}
-#else
-#define init_dbg(...)
-#define setup_dmap_dbg(...)
-#define setup_io_dbg(...)
-#endif
-
 void __main main(void *fdt)
 {
 	/* dbg uses direct mapping at this point */
@@ -38,7 +14,7 @@ void __main main(void *fdt)
 	setup_dmap_dbg();
 	dbg_fdt(fdt);
 
-	arch_setup(fdt);
+	setup_arch(fdt);
 
 	init_pmem(fdt);
 	struct vm_branch *b = init_vmem(fdt);

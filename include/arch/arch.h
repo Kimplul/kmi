@@ -1,8 +1,8 @@
 #ifndef APOS_ARCH_H
 #define APOS_ARCH_H
 
-/* functions that an arch has to provide */
+#include <apos/types.h>
 
-void arch_setup(void *fdt);
+stat_t setup_arch(void *fdt);
 
 #endif /* APOS_ARCH_H */

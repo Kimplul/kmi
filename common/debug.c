@@ -3,10 +3,31 @@
 #include <apos/bits.h>
 #include <apos/vmem.h>
 #include <apos/pmem.h>
+#include <arch/vmem.h>
 #include <libfdt.h>
 #include <stdarg.h>
 
 #ifdef DEBUG
+static struct dbg_info {
+	pm_t dbg_ptr;
+	enum serial_dev dev;
+} dbg_info = (struct dbg_info){0};
+
+void init_dbg(void *fdt)
+{
+	dbg_info = dbg_from_fdt(fdt);
+}
+
+void setup_dmap_dbg()
+{
+	setup_dbg(dbg_info.dbg_ptr, dbg_info.dev);
+}
+
+void setup_io_dbg(struct vm_branch *b)
+{
+	vm_t io_ptr = setup_kernel_io(b, dbg_info.dbg_ptr);
+	setup_dbg(io_ptr, dbg_info.dev);
+}
 
 /* if there arises a need for more supported serial drivers, I should probably
  * try to implement some kind of basic driver subsystem, but this is good enough
