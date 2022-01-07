@@ -23,7 +23,7 @@
  * maybe not even anything with sp_trees but more a weakness of binary trees in
  * general?
  */
-static struct mem_region *insert_free_region(struct mem_region_root *r, struct mem_region *m)
+static struct mem_region *__insert_free_region(struct mem_region_root *r, struct mem_region *m)
 {
 	struct sp_node *n = sp_root(r->free_regions), *p = NULL;
 	size_t start = m->start;
@@ -66,7 +66,7 @@ static struct mem_region *insert_free_region(struct mem_region_root *r, struct m
 	return m;
 }
 
-static struct mem_region *insert_used_region(struct mem_region_root *r, struct mem_region *m)
+static struct mem_region *__insert_used_region(struct mem_region_root *r, struct mem_region *m)
 {
 	struct sp_node *n = sp_root(r->used_regions), *p = NULL;
 	vm_t start = m->start;
@@ -108,7 +108,7 @@ stat_t init_region(struct mem_region_root *r, vm_t start, size_t arena_size)
 	struct mem_region *m = get_mem_node();
 	m->start = start;
 	m->end = start + arena_size;
-	insert_free_region(r, m);
+	__insert_free_region(r, m);
 
 	return OK;
 }
@@ -239,7 +239,7 @@ struct mem_region *find_free_region(struct mem_region_root *r, size_t size, size
 	return quick_best;
 }
 
-static vm_t partition_region(struct mem_region_root *r, struct mem_region *m,
+static vm_t __partition_region(struct mem_region_root *r, struct mem_region *m,
 		size_t pages, size_t align)
 {
 	sp_remove(&sp_root(r->free_regions), &m->sp_n);
@@ -259,7 +259,7 @@ static vm_t partition_region(struct mem_region_root *r, struct mem_region *m,
 		if(n->prev)
 			n->prev->next = n;
 
-		insert_free_region(r, n);
+		__insert_free_region(r, n);
 	}
 
 	if(post_start != post_end){
@@ -268,13 +268,13 @@ static vm_t partition_region(struct mem_region_root *r, struct mem_region *m,
 		if(n->next)
 			n->next->prev = n;
 
-		insert_free_region(r, n);
+		__insert_free_region(r, n);
 	}
 
 	m->end = end;
 	m->start = start;
 	mark_region_used(m->flags);
-	insert_used_region(r, m);
+	__insert_used_region(r, m);
 	return __addr(start);
 }
 
@@ -294,7 +294,7 @@ vm_t alloc_region(struct mem_region_root *r,
 	if(!m)
 		return 0;
 
-	return partition_region(r, m, pages, align);
+	return __partition_region(r, m, pages, align);
 }
 
 
@@ -329,7 +329,7 @@ vm_t alloc_fixed_region(struct mem_region_root *r,
 		return 0;
 
 	/* actually start marking region used */
-	return partition_region(r, m, pages, start - m->start);
+	return __partition_region(r, m, pages, start - m->start);
 }
 
 static void __try_coalesce_prev(struct mem_region_root *r, struct mem_region *m)
@@ -378,7 +378,7 @@ static void __try_coalesce_next(struct mem_region_root *r, struct mem_region *m)
 	}
 }
 
-static void try_coalesce_regions(struct mem_region_root *r, struct mem_region *m)
+static void __try_coalesce_regions(struct mem_region_root *r, struct mem_region *m)
 {
 	__try_coalesce_prev(r, m);
 	__try_coalesce_next(r, m);
@@ -397,8 +397,8 @@ stat_t free_region(struct mem_region_root *r, vm_t start)
 	sp_remove(&sp_root(r->used_regions), &m->sp_n);
 	mark_region_unused(m->flags);
 
-	try_coalesce_regions(r, m);
-	insert_free_region(r, m);
+	__try_coalesce_regions(r, m);
+	__insert_free_region(r, m);
 	return OK;
 }
 

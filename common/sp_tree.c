@@ -1,6 +1,6 @@
 #include <apos/sp_tree.h>
 
-inline static void __sp_turn_left(struct sp_node *n)
+static void __sp_turn_left(struct sp_node *n)
 {
 	struct sp_node *l = sp_left(n);
 	struct sp_node *p = sp_paren(n);
@@ -19,7 +19,7 @@ inline static void __sp_turn_left(struct sp_node *n)
 		sp_lparen(n) = n;
 }
 
-inline static void __sp_turn_right(struct sp_node *n)
+static void __sp_turn_right(struct sp_node *n)
 {
 	struct sp_node *r = sp_right(n);
 	struct sp_node *p = sp_paren(n);
@@ -38,7 +38,7 @@ inline static void __sp_turn_right(struct sp_node *n)
 		sp_rparen(n) = n;
 }
 
-inline static int __sp_balance(struct sp_node *n)
+static int __sp_balance(struct sp_node *n)
 {
 	int l = 0;
 	int r = 0;
@@ -52,7 +52,7 @@ inline static int __sp_balance(struct sp_node *n)
 	return l - r;
 }
 
-inline static int __sp_max_hint(struct sp_node *n)
+static int __sp_max_hint(struct sp_node *n)
 {
 	int l = 0;
 	int r = 0;
@@ -69,7 +69,7 @@ inline static int __sp_max_hint(struct sp_node *n)
 		return r;
 }
 
-inline static void sp_update(struct sp_node **root, struct sp_node *n)
+static void __sp_update(struct sp_node **root, struct sp_node *n)
 {
 	while(n){
 
@@ -115,10 +115,10 @@ void sp_insert(struct sp_node **root, struct sp_node *p,
 		sp_right(p) = n;
 
 	sp_paren(n) = p;
-	sp_update(root, n);
+	__sp_update(root, n);
 }
 
-inline static void __sp_replace_right(struct sp_node *n, struct sp_node *r)
+static void __sp_replace_right(struct sp_node *n, struct sp_node *r)
 {
 	struct sp_node *p = sp_paren(n);
 	struct sp_node *rp = sp_paren(r);
@@ -149,7 +149,7 @@ inline static void __sp_replace_right(struct sp_node *n, struct sp_node *r)
 		sp_lparen(n) = r;
 }
 
-inline static void __sp_replace_left(struct sp_node *n, struct sp_node *l)
+static void __sp_replace_left(struct sp_node *n, struct sp_node *l)
 {
 	struct sp_node *p = sp_paren(n);
 	struct sp_node *lp = sp_paren(l);
@@ -190,7 +190,7 @@ void sp_remove(struct sp_node **root, struct sp_node *del)
 			*root = least;
 
 		__sp_replace_right(del, least);
-		sp_update(root, sp_right(least));
+		__sp_update(root, sp_right(least));
 		return;
 	}
 
@@ -201,7 +201,7 @@ void sp_remove(struct sp_node **root, struct sp_node *del)
 			*root = most;
 
 		__sp_replace_left(del, most);
-		sp_update(root, sp_left(most));
+		__sp_update(root, sp_left(most));
 		return;
 	}
 
@@ -218,7 +218,7 @@ void sp_remove(struct sp_node **root, struct sp_node *del)
 	else
 		sp_right(paren) = 0;
 
-	sp_update(root, paren);
+	__sp_update(root, paren);
 }
 
 struct sp_node *sp_first(struct sp_node *n)

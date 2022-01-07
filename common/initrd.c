@@ -23,7 +23,7 @@ struct __packed cpio_header {
 	char c_check[8];
 };
 
-static struct cpio_header *next_entry(struct cpio_header *cp)
+static struct cpio_header *__next_entry(struct cpio_header *cp)
 {
 	size_t blen = align_up(sizeof(struct cpio_header) + convnum(cp->c_namesize, 8, 16), 4);
 	size_t tlen = align_up(convnum(cp->c_filesize, 8, 16), 4);
@@ -31,10 +31,10 @@ static struct cpio_header *next_entry(struct cpio_header *cp)
 	return (struct cpio_header *)(((char *)cp) + blen + tlen);
 }
 
-static struct cpio_header *find_file(char *c, char* fname, size_t fname_len)
+static struct cpio_header *__find_file(char *c, char* fname, size_t fname_len)
 {
 	struct cpio_header *cp = (struct cpio_header *)c;
-	for(; cp; cp = next_entry(cp)){
+	for(; cp; cp = __next_entry(cp)){
 		size_t namelen = convnum(cp->c_namesize, 8, 16);
 		if(namelen == 0)
 			return 0;
@@ -82,14 +82,14 @@ static size_t init_nlen = ARRAY_SIZE(init_n) - 1; /* ignore trailing NULL */
 size_t get_init_size(void *fdt)
 {
 	char *c = (char *)get_initrdbase(fdt);
-	struct cpio_header *cp = find_file(c, init_n, init_nlen);
+	struct cpio_header *cp = __find_file(c, init_n, init_nlen);
 	return convnum(cp->c_filesize, 8, 16);
 }
 
 vm_t get_init_base(void *fdt)
 {
 	char *c = (char *)get_initrdbase(fdt);
-	struct cpio_header *cp = find_file(c, init_n, init_nlen);
+	struct cpio_header *cp = __find_file(c, init_n, init_nlen);
 	size_t name_len = convnum(cp->c_namesize, 8, 16);
 	return ((vm_t)cp) + align_up(sizeof(struct cpio_header) + name_len, 4);
 }
@@ -98,7 +98,7 @@ void move_init(void *fdt, void *target)
 {
 	char *c = (char *)get_initrdbase(fdt);
 
-	struct cpio_header *cp = find_file(c, init_n, init_nlen);
+	struct cpio_header *cp = __find_file(c, init_n, init_nlen);
 	size_t name_len = convnum(cp->c_namesize, 8, 16);
 	size_t file_len = convnum(cp->c_filesize, 8, 16);
 

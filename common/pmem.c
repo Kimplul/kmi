@@ -346,7 +346,7 @@ pm_t probe_pmap(pm_t ram_base, size_t ram_size)
 	return cont;
 }
 
-static void mark_area_used(pm_t base, pm_t top)
+static void __mark_area_used(pm_t base, pm_t top)
 {
 	size_t area_left = top - base;
 	pm_t runner = base;
@@ -360,7 +360,7 @@ static void mark_area_used(pm_t base, pm_t top)
 		mark_used(BASE_PAGE, runner);
 }
 
-static void mark_reserved_mem(void *fdt)
+static void __mark_reserved_mem(void *fdt)
 {
 	int rmem_offset = fdt_path_offset(fdt, "/reserved-memory/mmode_resv0");
 	struct cell_info ci = get_reginfo(fdt, "/reserved-memory/mmode_resv0");
@@ -374,10 +374,10 @@ static void mark_reserved_mem(void *fdt)
 		rmem_reg += sizeof(fdt32_t);
 
 	pm_t top = (pm_t)fdt_load_int_ptr(ci.size_cells, rmem_reg) + base;
-	mark_area_used((pm_t)__va(base), (pm_t)__va(top));
+	__mark_area_used((pm_t)__va(base), (pm_t)__va(top));
 }
 
-static pm_t get_ramtop(void *fdt)
+static pm_t __get_ramtop(void *fdt)
 {
 	struct cell_info ci = get_reginfo(fdt, "/memory");
 	int mem_offset = fdt_path_offset(fdt, "/memory");
@@ -393,13 +393,13 @@ static pm_t get_ramtop(void *fdt)
 	return (pm_t)fdt_load_int_ptr(ci.size_cells, mem_reg) + base;
 }
 
-static pm_t get_fdttop(void *fdt)
+static pm_t __get_fdttop(void *fdt)
 {
 	const char *b = (const char *)fdt;
 	return (pm_t)(b + fdt_totalsize(fdt));
 }
 
-static pm_t get_fdtbase(void *fdt)
+static pm_t __get_fdtbase(void *fdt)
 {
 	/* lol */
 	return (pm_t)fdt;
@@ -413,11 +413,11 @@ void init_pmem(void *fdt)
 	arch_pmem_conf(fdt, &max_order, &base_bits, bits);
 	init_mem(max_order, bits, base_bits);
 
-	pm_t ram_size = get_ramtop(fdt) - RAM_BASE;
+	pm_t ram_size = __get_ramtop(fdt) - RAM_BASE;
 	pm_t ram_base = (pm_t)__va(RAM_BASE);
 
 	pm_t initrd_top = get_initrdtop(fdt);
-	pm_t fdt_top = get_fdttop(fdt);
+	pm_t fdt_top = __get_fdttop(fdt);
 
 	/* find probably most suitable contiguous region of ram for our physical
 	 * ram map */
@@ -432,21 +432,21 @@ void init_pmem(void *fdt)
 
 	/* mark init stack, this should be unmapped once we get to executing
 	 * processes */
-	mark_area_used((pm_t)__va(PM_STACK_BASE), (pm_t)__va(PM_STACK_TOP));
+	__mark_area_used((pm_t)__va(PM_STACK_BASE), (pm_t)__va(PM_STACK_TOP));
 
 	/* mark kernel */
 	/* this could be made more explicit, I suppose. */
-	mark_area_used(VM_KERN, VM_KERN + PM_KERN_SIZE);
+	__mark_area_used(VM_KERN, VM_KERN + PM_KERN_SIZE);
 
 	/* mark fdt and initrd */
-	mark_area_used(get_initrdbase(fdt), initrd_top);
-	mark_area_used(get_fdtbase(fdt), fdt_top);
+	__mark_area_used(get_initrdbase(fdt), initrd_top);
+	__mark_area_used(__get_fdtbase(fdt), fdt_top);
 
 	/* mark pmap */
-	mark_area_used(pmap_base, pmap_base + actual_size);
+	__mark_area_used(pmap_base, pmap_base + actual_size);
 
 	/* mark reserved mem */
-	mark_reserved_mem(fdt);
+	__mark_reserved_mem(fdt);
 
 	init_mem_blocks();
 

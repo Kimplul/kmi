@@ -80,7 +80,7 @@ static void __putchar(char c)
 	port->data = c;
 }
 
-static enum serial_dev serial_dev_enum(const char *dev_name)
+static enum serial_dev __serial_dev_enum(const char *dev_name)
 {
 	if (strncmp("ns16550", dev_name, 7) == 0)
 		return NS16550A;
@@ -99,7 +99,7 @@ struct dbg_info dbg_from_fdt(void *fdt)
 	const char *dev_name = (const char *)fdt_getprop(fdt, stdout_offset,
 			"compatible", NULL);
 
-	enum serial_dev dev = serial_dev_enum(dev_name);
+	enum serial_dev dev = __serial_dev_enum(dev_name);
 
 	/* get serial device address */
 	struct cell_info ci = get_reginfo(fdt, stdout);

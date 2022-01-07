@@ -137,7 +137,7 @@ void flush_tlb_all()
 	__asm__ volatile ("sfence.vma\n" ::: "memory");
 }
 
-static void start_vmem(struct vm_branch *branch, enum mm_mode m)
+static void __start_vmem(struct vm_branch *branch, enum mm_mode m)
 {
 	branch = (struct vm_branch *)__pa(branch);
 
@@ -160,7 +160,7 @@ struct vm_branch *init_vmem(void *fdt)
 
 	populate_root_branch(b);
 	/* update which memory branch to use */
-	start_vmem(b, Sv39);
+	__start_vmem(b, Sv39);
 	return b;
 }
 

@@ -1,0 +1,7 @@
+Mostly the same as the Linux coding standars, some additions:
++	Local functions should be marked static and be prefixed with __, the idea is
+	to hopefully minimize confusion about which header file the function came from.
+	I know, pretty dumb, but looks cool :)
+
++	structs and enums shouldn't be suffixed with _t, whereas scalar types
+	should.
