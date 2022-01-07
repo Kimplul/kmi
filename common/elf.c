@@ -1,6 +1,6 @@
 #include <apos/elf.h>
 #include <apos/vmem.h>
-#include <apos/bytes.h>
+#include <apos/bits.h>
 #include <apos/string.h>
 
 static uint8_t __elf_to_uvflags(uint8_t elf_flags)

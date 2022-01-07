@@ -1,6 +1,6 @@
 #include <apos/types.h>
 #include <apos/attrs.h>
-#include <apos/bytes.h>
+#include <apos/bits.h>
 #include <apos/builtin.h>
 
 #undef __bswap16
