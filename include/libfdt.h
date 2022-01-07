@@ -9,11 +9,11 @@ struct cell_info {
 	uint32_t addr_cells;
 };
 
-struct cell_info get_cellinfo(void *fdt, int offset);
-struct cell_info get_reginfo(void *fdt, const char *path);
+struct cell_info get_cellinfo(const void *fdt, const int offset);
+struct cell_info get_reginfo(const void *fdt, const char *path);
 
 #if defined(DEBUG)
-void __dbg_fdt(void *fdt, int node_offset, int depth);
+void __dbg_fdt(const void *fdt, int node_offset, int depth);
 #define dbg_fdt(fdt) __dbg_fdt(fdt, 0, 0)
 #else
 #define dbg_fdt(...)

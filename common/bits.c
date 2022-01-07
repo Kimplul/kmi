@@ -4,13 +4,13 @@
 #include <apos/builtin.h>
 
 #undef __bswap16
-__weak uint16_t __bswap16(uint16_t u)
+__weak uint16_t __bswap16(const uint16_t u)
 {
 	return (u & 0xff00) >> 8 | (u & 0x00ff) << 8;
 }
 
 #undef __bswap32
-__weak uint32_t __bswap32(uint32_t u)
+__weak uint32_t __bswap32(const uint32_t u)
 {
 	return (u & 0xff000000) >> 24 |
 		(u & 0x00ff0000) >> 8 |
@@ -19,7 +19,7 @@ __weak uint32_t __bswap32(uint32_t u)
 }
 
 #undef __bswap64
-__weak uint64_t __bswap64(uint64_t u)
+__weak uint64_t __bswap64(const uint64_t u)
 {
 	return (u & 0xff00000000000000ULL) >> 56	|
 		(u & 0x00ff000000000000ULL) >> 40	|

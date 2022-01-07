@@ -42,7 +42,7 @@
 #define SSTATUS_SPP		(1 << 8)
 
 /* directly lifted from Linux:/arch/riscv/include/asm/asm.h:9-13 */
-#ifdef __ASSEMBLY__
+#if defined(__ASSEMBLY__)
 #define __ASM_STR(x) x
 #else
 #define __ASM_STR(x) #x

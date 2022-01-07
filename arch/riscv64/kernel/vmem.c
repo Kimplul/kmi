@@ -175,8 +175,8 @@ void populate_root_branch(struct vm_branch *b)
 	b->leaf[IO_PAGE] = (struct vm_branch *)to_pte(0, flags);
 }
 
-#ifdef DEBUG
-int setup_kernel_io(struct vm_branch *b, vm_t paddr)
+#if defined(DEBUG)
+vm_t setup_kernel_io(struct vm_branch *b, vm_t paddr)
 {
 	/* assume Sv39 for now */
 	pm_t gigapage = paddr / MM_GPAGE_SIZE;

@@ -5,7 +5,7 @@
 #include <apos/pmem.h>
 #include <arch/vmem.h>
 
-#ifdef DEBUG
+#if defined(DEBUG)
 enum serial_dev {
 	/* only the NS16550A and compatible at the moment */
 	NS16550A,
@@ -13,13 +13,13 @@ enum serial_dev {
 
 void __fmt(1, 2) dbg(const char *fmt, ...);
 
-void init_dbg(void *fdt);
+void init_dbg(const void *fdt);
 
 void setup_dmap_dbg();
 void setup_io_dbg(struct vm_branch *b);
 void setup_dbg(pm_t pt, enum serial_dev dev);
 
-struct dbg_info dbg_from_fdt(void *fdt);
+struct dbg_info dbg_from_fdt(const void *fdt);
 
 #define COMMON_FORMAT "[%s] %s:%d\n\t"
 #define COMMON_ARGS(s) s, __FILE__, __LINE__

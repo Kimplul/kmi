@@ -7,13 +7,13 @@
 #include <libfdt.h>
 #include <stdarg.h>
 
-#ifdef DEBUG
+#if defined(DEBUG)
 static struct dbg_info {
 	pm_t dbg_ptr;
 	enum serial_dev dev;
 } dbg_info = (struct dbg_info){0};
 
-void init_dbg(void *fdt)
+void init_dbg(const void *fdt)
 {
 	dbg_info = dbg_from_fdt(fdt);
 }
@@ -88,7 +88,7 @@ static enum serial_dev __serial_dev_enum(const char *dev_name)
 	return -1;
 }
 
-struct dbg_info dbg_from_fdt(void *fdt)
+struct dbg_info dbg_from_fdt(const void *fdt)
 {
 	int chosen_offset = fdt_path_offset(fdt, "/chosen");
 	const char *stdout = fdt_getprop(fdt, chosen_offset, "stdout-path", NULL);

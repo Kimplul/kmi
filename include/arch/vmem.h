@@ -18,8 +18,8 @@ void flush_tlb_all();
 void populate_root_branch(struct vm_branch *b);
 struct vm_branch *init_vmem(void *fdt);
 
-#ifdef DEBUG
-stat_t setup_kernel_io(struct vm_branch *b, vm_t paddr);
+#if defined(DEBUG)
+vm_t setup_kernel_io(struct vm_branch *b, vm_t paddr);
 #endif
 
 #endif /* APOS_ARCH_PAGES_H */

@@ -22,8 +22,8 @@ genrule () {
 	gencommon "${1}"
 	echo "	\$(COMPILE)  -c \$< -o \$@"	>> deps.mk
 
-	echo "${lint}: ${s}"		>> deps.mk
-	echo "	\$(LINT) -c \$<"	>> deps.mk
+	echo "${lint}: ${s}"			>> deps.mk
+	echo "	\$(LINT) -c \$< -o /dev/null"	>> deps.mk
 }
 
 case "${1}" in

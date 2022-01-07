@@ -58,7 +58,7 @@ typedef intmax_t ssize_t;
 #define SCHAR_MIN	(-__SCHAR_MAX - 1)
 #define UCHAR_MAX	(2 * __SCHAR_MAX__ - 1)
 
-#ifdef __CHAR_UNSIGNED__
+#if defined(__CHAR_UNSIGNED__)
 #define CHAR_MIN	0
 #define CHAR_MAX	UCHAR_MAX
 #else

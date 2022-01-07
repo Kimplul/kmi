@@ -89,7 +89,7 @@ static void __print_prop_value(const void *data, int len)
 	}
 }
 
-void __dbg_fdt(void *fdt, int node_offset, int depth)
+void __dbg_fdt(const void *fdt, int node_offset, int depth)
 {
 	int node = 0;
 	fdt_for_each_subnode(node, fdt, node_offset){

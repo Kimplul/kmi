@@ -5,10 +5,10 @@
 #include <apos/pmem.h>
 #include <apos/vmem.h>
 
-size_t get_init_size(void *fdt);
-vm_t get_init_base(void *fdt);
+size_t get_init_size(const void *fdt);
+vm_t get_init_base(const void *fdt);
 
-pm_t get_initrdtop(void *fdt);
-pm_t get_initrdbase(void *fdt);
+pm_t get_initrdtop(const void *fdt);
+pm_t get_initrdbase(const void *fdt);
 
 #endif /* APOS_INITRD_H */

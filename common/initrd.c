@@ -31,7 +31,7 @@ static struct cpio_header *__next_entry(struct cpio_header *cp)
 	return (struct cpio_header *)(((char *)cp) + blen + tlen);
 }
 
-static struct cpio_header *__find_file(char *c, char* fname, size_t fname_len)
+static struct cpio_header *__find_file(const char *c, const char* fname, size_t fname_len)
 {
 	struct cpio_header *cp = (struct cpio_header *)c;
 	for(; cp; cp = __next_entry(cp)){
@@ -53,7 +53,7 @@ static struct cpio_header *__find_file(char *c, char* fname, size_t fname_len)
 	return 0;
 }
 
-pm_t get_initrdtop(void *fdt)
+pm_t get_initrdtop(const void *fdt)
 {
 	int chosen_offset = fdt_path_offset(fdt, "/chosen");
 	struct cell_info ci = get_cellinfo(fdt, chosen_offset);
@@ -65,10 +65,10 @@ pm_t get_initrdtop(void *fdt)
 	return (pm_t)__va(fdt_load_int_ptr(ci.addr_cells, initrd_end_ptr));
 }
 
-pm_t get_initrdbase(void *fdt)
+pm_t get_initrdbase(const void *fdt)
 {
-	int chosen_offset = fdt_path_offset(fdt, "/chosen");
-	struct cell_info ci = get_cellinfo(fdt, chosen_offset);
+	const int chosen_offset = fdt_path_offset(fdt, "/chosen");
+	const struct cell_info ci = get_cellinfo(fdt, chosen_offset);
 
 	void *initrd_base_ptr = (void *)fdt_getprop(fdt, chosen_offset,
 			"linux,initrd-start", NULL);
@@ -79,14 +79,14 @@ pm_t get_initrdbase(void *fdt)
 static char init_n[] = "init";
 static size_t init_nlen = ARRAY_SIZE(init_n) - 1; /* ignore trailing NULL */
 
-size_t get_init_size(void *fdt)
+size_t get_init_size(const void *fdt)
 {
 	char *c = (char *)get_initrdbase(fdt);
 	struct cpio_header *cp = __find_file(c, init_n, init_nlen);
 	return convnum(cp->c_filesize, 8, 16);
 }
 
-vm_t get_init_base(void *fdt)
+vm_t get_init_base(const void *fdt)
 {
 	char *c = (char *)get_initrdbase(fdt);
 	struct cpio_header *cp = __find_file(c, init_n, init_nlen);
@@ -94,11 +94,11 @@ vm_t get_init_base(void *fdt)
 	return ((vm_t)cp) + align_up(sizeof(struct cpio_header) + name_len, 4);
 }
 
-void move_init(void *fdt, void *target)
+void move_init(const void *fdt, void *target)
 {
-	char *c = (char *)get_initrdbase(fdt);
+	const char *c = (const char *)get_initrdbase(fdt);
 
-	struct cpio_header *cp = __find_file(c, init_n, init_nlen);
+	const struct cpio_header *cp = __find_file(c, init_n, init_nlen);
 	size_t name_len = convnum(cp->c_namesize, 8, 16);
 	size_t file_len = convnum(cp->c_filesize, 8, 16);
 

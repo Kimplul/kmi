@@ -1,6 +1,6 @@
 #include <libfdt.h>
 
-struct cell_info get_cellinfo(void *fdt, int offset)
+struct cell_info get_cellinfo(const void *fdt, const int offset)
 {
 	return (struct cell_info){
 		fdt_size_cells(fdt, offset),
@@ -9,7 +9,7 @@ struct cell_info get_cellinfo(void *fdt, int offset)
 }
 
 /* how "reg" is interpreted depends on the parent node */
-struct cell_info get_reginfo(void *fdt, const char *path)
+struct cell_info get_reginfo(const void *fdt, const char *path)
 {
 	const char *i = strrchr(path, '/');
 	if(!i)
