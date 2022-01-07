@@ -1,6 +1,6 @@
-#include <apos/pmem.h>
+#include <arch/pmem.h>
 
-int arch_pmem_conf(void *fdt, size_t *max_order, size_t *base_bits, size_t bits[ORDERS_NUM])
+stat_t stat_pmem_conf(void *fdt, size_t *max_order, size_t *base_bits, size_t bits[NUM_ORDERS])
 {
 	UNUSED(fdt);
 
@@ -11,5 +11,5 @@ int arch_pmem_conf(void *fdt, size_t *max_order, size_t *base_bits, size_t bits[
 	for(size_t i = 0; i <= *max_order; ++i)
 		bits[i] = 9;
 
-	return 0;
+	return OK;
 }

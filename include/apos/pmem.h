@@ -3,11 +3,8 @@
 
 #include <apos/mem.h>
 #include <apos/types.h>
+#include <arch/pmem.h>
 
-/* arch */
-int arch_pmem_conf(void *fdt, size_t *max_order, size_t *base_bits, size_t bits[ORDERS_NUM]);
-
-/* common */
 void update_pmap(pm_t offset);
 void free_page(enum mm_order order, pm_t paddr);
 void mark_used(enum mm_order order, pm_t paddr);

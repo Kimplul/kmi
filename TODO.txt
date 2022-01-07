@@ -35,7 +35,7 @@ worh doing anything to.
 !!! CURRENT:
 
 + Separate vmem and devmem to have a common 'backend', like mem_nodes or
-whatever, would probably make it a bit more clean-feeling.
+whatever, would probably make it a bit more clean-feeling. (x)
 + Add in interrupt handling and start testing jumping back and forth.
 + Add in better tcb handling, mainly creating linked lists with all threads
 under a common process ID.
@@ -46,3 +46,6 @@ under a common process ID.
 used address of the guest address space and only map so many pages, which could
 be better for cache locality.
 + Assert? Not sure how to handle a kernel panic at the moment, I guess just die?
++ Add in more logging etc. dumbass
++ More functions, less macros? sometimes helpful in gdb, maybe also for kernel
+binary size?

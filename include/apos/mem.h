@@ -44,7 +44,7 @@ extern size_t __mm_sizes[10];
 extern size_t __mm_page_shift;
 extern size_t __mm_max_order;
 
-#define ORDERS_NUM 10
+#define NUM_ORDERS 10
 enum mm_order {
 	MM_O0,
 	MM_O1,

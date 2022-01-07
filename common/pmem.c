@@ -409,8 +409,8 @@ void init_pmem(void *fdt)
 {
 	size_t max_order = 0;
 	size_t base_bits = 0;
-	size_t bits[ORDERS_NUM] = {0};
-	arch_pmem_conf(fdt, &max_order, &base_bits, bits);
+	size_t bits[NUM_ORDERS] = {0};
+	stat_pmem_conf(fdt, &max_order, &base_bits, bits);
 	init_mem(max_order, bits, base_bits);
 
 	pm_t ram_size = __get_ramtop(fdt) - RAM_BASE;
