@@ -20,7 +20,7 @@ struct mem_region {
 	struct mem_region *next;
 	struct mem_region *prev;
 
-	char flags;
+	vmflags_t flags;
 
 	vm_t end;
 	vm_t start;

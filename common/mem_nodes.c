@@ -15,10 +15,13 @@ struct block_wrapper {
 
 struct block_region {
 	size_t used_blocks;
-	struct sp_node sp_n;
-};
 
-static struct sp_root root_region = (struct sp_root){0};
+	struct block_region *av_next;
+	struct block_region *av_prev;
+
+	struct block_region *next;
+	struct block_region *prev;
+};
 
 #define MAX_BLOCKS \
 	((BASE_PAGE_SIZE - sizeof(struct block_region)) / sizeof(struct block_wrapper))
@@ -26,14 +29,14 @@ static struct sp_root root_region = (struct sp_root){0};
 #define block_region(b) \
 	((struct block_region *)((size_t)(b) & ~(BASE_PAGE_SIZE - 1)))
 
-#define region_container(b) \
-	container_of(b, struct block_region, sp_n)
-
 #define block_container(b) \
 	container_of(b, struct block_wrapper, n)
 
 #define region_to_array(r) \
 	((struct block_wrapper *)((char *)(r) + sizeof(struct block_region)))
+
+static struct block_region *head = 0;
+static struct block_region *av_head = 0;
 
 static struct block_region *__create_region()
 {
@@ -44,24 +47,18 @@ static struct block_region *__create_region()
 
 void init_mem_blocks()
 {
-	sp_root(root_region) = &__create_region()->sp_n;
-}
-
-static void __destroy_mem_block(struct sp_node *n)
-{
-	if(!n)
-		return;
-
-	__destroy_mem_block(sp_left(n));
-	__destroy_mem_block(sp_right(n));
-
-	struct block_region *r = block_region(n);
-	free_page(BASE_PAGE, (vm_t)r);
+	head = __create_region();
+	av_head = head;
 }
 
 void destroy_mem_blocks()
 {
-	__destroy_mem_block(sp_root(root_region));
+	struct block_region *r = head;
+	while(r){
+		struct block_region *d = r;
+		r = r->prev;
+		free_page(MM_O0, (pm_t)d);
+	}
 }
 
 static struct mem_region *__find_free_block(struct block_region *h)
@@ -78,75 +75,78 @@ static struct mem_region *__find_free_block(struct block_region *h)
 	return 0;
 }
 
-static void __region_insert(struct block_region *r)
+static void __pop_av_head()
 {
-	struct sp_node *n = sp_root(root_region), *p = NULL;
-	enum sp_dir d = LEFT;
+	struct block_region *t = av_head;
+	av_head = av_head->av_next;
+	if(av_head)
+		av_head->av_prev = 0;
 
-	r->sp_n = (struct sp_node){0};
-
-	while(n){
-		struct block_region *t = region_container(n);
-
-		p = n;
-		if(r->used_blocks < t->used_blocks){
-			n = sp_left(n);
-			d = LEFT;
-		}
-
-		else if(r->used_blocks > t->used_blocks){
-			n = sp_right(n);
-			d = RIGHT;
-		}
-
-		else if(r < t) {
-			n = sp_left(n);
-			d = LEFT;
-		}
-
-		else {
-			n = sp_right(n);
-			d = RIGHT;
-		}
-	}
-
-	sp_insert(&sp_root(root_region), p, &r->sp_n, d);
-}
-
-static void __region_remove(struct block_region *r)
-{
-	sp_remove(&sp_root(root_region), &r->sp_n);
-}
-
-static void __update_regions(struct block_region *r)
-{
-	__region_remove(r);
-	__region_insert(r);
+	t->av_next = 0;
+	t->av_prev = 0;
 }
 
 struct mem_region *get_mem_node()
 {
-	struct sp_node *n = sp_root(root_region);
+	if(!av_head){
+		av_head = __create_region();
 
-	while(n){
-		struct block_region *r = region_container(n);
+		av_head->prev = head;
+		head->next = av_head;
 
-		if(r->used_blocks != MAX_BLOCKS){
-			r->used_blocks++;
-			__update_regions(r);
-
-			return __find_free_block(r);
-		}
-
-		n = sp_left(n);
+		head = av_head;
 	}
 
-	/* we need to allocate a new region */
-	struct block_region *r = __create_region();
-	r->used_blocks++;
-	__region_insert(r);
+	struct mem_region *ret = __find_free_block(av_head);
 
-	return __find_free_block(r);
+	if(++av_head->used_blocks == MAX_BLOCKS)
+		__pop_av_head();
+
+	return ret;
+}
+
+static void __push_av_head(struct block_region *r)
+{
+	r->av_prev = 0;
+	r->av_next = av_head;
+	if(av_head)
+		av_head->av_prev = r;
+
+	av_head = r;
+}
+
+static void __free_block(struct block_region *r)
+{
+	struct block_region *av_n = r->av_next;
+	struct block_region *av_p = r->av_prev;
+
+	if(av_n)
+		av_n->av_prev = av_p;
+
+	if(av_p)
+		av_p->av_next = av_n;
+
+	if(r == av_head)
+		__pop_av_head();
+
+	struct block_region *n = r->next;
+	struct block_region *p = r->prev;
+
+	if(n)
+		n->prev = p;
+
+	if(p)
+		p->next = n;
+
+	if(r == head){
+		if(head->prev){
+			head->next = 0;
+			head = head->prev;
+		} else
+			return;
+	}
+
+	free_page(BASE_PAGE, (pm_t)r);
 }
 
 void free_mem_node(struct mem_region *m)
@@ -155,7 +155,12 @@ void free_mem_node(struct mem_region *m)
 	w->status = FREE;
 
 	struct block_region *r = block_region(w);
-	r->used_blocks--;
 
-	__update_regions(r);
+	if(--r->used_blocks == 0){
+		__free_block(r);
+		return;
+	}
+
+	else if(!r->av_next && !r->av_prev)
+		__push_av_head(r);
 }
