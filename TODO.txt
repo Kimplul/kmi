@@ -49,3 +49,6 @@ be better for cache locality.
 + Add in more logging etc. dumbass
 + More functions, less macros? sometimes helpful in gdb, maybe also for kernel
 binary size?
++ Add in purely virtual memory pages, i.e. stuff that shouldn't free physical
+memory when the memory page is freed, for example if two processes share the
+same memory

@@ -46,7 +46,7 @@ stat_t mod_vpage(struct vm_branch *branch, vm_t vaddr, pm_t paddr, vmflags_t fla
 {
 	pm_t *pte = __find_vmem(branch, vaddr, 0);
 	if(pte){
-		*pte = to_pte((pm_t)__pa(paddr), flags);
+		*pte = to_pte((pm_t)__pa(paddr), vp_flags(flags));
 		return OK;
 	}
 
@@ -111,7 +111,7 @@ stat_t map_vpage(struct vm_branch *branch,
 	if (is_branch(branch->leaf[idx])) /* something has gone terribly wrong? */
 		__destroy_branch(branch->leaf[idx]);
 
-	branch->leaf[idx] = (struct vm_branch *)to_pte((pm_t)__pa(paddr), flags);
+	branch->leaf[idx] = (struct vm_branch *)to_pte((pm_t)__pa(paddr), vp_flags(flags));
 	return OK;
 }
 

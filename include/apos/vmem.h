@@ -21,4 +21,7 @@ stat_t free_uvmem_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr, vmflags
 #define unmap_freed_region(b, start, bytes)\
 	map_fill_region(b, &free_uvmem_wrapper, 0, start, bytes, 0)
 
+#define vm_flags(x) ((x) & ~0xff)
+#define vp_flags(x) ((x) & 0xff)
+
 #endif /* APOS_VMEM_H */

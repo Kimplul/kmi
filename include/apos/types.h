@@ -178,7 +178,7 @@ typedef intmax_t ssize_t;
 /* some common types used throughout the kernel */
 typedef int_fast8_t stat_t;
 typedef uint_fast32_t id_t;
-typedef uint_fast8_t vmflags_t;
+typedef uint_fast16_t vmflags_t;
 
 /* error types (should this go somewhere else? */
 /* negative error codes are reserved for general usage, positive error codes are
