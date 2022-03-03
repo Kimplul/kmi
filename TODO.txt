@@ -51,4 +51,8 @@ be better for cache locality.
 binary size?
 + Add in purely virtual memory pages, i.e. stuff that shouldn't free physical
 memory when the memory page is freed, for example if two processes share the
-same memory
+same memory (started on it)
++ Arches will need to implement timers. All in all, in kernel there should be
+SMP, IPC, timers a memory manager, everything else in userspace.
++ Choose between allowing the process manager to interrupt other cpus and each
+cpu starts its own process manager with a timer of some sort?

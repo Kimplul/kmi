@@ -72,7 +72,7 @@ stat_t free_devmem(struct tcb *t, vm_t dev_start)
 	struct mem_region *m = 0;
 	if(dev_paddr < __pre_top)
 		m = find_used_region(&pre_ram, dev_paddr);
-	
+
 	if(dev_paddr > __post_base)
 		m = find_used_region(&post_ram, dev_paddr);
 

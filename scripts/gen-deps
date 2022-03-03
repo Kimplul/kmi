@@ -4,8 +4,6 @@ gencommon () {
 	lint="build/${s%.*}${1}.l"
 	dep="build/${s%.*}${1}.d"
 	obj="build/${s%.*}${1}"
-	
-	mkdir -p $(dirname ${dep})
 
 	echo "${dep}:"		>> deps.mk
 	echo "include ${dep}"	>> deps.mk
@@ -35,6 +33,9 @@ case "${1}" in
 		suffix=.ld
 		func=genlink
 esac
+
+# create all subdirectories
+mkdir -p $(echo "${2}" | xargs dirname | uniq | sed 's|^|build/|g')
 
 for s in ${2}
 do
