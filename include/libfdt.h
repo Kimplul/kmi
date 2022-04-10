@@ -1,6 +1,7 @@
 #ifndef APOS_LIBFDT_H
 #define APOS_LIBFDT_H
 #include "../dtc/libfdt/libfdt.h"
+#include <apos/unaligned.h>
 #include <apos/types.h>
 
 /* apos additions, implementation can be found in common/fdt.c */
@@ -20,7 +21,7 @@ void __dbg_fdt(const void *fdt, int node_offset, int depth);
 #endif
 
 #define fdt_load_int_ptr(c, p)                                                 \
-	((c) == 2 ? fdt64_to_cpu(*(fdt64_t *)(p)) :                            \
-                    fdt32_to_cpu(*(fdt32_t *)(p)))
+	((c) == 2 ? fdt64_to_cpu(get_unaligned((uint64_t *)p)) :               \
+                    fdt32_to_cpu(get_unaligned((uint32_t *)p)))
 
 #endif

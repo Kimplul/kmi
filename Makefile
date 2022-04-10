@@ -1,11 +1,11 @@
-DO		!= echo > deps.mk
+DO		!= echo -n > deps.mk
 
 # this could be done better
 DEBUGFLAGS	!= [ $(RELEASE) ] \
 			&& echo "-flto -O2 -DNDEBUG" \
 			|| echo "-O0 -ggdb3 -DDEBUG"
 
-CFLAGS		= -ffreestanding -nostdlib -std=c17 -Wall -Wextra
+CFLAGS		= -ffreestanding -nostdlib -std=c17 -Wall -Wextra -Wvla
 DEPFLAGS	= -MT $@ -MMD -MP -MF $@.d
 LINTFLAGS	= -fsyntax-only
 PREPROCESS	= -E
@@ -56,10 +56,13 @@ KERN_INFO	= sed "s/<KERNEL_SIZE>/$$($(KERN_SIZE))/"
 KERNEL_LINK	:= arch/$(ARCH)/conf/kernel-link
 INIT_LINK	:= arch/$(ARCH)/conf/init-link
 
-KERNEL_OBJECTS	!= ./scripts/gen-deps --compile "$(KERNEL_SOURCES)"
-INIT_OBJECTS	!= ./scripts/gen-deps --compile "$(INIT_SOURCES)"
-KERNEL_LD	!= ./scripts/gen-deps --link "$(KERNEL_LINK).S"
-INIT_LD		!= ./scripts/gen-deps --link "$(INIT_LINK).S"
+KERN_FLAGS	!= [ $(UBSAN) ] && echo -fsanitize=undefined
+INIT_FLAGS	:=
+
+KERNEL_OBJECTS	!= ./scripts/gen-deps --kernel --compile "$(KERNEL_SOURCES)"
+INIT_OBJECTS	!= ./scripts/gen-deps --init --compile "$(INIT_SOURCES)"
+KERNEL_LD	!= ./scripts/gen-deps --kernel --link "$(KERNEL_LINK).S"
+INIT_LD		!= ./scripts/gen-deps --init --link "$(INIT_LINK).S"
 
 include deps.mk
 

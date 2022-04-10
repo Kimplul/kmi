@@ -12,19 +12,32 @@ gencommon () {
 
 genlink () {
 	gencommon ".ld"
-	echo "	\$(GENLINK) $< | \$(STRIPLINK) | \$(KERN_INFO) > \$@"\
-		>> deps.mk;
+	if [ ${kern} ]; then
+		echo "	\$(GENLINK) $< | \$(STRIPLINK) > \$@" >> deps.mk
+	else
+		echo "	\$(GENLINK) $< | \$(STRIPLINK) | \$(KERN_INFO) > \$@" >> deps.mk;
+	fi
 }
 
 genrule () {
 	gencommon "${1}"
-	echo "	\$(COMPILE)  -c \$< -o \$@"	>> deps.mk
+	echo "	\$(COMPILE) ${flags} -c \$< -o \$@"	>> deps.mk
 
 	echo "${lint}: ${s}"			>> deps.mk
-	echo "	\$(LINT) -c \$< -o /dev/null"	>> deps.mk
+	echo "	\$(LINT) ${flags} -c \$< -o /dev/null"	>> deps.mk
 }
 
 case "${1}" in
+	--kernel)
+		kern=1
+		flags='$(KERN_FLAGS)'
+		;;
+	--init)
+		flags='$(INIT_FLAGS)'
+		;;
+esac
+
+case "${2}" in
 	--compile)
 		suffix=.o
 		func=genrule
@@ -35,9 +48,9 @@ case "${1}" in
 esac
 
 # create all subdirectories
-mkdir -p $(echo "${2}" | xargs dirname | uniq | sed 's|^|build/|g')
+mkdir -p $(echo "${3}" | xargs dirname | uniq | sed 's|^|build/|g')
 
-for s in ${2}
+for s in ${3}
 do
 	${func} ${suffix}
 	echo ${obj}

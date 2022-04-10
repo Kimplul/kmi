@@ -236,6 +236,7 @@ static pm_t __populate_order(mm_node_t **op, pm_t cont, enum mm_order src,
 
 	o->entries = num;
 	o->full = (mm_info_t *)move_forward(cont, state_elems(num));
+	cont = align_up(cont, sizeof(void *));
 	o->next = (mm_node_t **)move_forward(cont, next_elems(num));
 	memset(o->full, 0, state_elems(num));
 	memset(o->next, 0, next_elems(num));
@@ -260,6 +261,7 @@ static pm_t __probe_order(pm_t cont, enum mm_order src, enum mm_order dst,
 
 	cont += sizeof(struct mm_branch_t);
 	cont += state_elems(num);
+	cont = align_up(cont, sizeof(void *));
 	cont += next_elems(num);
 
 	for (size_t i = 0; i < num; ++i)

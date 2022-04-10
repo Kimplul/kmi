@@ -17,12 +17,12 @@
 #define VM_DMAP         (0xffffffc000000000) /* testing for now */
 #define VM_KERN         (VM_DMAP + SZ_256K)
 #define TMP_PTE         (-SZ_2G)
-#define ROOT_PTE        (0)
+#define ROOT_PTE        (0UL)
 #define ROOT_REGION     (SZ_4K)
 
-#define IO_PAGE         511
-#define KSTART_PAGE     256
-#define CSTACK_PAGE     255
+#define IO_PAGE         511UL
+#define KSTART_PAGE     256UL
+#define CSTACK_PAGE     255UL
 
 /* assume Sv39, probably wouldn't be too difficult to use runtime parameters
  * instead. First 4K is reserved for NULL, but I suppose it could be mapped

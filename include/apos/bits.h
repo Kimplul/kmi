@@ -8,9 +8,9 @@
 #define __set_bit(x, y)    ((x) |= (y))
 #define __clear_bit(x, y)  ((x) &= ~(y))
 
-#define __is_nset(x, y)    (__is_set((x), 1 << (y)))
-#define __set_nbit(x, y)   (__set_bit((x), 1 << (y)))
-#define __clear_nbit(x, y) (__clear_bit((x), 1 << (y)))
+#define __is_nset(x, y)    (__is_set((x), 1UL << (y)))
+#define __set_nbit(x, y)   (__set_bit((x), 1UL << (y)))
+#define __clear_nbit(x, y) (__clear_bit((x), 1UL << (y)))
 
 uint16_t __bswap16(uint16_t u);
 uint32_t __bswap32(uint32_t u);

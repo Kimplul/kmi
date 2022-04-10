@@ -30,8 +30,8 @@
 #define __o_container(idx)              ((idx) / MM_OINFO_WIDTH)
 #define __o_bit(idx)                    ((idx) & (MM_OINFO_WIDTH - 1))
 
-#define __va(x)                         (((char *)(x)) + VM_DMAP - RAM_BASE)
-#define __pa(x)                         (((char *)(x)) + RAM_BASE - VM_DMAP)
+#define __va(x)                         (void *)(((uintptr_t)(x)) + VM_DMAP - RAM_BASE)
+#define __pa(x)                         (void *)(((uintptr_t)(x)) - VM_DMAP + RAM_BASE)
 #define __page(x)                       ((x) / BASE_PAGE_SIZE)
 #define __addr(x)                       ((x)*BASE_PAGE_SIZE)
 #define __pages(x)                                                             \
