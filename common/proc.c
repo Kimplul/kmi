@@ -11,10 +11,10 @@ static vm_t setup_call_stack(struct tcb *t, size_t bytes)
 	pm_t offset = 0;
 	size_t pages = __pages(bytes);
 	vmflags_t flags = VM_V | VM_R | VM_W | VM_U;
-	for(size_t i = 1; i <= pages; ++i)
-	{
+	for (size_t i = 1; i <= pages; ++i) {
 		offset = alloc_page(BASE_PAGE, offset);
-		map_vpage(t->b_r, offset, PROC_STACK_TOP - BASE_PAGE_SIZE * i, flags, BASE_PAGE);
+		map_vpage(t->b_r, offset, PROC_STACK_TOP - BASE_PAGE_SIZE * i,
+		          flags, BASE_PAGE);
 	}
 
 	return PROC_STACK_TOP - BASE_PAGE_SIZE * pages;
@@ -29,7 +29,7 @@ stat_t init_proc(void *fdt, struct vm_branch *b)
 {
 	/* todo: cleanup or something */
 	struct tcb *t = (struct tcb *)alloc_page(BASE_PAGE, 0);
-	if(!t)
+	if (!t)
 		return ERR_OOMEM;
 
 	memset(t, 0, sizeof(struct tcb));
@@ -43,17 +43,16 @@ stat_t init_proc(void *fdt, struct vm_branch *b)
 
 	/* the binary gets to choose first what memory regions it requires */
 	t->entry = load_elf(t, get_init_base(fdt));
-	if(!t->entry)
+	if (!t->entry)
 		return ERR_ADDR;
 
 	t->proc_stack = setup_proc_stack(t, __proc_stack_size);
-	if(!t->proc_stack)
+	if (!t->proc_stack)
 		return ERR_ADDR;
 
 	t->call_stack = setup_call_stack(t, __call_stack_size);
-	if(!t->call_stack)
+	if (!t->call_stack)
 		return ERR_ADDR;
-
 
 	flush_tlb();
 

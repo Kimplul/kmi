@@ -10,12 +10,12 @@ static void __sp_turn_left(struct sp_node *n)
 	sp_paren(n) = l;
 	sp_right(l) = n;
 
-	if(p && sp_left(p) == n)
+	if (p && sp_left(p) == n)
 		sp_left(p) = l;
 	else if (p)
 		sp_right(p) = l;
 
-	if(sp_left(n))
+	if (sp_left(n))
 		sp_lparen(n) = n;
 }
 
@@ -29,12 +29,12 @@ static void __sp_turn_right(struct sp_node *n)
 	sp_paren(n) = r;
 	sp_left(r) = n;
 
-	if(p && sp_left(p) == n)
+	if (p && sp_left(p) == n)
 		sp_left(p) = r;
 	else if (p)
 		sp_right(p) = r;
 
-	if(sp_right(n))
+	if (sp_right(n))
 		sp_rparen(n) = n;
 }
 
@@ -43,10 +43,10 @@ static int __sp_balance(struct sp_node *n)
 	int l = 0;
 	int r = 0;
 
-	if(sp_left(n))
+	if (sp_left(n))
 		l = sp_left(n)->hint + 1;
 
-	if(sp_right(n))
+	if (sp_right(n))
 		r = sp_right(n)->hint + 1;
 
 	return l - r;
@@ -57,13 +57,13 @@ static int __sp_max_hint(struct sp_node *n)
 	int l = 0;
 	int r = 0;
 
-	if(sp_left(n))
+	if (sp_left(n))
 		l = sp_left(n)->hint + 1;
 
-	if(sp_right(n))
+	if (sp_right(n))
 		r = sp_right(n)->hint + 1;
 
-	if(l > r)
+	if (l > r)
 		return l;
 	else
 		return r;
@@ -71,45 +71,44 @@ static int __sp_max_hint(struct sp_node *n)
 
 static void __sp_update(struct sp_node **root, struct sp_node *n)
 {
-	while(n){
-
+	while (n) {
 		int b = __sp_balance(n);
 		int prev_hint = n->hint;
 		struct sp_node *p = sp_paren(n);
 
-		if(b < -1) {
+		if (b < -1) {
 			/* leaning to the right */
-			if(n == *root)
+			if (n == *root)
 				*root = sp_right(n);
 
 			__sp_turn_right(n);
 		}
 
-		else if(b > 1){
+		else if (b > 1) {
 			/* leaning to the left */
-			if(n == *root)
+			if (n == *root)
 				*root = sp_left(n);
 
 			__sp_turn_left(n);
 		}
 
 		n->hint = __sp_max_hint(n);
-		if(n->hint == 0 || n->hint != prev_hint)
+		if (n->hint == 0 || n->hint != prev_hint)
 			n = p;
 		else
 			return;
 	}
 }
 
-void sp_insert(struct sp_node **root, struct sp_node *p,
-		struct sp_node *n, enum sp_dir d)
+void sp_insert(struct sp_node **root, struct sp_node *p, struct sp_node *n,
+               enum sp_dir d)
 {
-	if(!*root){
+	if (!*root) {
 		*root = n;
 		return;
 	}
 
-	if(d == LEFT)
+	if (d == LEFT)
 		sp_left(p) = n;
 	else
 		sp_right(p) = n;
@@ -123,29 +122,29 @@ static void __sp_replace_right(struct sp_node *n, struct sp_node *r)
 	struct sp_node *p = sp_paren(n);
 	struct sp_node *rp = sp_paren(r);
 
-	if(sp_left(rp) == r){
+	if (sp_left(rp) == r) {
 		sp_left(rp) = sp_right(r);
-		if(sp_right(r))
+		if (sp_right(r))
 			sp_rparen(r) = rp;
 	}
 
-	if(sp_paren(rp) == n)
+	if (sp_paren(rp) == n)
 		sp_paren(rp) = r;
 
 	sp_paren(r) = p;
 	sp_left(r) = sp_left(n);
 
-	if(sp_right(n) != r){
+	if (sp_right(n) != r) {
 		sp_right(r) = sp_right(n);
 		sp_rparen(n) = r;
 	}
 
-	if(p && sp_left(p) == n)
+	if (p && sp_left(p) == n)
 		sp_left(p) = r;
 	else if (p)
 		sp_right(p) = r;
 
-	if(sp_left(n))
+	if (sp_left(n))
 		sp_lparen(n) = r;
 }
 
@@ -154,39 +153,39 @@ static void __sp_replace_left(struct sp_node *n, struct sp_node *l)
 	struct sp_node *p = sp_paren(n);
 	struct sp_node *lp = sp_paren(l);
 
-	if(sp_right(lp) == l){
+	if (sp_right(lp) == l) {
 		sp_right(lp) = sp_left(l);
-		if(sp_left(l))
+		if (sp_left(l))
 			sp_lparen(l) = lp;
 	}
 
-	if(sp_paren(lp) == n)
+	if (sp_paren(lp) == n)
 		sp_paren(lp) = l;
 
 	sp_paren(l) = p;
 	sp_right(l) = sp_right(n);
 
-	if(sp_left(n) != l){
+	if (sp_left(n) != l) {
 		sp_left(l) = sp_left(n);
 		sp_lparen(n) = l;
 	}
 
-	if(p && sp_left(p) == n)
+	if (p && sp_left(p) == n)
 		sp_left(p) = l;
 	else if (p)
 		sp_right(p) = l;
 
-	if(sp_right(n))
+	if (sp_right(n))
 		sp_rparen(n) = l;
 }
 
 /* TODO: handle root better */
 void sp_remove(struct sp_node **root, struct sp_node *del)
 {
-	if(sp_right(del)){
+	if (sp_right(del)) {
 		struct sp_node *least = sp_first(sp_right(del));
 
-		if(del == *root)
+		if (del == *root)
 			*root = least;
 
 		__sp_replace_right(del, least);
@@ -194,10 +193,10 @@ void sp_remove(struct sp_node **root, struct sp_node *del)
 		return;
 	}
 
-	if(sp_left(del)){
+	if (sp_left(del)) {
 		struct sp_node *most = sp_last(sp_left(del));
 
-		if(del == *root)
+		if (del == *root)
 			*root = most;
 
 		__sp_replace_left(del, most);
@@ -205,7 +204,7 @@ void sp_remove(struct sp_node **root, struct sp_node *del)
 		return;
 	}
 
-	if(del == *root){
+	if (del == *root) {
 		*root = 0;
 		return;
 	}
@@ -213,7 +212,7 @@ void sp_remove(struct sp_node **root, struct sp_node *del)
 	/* empty node */
 	struct sp_node *paren = sp_paren(del);
 
-	if(sp_left(paren) == del)
+	if (sp_left(paren) == del)
 		sp_left(paren) = 0;
 	else
 		sp_right(paren) = 0;
@@ -223,14 +222,16 @@ void sp_remove(struct sp_node **root, struct sp_node *del)
 
 struct sp_node *sp_first(struct sp_node *n)
 {
-	if(!sp_left(n)) return n;
+	if (!sp_left(n))
+		return n;
 
 	return sp_first(sp_left(n));
 }
 
 struct sp_node *sp_last(struct sp_node *n)
 {
-	if(!sp_right(n)) return n;
+	if (!sp_right(n))
+		return n;
 
 	return sp_last(sp_right(n));
 }

@@ -7,7 +7,7 @@ void init_irq(void *fdt)
 {
 	UNUSED(fdt);
 	csr_write(CSR_STVEC, &handle_irq);
-	
+
 	long s = 0;
 	csr_read(CSR_SIE, s);
 	info("CSR_SIE: %lx\n", s);
@@ -15,7 +15,8 @@ void init_irq(void *fdt)
 
 __aligned(4) void handle_irq()
 {
-	while(1);
+	while (1)
+		;
 }
 
 /* very simple for now */

@@ -5,31 +5,31 @@
 #include <apos/types.h>
 #include <apos/vmem.h>
 
-#define EI_MAGIC 0x7f454c46
+#define EI_MAGIC         0x7f454c46
 
-#define ELFCLASSNONE		0x0
-#define ELFCLASS32		0x1
-#define ELFCLASS64		0x2
+#define ELFCLASSNONE     0x0
+#define ELFCLASS32       0x1
+#define ELFCLASS64       0x2
 
-#define ELFDATANONE		0x0
-#define ELFDATA2LSB		0x1
-#define ELFDATA2MSB		0x2
+#define ELFDATANONE      0x0
+#define ELFDATA2LSB      0x1
+#define ELFDATA2MSB      0x2
 
-#define ELFOSABI_NONE		0x0
-#define ELFOSABI_SYSV		0x0
-#define ELFOSABI_NETBSD		0x2
-#define ELFOSABI_LINUX		0x3
-#define ELFOSABI_HURD		0x4
-#define ELFOSABI_FREEBSD	0x9
-#define ELFOSABI_OPENBSD	0xc
+#define ELFOSABI_NONE    0x0
+#define ELFOSABI_SYSV    0x0
+#define ELFOSABI_NETBSD  0x2
+#define ELFOSABI_LINUX   0x3
+#define ELFOSABI_HURD    0x4
+#define ELFOSABI_FREEBSD 0x9
+#define ELFOSABI_OPENBSD 0xc
 
-#define ET_NONE			0x0
-#define ET_REL			0x1
-#define ET_EXEC			0x2
-#define ET_DYN			0x3
-#define ET_CORE			0x4
+#define ET_NONE          0x0
+#define ET_REL           0x1
+#define ET_EXEC          0x2
+#define ET_DYN           0x3
+#define ET_CORE          0x4
 
-#define EM_RISCV		0xf3
+#define EM_RISCV         0xf3
 
 struct __packed elf_ident {
 	uint32_t ei_magic;
@@ -75,22 +75,22 @@ struct __packed elf64_header {
 	uint16_t e_shstrndx;
 };
 
-#define PT_NULL			0x0
-#define PT_LOAD			0x1
-#define PT_DYNAMIC		0x2
-#define PT_INTERP		0x3
-#define PT_NOTE			0x4
-#define PT_SHLIB		0x5
-#define PT_PHDR			0x6
-#define PT_TLS			0x7
-#define PT_LOOS			0x60000000
-#define PT_HIOS			0x6fffffff
-#define PT_LOPROC		0x70000000
-#define PT_HIPROC		0x7fffffff
+#define PT_NULL    0x0
+#define PT_LOAD    0x1
+#define PT_DYNAMIC 0x2
+#define PT_INTERP  0x3
+#define PT_NOTE    0x4
+#define PT_SHLIB   0x5
+#define PT_PHDR    0x6
+#define PT_TLS     0x7
+#define PT_LOOS    0x60000000
+#define PT_HIOS    0x6fffffff
+#define PT_LOPROC  0x70000000
+#define PT_HIPROC  0x7fffffff
 
-#define PF_X			(1 << 0)
-#define PF_W			(1 << 1)
-#define PF_R			(1 << 2)
+#define PF_X       (1 << 0)
+#define PF_W       (1 << 1)
+#define PF_R       (1 << 2)
 
 struct __packed program32_header {
 	uint32_t p_type;
@@ -114,37 +114,37 @@ struct __packed program64_header {
 	uint64_t p_align;
 };
 
-#define SHT_NULL		0x0
-#define SH_PROGBITS		0x1
-#define SHT_SYMTAB		0x2
-#define SHT_STRTAB		0x3
-#define SHT_RELA		0x4
-#define SHT_HASH		0x5
-#define SHT_DYNAMIC		0x6
-#define SHT_NOTE		0x7
-#define SHT_NOBITS		0x8
-#define SHT_REL			0x9
-#define SHT_SHLIB		0x0a
-#define SHT_DYNSYM		0x0b
-#define SHT_INIT_ARRAY		0x0e
-#define SHT_FINI_ARRAY		0x0f
-#define SHT_PREINIT_ARRAY	0x10
-#define SHT_GROUP		0x11
-#define SHT_SYMTAB_SHNDX	0x12
-#define SHT_NUM			0x13
+#define SHT_NULL             0x0
+#define SH_PROGBITS          0x1
+#define SHT_SYMTAB           0x2
+#define SHT_STRTAB           0x3
+#define SHT_RELA             0x4
+#define SHT_HASH             0x5
+#define SHT_DYNAMIC          0x6
+#define SHT_NOTE             0x7
+#define SHT_NOBITS           0x8
+#define SHT_REL              0x9
+#define SHT_SHLIB            0x0a
+#define SHT_DYNSYM           0x0b
+#define SHT_INIT_ARRAY       0x0e
+#define SHT_FINI_ARRAY       0x0f
+#define SHT_PREINIT_ARRAY    0x10
+#define SHT_GROUP            0x11
+#define SHT_SYMTAB_SHNDX     0x12
+#define SHT_NUM              0x13
 
-#define SHF_WRITE		0x1
-#define SHF_ALLOC		0x2
-#define SHF_EXECINSTR		0x4
-#define SHF_MERGE		0x10
-#define SHF_STRINGS		0x20
-#define SHF_INFO_LINK		0x40
-#define SHF_LINK_ODER		0x80
-#define SHF_OS_NONCONFORMING	0x100
-#define SHF_GROUP		0x200
-#define SHF_TLS			0x400
-#define SHF_MASKOS		0x0ff00000
-#define SHF_MASKPROC		0xf0000000
+#define SHF_WRITE            0x1
+#define SHF_ALLOC            0x2
+#define SHF_EXECINSTR        0x4
+#define SHF_MERGE            0x10
+#define SHF_STRINGS          0x20
+#define SHF_INFO_LINK        0x40
+#define SHF_LINK_ODER        0x80
+#define SHF_OS_NONCONFORMING 0x100
+#define SHF_GROUP            0x200
+#define SHF_TLS              0x400
+#define SHF_MASKOS           0x0ff00000
+#define SHF_MASKPROC         0xf0000000
 
 struct __packed section32_header {
 	uint32_t sh_name;
@@ -172,17 +172,20 @@ struct __packed section64_header {
 	uint64_t s_entsize;
 };
 
-#define elf_indent(e) ((struct elf_ident *)e)
-#define elf64_header(e) ((struct elf64_header *)e)
-#define elf32_header(e) ((struct elf32_header *)e)
+#define elf_indent(e)       ((struct elf_ident *)e)
+#define elf64_header(e)     ((struct elf64_header *)e)
+#define elf32_header(e)     ((struct elf32_header *)e)
 #define program64_header(p) ((struct program64_header *)p)
 #define program32_header(p) ((struct program32_header *)p)
 #define section64_header(s) ((struct section64_header *)s)
 #define section32_header(s) ((struct section32_header *)s)
 
-#define elf_header_prop(c, e, p) (c == ELFCLASS64 ? elf64_header(e)->p : elf32_header(e)->p)
-#define program_header_prop(c, e, p) (c == ELFCLASS64 ? program64_header(e)->p : program32_header(e)->p)
-#define section_header_prop(c, e, p) (c == ELFCLASS64 ? section64_header(e)->p : section32_header(e)->p)
+#define elf_header_prop(c, e, p)                                               \
+	(c == ELFCLASS64 ? elf64_header(e)->p : elf32_header(e)->p)
+#define program_header_prop(c, e, p)                                           \
+	(c == ELFCLASS64 ? program64_header(e)->p : program32_header(e)->p)
+#define section_header_prop(c, e, p)                                           \
+	(c == ELFCLASS64 ? section64_header(e)->p : section32_header(e)->p)
 
 vm_t load_elf(struct tcb *t, vm_t b);
 

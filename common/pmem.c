@@ -8,25 +8,28 @@
 #include <libfdt.h>
 
 /* NOTE: these are all for pnum_t, i.e. O0_SHIFT is from 0 */
-#define __foreach_page(var, start, end, attr, neg)\
-	for(size_t i = num_indexes(start); i < num_elems(end); ++i)\
-	if(var->attr[i] == (mm_info_t)(-1)) continue;\
-	else for(pnum_t page = i * MM_OINFO_WIDTH, j = 0;\
-			j < (pnum_t)MIN((end) - i * MM_OINFO_WIDTH, MM_OINFO_WIDTH);\
-			++j, ++page)\
-		if(neg(__is_nset(var->attr[i], j)))
+#define __foreach_page(var, start, end, attr, neg)                             \
+	for (size_t i = num_indexes(start); i < num_elems(end); ++i)           \
+		if (var->attr[i] == (mm_info_t)(-1))                           \
+			continue;                                              \
+		else                                                           \
+			for (pnum_t page = i * MM_OINFO_WIDTH, j = 0;          \
+			     j < (pnum_t)MIN((end)-i * MM_OINFO_WIDTH,         \
+			                     MM_OINFO_WIDTH);                  \
+			     ++j, ++page)                                      \
+				if (neg(__is_nset(var->attr[i], j)))
 
 #define NEG !
-#define foreach_full_page(var, start, order)\
+#define foreach_full_page(var, start, order)                                   \
 	__foreach_page(var, start, var->entries, full, )
 
-#define foreach_not_full_page(var, start, order)\
+#define foreach_not_full_page(var, start, order)                               \
 	__foreach_page(var, start, var->entries, full, NEG)
 
-#define foreach_used_page(var, start, order)\
+#define foreach_used_page(var, start, order)                                   \
 	__foreach_page(var, start, var->entries, used, )
 
-#define foreach_not_used_page(var, start, order)\
+#define foreach_not_used_page(var, start, order)                               \
 	__foreach_page(var, start, var->entries, used, NEG)
 
 typedef uint32_t mm_info_t;
@@ -55,8 +58,8 @@ struct mm_pmap_t {
 
 static struct mm_pmap_t *pmap = 0;
 
-static void __mark_free(mm_node_t * op, pnum_t pnum, enum mm_order tgt,
-	enum mm_order src, enum mm_order dst)
+static void __mark_free(mm_node_t *op, pnum_t pnum, enum mm_order tgt,
+                        enum mm_order src, enum mm_order dst)
 {
 	size_t idx = pnum_to_index(pnum, src);
 
@@ -67,7 +70,7 @@ static void __mark_free(mm_node_t * op, pnum_t pnum, enum mm_order tgt,
 	}
 
 	struct mm_branch_t *o = (struct mm_branch_t *)op;
-	if(src != tgt)
+	if (src != tgt)
 		__mark_free(o->next[idx], pnum, tgt, src - 1, dst);
 
 	/* freeing a page results in always clearing a full bit? */
@@ -87,15 +90,15 @@ void free_page(enum mm_order order, pm_t paddr)
 
 		for (size_t j = 0; j < omap->order; ++j)
 			__mark_free(omap->orders[j],
-				pm_to_pnum(paddr - omap->base),
-				order, omap->order, j);
+			            pm_to_pnum(paddr - omap->base), order,
+			            omap->order, j);
 
 		return;
 	}
 }
 
-static bool __mark_used(mm_node_t * op, pnum_t pnum, enum mm_order tgt,
-	enum mm_order src, enum mm_order dst)
+static bool __mark_used(mm_node_t *op, pnum_t pnum, enum mm_order tgt,
+                        enum mm_order src, enum mm_order dst)
 {
 	size_t idx = pnum_to_index(pnum, src);
 
@@ -141,21 +144,22 @@ void mark_used(enum mm_order order, pm_t paddr)
 
 		for (size_t j = 0; j <= omap->order; ++j)
 			__mark_used(omap->orders[j],
-				pm_to_pnum(paddr - omap->base),
-				order, omap->order, j);
+			            pm_to_pnum(paddr - omap->base), order,
+			            omap->order, j);
 
 		return;
 	}
 }
 
-static pnum_t __enum_order(mm_node_t * op, pnum_t offset,
-	enum mm_order src, enum mm_order dst)
+static pnum_t __enum_order(mm_node_t *op, pnum_t offset, enum mm_order src,
+                           enum mm_order dst)
 {
 	size_t idx = pnum_to_index(offset, src);
 
 	if (src == dst) {
 		struct mm_leaf_t *o = (struct mm_leaf_t *)op;
-		foreach_not_used_page(o, idx, src) {
+		foreach_not_used_page(o, idx, src)
+		{
 			return page << __o_offset(src);
 		}
 
@@ -163,11 +167,12 @@ static pnum_t __enum_order(mm_node_t * op, pnum_t offset,
 	}
 
 	struct mm_branch_t *o = (struct mm_branch_t *)op;
-	foreach_not_full_page(o, idx, src) {
+	foreach_not_full_page(o, idx, src)
+	{
 		/* if the suggested search index is full, the following level
 		 * would get an incorrect offset if trying to follow the original
 		 * suggestion. */
-		if (page != (pnum_t) idx)
+		if (page != (pnum_t)idx)
 			offset = 0;
 
 		pnum_t ret = __enum_order(o->next[page], offset, src - 1, dst);
@@ -195,8 +200,8 @@ pm_t alloc_page(enum mm_order order, pm_t offset)
 		if (offset != 0)
 			base = offset - omap->base;
 
-		pnum = __enum_order(omap->orders[order],
-			pm_to_pnum(base), omap->order, order);
+		pnum = __enum_order(omap->orders[order], pm_to_pnum(base),
+		                    omap->order, order);
 
 		if (!(pnum < 0))
 			break;
@@ -211,43 +216,43 @@ pm_t alloc_page(enum mm_order order, pm_t offset)
 }
 
 /* unfortunate that populating the mm info is so complicated */
-static pm_t __populate_order(mm_node_t ** op, pm_t cont,
-	enum mm_order src, enum mm_order dst, size_t num)
+static pm_t __populate_order(mm_node_t **op, pm_t cont, enum mm_order src,
+                             enum mm_order dst, size_t num)
 {
 	if (src == dst) {
-		struct mm_leaf_t *o = (struct mm_leaf_t *)
-			move_forward(cont, sizeof(struct mm_leaf_t));
+		struct mm_leaf_t *o = (struct mm_leaf_t *)move_forward(
+			cont, sizeof(struct mm_leaf_t));
 
 		o->entries = num;
-		o->used = (mm_info_t *) move_forward(cont, state_elems(num));
+		o->used = (mm_info_t *)move_forward(cont, state_elems(num));
 		memset(o->used, 0, state_elems(num));
 
-		*op = (mm_node_t *) o;
+		*op = (mm_node_t *)o;
 		return cont;
 	}
 
-	struct mm_branch_t *o = (struct mm_branch_t *)
-		move_forward(cont, sizeof(struct mm_branch_t));
+	struct mm_branch_t *o = (struct mm_branch_t *)move_forward(
+		cont, sizeof(struct mm_branch_t));
 
 	o->entries = num;
-	o->full = (mm_info_t *) move_forward(cont, state_elems(num));
-	o->next = (mm_node_t **) move_forward(cont, next_elems(num));
+	o->full = (mm_info_t *)move_forward(cont, state_elems(num));
+	o->next = (mm_node_t **)move_forward(cont, next_elems(num));
 	memset(o->full, 0, state_elems(num));
 	memset(o->next, 0, next_elems(num));
 
 	for (size_t i = 0; i < num; ++i) {
-		cont = __populate_order(&o->next[i], cont,
-			src - 1, dst, __o_width(src - 1));
+		cont = __populate_order(&o->next[i], cont, src - 1, dst,
+		                        __o_width(src - 1));
 	}
 
-	*op = (mm_node_t *) o;
+	*op = (mm_node_t *)o;
 	return cont;
 }
 
 static pm_t __probe_order(pm_t cont, enum mm_order src, enum mm_order dst,
-		size_t num)
+                          size_t num)
 {
-	if(src == dst){
+	if (src == dst) {
 		cont += sizeof(struct mm_leaf_t);
 		cont += state_elems(num);
 		return cont;
@@ -257,29 +262,29 @@ static pm_t __probe_order(pm_t cont, enum mm_order src, enum mm_order dst,
 	cont += state_elems(num);
 	cont += next_elems(num);
 
-	for(size_t i = 0; i < num; ++i)
+	for (size_t i = 0; i < num; ++i)
 		cont = __probe_order(cont, src - 1, dst, __o_width(src - 1));
 
 	return cont;
 }
 
-static pm_t __populate_omap(struct mm_omap_t **omap, pm_t cont,
-	pm_t base, size_t entries, enum mm_order order)
+static pm_t __populate_omap(struct mm_omap_t **omap, pm_t cont, pm_t base,
+                            size_t entries, enum mm_order order)
 {
-	struct mm_omap_t *lomap = (struct mm_omap_t *)
-		move_forward(cont, sizeof(struct mm_omap_t));
+	struct mm_omap_t *lomap = (struct mm_omap_t *)move_forward(
+		cont, sizeof(struct mm_omap_t));
 	memset(lomap, 0, sizeof(struct mm_omap_t));
 
-	lomap->orders = (mm_node_t **) move_forward(cont,
-		(order + 1) * sizeof(mm_node_t **));
+	lomap->orders = (mm_node_t **)move_forward(
+		cont, (order + 1) * sizeof(mm_node_t **));
 	memset(lomap->orders, 0, (order + 1) * sizeof(mm_node_t **));
 
 	lomap->order = order;
 	lomap->base = base;
 
 	for (size_t i = 0; i <= order; ++i)
-		cont = __populate_order(&lomap->orders[i], cont,
-			order, i, entries);
+		cont = __populate_order(&lomap->orders[i], cont, order, i,
+		                        entries);
 
 	*omap = lomap;
 	return cont;
@@ -290,7 +295,7 @@ static pm_t __probe_omap(pm_t cont, size_t entries, enum mm_order order)
 	cont += sizeof(struct mm_omap_t);
 	cont += (order + 1) * sizeof(mm_node_t **);
 
-	for(size_t i = 0; i <= order; ++i)
+	for (size_t i = 0; i <= order; ++i)
 		cont = __probe_order(cont, order, i, entries);
 
 	return cont;
@@ -310,8 +315,8 @@ pm_t populate_pmap(pm_t ram_base, size_t ram_size, pm_t cont)
 		if (entries == 0)
 			continue;
 
-		cont = __populate_omap(&pmap->omap[i], cont,
-			ram_region, entries, i);
+		cont = __populate_omap(&pmap->omap[i], cont, ram_region,
+		                       entries, i);
 
 		ram_left -= __mm_sizes[i] * entries;
 		ram_region += (__mm_sizes[i] * entries);
@@ -332,9 +337,9 @@ pm_t probe_pmap(pm_t ram_base, size_t ram_size)
 
 	pm_t ram_region = ram_base;
 	size_t ram_left = ram_size;
-	for(ssize_t i = __mm_max_order; i >= MM_O0; --i){
+	for (ssize_t i = __mm_max_order; i >= MM_O0; --i) {
 		size_t entries = ram_left / __mm_sizes[i];
-		if(entries == 0)
+		if (entries == 0)
 			continue;
 
 		cont = __probe_omap(cont, entries, i);
@@ -350,13 +355,13 @@ static void __mark_area_used(pm_t base, pm_t top)
 {
 	size_t area_left = top - base;
 	pm_t runner = base;
-	while(area_left >= BASE_PAGE_SIZE){
+	while (area_left >= BASE_PAGE_SIZE) {
 		mark_used(BASE_PAGE, runner);
 		runner += BASE_PAGE_SIZE;
 		area_left -= BASE_PAGE_SIZE;
 	}
 
-	if(area_left != 0)
+	if (area_left != 0)
 		mark_used(BASE_PAGE, runner);
 }
 
@@ -364,11 +369,12 @@ static void __mark_reserved_mem(void *fdt)
 {
 	int rmem_offset = fdt_path_offset(fdt, "/reserved-memory/mmode_resv0");
 	struct cell_info ci = get_reginfo(fdt, "/reserved-memory/mmode_resv0");
-	uint8_t *rmem_reg = (uint8_t *)fdt_getprop(fdt, rmem_offset, "reg", NULL);
+	uint8_t *rmem_reg =
+		(uint8_t *)fdt_getprop(fdt, rmem_offset, "reg", NULL);
 
 	pm_t base = (pm_t)fdt_load_int_ptr(ci.addr_cells, rmem_reg);
 
-	if(ci.addr_cells == 2)
+	if (ci.addr_cells == 2)
 		rmem_reg += sizeof(fdt64_t);
 	else
 		rmem_reg += sizeof(fdt32_t);
@@ -385,7 +391,7 @@ static pm_t __get_ramtop(void *fdt)
 
 	pm_t base = (pm_t)fdt_load_int_ptr(ci.addr_cells, mem_reg);
 
-	if(ci.addr_cells == 2)
+	if (ci.addr_cells == 2)
 		mem_reg += sizeof(fdt64_t);
 	else
 		mem_reg += sizeof(fdt32_t);
@@ -409,7 +415,7 @@ void init_pmem(void *fdt)
 {
 	size_t max_order = 0;
 	size_t base_bits = 0;
-	size_t bits[NUM_ORDERS] = {0};
+	size_t bits[NUM_ORDERS] = { 0 };
 	stat_pmem_conf(fdt, &max_order, &base_bits, bits);
 	init_mem(max_order, bits, base_bits);
 
@@ -426,9 +432,9 @@ void init_pmem(void *fdt)
 	size_t probe_size = probe_pmap(ram_base, ram_size);
 	size_t actual_size = populate_pmap(ram_base, ram_size, pmap_base);
 
-	if(probe_size != actual_size)
-		bug("probe_size (%#lx) != actual_size (%#lx)\n",
-				probe_size, actual_size);
+	if (probe_size != actual_size)
+		bug("probe_size (%#lx) != actual_size (%#lx)\n", probe_size,
+		    actual_size);
 
 	/* mark init stack, this should be unmapped once we get to executing
 	 * processes */

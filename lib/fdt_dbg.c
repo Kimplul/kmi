@@ -5,7 +5,7 @@
 static void __print_char(char c, int depth)
 {
 	/* lol, ugly but good enough for now */
-	for(int i = 0; i < depth; ++i)
+	for (int i = 0; i < depth; ++i)
 		dbg("%c", c);
 }
 
@@ -53,17 +53,17 @@ static int __is_string(const void *data, int len)
 
 static void __print_prop_value(const void *data, int len)
 {
-	if(len == 0)
+	if (len == 0)
 		return;
 
 	dbg(" = ");
 
 	/* heavily inspired by u-boot's fdt print */
-	if(__is_string(data, len)){
+	if (__is_string(data, len)) {
 		dbg("\"");
 		int i = 0;
-		while(i < len){
-			if(i > 0)
+		while (i < len) {
+			if (i > 0)
 				dbg("\", \"");
 
 			dbg("%s", (const char *)data);
@@ -75,15 +75,17 @@ static void __print_prop_value(const void *data, int len)
 	} else if ((len % 4) == 0) {
 		const int32_t *p = (const int32_t *)data;
 		dbg("<");
-		for(int i = 0; i < len / 4; ++i)
-			dbg("%#08x%s", fdt32_to_cpu(p[i]), i < (len / 4 - 1) ? " " : "");
+		for (int i = 0; i < len / 4; ++i)
+			dbg("%#08x%s", fdt32_to_cpu(p[i]),
+			    i < (len / 4 - 1) ? " " : "");
 
 		dbg(">");
 	} else {
 		const int32_t *p = (const int32_t *)data;
 		dbg("[");
-		for(int i = 0; i < len / 4; ++i)
-			dbg("%#02x%s", fdt32_to_cpu(p[i]), i < (len / 4 - 1) ? " " : "");
+		for (int i = 0; i < len / 4; ++i)
+			dbg("%#02x%s", fdt32_to_cpu(p[i]),
+			    i < (len / 4 - 1) ? " " : "");
 
 		dbg("]");
 	}
@@ -92,17 +94,18 @@ static void __print_prop_value(const void *data, int len)
 void __dbg_fdt(const void *fdt, int node_offset, int depth)
 {
 	int node = 0;
-	fdt_for_each_subnode(node, fdt, node_offset){
+	fdt_for_each_subnode(node, fdt, node_offset)
+	{
 		__print_char('\t', depth);
 		dbg("%s: {\n", fdt_get_name(fdt, node, 0));
 
 		int property = 0;
-		fdt_for_each_property_offset(property, fdt, node){
-
+		fdt_for_each_property_offset(property, fdt, node)
+		{
 			int len;
 			const char *name;
 			const void *data = fdt_getprop_by_offset(fdt, property,
-					&name, &len);
+			                                         &name, &len);
 
 			__print_char('\t', depth + 1);
 			dbg("%s", name);
@@ -110,7 +113,6 @@ void __dbg_fdt(const void *fdt, int node_offset, int depth)
 			__print_prop_value(data, len);
 			dbg(";\n");
 		}
-
 
 		__dbg_fdt(fdt, node, depth + 1);
 

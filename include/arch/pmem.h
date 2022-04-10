@@ -5,7 +5,7 @@
 #include <apos/types.h>
 #include <pmem.h>
 
-stat_t stat_pmem_conf(void *fdt, size_t *max_order,
-		size_t *base_bits, size_t bits[NUM_ORDERS]);
+stat_t stat_pmem_conf(void *fdt, size_t *max_order, size_t *base_bits,
+                      size_t bits[NUM_ORDERS]);
 
 #endif /* APOS_ARCH_PMEM_H */

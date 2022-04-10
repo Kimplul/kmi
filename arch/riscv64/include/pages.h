@@ -1,10 +1,10 @@
 #ifndef APOS_RISCV_PAGES_H
 #define APOS_RISCV_PAGES_H
 
-#define MM_KPAGE MM_O0
-#define MM_MPAGE MM_O1
-#define MM_GPAGE MM_O2
-#define MM_TPAGE MM_O3
+#define MM_KPAGE      MM_O0
+#define MM_MPAGE      MM_O1
+#define MM_GPAGE      MM_O2
+#define MM_TPAGE      MM_O3
 
 #define MM_KPAGE_SIZE SZ_4K
 #define MM_MPAGE_SIZE SZ_2M

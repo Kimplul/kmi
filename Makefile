@@ -19,7 +19,7 @@ CROSS_COMPILE	?= $(ARCH)-unknown-elf
 
 OBJCOPY		!= [ $(LLVM) ] \
 			&& echo llvm-objcopy \
-		   	|| echo $(CROSS_COMPILE)-objcopy
+			|| echo $(CROSS_COMPILE)-objcopy
 
 COMPILER	!= [ $(LLVM) ] \
 			&& echo clang --target="$(CROSS_COMPILE)" \
@@ -81,6 +81,10 @@ kernel.bin: kernel.elf
 
 apos.bin: init.bin kernel.bin
 	cat init.bin kernel.bin > apos.bin
+
+format:
+	find arch lib common include -iname '*.[ch]' \
+		-exec clang-format -i -style=file {} \;
 
 clean:
 	$(RM) -r $(CLEANUP)

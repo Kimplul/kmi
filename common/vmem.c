@@ -22,7 +22,7 @@ vm_t alloc_fixed_uvmem(struct tcb *t, vm_t start, size_t size, vmflags_t flags)
 stat_t free_uvmem(struct tcb *t, vm_t va)
 {
 	struct mem_region *m = find_used_region(&t->sp_r, va);
-	if(!m)
+	if (!m)
 		return -1;
 
 	pm_t pa = __addr(m->end - m->start);
@@ -32,24 +32,27 @@ stat_t free_uvmem(struct tcb *t, vm_t va)
 	return 0;
 }
 
-stat_t alloc_uvmem_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr, vmflags_t flags, enum mm_order order)
+stat_t alloc_uvmem_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr,
+                           vmflags_t flags, enum mm_order order)
 {
 	*offset = alloc_page(order, *offset);
-	if(!*offset)
+	if (!*offset)
 		return REGION_TRY_AGAIN; /* try again */
 
 	map_vpage(b, *offset, vaddr, flags, order);
 	return OK;
 }
 
-stat_t free_uvmem_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr, vmflags_t flags, enum mm_order order)
+stat_t free_uvmem_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr,
+                          vmflags_t flags, enum mm_order order)
 {
-	UNUSED(flags); UNUSED(offset);
+	UNUSED(flags);
+	UNUSED(offset);
 
 	pm_t paddr = 0;
 	enum mm_order v_order = 0;
 	stat_vpage(b, vaddr, &paddr, &v_order, 0);
-	if(order != v_order)
+	if (order != v_order)
 		return REGION_TRY_AGAIN;
 
 	unmap_vpage(b, vaddr);

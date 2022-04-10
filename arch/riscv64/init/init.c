@@ -20,16 +20,18 @@ void init_bootmem()
 	size_t flags = VM_V | VM_X | VM_R | VM_W;
 
 	extern char *__init_start;
-	root_branch = (struct init_vmem *)align_down((size_t)&__init_start - SZ_4K, SZ_4K);
+	root_branch = (struct init_vmem *)align_down(
+		(size_t)&__init_start - SZ_4K, SZ_4K);
 
 	/* direct mapping (temp) */
-	for(size_t i = 0; i < CSTACK_PAGE; ++i)
-		root_branch->leaf[i] = (int*)to_pte(SZ_1G * i, flags);
+	for (size_t i = 0; i < CSTACK_PAGE; ++i)
+		root_branch->leaf[i] = (int *)to_pte(SZ_1G * i, flags);
 
 	/* kernel (also sort of direct mapping) */
 	flags |= VM_G;
-	for(size_t i = KSTART_PAGE; i < IO_PAGE; ++i)
-		root_branch->leaf[i] = (int *)to_pte(RAM_BASE + SZ_1G * (i - 256), flags);
+	for (size_t i = KSTART_PAGE; i < IO_PAGE; ++i)
+		root_branch->leaf[i] =
+			(int *)to_pte(RAM_BASE + SZ_1G * (i - 256), flags);
 
 	/* kernel IO, map to 0 for now, will be updated in the future */
 	root_branch->leaf[IO_PAGE] = (int *)to_pte(0, flags);
@@ -45,17 +47,17 @@ void move_kernel()
 	size_t sz = (size_t)&__kernel_size;
 	char *src = (char *)&__init_end;
 	char *dst = (char *)VM_KERN;
-	for(size_t i = 0; i < sz; ++i)
+	for (size_t i = 0; i < sz; ++i)
 		dst[i] = src[i];
 }
 
-#define __va_reg(reg)\
-{\
-	vm_t reg = 0;\
-	__asm__("mv %0, " QUOTE(reg) : "=r" (reg) :: );\
-	reg = (vm_t)__va(reg);\
-	__asm__("mv " QUOTE(reg) ", %0" :: "rK" (reg) : );\
-}
+#define __va_reg(reg)                                                          \
+	{                                                                      \
+		vm_t reg = 0;                                                  \
+		__asm__("mv %0, " QUOTE(reg) : "=r"(reg)::);                   \
+		reg = (vm_t)__va(reg);                                         \
+		__asm__("mv " QUOTE(reg) ", %0" ::"rK"(reg) :);                \
+	}
 
 void init(void *fdt)
 {

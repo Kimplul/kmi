@@ -3,15 +3,14 @@
 #include <apos/sp_tree.h>
 #include <arch/cpu.h>
 
-static struct sp_root t_root = (struct sp_root){0};
-static struct tcb *__tcb_cache[MAX_CPUS] = {0};
+static struct sp_root t_root = (struct sp_root){ 0 };
+static struct tcb *__tcb_cache[MAX_CPUS] = { 0 };
 
-#define tcb_container(x) \
-	container_of(x, struct tcb, sp_n)
+#define tcb_container(x) container_of(x, struct tcb, sp_n)
 
 stat_t threads_insert(struct tcb *t)
 {
-	if(!sp_root(t_root)){
+	if (!sp_root(t_root)) {
 		sp_root(t_root) = &t->sp_n;
 		return OK;
 	}
@@ -19,11 +18,11 @@ stat_t threads_insert(struct tcb *t)
 	struct sp_node *n = sp_root(t_root), *p = NULL;
 	enum sp_dir d = LEFT;
 
-	while(n){
+	while (n) {
 		struct tcb *tc = tcb_container(n);
 		p = n;
 
-		if(t->tid < tc->tid){
+		if (t->tid < tc->tid) {
 			n = sp_left(n);
 			d = LEFT;
 		}
@@ -42,13 +41,13 @@ struct tcb *threads_find(id_t tid)
 {
 	struct sp_node *n = sp_root(t_root);
 
-	while(n){
+	while (n) {
 		struct tcb *t = tcb_container(n);
 
-		if(t->tid == tid)
+		if (t->tid == tid)
 			return t;
 
-		if(t->tid < tid)
+		if (t->tid < tid)
 			n = sp_left(n);
 		else
 			n = sp_right(n);

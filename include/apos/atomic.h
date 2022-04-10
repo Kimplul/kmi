@@ -3,8 +3,7 @@
 
 #include <apos/utils.h> /* GLUE */
 
-typedef enum
-{
+typedef enum {
 	memory_order_relaxed = __ATOMIC_RELAXED,
 	memory_order_consume = __ATOMIC_CONSUME,
 	memory_order_acquire = __ATOMIC_ACQUIRE,
@@ -52,10 +51,9 @@ typedef _Atomic __INTMAX_TYPE__ atomic_intmax_t;
 typedef _Atomic __UINTMAX_TYPE__ atomic_uintmax_t;
 
 #define ATOMIC_VAR_INIT(VALUE) (VALUE)
-#define atomic_init(PTR, VAL)\
-	atomic_store_explicit(PTR, VAL, __ATOMIC_RELAXED)
+#define atomic_init(PTR, VAL)  atomic_store_explicit(PTR, VAL, __ATOMIC_RELAXED)
 
-#define kill_dependency(y) (y)
+#define kill_dependency(y)     (y)
 
 #if defined(__GNUC__)
 #define CMPLR_LOCK_FREE(x) GLUE(__GCC_ATOMIC_, x)##_LOCK_FREE
@@ -63,16 +61,16 @@ typedef _Atomic __UINTMAX_TYPE__ atomic_uintmax_t;
 #define CMPLR_LOCK_FREE(x) GLUE(__CLANG_ATOMIC_, x)##_LOCK_FREE
 #endif
 
-#define ATOMIC_BOOL_LOCK_FREE CMPLR_LOCK_FREE(BOOL)
-#define ATOMIC_CHAR_LOCK_FREE CMPLR_LOCK_FREE(CHAR)
+#define ATOMIC_BOOL_LOCK_FREE     CMPLR_LOCK_FREE(BOOL)
+#define ATOMIC_CHAR_LOCK_FREE     CMPLR_LOCK_FREE(CHAR)
 #define ATOMIC_CHAR16_T_LOCK_FREE CMPLR_LOCK_FREE(CHAR16_T)
 #define ATOMIC_CHAR32_T_LOCK_FREE CMPLR_LOCK_FREE(CHAR32_T)
-#define ATOMIC_WCHAR_T_LOCK_FREE CMPLR_LOCK_FREE(WCHAR32_T)
-#define ATOMIC_SHORT_LOCK_FREE CMPLR_LOCK_FREE(SHORT)
-#define ATOMIC_INT_LOCK_FREE CMPLR_LOCK_FREE(INT)
-#define ATOMIC_LONG_LOCK_FREE CMPLR_LOCK_FREE(LONG)
-#define ATOMIC_LLONG_LOCK_FREE CMPLR_LOCK_FREE(LLONG)
-#define ATOMIC_POINTER_LOCK_FREE CMPLR_LOCK_FREE(POINTER)
+#define ATOMIC_WCHAR_T_LOCK_FREE  CMPLR_LOCK_FREE(WCHAR32_T)
+#define ATOMIC_SHORT_LOCK_FREE    CMPLR_LOCK_FREE(SHORT)
+#define ATOMIC_INT_LOCK_FREE      CMPLR_LOCK_FREE(INT)
+#define ATOMIC_LONG_LOCK_FREE     CMPLR_LOCK_FREE(LONG)
+#define ATOMIC_LLONG_LOCK_FREE    CMPLR_LOCK_FREE(LLONG)
+#define ATOMIC_POINTER_LOCK_FREE  CMPLR_LOCK_FREE(POINTER)
 
 #if defined(__GNUC__)
 #define C11_ATOMIC(x) GLUE(__atomic_, x)
@@ -102,82 +100,79 @@ typedef _Atomic __UINTMAX_TYPE__ atomic_uintmax_t;
 #define N_ATOMIC(x) C11_ATOMIC(x)
 #endif
 
-#define atomic_store_explicit(obj, val, mode)\
-	N_ATOMIC(store)(obj, val, mode)
+#define atomic_store_explicit(obj, val, mode) N_ATOMIC(store)(obj, val, mode)
 
-#define atomic_store(obj, val)\
+#define atomic_store(obj, val)                                                 \
 	atomic_store_explicit(obj, val, __ATOMIC_SEQ_CST);
 
-#define atomic_load_explicit(obj, mode)\
-	N_ATOMIC(load)(obj, mode)
+#define atomic_load_explicit(obj, mode) N_ATOMIC(load)(obj, mode)
 
-#define atomic_load(obj)\
-	atomic_load_explicit(obj, ATOMIC_SEQ_CST)
+#define atomic_load(obj)                atomic_load_explicit(obj, ATOMIC_SEQ_CST)
 
-#define atomic_exchange_explicit(obj, val, mode)\
+#define atomic_exchange_explicit(obj, val, mode)                               \
 	N_ATOMIC(exchange)(obj, val, mode)
 
-#define atomic_exchange(obj, val)\
+#define atomic_exchange(obj, val)                                              \
 	atomic_exchange_explicit(obj, val, __ATOMIC_SEQ_CST)
 
 #if defined(__GNUC__)
-#define atomic_compare_exchange_strong_explicit(obj, val, des, suc, fail)\
+#define atomic_compare_exchange_strong_explicit(obj, val, des, suc, fail)      \
 	N_ATOMIC(compare_exchange)(obj, val, des, 0, suc, fail)
 #elif defined(__clang__)
-#define atomic_compare_exchange_strong_explicit(obj, val, des, suc, fail)\
+#define atomic_compare_exchange_strong_explicit(obj, val, des, suc, fail)      \
 	N_ATOMIC(compare_exchange_strong)(obj, val, des, suc, fail)
 #endif
 
-#define atomic_compare_exchange_strong(obj, val, des)\
-	atomic_compare_exchange_strong_explicit\
-	(obj, val, des, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST)
+#define atomic_compare_exchange_strong(obj, val, des)                          \
+	atomic_compare_exchange_strong_explicit(                               \
+		obj, val, des, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST)
 
 #if defined(__GNUC__)
-#define atomic_compare_exchange_weak_explicit(obj, val, des, suc, fail)\
+#define atomic_compare_exchange_weak_explicit(obj, val, des, suc, fail)        \
 	N_ATOMIC(compare_exchange)(obj, val, des, 1, suc, fail)
 #elif defined(__clang__)
-#define atomic_compare_exchange_weak_explicit(obj, val, des, suc, fail)\
+#define atomic_compare_exchange_weak_explicit(obj, val, des, suc, fail)        \
 	N_ATOMIC(compare_exchange_weak)(obj, val, des, suc, fail)
 #endif
 
-#define atomic_compare_exchange_weak(obj, val, des)\
-	atomic_compare_exchange_weak_explicit\
-	(obj, val, des, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST)
+#define atomic_compare_exchange_weak(obj, val, des)                            \
+	atomic_compare_exchange_weak_explicit(obj, val, des, __ATOMIC_SEQ_CST, \
+	                                      __ATOMIC_SEQ_CST)
 
-#define atomic_fetch_add_explicit(obj, val, mode)\
+#define atomic_fetch_add_explicit(obj, val, mode)                              \
 	C11_ATOMIC(fetch_add)(obj, val, mode)
 
-#define atomic_fetch_add(obj, val)\
+#define atomic_fetch_add(obj, val)                                             \
 	atomic_fetch_add_explicit(obj, val, __ATOMIC_SEQ_CST)
 
-#define atomic_fetch_sub_explicit(obj, val, mode)\
+#define atomic_fetch_sub_explicit(obj, val, mode)                              \
 	C11_ATOMIC(fetch_sub)(obj, val, mode)
 
-#define atomic_fetch_sub(obj, val)\
+#define atomic_fetch_sub(obj, val)                                             \
 	atomic_fetch_sub_explicit(obj, val, __ATOMIC_SEQ_CST)
 
-#define atomic_fetch_and_explicit(obj, val, mode)\
+#define atomic_fetch_and_explicit(obj, val, mode)                              \
 	C11_ATOMIC(fetch_and)(obj, val, mode)
 
-#define atomic_fetch_and(obj, val)\
+#define atomic_fetch_and(obj, val)                                             \
 	atomic_fetch_and_explicit(obj, val, __ATOMIC_SEQ_CST)
 
-#define atomic_fetch_xor_explicit(obj, val, mode)\
+#define atomic_fetch_xor_explicit(obj, val, mode)                              \
 	C11_ATOMIC(fetch_xor)(obj, val, mode)
 
-#define atomic_fetch_xor(obj, val)\
+#define atomic_fetch_xor(obj, val)                                             \
 	atomic_fetch_xor_explicit(obj, val, __ATOMIC_SEQ_CST)
 
-#define atomic_fetch_or_explicit(obj, val, mode)\
+#define atomic_fetch_or_explicit(obj, val, mode)                               \
 	C11_ATOMIC(fetch_or)(obj, val, mode)
 
-#define atomic_fetch_or(obj, val)\
+#define atomic_fetch_or(obj, val)                                              \
 	atomic_fetch_or_explicit(obj, val, __ATOMIC_SEQ_CST)
 
-#define atomic_fetch_nand_explicit(obj, val, mode)\
+#define atomic_fetch_nand_explicit(obj, val, mode)                             \
 	C11_ATOMIC(fetch_nand)(obj, val, mode)
 
-#define atomic_fetch_nand(obj, val)\
+#define atomic_fetch_nand(obj, val)                                            \
 	atomic_fetch_nand_explicit(obj, val, __ATOMIC_SEQ_CST)
 
 /* skip atomic flags, probably not needed */

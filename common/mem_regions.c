@@ -3,9 +3,9 @@
 #include <apos/pmem.h>
 #include <apos/mem.h>
 
-#define mark_region_used(r) ((r) = 1)
+#define mark_region_used(r)   ((r) = 1)
 #define mark_region_unused(r) ((r) = 0)
-#define region_used(r) (r)
+#define region_used(r)        (r)
 
 /* pretty major slowdown when we get to some really massive numbers, not
  * entirely sure why. Will need to check up on this at some point, have I
@@ -23,31 +23,32 @@
  * maybe not even anything with sp_trees but more a weakness of binary trees in
  * general?
  */
-static struct mem_region *__insert_free_region(struct mem_region_root *r, struct mem_region *m)
+static struct mem_region *__insert_free_region(struct mem_region_root *r,
+                                               struct mem_region *m)
 {
 	struct sp_node *n = sp_root(r->free_regions), *p = NULL;
 	size_t start = m->start;
 	size_t size = m->end - m->start;
 	enum sp_dir d = LEFT;
 
-	m->sp_n = (struct sp_node){0};
+	m->sp_n = (struct sp_node){ 0 };
 
-	while(n){
+	while (n) {
 		struct mem_region *t = mem_container(n);
 		size_t nsize = t->end - t->start;
 		p = n;
 
-		if(size < nsize){
+		if (size < nsize) {
 			n = sp_left(n);
 			d = LEFT;
 		}
 
-		else if(size > nsize) {
+		else if (size > nsize) {
 			n = sp_right(n);
 			d = RIGHT;
 		}
 
-		else if (start < t->start){
+		else if (start < t->start) {
 			n = sp_left(n);
 			d = LEFT;
 		}
@@ -58,7 +59,7 @@ static struct mem_region *__insert_free_region(struct mem_region_root *r, struct
 		}
 	}
 
-	if(sp_root(r->free_regions))
+	if (sp_root(r->free_regions))
 		sp_insert(&sp_root(r->free_regions), p, &m->sp_n, d);
 	else
 		sp_root(r->free_regions) = &m->sp_n;
@@ -66,20 +67,21 @@ static struct mem_region *__insert_free_region(struct mem_region_root *r, struct
 	return m;
 }
 
-static struct mem_region *__insert_used_region(struct mem_region_root *r, struct mem_region *m)
+static struct mem_region *__insert_used_region(struct mem_region_root *r,
+                                               struct mem_region *m)
 {
 	struct sp_node *n = sp_root(r->used_regions), *p = NULL;
 	vm_t start = m->start;
 	enum sp_dir d = LEFT;
 
-	m->sp_n = (struct sp_node){0};
+	m->sp_n = (struct sp_node){ 0 };
 
-	while(n){
+	while (n) {
 		struct mem_region *t = mem_container(n);
 
 		p = n;
 
-		if(start < t->start){
+		if (start < t->start) {
 			n = sp_left(n);
 			d = LEFT;
 		}
@@ -92,7 +94,7 @@ static struct mem_region *__insert_used_region(struct mem_region_root *r, struct
 		}
 	}
 
-	if(sp_root(r->used_regions))
+	if (sp_root(r->used_regions))
 		sp_insert(&sp_root(r->used_regions), p, &m->sp_n, d);
 	else
 		sp_root(r->used_regions) = &m->sp_n;
@@ -115,7 +117,7 @@ stat_t init_region(struct mem_region_root *r, vm_t start, size_t arena_size)
 
 static void __destroy_region(struct sp_node *n)
 {
-	if(!n)
+	if (!n)
 		return;
 
 	__destroy_region(sp_left(n));
@@ -139,12 +141,12 @@ void destroy_region(struct mem_region_root *r)
 struct mem_region *find_used_region(struct mem_region_root *r, vm_t start)
 {
 	struct sp_node *n = sp_root(r->used_regions);
-	while(n){
+	while (n) {
 		struct mem_region *t = mem_container(n);
-		if(start == t->start)
+		if (start == t->start)
 			return t;
 
-		if(start < t->start)
+		if (start < t->start)
 			n = sp_left(n);
 		else
 			n = sp_right(n);
@@ -154,7 +156,8 @@ struct mem_region *find_used_region(struct mem_region_root *r, vm_t start)
 }
 
 static struct mem_region *create_region(vm_t start, vm_t end,
-		struct mem_region *prev, struct mem_region *next)
+                                        struct mem_region *prev,
+                                        struct mem_region *next)
 {
 	struct mem_region *m = get_mem_node();
 	m->start = start;
@@ -168,35 +171,36 @@ static struct mem_region *create_region(vm_t start, vm_t end,
  * just from really quick checking */
 static size_t po_align(size_t s)
 {
-	for(size_t o = __mm_max_order; o > 0; --o){
-		if(s >= __o_size(o))
+	for (size_t o = __mm_max_order; o > 0; --o) {
+		if (s >= __o_size(o))
 			return __o_size(o);
 	}
 
 	return 0;
 }
 
-struct mem_region *find_closest_used_region(struct mem_region_root *r, vm_t start)
+struct mem_region *find_closest_used_region(struct mem_region_root *r,
+                                            vm_t start)
 {
 	struct mem_region *closest = 0;
 	size_t md = (size_t)(-1);
 	struct sp_node *n = sp_root(r->used_regions);
-	if(!n)
+	if (!n)
 		return mem_container(sp_root(r->free_regions));
 
-	while(n){
+	while (n) {
 		struct mem_region *t = mem_container(n);
 		size_t d = ABS((ssize_t)start - (ssize_t)t->start);
 
-		if(d == 0) /* exact match */
+		if (d == 0) /* exact match */
 			return t;
 
-		if(d < md){ /* closest so far */
+		if (d < md) { /* closest so far */
 			closest = t;
 			md = d;
 		}
 
-		if(start < t->start)
+		if (start < t->start)
 			n = sp_left(n);
 		else
 			n = sp_right(n);
@@ -212,23 +216,24 @@ struct mem_region *find_closest_used_region(struct mem_region_root *r, vm_t star
  * still fits in, unaligned. If none of these criteria are met, a NULL is
  * returned. Note that this does not check *all* possible memory blocks, only
  * going up in increasing size so as to save time. */
-struct mem_region *find_free_region(struct mem_region_root *r, size_t size, size_t *align)
+struct mem_region *find_free_region(struct mem_region_root *r, size_t size,
+                                    size_t *align)
 {
 	*align = 0;
 	size_t offset = __page(po_align(__addr(size)));
 	struct mem_region *quick_best = 0;
 	struct sp_node *n = sp_root(r->free_regions);
-	while(n){
+	while (n) {
 		struct mem_region *t = mem_container(n);
 		vm_t start = align_up(t->start, offset);
 
 		size_t qsize = t->end - t->start;
 		size_t bsize = t->end - start;
 
-		if(!quick_best && size <= qsize)
+		if (!quick_best && size <= qsize)
 			quick_best = t;
 
-		if(size <= bsize){
+		if (size <= bsize) {
 			*align = start - t->start;
 			return t;
 		}
@@ -240,32 +245,34 @@ struct mem_region *find_free_region(struct mem_region_root *r, size_t size, size
 }
 
 static vm_t __partition_region(struct mem_region_root *r, struct mem_region *m,
-		size_t pages, size_t align)
+                               size_t pages, size_t align)
 {
 	sp_remove(&sp_root(r->free_regions), &m->sp_n);
 
 	vm_t pre_start = m->start;
 	vm_t pre_end = pre_start + align;
-	
+
 	vm_t start = pre_end;
 	vm_t end = start + pages;
 
 	vm_t post_start = end;
 	vm_t post_end = m->end;
 
-	if(pre_start != pre_end){
-		struct mem_region *n = create_region(pre_start, pre_end, m->prev, m);
+	if (pre_start != pre_end) {
+		struct mem_region *n =
+			create_region(pre_start, pre_end, m->prev, m);
 		m->prev = n;
-		if(n->prev)
+		if (n->prev)
 			n->prev->next = n;
 
 		__insert_free_region(r, n);
 	}
 
-	if(post_start != post_end){
-		struct mem_region *n = create_region(post_start, post_end, m, m->next);
+	if (post_start != post_end) {
+		struct mem_region *n =
+			create_region(post_start, post_end, m, m->next);
 		m->next = n;
-		if(n->next)
+		if (n->next)
 			n->next->prev = n;
 
 		__insert_free_region(r, n);
@@ -282,8 +289,7 @@ static vm_t __partition_region(struct mem_region_root *r, struct mem_region *m,
  * just ignore them for now. Note that alloc_region should only be used when
  * mmap is called with MAP_ANON, all other situations should be handled in some
  * fs server */
-vm_t alloc_region(struct mem_region_root *r,
-		size_t size, size_t *actual_size)
+vm_t alloc_region(struct mem_region_root *r, size_t size, size_t *actual_size)
 {
 	*actual_size = align_up(size, BASE_PAGE_SIZE);
 	size_t pages = __page(*actual_size);
@@ -291,41 +297,40 @@ vm_t alloc_region(struct mem_region_root *r,
 	/* find best fitting, alignment etc. */
 	size_t align = 0;
 	struct mem_region *m = find_free_region(r, pages, &align);
-	if(!m)
+	if (!m)
 		return 0;
 
 	return __partition_region(r, m, pages, align);
 }
 
-
-vm_t alloc_fixed_region(struct mem_region_root *r,
-		vm_t start, size_t size, size_t *actual_size)
+vm_t alloc_fixed_region(struct mem_region_root *r, vm_t start, size_t size,
+                        size_t *actual_size)
 {
 	size_t asize = align_up(size, BASE_PAGE_SIZE);
-	if(actual_size)
+	if (actual_size)
 		*actual_size = asize;
 
 	size_t pages = __page(asize);
 	start = __page(start);
 
 	struct mem_region *m = find_closest_used_region(r, start);
-	if(!m)
+	if (!m)
 		return 0;
 
 	/* locate actual region where start is between the region start and end */
-	while(!((m->start <= start) && (start <= m->end))){
-		if(start > m->start)
+	while (!((m->start <= start) && (start <= m->end))) {
+		if (start > m->start)
 			m = m->next;
 		else
 			m = m->prev;
 	}
 
 	/* if region is already in use, forget it */
-	if(region_used(m->flags))
+	if (region_used(m->flags))
 		return 0;
 
 	/* region is too small */
-	if(start + pages > m->end)
+	if (start + pages > m->end)
 		return 0;
 
 	/* actually start marking region used */
@@ -334,18 +339,18 @@ vm_t alloc_fixed_region(struct mem_region_root *r,
 
 static void __try_coalesce_prev(struct mem_region_root *r, struct mem_region *m)
 {
-	while(m){
-		if(!m || region_used(m->flags))
+	while (m) {
+		if (!m || region_used(m->flags))
 			return;
 
 		struct mem_region *p = m->prev;
-		if(!p || region_used(p->flags))
+		if (!p || region_used(p->flags))
 			return;
 
 		m->start = p->start;
 		m->prev = p->prev;
 
-		if(m->prev)
+		if (m->prev)
 			m->prev->next = m;
 
 		sp_remove(&sp_root(r->free_regions), &p->sp_n);
@@ -357,18 +362,18 @@ static void __try_coalesce_prev(struct mem_region_root *r, struct mem_region *m)
 
 static void __try_coalesce_next(struct mem_region_root *r, struct mem_region *m)
 {
-	while(m){
-		if(!m || region_used(m->flags))
+	while (m) {
+		if (!m || region_used(m->flags))
 			return;
 
 		struct mem_region *n = m->next;
-		if(!n || region_used(n->flags))
+		if (!n || region_used(n->flags))
 			return;
 
 		m->end = n->end;
 		m->next = n->next;
 
-		if(m->next)
+		if (m->next)
 			m->next->prev = m;
 
 		sp_remove(&sp_root(r->free_regions), &n->sp_n);
@@ -378,7 +383,8 @@ static void __try_coalesce_next(struct mem_region_root *r, struct mem_region *m)
 	}
 }
 
-static void __try_coalesce_regions(struct mem_region_root *r, struct mem_region *m)
+static void __try_coalesce_regions(struct mem_region_root *r,
+                                   struct mem_region *m)
 {
 	__try_coalesce_prev(r, m);
 	__try_coalesce_next(r, m);
@@ -387,11 +393,11 @@ static void __try_coalesce_regions(struct mem_region_root *r, struct mem_region 
 stat_t free_region(struct mem_region_root *r, vm_t start)
 {
 	/* addr not aligned to page boundary, corrupted or incorrect pointer */
-	if(!aligned(start, BASE_PAGE_SIZE))
+	if (!aligned(start, BASE_PAGE_SIZE))
 		return ERR_ALIGN;
 
 	struct mem_region *m = find_used_region(r, __page(start));
-	if(!m)
+	if (!m)
 		return ERR_NF;
 
 	sp_remove(&sp_root(r->used_regions), &m->sp_n);
@@ -409,7 +415,7 @@ stat_t free_region(struct mem_region_root *r, vm_t start)
  * permutations etc. which would be slow and I don't want to implement it.
  */
 vm_t map_fill_region(struct vm_branch *b, region_callback_t *mem_handler,
-		pm_t offset, vm_t start, size_t bytes, vmflags_t flags)
+                     pm_t offset, vm_t start, size_t bytes, vmflags_t flags)
 {
 	pm_t runner = __page(start);
 	size_t pages = __pages(bytes);
@@ -418,22 +424,23 @@ vm_t map_fill_region(struct vm_branch *b, region_callback_t *mem_handler,
 	/* actual start might not be the same as the user specified start */
 	start = __addr(runner);
 
-	for(; pages; top--){
+	for (; pages; top--) {
 		size_t o_size = __o_size(top);
 		size_t o_pages = __pages(o_size);
 
 		/* NULL does pass this check, so technically all NULL pages are
 		 * aligned, but they're caught in the while expr so this should
 		 * work even if someone tries to map NULL */
-		if(!aligned(runner, o_pages))
+		if (!aligned(runner, o_pages))
 			continue;
 
-		while(pages >= o_pages){
-			stat_t res = mem_handler(b, &offset, __addr(runner), flags, top);
-			if(res > 0)
+		while (pages >= o_pages) {
+			stat_t res = mem_handler(b, &offset, __addr(runner),
+			                         flags, top);
+			if (res > 0)
 				break;
 
-			if(res < 0)
+			if (res < 0)
 				return 0;
 
 			pages -= o_pages;

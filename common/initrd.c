@@ -25,28 +25,30 @@ struct __packed cpio_header {
 
 static struct cpio_header *__next_entry(struct cpio_header *cp)
 {
-	size_t blen = align_up(sizeof(struct cpio_header) + convnum(cp->c_namesize, 8, 16), 4);
+	size_t blen = align_up(
+		sizeof(struct cpio_header) + convnum(cp->c_namesize, 8, 16), 4);
 	size_t tlen = align_up(convnum(cp->c_filesize, 8, 16), 4);
 
 	return (struct cpio_header *)(((char *)cp) + blen + tlen);
 }
 
-static struct cpio_header *__find_file(const char *c, const char* fname, size_t fname_len)
+static struct cpio_header *__find_file(const char *c, const char *fname,
+                                       size_t fname_len)
 {
 	struct cpio_header *cp = (struct cpio_header *)c;
-	for(; cp; cp = __next_entry(cp)){
+	for (; cp; cp = __next_entry(cp)) {
 		size_t namelen = convnum(cp->c_namesize, 8, 16);
-		if(namelen == 0)
+		if (namelen == 0)
 			return 0;
 
-		if(namelen < fname_len)
+		if (namelen < fname_len)
 			continue;
 
 		char *name = (char *)(cp + 1);
-		if(fname[0] != '/')
+		if (fname[0] != '/')
 			name += namelen - (fname_len + 1); /* match ending */
 
-		if(strncmp(name, fname, fname_len) == 0)
+		if (strncmp(name, fname, fname_len) == 0)
 			return cp;
 	}
 
@@ -59,7 +61,7 @@ pm_t get_initrdtop(const void *fdt)
 	struct cell_info ci = get_cellinfo(fdt, chosen_offset);
 
 	void *initrd_end_ptr = (void *)fdt_getprop(fdt, chosen_offset,
-			"linux,initrd-end", NULL);
+	                                           "linux,initrd-end", NULL);
 
 	/* fdt is only aware of physical memory pointers */
 	return (pm_t)__va(fdt_load_int_ptr(ci.addr_cells, initrd_end_ptr));
@@ -71,7 +73,7 @@ pm_t get_initrdbase(const void *fdt)
 	const struct cell_info ci = get_cellinfo(fdt, chosen_offset);
 
 	void *initrd_base_ptr = (void *)fdt_getprop(fdt, chosen_offset,
-			"linux,initrd-start", NULL);
+	                                            "linux,initrd-start", NULL);
 
 	return (pm_t)__va(fdt_load_int_ptr(ci.addr_cells, initrd_base_ptr));
 }

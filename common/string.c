@@ -73,7 +73,8 @@ __weak int strcmp(const char *str1, const char *str2)
 	const char *s1 = (const char *)str1;
 	const char *s2 = (const char *)str2;
 
-	while ((*(s1++) == *(s2++)) && *s1 && *s2) ;
+	while ((*(s1++) == *(s2++)) && *s1 && *s2)
+		;
 
 	return (int)(s1[-1] - s2[-1]);
 }
@@ -84,7 +85,8 @@ __weak int strncmp(const char *str1, const char *str2, size_t num)
 	const char *s1 = (const char *)str1;
 	const char *s2 = (const char *)str2;
 
-	while ((*(s1++) == *(s2++)) && *s1 && *s2 && --num) ;
+	while ((*(s1++) == *(s2++)) && *s1 && *s2 && --num)
+		;
 
 	return (int)(s1[-1] - s2[-1]);
 }
@@ -95,7 +97,8 @@ __weak char *strchr(const char *str, int chr)
 	const char *s1 = str;
 	ssize_t num = strlen(s1);
 
-	while (num-- && *(s1--) != chr) ;
+	while (num-- && *(s1--) != chr)
+		;
 
 	if (num < 0)
 		return 0;
@@ -164,7 +167,8 @@ __weak char *strrchr(const char *str, int chr)
 	ssize_t num = strlen(str);
 	const char *s1 = (str + num) - 1;
 
-	while (num-- && *(s1--) != chr) ;
+	while (num-- && *(s1--) != chr)
+		;
 
 	if (num < 0)
 		return 0;
@@ -229,7 +233,8 @@ __weak size_t strspn(const char *str1, const char *str2)
 __weak size_t strlen(const char *str)
 {
 	const char *s1 = str;
-	while (*(s1++)) ;
+	while (*(s1++))
+		;
 
 	/* the loop overshoots by one */
 	return (size_t)(s1 - str) - 1;
@@ -239,7 +244,8 @@ __weak size_t strlen(const char *str)
 __weak size_t strnlen(const char *str, size_t num)
 {
 	const char *s1 = str;
-	while (num-- && *(s1++)) ;
+	while (num-- && *(s1++))
+		;
 
 	return (size_t)(s1 - str) - 1;
 }
@@ -263,7 +269,8 @@ __weak void *memchr(const void *ptr, int val, size_t num)
 	ssize_t n = num;
 	char c = (char)val;
 
-	while (n-- && *(p1++) != c) ;
+	while (n-- && *(p1++) != c)
+		;
 
 	if (n < 0)
 		return 0;
@@ -304,8 +311,8 @@ __weak int memcmp(const void *ptr1, const void *ptr2, size_t num)
 	const char *p1 = (const char *)ptr1;
 	const char *p2 = (const char *)ptr2;
 
-	while ((*(p1++) == *(p2++)) && --num) ;
+	while ((*(p1++) == *(p2++)) && --num)
+		;
 
 	return (int)(p1[-1] - p2[-1]);
 }
-
