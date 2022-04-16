@@ -27,17 +27,13 @@ static vm_t setup_proc_stack(struct tcb *t, size_t bytes)
 
 stat_t init_proc(void *fdt, struct vm_branch *b)
 {
+	init_tcbs();
+
 	/* todo: cleanup or something */
-	struct tcb *t = (struct tcb *)alloc_page(BASE_PAGE, 0);
+	struct tcb *t = new_thread();
 	if (!t)
 		return ERR_OOMEM;
-
-	memset(t, 0, sizeof(struct tcb));
 	t->b_r = b;
-	t->pid = 0;
-	t->tid = 0;
-
-	threads_insert(t);
 
 	init_uvmem(t, UVMEM_START, UVMEM_END);
 

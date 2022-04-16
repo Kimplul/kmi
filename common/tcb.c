@@ -1,74 +1,89 @@
 #include <apos/tcb.h>
-#include <apos/utils.h>
-#include <apos/sp_tree.h>
 #include <arch/cpu.h>
+#include <apos/mem.h>
+#include <apos/pmem.h>
+#include <apos/nodes.h>
+#include <apos/types.h>
+#include <apos/string.h>
 
-static struct sp_root t_root = (struct sp_root){ 0 };
-static struct tcb *__tcb_cache[MAX_CPUS] = { 0 };
+/* arguably exessively many globals... */
+static id_t start_tid;
+static size_t num_tids;
 
-#define tcb_container(x) container_of(x, struct tcb, sp_n)
+static struct node_root root;
+static struct tcb **tcbs;
 
-stat_t threads_insert(struct tcb *t)
+/* if we ever support systems with massive amounts of cpus, this should probably
+ * be allocated at runtime */
+static struct tcb *cpu_tcb[MAX_CPUS] = {0};
+
+void init_tcbs()
 {
-	if (!sp_root(t_root)) {
-		sp_root(t_root) = &t->sp_n;
-		return OK;
-	}
-
-	struct sp_node *n = sp_root(t_root), *p = NULL;
-	enum sp_dir d = LEFT;
-
-	while (n) {
-		struct tcb *tc = tcb_container(n);
-		p = n;
-
-		if (t->tid < tc->tid) {
-			n = sp_left(n);
-			d = LEFT;
-		}
-
-		else {
-			n = sp_right(n);
-			d = RIGHT;
-		}
-	}
-
-	sp_insert(&sp_root(t_root), p, &t->sp_n, d);
-	return OK;
+	/* assumption: init_tcb called after memory subsystem is initialized */
+	init_nodes(&root, sizeof(struct tcb));
+	/* MM_O1 is 2MiB on riscv64, so 262144 different possible thread ids.
+	 * Should be enough, if we're really strapped for memory I might try
+	 * something smaller but this is fine for now. */
+	tcbs = alloc_page(MM_O1, 0);
+	num_tids = __o_size(MM_O1) / sizeof(struct tcb *);
+	memset(tcbs, 0, __o_size(MM_O1));
 }
 
-struct tcb *threads_find(id_t tid)
+void destroy_tcbs()
 {
-	struct sp_node *n = sp_root(t_root);
-
-	while (n) {
-		struct tcb *t = tcb_container(n);
-
-		if (t->tid == tid)
-			return t;
-
-		if (t->tid < tid)
-			n = sp_left(n);
-		else
-			n = sp_right(n);
-	}
-
-	return 0;
+	destroy_nodes(&root);
+	free_page(MM_O2, (pm_t)tcbs);
 }
 
-struct tcb *get_tcb(id_t pid)
+static id_t __alloc_tid(struct tcb *t)
 {
-	/* TODO: figure out how exactly thread IDs are related to process IDs,
-	 * and figure out mapping between them. */
-	return 0;
+	/* TODO: this would need some locking or something... */
+	for (size_t i = start_tid; i < num_tids; ++i) {
+		if (tcbs[i])
+			continue;
+
+		tcbs[i] = t;
+		start_tid = i + 1;
+		return i;
+	}
+
+	return ERR_NF;
+}
+
+struct tcb *new_thread()
+{
+	if (unlikely(!tcbs))
+		return 0;
+
+	struct tcb *t = (struct tcb *)get_node(&root);
+	t->tid = __alloc_tid(t);
+}
+
+void destroy_thread(struct tcb *t)
+{
+	if (unlikely(!tcbs))
+		return;
+
+	/* remove thread id from list */
+	tcbs[t->tid] = 0;
+	/* free node associated with tcb */
+	free_node(&root, t);
 }
 
 struct tcb *cur_tcb()
 {
-	return __tcb_cache[cpu_id()];
+	return cpu_tcb[cpu_id()];
 }
 
-void set_tcb(struct tcb *t)
+void use_tcb(struct tcb *t)
 {
-	__tcb_cache[cpu_id()] = t;
+	cpu_tcb[cpu_id()] = t;
+}
+
+struct tcb *get_tcb(id_t tid)
+{
+	if (unlikely(!tcbs))
+		return 0;
+
+	return tcbs[tid];
 }

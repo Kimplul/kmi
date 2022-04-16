@@ -184,6 +184,8 @@ typedef uint_fast16_t vmflags_t;
 /* negative error codes are reserved for general usage, positive error codes are
  * allowed to be function-specific. */
 enum {
+	ERR_NOINIT = -7, /* not initialized */
+	ERR_INVAL = -6, /* invalid value */
 	ERR_EXT = -5, /* already exists */
 	ERR_OOMEM = -4, /* out of memory */
 	ERR_ADDR = -3, /* illegal address */

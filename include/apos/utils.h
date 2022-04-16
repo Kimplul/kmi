@@ -31,6 +31,14 @@
 #define offsetof(type, member) ((size_t) & ((type *)0)->member)
 #endif
 
+#if __has_builtin(__builtin_expect)
+#define likely(x) __builtin_expect(!!(x), 1)
+#define unlikely(x) __builtin_expect(!!(x), 0)
+#else
+#define likely(x) (x)
+#define unlikely(x) (x)
+#endif
+
 #define container_of(ptr, type, member)                                        \
 	((type *)((char *)(ptr)-offsetof(type, member)))
 
