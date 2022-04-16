@@ -2,6 +2,7 @@
 #define MM_NODES_H
 
 #include <apos/vmem.h>
+#include <apos/nodes.h>
 
 void init_mem_blocks();
 void destroy_mem_blocks();

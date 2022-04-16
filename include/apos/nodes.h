@@ -1,0 +1,30 @@
+#ifndef APOS_NODES_H
+#define APOS_NODES_H
+
+#include <apos/types.h>
+
+enum node_status { FREE = 0, USED = 1};
+struct node_region {
+	size_t used_nodes;
+
+	struct node_region *av_next;
+	struct node_region *av_prev;
+
+	struct node_region *next;
+	struct node_region *prev;
+};
+
+struct node_root {
+	size_t node_size;
+
+	struct node_region *head;
+	struct node_region *av_head;
+};
+
+void init_nodes(struct node_root *r, size_t node_size);
+void destroy_nodes(struct node_root *r);
+
+void *get_node(struct node_root *r);
+void free_node(struct node_root *r, void *p);
+
+#endif /* APOS_NODES_H */
