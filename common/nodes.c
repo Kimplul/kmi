@@ -1,16 +1,17 @@
 #include <apos/mem.h>
 #include <apos/pmem.h>
+#include <apos/bits.h>
 #include <apos/nodes.h>
 #include <apos/string.h>
 
-#define MAX_NODES(node_size)\
-	((BASE_PAGE_SIZE - sizeof(struct node_region)) / (sizeof(enum node_status) + node_size))
-
-#define region_to_nodes(r)\
-	((enum node_status *)((char *)(r) + sizeof(struct node_region)))
-
-#define node_status(r)\
-	((enum node_status *)((char *)(r) - sizeof(enum node_status)))
+/* the structure of each node_region is approximately
+ *
+ * struct node_region | bitmap | array of node_size nodes
+ *
+ * where array starts on a multiple of node_size to ensure alignment and
+ * bitmap is a bitmap of whether node at index is free or used (1 being used, 0
+ * being free)
+ */
 
 #define node_region(r)\
 	((struct node_region *)((uintptr_t)(r) & ~(BASE_PAGE_SIZE - 1)))
@@ -27,6 +28,16 @@ void init_nodes(struct node_root *r, size_t node_size)
 	r->head = __create_region();
 	r->av_head = r->head;
 	r->node_size = node_size;
+	r->bitmap = sizeof(struct node_region);
+
+	/* ideal values */
+	size_t max_nodes = BASE_PAGE_SIZE / node_size;
+	/* make sure not to truncate division */
+	size_t bitmap_size = (max_nodes / 8) + 1;
+	uintptr_t first_node = r->bitmap + bitmap_size;
+	/* actual values */
+	r->first_node = align_up(first_node, node_size);
+	r->max_nodes = max_nodes - (r->first_node / node_size);
 }
 
 void destroy_nodes(struct node_root *r)
@@ -41,15 +52,13 @@ void destroy_nodes(struct node_root *r)
 
 static void *__find_free_node(struct node_root *r, struct node_region *nr)
 {
-	enum node_status *w = region_to_nodes(nr);
-	for (size_t i = 0; i < MAX_NODES(r->node_size); ++i) {
-		if (*w != FREE) {
-			w = (enum node_status *)(r->node_size + (uint8_t *)(w + 1));
+	uint8_t *bitmap = r->bitmap + (uint8_t *)nr;
+	for (size_t i = 0; i < r->max_nodes; ++i) {
+		if (bitmap_is_set(bitmap, i))
 			continue;
-		}
 
-		*w = USED;
-		return (void *)(w + 1);
+		bitmap_set(bitmap, i);
+		return (i * r->node_size) + (r->first_node + (uint8_t *)nr);
 	}
 
 	return 0;
@@ -81,7 +90,7 @@ void *get_node(struct node_root *r)
 	}
 
 	void *p = __find_free_node(r, r->av_head);
-	if (++r->av_head->used_nodes == MAX_NODES(r->node_size))
+	if (++r->av_head->used_nodes == r->max_nodes)
 		__pop_av_head(r);
 
 	return p;
@@ -133,10 +142,10 @@ static void __free_region(struct node_root *r, struct node_region *nr)
 
 void free_node(struct node_root *r, void *p)
 {
-	enum node_status *w = node_status(p);
-	*w = FREE;
-
-	struct node_region *nr = node_region(w);
+	struct node_region *nr = node_region(p);
+	uint8_t *bitmap = r->bitmap + (uint8_t *)nr;
+	size_t i = ((uintptr_t)p - (r->first_node + (uintptr_t)nr)) / r->node_size;
+	bitmap_clear(bitmap, i);
 
 	if (--nr->used_nodes == 0) {
 		__free_region(r, nr);

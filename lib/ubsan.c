@@ -2,6 +2,8 @@
 #include <apos/debug.h>
 
 /* mostly lifted from https://github.com/Abb1x/tinyubsan/blob/master/src/tinyubsan.c */
+/* TODO: while this is really useful, it would probably be a good idea to add in
+ * more runtime info, see linux for example */
 
 struct tu_source_location {
 	const char *file;

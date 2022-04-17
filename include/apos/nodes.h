@@ -16,6 +16,10 @@ struct node_region {
 
 struct node_root {
 	size_t node_size;
+	size_t max_nodes;
+
+	ptrdiff_t bitmap;
+	ptrdiff_t first_node;
 
 	struct node_region *head;
 	struct node_region *av_head;

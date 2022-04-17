@@ -12,6 +12,30 @@
 #define __set_nbit(x, y)   (__set_bit((x), 1UL << (y)))
 #define __clear_nbit(x, y) (__clear_bit((x), 1UL << (y)))
 
+static inline bool bitmap_is_set(void *bmap, size_t n)
+{
+	uint8_t *bitmap = bmap;
+	size_t i = n / 8;
+	size_t r = n - (i * 8);
+	return __is_nset(bitmap[i], r);
+}
+
+static inline void bitmap_set(void *bmap, size_t n)
+{
+	uint8_t *bitmap = bmap;
+	size_t i = n / 8;
+	size_t r = n - (i * 8);
+	__set_nbit(bitmap[i], r);
+}
+
+static inline void bitmap_clear(void *bmap, size_t n)
+{
+	uint8_t *bitmap = bmap;
+	size_t i = n / 8;
+	size_t r = n - (i * 8);
+	__clear_nbit(bitmap[i], r);
+}
+
 uint16_t __bswap16(uint16_t u);
 uint32_t __bswap32(uint32_t u);
 uint64_t __bswap64(uint64_t u);
