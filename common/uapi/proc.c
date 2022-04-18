@@ -10,42 +10,33 @@
  * would have to periodically ask the kernel about all threads it is aware of
  * via sys_sync. Dunno.
  */
-vm_t sys_fork(vm_t pid, vm_t u0, vm_t u1, vm_t u2)
+SYSCALL_DEFINE1(fork)(vm_t pid)
 {
-	UNUSED(u0);
-	UNUSED(u1);
-	UNUSED(u2);
+	/* fork might not actually even need pid...? */
 	/* TODO: create new thread in the same process family */
 	return 0;
 }
 
-vm_t sys_exec(vm_t pid, vm_t bin, vm_t argc, vm_t argv)
+SYSCALL_DEFINE4(exec)(vm_t pid, vm_t bin, vm_t argc, vm_t argv)
 {
 	/* TODO: execute new process */
 	return 0;
 }
 
-vm_t sys_signal(vm_t pid, vm_t signal, vm_t u0, vm_t u1)
+SYSCALL_DEFINE2(signal)(vm_t pid, vm_t signal)
 {
-	UNUSED(u0);
-	UNUSED(u1);
 	/* TODO: signals? */
 	return 0;
 }
 
-vm_t sys_switch(vm_t pid, vm_t u0, vm_t u1, vm_t u2)
+SYSCALL_DEFINE1(switch)(vm_t pid)
 {
-	UNUSED(u0);
-	UNUSED(u1);
-	UNUSED(u2);
 	/* TODO: switch to process */
 	return 0;
 }
 
-vm_t sys_sync(vm_t buf, vm_t size, vm_t u0, vm_t u1)
+SYSCALL_DEFINE2(sync)(vm_t buf, vm_t size)
 {
-	UNUSED(u0);
-	UNUSED(u1);
 	/* check that only the process manager can use this syscall, otherwise
 	 * just dump process info into the buffer (I guess, not sure if this
 	 * will be quite required */

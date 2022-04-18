@@ -3,27 +3,21 @@
 #include <apos/vmem.h>
 #include <apos/dmem.h>
 
-vm_t sys_req_mem(vm_t size, vm_t flags, vm_t u0, vm_t u1)
+SYSCALL_DEFINE2(req_mem)(vm_t size, vm_t flags)
 {
-	UNUSED(u0);
-	UNUSED(u1);
 	/* proc_tcb should give the tcb of the TID currently running */
 	struct tcb *r = cur_tcb();
 	return alloc_uvmem(r, size, flags);
 }
 
-vm_t sys_req_fixmem(vm_t start, vm_t size, vm_t flags, vm_t u0)
+SYSCALL_DEFINE3(req_fixmem)(vm_t start, vm_t size, vm_t flags)
 {
-	UNUSED(u0);
 	struct tcb *r = cur_tcb();
 	return alloc_fixed_uvmem(r, start, size, flags);
 }
 
-vm_t sys_free_mem(vm_t start, vm_t u0, vm_t u1, vm_t u2)
+SYSCALL_DEFINE1(free_mem)(vm_t start)
 {
-	UNUSED(u0);
-	UNUSED(u1);
-	UNUSED(u2);
 	struct tcb *r = cur_tcb();
 	if (start > __pre_top && start < __post_base)
 		free_uvmem(r, start);
@@ -33,9 +27,8 @@ vm_t sys_free_mem(vm_t start, vm_t u0, vm_t u1, vm_t u2)
 	return 0;
 }
 
-vm_t sys_req_pmem(vm_t paddr, vm_t size, vm_t flags, vm_t u0)
+SYSCALL_DEFINE3(req_pmem)(vm_t paddr, vm_t size, vm_t flags)
 {
-	UNUSED(u0);
 	/* this will require some pondering, but essentially this syscall should
 	 * only be used for device access, so any addresses requested should be
 	 * outside the RAM area, and I'll probably have to implement some method
@@ -45,7 +38,7 @@ vm_t sys_req_pmem(vm_t paddr, vm_t size, vm_t flags, vm_t u0)
 	return alloc_devmem(r, paddr, size, flags);
 }
 
-vm_t sys_req_sharedmem(vm_t pid, vm_t start, vm_t size, vm_t flags)
+SYSCALL_DEFINE4(req_sharedmem)(vm_t pid, vm_t start, vm_t size, vm_t flags)
 {
 	/* take memory in PID's vaddr and map it somewhere in our own memory
 	 * region.

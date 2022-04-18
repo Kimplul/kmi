@@ -26,7 +26,7 @@
 static struct mem_region *__insert_free_region(struct mem_region_root *r,
                                                struct mem_region *m)
 {
-	struct sp_node *n = sp_root(r->free_regions), *p = NULL;
+	struct sp_node *n = sp_root(&r->free_regions), *p = NULL;
 	size_t start = m->start;
 	size_t size = m->end - m->start;
 	enum sp_dir d = LEFT;
@@ -59,10 +59,10 @@ static struct mem_region *__insert_free_region(struct mem_region_root *r,
 		}
 	}
 
-	if (sp_root(r->free_regions))
-		sp_insert(&sp_root(r->free_regions), p, &m->sp_n, d);
+	if (sp_root(&r->free_regions))
+		sp_insert(&sp_root(&r->free_regions), p, &m->sp_n, d);
 	else
-		sp_root(r->free_regions) = &m->sp_n;
+		sp_root(&r->free_regions) = &m->sp_n;
 
 	return m;
 }
@@ -70,7 +70,7 @@ static struct mem_region *__insert_free_region(struct mem_region_root *r,
 static struct mem_region *__insert_used_region(struct mem_region_root *r,
                                                struct mem_region *m)
 {
-	struct sp_node *n = sp_root(r->used_regions), *p = NULL;
+	struct sp_node *n = sp_root(&r->used_regions), *p = NULL;
 	vm_t start = m->start;
 	enum sp_dir d = LEFT;
 
@@ -94,10 +94,10 @@ static struct mem_region *__insert_used_region(struct mem_region_root *r,
 		}
 	}
 
-	if (sp_root(r->used_regions))
-		sp_insert(&sp_root(r->used_regions), p, &m->sp_n, d);
+	if (sp_root(&r->used_regions))
+		sp_insert(&sp_root(&r->used_regions), p, &m->sp_n, d);
 	else
-		sp_root(r->used_regions) = &m->sp_n;
+		sp_root(&r->used_regions) = &m->sp_n;
 
 	return m;
 }
@@ -129,8 +129,8 @@ static void __destroy_region(struct sp_node *n)
 
 void destroy_region(struct mem_region_root *r)
 {
-	__destroy_region(sp_root(r->free_regions));
-	__destroy_region(sp_root(r->used_regions));
+	__destroy_region(sp_root(&r->free_regions));
+	__destroy_region(sp_root(&r->used_regions));
 }
 
 /* interestingly this is now the main bottleneck :D
@@ -140,7 +140,7 @@ void destroy_region(struct mem_region_root *r)
  * */
 struct mem_region *find_used_region(struct mem_region_root *r, vm_t start)
 {
-	struct sp_node *n = sp_root(r->used_regions);
+	struct sp_node *n = sp_root(&r->used_regions);
 	while (n) {
 		struct mem_region *t = mem_container(n);
 		if (start == t->start)
@@ -184,9 +184,9 @@ struct mem_region *find_closest_used_region(struct mem_region_root *r,
 {
 	struct mem_region *closest = 0;
 	size_t md = (size_t)(-1);
-	struct sp_node *n = sp_root(r->used_regions);
+	struct sp_node *n = sp_root(&r->used_regions);
 	if (!n)
-		return mem_container(sp_root(r->free_regions));
+		return mem_container(sp_root(&r->free_regions));
 
 	while (n) {
 		struct mem_region *t = mem_container(n);
@@ -222,7 +222,7 @@ struct mem_region *find_free_region(struct mem_region_root *r, size_t size,
 	*align = 0;
 	size_t offset = __page(po_align(__addr(size)));
 	struct mem_region *quick_best = 0;
-	struct sp_node *n = sp_root(r->free_regions);
+	struct sp_node *n = sp_root(&r->free_regions);
 	while (n) {
 		struct mem_region *t = mem_container(n);
 		vm_t start = align_up(t->start, offset);
@@ -247,7 +247,7 @@ struct mem_region *find_free_region(struct mem_region_root *r, size_t size,
 static vm_t __partition_region(struct mem_region_root *r, struct mem_region *m,
                                size_t pages, size_t align)
 {
-	sp_remove(&sp_root(r->free_regions), &m->sp_n);
+	sp_remove(&sp_root(&r->free_regions), &m->sp_n);
 
 	vm_t pre_start = m->start;
 	vm_t pre_end = pre_start + align;
@@ -353,7 +353,7 @@ static void __try_coalesce_prev(struct mem_region_root *r, struct mem_region *m)
 		if (m->prev)
 			m->prev->next = m;
 
-		sp_remove(&sp_root(r->free_regions), &p->sp_n);
+		sp_remove(&sp_root(&r->free_regions), &p->sp_n);
 		free_mem_node(p);
 
 		m = m->prev;
@@ -376,7 +376,7 @@ static void __try_coalesce_next(struct mem_region_root *r, struct mem_region *m)
 		if (m->next)
 			m->next->prev = m;
 
-		sp_remove(&sp_root(r->free_regions), &n->sp_n);
+		sp_remove(&sp_root(&r->free_regions), &n->sp_n);
 		free_mem_node(n);
 
 		m = m->next;
@@ -400,7 +400,7 @@ stat_t free_region(struct mem_region_root *r, vm_t start)
 	if (!m)
 		return ERR_NF;
 
-	sp_remove(&sp_root(r->used_regions), &m->sp_n);
+	sp_remove(&sp_root(&r->used_regions), &m->sp_n);
 	mark_region_unused(m->flags);
 
 	__try_coalesce_regions(r, m);

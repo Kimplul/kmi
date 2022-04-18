@@ -38,7 +38,12 @@ worh doing anything to.
 whatever, would probably make it a bit more clean-feeling. (x)
 + Add in interrupt handling and start testing jumping back and forth.
 + Add in better tcb handling, mainly creating linked lists with all threads
-under a common process ID.
+under a common process ID. (sort of done, not sure if linked lists even
+ necessary)
++ Start implementing IRQ handling
++ Timers should use the sp_tree thing sorted by time of completion, and then
+each timer interrupt just pops the smallest value off and jumps to the
+associated program. Easy. (started)
 
 !!! FUTURE:
 + Cache locality?
@@ -56,3 +61,4 @@ same memory (started on it)
 SMP, IPC, timers a memory manager, everything else in userspace.
 + Choose between allowing the process manager to interrupt other cpus and each
 cpu starts its own process manager with a timer of some sort?
++ More const correctness, possibly better assembly but don't count on it.

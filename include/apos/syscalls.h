@@ -10,6 +10,10 @@ enum {
 	SYS_REQ_FIXMEM, /* request memory at fixed address */
 	SYS_FREE_MEM, /* free memory */
 
+	/* timers */
+	SYS_REQ_TIMER,
+	SYS_FREE_TIMER,
+
 	/* IPC */
 	/* I really should try to find my notes about the server/client
 	 * structure of the OS, but these following syscalls are probably
@@ -28,7 +32,7 @@ enum {
 	/* kernel management */
 	SYS_CONF, /* config system parameters (stack size etc.) */
 	SYS_POWEROFF, /* shutdown/reboot etc. */
-}
+};
 
 /* function declarations should be somewhere else, this file could be used in
  * userspace applications as well */

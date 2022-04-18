@@ -24,7 +24,7 @@ void init_tcbs()
 	/* MM_O1 is 2MiB on riscv64, so 262144 different possible thread ids.
 	 * Should be enough, if we're really strapped for memory I might try
 	 * something smaller but this is fine for now. */
-	tcbs = alloc_page(MM_O1, 0);
+	tcbs = (struct tcb **)alloc_page(MM_O1, 0);
 	num_tids = __o_size(MM_O1) / sizeof(struct tcb *);
 	memset(tcbs, 0, __o_size(MM_O1));
 }
@@ -57,6 +57,7 @@ struct tcb *new_thread()
 
 	struct tcb *t = (struct tcb *)get_node(&root);
 	t->tid = __alloc_tid(t);
+	return t;
 }
 
 void destroy_thread(struct tcb *t)
