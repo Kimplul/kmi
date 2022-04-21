@@ -1,5 +1,7 @@
 + Investigate GCC/Clang builtin atomic operations?
 
++ Implement more type operators in dbg, mainly intmax/uintmax and size_t
+
 + Add in mapping the same memory to two different processes
 + Create sensible thread handling
 + Add in init process loading

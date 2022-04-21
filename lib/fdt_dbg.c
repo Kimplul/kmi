@@ -76,7 +76,7 @@ static void __print_prop_value(const void *data, int len)
 		const int32_t *p = (const int32_t *)data;
 		dbg("<");
 		for (int i = 0; i < len / 4; ++i)
-			dbg("%#08x%s", fdt32_to_cpu(p[i]),
+			dbg("%#08x%s", (unsigned int)fdt32_to_cpu(p[i]),
 			    i < (len / 4 - 1) ? " " : "");
 
 		dbg(">");
@@ -84,7 +84,7 @@ static void __print_prop_value(const void *data, int len)
 		const int32_t *p = (const int32_t *)data;
 		dbg("[");
 		for (int i = 0; i < len / 4; ++i)
-			dbg("%#02x%s", fdt32_to_cpu(p[i]),
+			dbg("%#02x%s", (unsigned int)fdt32_to_cpu(p[i]),
 			    i < (len / 4 - 1) ? " " : "");
 
 		dbg("]");

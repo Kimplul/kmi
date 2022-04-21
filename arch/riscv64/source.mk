@@ -4,7 +4,8 @@ INIT_SOURCES	+= arch/riscv64/init/*.[cS]
 
 CLEANUP_CMD	:= ./arch/riscv64/conf/rmimage.sh
 
-ARCH_FLAGS	:= -mcmodel=medany
+ARCH_CFLAGS	:= -mcmodel=medany -fno-strict-aliasing
+ARCH_LDFLAGS	:=
 
 # llvm compilation doesn't seem to work, either bfd reads the object files wrong
 # and outputs incorrect symbols or lld handles relocations in a dumb way. Only

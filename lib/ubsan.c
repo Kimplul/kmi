@@ -71,8 +71,8 @@ struct tu_invalid_builtin_data {
 static void tu_print_location(const char *message,
                               struct tu_source_location loc)
 {
-	bug("ubsan: %s at file %s, line %d, column %d\n", message, loc.file,
-	    loc.line, loc.column);
+	bug("ubsan: %s at file %s, line %ju, column %ju\n", message, loc.file,
+	    (uintmax_t)loc.line, (uintmax_t)loc.column);
 }
 
 void __ubsan_handle_add_overflow(struct tu_overflow_data *data)

@@ -37,9 +37,13 @@ typedef __UINT_FAST64_TYPE__ uint_fast64_t;
 typedef __INTPTR_TYPE__ intptr_t;
 typedef __UINTPTR_TYPE__ uintptr_t;
 
-/* sort of unconventional, but should be fine */
-typedef uintmax_t size_t;
-typedef intmax_t ssize_t;
+#if __SIZE_WIDTH__ == 64
+typedef uint64_t size_t;
+typedef int64_t ssize_t;
+#else
+typedef uint32_t size_t;
+typedef int32_t ssize_t;
+#endif
 
 #define INT8_C    __INT8_C
 #define INT16_C   __INT16_C

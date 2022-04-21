@@ -28,7 +28,7 @@
 #if __has_builtin(__builtin_offsetof)
 #define offsetof(type, member) __builtin_offsetof(type, member)
 #else
-#define offsetof(type, member) ((size_t) & ((type *)0)->member)
+#define offsetof(type, member) ((uintptr_t) & ((type *)0)->member)
 #endif
 
 #if __has_builtin(__builtin_expect)
@@ -49,12 +49,12 @@
 
 #include <apos/types.h>
 
-static inline size_t align_up(size_t val, size_t a)
+static inline uintptr_t align_up(uintptr_t val, uintptr_t a)
 {
 	if (!a)
 		return val;
 
-	size_t rem = val % a;
+	uintptr_t rem = val % a;
 
 	if (rem == 0)
 		return val;
@@ -62,7 +62,7 @@ static inline size_t align_up(size_t val, size_t a)
 	return val + a - rem;
 }
 
-static inline size_t align_down(size_t val, size_t a)
+static inline uintptr_t align_down(uintptr_t val, uintptr_t a)
 {
 	if (!a)
 		return val;
@@ -70,7 +70,7 @@ static inline size_t align_down(size_t val, size_t a)
 	return val - (val % a);
 }
 
-static inline bool aligned(size_t val, size_t a)
+static inline bool aligned(uintmax_t val, uintmax_t a)
 {
 	if (!a)
 		return true;
@@ -78,7 +78,7 @@ static inline bool aligned(size_t val, size_t a)
 	return val % a == 0;
 }
 
-static inline size_t asciinum(char c)
+static inline int asciinum(char c)
 {
 	if (c >= '0' && c <= '9')
 		return c - '0';
@@ -90,7 +90,7 @@ static inline size_t asciinum(char c)
 		return 0;
 }
 
-static inline size_t convnum(const char *c, size_t len, size_t base)
+static inline uintmax_t convnum(const char *c, size_t len, size_t base)
 {
 	size_t multiplier = 1;
 	size_t sum = 0;

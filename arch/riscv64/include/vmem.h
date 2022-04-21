@@ -4,6 +4,8 @@
 #include <apos/types.h>
 #include <apos/attrs.h>
 
+#define RISCV_NUM_LEAVES (4096 / sizeof(void *))
+
 #define VM_V (1 << 0)
 #define VM_R (1 << 1)
 #define VM_W (1 << 2)
@@ -19,8 +21,8 @@ enum mm_mode {
 	Sv32,
 };
 
-struct __packed vm_branch {
-	struct vm_branch *leaf[512];
+struct vm_branch {
+	struct vm_branch *leaf[RISCV_NUM_LEAVES];
 };
 
 #endif /* APOS_RISCV_VMAP_H */

@@ -9,7 +9,7 @@ CFLAGS		= -ffreestanding -nostdlib -std=c17 -Wall -Wextra -Wvla
 DEPFLAGS	= -MT $@ -MMD -MP -MF $@.d
 LINTFLAGS	= -fsyntax-only
 PREPROCESS	= -E
-LINKFLAGS	=
+LDFLAGS		= -static-libgcc -lgcc
 
 all: apos.bin
 
@@ -33,6 +33,9 @@ INIT_SOURCES	:=
 
 include arch/$(ARCH)/source.mk
 
+COMPILE_FLAGS	:= $(CFLAGS) $(ARCH_CFLAGS)
+LINK_FLAGS	:= $(LDFLAGS) $(ARCH_LDFLAGS)
+
 INCLUDE_FLAGS	:= -I include -I arch/$(ARCH)/include\
 	-include config.h -include arch/$(ARCH)/config.h
 
@@ -40,15 +43,15 @@ INCLUDE_FLAGS	:= -I include -I arch/$(ARCH)/include\
 OBJCOPY_FLAGS	?= -Obinary --set-section-flags .bss=alloc,load,contents
 
 COMPILE		= $(COMPILER) $(DEBUGFLAGS)\
-		  $(CFLAGS) $(ARCH_FLAGS) $(DEPFLAGS) $(INCLUDE_FLAGS)
+		  $(COMPILE_FLAGS) $(DEPFLAGS) $(INCLUDE_FLAGS)
 
 LINT		= $(COMPILER) $(DEBUGFLAGS)\
-		  $(CFLAGS) $(ARCH_FLAGS) $(LINTFLAGS) $(INCLUDE_FLAGS)
+		  $(COMPILE_FLAGS) $(LINTFLAGS) $(INCLUDE_FLAGS)
 
 GENELF		= $(COMPILER) $(DEBUGFLAGS)\
-		  $(CFLAGS) $(ARCH_FLAGS) $(LINKFLAGS) $(INCLUDE_FLAGS)
+		  $(COMPILE_FLAGS) $(INCLUDE_FLAGS)
 
-GENLINK		= $(COMPILER) $(PREPROCESS) $(DEPFLAGS) $(INCLUDE_FLAGS)
+GENLINK		= $(COMPILER) $(COMPILE_FLAGS) $(PREPROCESS) $(DEPFLAGS) $(INCLUDE_FLAGS)
 STRIPLINK	= sed -n '/^[^\#]/p'
 KERN_SIZE	= wc -c kernel.bin | cut -d ' ' -f 1
 KERN_INFO	= sed "s/<KERNEL_SIZE>/$$($(KERN_SIZE))/"
@@ -71,10 +74,10 @@ $(INIT_LD): kernel.bin
 lint: $(INIT_OBJECTS:.o=.o.l) $(KERNEL_OBJECTS:.o=.o.l)
 
 init.elf: $(INIT_OBJECTS) $(INIT_LD)
-	$(GENELF) -T $(INIT_LD) $(INIT_OBJECTS) -o $@
+	$(GENELF) -T $(INIT_LD) $(INIT_OBJECTS) -o $@ $(LINK_FLAGS)
 
 kernel.elf: $(KERNEL_OBJECTS) $(KERNEL_LD)
-	$(GENELF) -T $(KERNEL_LD) $(KERNEL_OBJECTS) -o $@
+	$(GENELF) -T $(KERNEL_LD) $(KERNEL_OBJECTS) -o $@ $(LINK_FLAGS)
 
 init.bin: init.elf
 	$(OBJCOPY) $(OBJCOPY_FLAGS) $< $@
