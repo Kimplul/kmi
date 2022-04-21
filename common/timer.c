@@ -26,9 +26,9 @@ static struct sp_root *__cpu_timers()
 	return &cpu_timers[cpu_id()];
 }
 
-void init_timer()
+void init_timer(const void *fdt)
 {
-	ticks_per_sec = stat_timer();
+	ticks_per_sec = stat_timer(fdt);
 	init_nodes(&node_root, sizeof(struct timer_node));
 }
 
@@ -39,8 +39,17 @@ static id_t __insert_timer(struct timer_node *ti)
 	enum sp_dir d;
 	while (n) {
 		struct timer_node *t = container_of(n, struct timer_node, sp_n);
-		if (ti->timer.cid == t->timer.cid)
-			ti->timer.cid--;
+		if (ti->timer.cid == t->timer.cid) {
+			/* if there's an identical ID, we'll just increment our
+			 * ID until we get and ID that doesn't exist yet. There
+			 * is a very small possibility that this will set a
+			 * timer that's very slightly ahead of some other timer
+			 * to be handled after the one that's very close, but
+			 * the timescales that we're dealing with are probably
+			 * tiny enough that this won't matter, even if it
+			 * occurs. */
+			ti->timer.cid++;
+		}
 
 		p = n;
 
@@ -66,6 +75,7 @@ static id_t __new_timer(id_t tid, ticks_t ticks)
 {
 	struct timer_node *ti = (struct timer_node *)get_node(&node_root);
 	ti->timer.ticks = ticks;
+	/* preliminary ID, may change after actual insertion */
 	ti->timer.cid = ticks;
 	ti->timer.tid = tid;
 	return __insert_timer(ti);
@@ -117,8 +127,8 @@ void remove_timer(struct timer *t)
 	sp_remove(&sp_root(__cpu_timers()), n);
 }
 
-/* TODO: does this overflow too early? */
 ticks_t nsecs_to_ticks(tunit_t nsecs)
 {
-	return (nsecs * ticks_per_sec) / 1000000000;
+	ticks_t t = (nsecs * ticks_per_sec) / 1000000000;
+	return t == 0 ? 1 : t;
 }

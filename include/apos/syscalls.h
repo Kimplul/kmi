@@ -11,7 +11,8 @@ enum {
 	SYS_FREE_MEM, /* free memory */
 
 	/* timers */
-	SYS_REQ_TIMER,
+	SYS_REQ_REL_TIMER,
+	SYS_REQ_ABS_TIMER,
 	SYS_FREE_TIMER,
 
 	/* IPC */

@@ -64,7 +64,8 @@ SYSCALL_DECLARE(req_sharedmem);
 SYSCALL_DECLARE(free_mem);
 
 /* timers */
-SYSCALL_DECLARE(req_timer);
+SYSCALL_DECLARE(req_rel_timer);
+SYSCALL_DECLARE(req_abs_timer);
 SYSCALL_DECLARE(free_timer);
 
 /* ipc */

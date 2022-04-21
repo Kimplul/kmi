@@ -1,6 +1,6 @@
 #include <arch/timer.h>
 
-ticks_t stat_timer()
+ticks_t stat_timer(const void *fdt)
 {
 	/* TODO: read from fdt */
 	return 0;

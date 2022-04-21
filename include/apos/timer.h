@@ -3,7 +3,10 @@
 
 #include <apos/types.h>
 
-typedef size_t ticks_t;
+/* GCC will compile uint64_t even on 32bit platforms, just with some runtime
+ * overhead, should be fine. This will allow us to have a reasonable time range
+ * even with nanosecond clocks. (138 years with ~4.2 Hz clock) */
+typedef uint64_t ticks_t;
 /* whichever time unit we're dealing with */
 typedef size_t tunit_t;
 

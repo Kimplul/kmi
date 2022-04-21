@@ -8,7 +8,8 @@ static const sys_t syscall_table[] = {
 	[SYS_FREE_MEM] = sys_free_mem,
 
 	/* timers */
-	[SYS_REQ_TIMER] = sys_req_timer,
+	[SYS_REQ_REL_TIMER] = sys_req_rel_timer,
+	[SYS_REQ_ABS_TIMER] = sys_req_abs_timer,
 	[SYS_FREE_TIMER] = sys_free_timer,
 
 	/* ipc */
