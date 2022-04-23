@@ -49,34 +49,106 @@
 
 #include <apos/types.h>
 
-static inline uintptr_t align_up(uintptr_t val, uintptr_t a)
-{
-	if (!a)
-		return val;
+#define align_up(x, y)                                                         \
+	_Generic((x), int8_t                                                   \
+	         : align_up_int8_t, int16_t                                    \
+	         : align_up_int16_t, int32_t                                   \
+	         : align_up_int32_t, int64_t                                   \
+	         : align_up_int64_t,                                           \
+                                                                               \
+	           uint8_t                                                     \
+	         : align_up_uint8_t, uint16_t                                  \
+	         : align_up_uint16_t, uint32_t                                 \
+	         : align_up_uint32_t, uint64_t                                 \
+	         : align_up_uint64_t)((x), (y))
 
-	uintptr_t rem = val % a;
+#define DEFINE_ALIGN_UP(type)                                                  \
+	static inline type align_up_##type(type val, type a)                   \
+	{                                                                      \
+		if (!a)                                                        \
+			return val;                                            \
+                                                                               \
+		type rem = val % a;                                            \
+                                                                               \
+		if (rem == 0)                                                  \
+			return val;                                            \
+                                                                               \
+		return val + a - rem;                                          \
+	}
 
-	if (rem == 0)
-		return val;
+DEFINE_ALIGN_UP(int8_t);
+DEFINE_ALIGN_UP(int16_t);
+DEFINE_ALIGN_UP(int32_t);
+DEFINE_ALIGN_UP(int64_t);
 
-	return val + a - rem;
-}
+DEFINE_ALIGN_UP(uint8_t);
+DEFINE_ALIGN_UP(uint16_t);
+DEFINE_ALIGN_UP(uint32_t);
+DEFINE_ALIGN_UP(uint64_t);
 
-static inline uintptr_t align_down(uintptr_t val, uintptr_t a)
-{
-	if (!a)
-		return val;
+#define align_down(x, y)                                                       \
+	_Generic((x), int8_t                                                   \
+	         : align_down_int8_t, int16_t                                  \
+	         : align_down_int16_t, int32_t                                 \
+	         : align_down_int32_t, int64_t                                 \
+	         : align_down_int64_t,                                         \
+                                                                               \
+	           uint8_t                                                     \
+	         : align_down_uint8_t, uint16_t                                \
+	         : align_down_uint16_t, uint32_t                               \
+	         : align_down_uint32_t, uint64_t                               \
+	         : align_down_uint64_t)((x), (y))
 
-	return val - (val % a);
-}
+#define DEFINE_ALIGN_DOWN(type)                                                \
+	static inline type align_down_##type(type val, type a)                 \
+	{                                                                      \
+		if (!a)                                                        \
+			return val;                                            \
+                                                                               \
+		return val - (val % a);                                        \
+	}
 
-static inline bool aligned(uintmax_t val, uintmax_t a)
-{
-	if (!a)
-		return true;
+DEFINE_ALIGN_DOWN(int8_t);
+DEFINE_ALIGN_DOWN(int16_t);
+DEFINE_ALIGN_DOWN(int32_t);
+DEFINE_ALIGN_DOWN(int64_t);
 
-	return val % a == 0;
-}
+DEFINE_ALIGN_DOWN(uint8_t);
+DEFINE_ALIGN_DOWN(uint16_t);
+DEFINE_ALIGN_DOWN(uint32_t);
+DEFINE_ALIGN_DOWN(uint64_t);
+
+#define is_aligned(x, y)                                                       \
+	_Generic((x), int8_t                                                   \
+	         : is_aligned_int8_t, int16_t                                  \
+	         : is_aligned_int16_t, int32_t                                 \
+	         : is_aligned_int32_t, int64_t                                 \
+	         : is_aligned_int64_t,                                         \
+                                                                               \
+	           uint8_t                                                     \
+	         : is_aligned_uint8_t, uint16_t                                \
+	         : is_aligned_uint16_t, uint32_t                               \
+	         : is_aligned_uint32_t, uint64_t                               \
+	         : is_aligned_uint64_t)((x), (y))
+
+#define DEFINE_ALIGNED(type)                                                   \
+	static inline bool is_aligned_##type(type val, type a)                 \
+	{                                                                      \
+		if (!a)                                                        \
+			return true;                                           \
+                                                                               \
+		return val % a == 0;                                           \
+	}
+
+DEFINE_ALIGNED(int8_t);
+DEFINE_ALIGNED(int16_t);
+DEFINE_ALIGNED(int32_t);
+DEFINE_ALIGNED(int64_t);
+
+DEFINE_ALIGNED(uint8_t);
+DEFINE_ALIGNED(uint16_t);
+DEFINE_ALIGNED(uint32_t);
+DEFINE_ALIGNED(uint64_t);
 
 static inline int asciinum(char c)
 {

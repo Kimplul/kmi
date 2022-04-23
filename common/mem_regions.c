@@ -393,7 +393,7 @@ static void __try_coalesce_regions(struct mem_region_root *r,
 stat_t free_region(struct mem_region_root *r, vm_t start)
 {
 	/* addr not aligned to page boundary, corrupted or incorrect pointer */
-	if (!aligned(start, BASE_PAGE_SIZE))
+	if (!is_aligned(start, BASE_PAGE_SIZE))
 		return ERR_ALIGN;
 
 	struct mem_region *m = find_used_region(r, __page(start));
@@ -431,7 +431,7 @@ vm_t map_fill_region(struct vm_branch *b, region_callback_t *mem_handler,
 		/* NULL does pass this check, so technically all NULL pages are
 		 * aligned, but they're caught in the while expr so this should
 		 * work even if someone tries to map NULL */
-		if (!aligned(runner, o_pages))
+		if (!is_aligned(runner, o_pages))
 			continue;
 
 		while (pages >= o_pages) {
