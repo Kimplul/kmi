@@ -17,10 +17,10 @@ SYSCALL_DEFINE2(conf)(vm_t param, vm_t val)
 SYSCALL_DEFINE1(poweroff)(vm_t type)
 {
 	switch (type) {
-		case SHUTDOWN:
-		case COLD_REBOOT:
-		case WARM_REBOOT:
-			return poweroff(type);
+	case SHUTDOWN:
+	case COLD_REBOOT:
+	case WARM_REBOOT:
+		return poweroff(type);
 	};
 
 	return ERR_INVAL;

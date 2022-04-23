@@ -13,7 +13,7 @@
  * being free)
  */
 
-#define node_region(r)\
+#define node_region(r)                                                         \
 	((struct node_region *)((uintptr_t)(r) & ~(BASE_PAGE_SIZE - 1)))
 
 static struct node_region *__create_region()
@@ -144,7 +144,8 @@ void free_node(struct node_root *r, void *p)
 {
 	struct node_region *nr = node_region(p);
 	uint8_t *bitmap = r->bitmap + (uint8_t *)nr;
-	size_t i = ((uintptr_t)p - (r->first_node + (uintptr_t)nr)) / r->node_size;
+	size_t i =
+		((uintptr_t)p - (r->first_node + (uintptr_t)nr)) / r->node_size;
 	bitmap_clear(bitmap, i);
 
 	if (--nr->used_nodes == 0) {

@@ -7,7 +7,7 @@
 #include <arch/cpu.h>
 
 static ticks_t ticks_per_sec = 0;
-static struct sp_root cpu_timers[MAX_CPUS] = {0};
+static struct sp_root cpu_timers[MAX_CPUS] = { 0 };
 static struct node_root node_root;
 
 struct timer_node {
@@ -15,11 +15,9 @@ struct timer_node {
 	struct timer timer;
 };
 
-#define timer_container(ptr)\
-	container_of(ptr, struct timer_node, sp_n)
+#define timer_container(ptr)      container_of(ptr, struct timer_node, sp_n)
 
-#define timer_node_container(ptr)\
-	container_of(ptr, struct timer_node, timer)
+#define timer_node_container(ptr) container_of(ptr, struct timer_node, timer)
 
 static struct sp_root *__cpu_timers()
 {
@@ -61,7 +59,7 @@ static id_t __insert_timer(struct timer_node *ti)
 			d = RIGHT;
 		}
 	}
-	
+
 	if (sp_root(root))
 		sp_insert(&sp_root(root), p, &ti->sp_n, d);
 	else

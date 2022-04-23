@@ -32,10 +32,10 @@
 #endif
 
 #if __has_builtin(__builtin_expect)
-#define likely(x) __builtin_expect(!!(x), 1)
+#define likely(x)   __builtin_expect(!!(x), 1)
 #define unlikely(x) __builtin_expect(!!(x), 0)
 #else
-#define likely(x) (x)
+#define likely(x)   (x)
 #define unlikely(x) (x)
 #endif
 
@@ -49,6 +49,7 @@
 
 #include <apos/types.h>
 
+/* clang-format doesn't like _Generic, but I guess that's fine. */
 #define align_up(x, y)                                                         \
 	_Generic((x), int8_t                                                   \
 	         : align_up_int8_t, int16_t                                    \

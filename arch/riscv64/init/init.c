@@ -21,13 +21,14 @@ void init_bootmem()
 
 	/* direct mapping (temp) */
 	for (size_t i = 0; i < CSTACK_PAGE; ++i)
-		root_branch->leaf[i] = (struct vm_branch *)to_pte(SZ_1G * i, flags);
+		root_branch->leaf[i] =
+			(struct vm_branch *)to_pte(SZ_1G * i, flags);
 
 	/* kernel (also sort of direct mapping) */
 	flags |= VM_G;
 	for (size_t i = KSTART_PAGE; i < IO_PAGE; ++i)
-		root_branch->leaf[i] =
-			(struct vm_branch *)to_pte(RAM_BASE + SZ_1G * (i - 256), flags);
+		root_branch->leaf[i] = (struct vm_branch *)to_pte(
+			RAM_BASE + SZ_1G * (i - 256), flags);
 
 	/* kernel IO, map to 0 for now, will be updated in the future */
 	root_branch->leaf[IO_PAGE] = (struct vm_branch *)to_pte(0, flags);

@@ -3,7 +3,7 @@
 
 #include <apos/types.h>
 
-enum node_status { FREE = 0, USED = 1};
+enum node_status { FREE = 0, USED = 1 };
 struct node_region {
 	size_t used_nodes;
 

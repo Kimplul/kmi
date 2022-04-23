@@ -8,52 +8,56 @@
  * goes */
 typedef vm_t (*sys_t)(vm_t, vm_t, vm_t, vm_t);
 
-#define SYSCALL_DECLARE(name)\
-	vm_t sys_##name(vm_t a, vm_t b, vm_t c, vm_t d);
+#define SYSCALL_DECLARE(name) vm_t sys_##name(vm_t a, vm_t b, vm_t c, vm_t d);
 
-#define SYSCALL_DEFINE0(name)\
-	static vm_t __##name();\
-	vm_t sys_##name(vm_t a, vm_t b, vm_t c, vm_t d){ \
-		UNUSED(a);\
-		UNUSED(b);\
-		UNUSED(c);\
-		UNUSED(d);\
-		return __##name();\
-	}\
+#define SYSCALL_DEFINE0(name)                                                  \
+	static vm_t __##name();                                                \
+	vm_t sys_##name(vm_t a, vm_t b, vm_t c, vm_t d)                        \
+	{                                                                      \
+		UNUSED(a);                                                     \
+		UNUSED(b);                                                     \
+		UNUSED(c);                                                     \
+		UNUSED(d);                                                     \
+		return __##name();                                             \
+	}                                                                      \
 	static vm_t __##name
 
-#define SYSCALL_DEFINE1(name)\
-	static vm_t __##name(vm_t);\
-	vm_t sys_##name(vm_t a, vm_t b, vm_t c, vm_t d){ \
-		UNUSED(b);\
-		UNUSED(c);\
-		UNUSED(d);\
-		return __##name(a);\
-	}\
+#define SYSCALL_DEFINE1(name)                                                  \
+	static vm_t __##name(vm_t);                                            \
+	vm_t sys_##name(vm_t a, vm_t b, vm_t c, vm_t d)                        \
+	{                                                                      \
+		UNUSED(b);                                                     \
+		UNUSED(c);                                                     \
+		UNUSED(d);                                                     \
+		return __##name(a);                                            \
+	}                                                                      \
 	static vm_t __##name
 
-#define SYSCALL_DEFINE2(name)\
-	static vm_t __##name(vm_t, vm_t);\
-	vm_t sys_##name(vm_t a, vm_t b, vm_t c, vm_t d){ \
-		UNUSED(c);\
-		UNUSED(d);\
-		return __##name(a, b);\
-	}\
+#define SYSCALL_DEFINE2(name)                                                  \
+	static vm_t __##name(vm_t, vm_t);                                      \
+	vm_t sys_##name(vm_t a, vm_t b, vm_t c, vm_t d)                        \
+	{                                                                      \
+		UNUSED(c);                                                     \
+		UNUSED(d);                                                     \
+		return __##name(a, b);                                         \
+	}                                                                      \
 	static vm_t __##name
 
-#define SYSCALL_DEFINE3(name)\
-	static vm_t __##name(vm_t, vm_t, vm_t);\
-	vm_t sys_##name(vm_t a, vm_t b, vm_t c, vm_t d){ \
-		UNUSED(d);\
-		return __##name(a, b, c);\
-	}\
+#define SYSCALL_DEFINE3(name)                                                  \
+	static vm_t __##name(vm_t, vm_t, vm_t);                                \
+	vm_t sys_##name(vm_t a, vm_t b, vm_t c, vm_t d)                        \
+	{                                                                      \
+		UNUSED(d);                                                     \
+		return __##name(a, b, c);                                      \
+	}                                                                      \
 	static vm_t __##name
 
-#define SYSCALL_DEFINE4(name)\
-	static vm_t __##name(vm_t, vm_t, vm_t, vm_t);\
-	vm_t sys_##name(vm_t a, vm_t b, vm_t c, vm_t d){ \
-		return __##name(a, b, c, d);\
-	}\
+#define SYSCALL_DEFINE4(name)                                                  \
+	static vm_t __##name(vm_t, vm_t, vm_t, vm_t);                          \
+	vm_t sys_##name(vm_t a, vm_t b, vm_t c, vm_t d)                        \
+	{                                                                      \
+		return __##name(a, b, c, d);                                   \
+	}                                                                      \
 	static vm_t __##name
 
 /* memory */

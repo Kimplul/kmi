@@ -15,7 +15,7 @@ static struct tcb **tcbs;
 
 /* if we ever support systems with massive amounts of cpus, this should probably
  * be allocated at runtime */
-static struct tcb *cpu_tcb[MAX_CPUS] = {0};
+static struct tcb *cpu_tcb[MAX_CPUS] = { 0 };
 
 void init_tcbs()
 {

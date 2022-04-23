@@ -26,24 +26,27 @@ struct sbiret sbi_ecall(int ext, int fid, unsigned long arg0,
                         unsigned long arg3, unsigned long arg4,
                         unsigned long arg5);
 
-#define EID_TIME 0x54494D45
+#define EID_TIME      0x54494D45
 #define FID_SET_TIMER 0
 static inline struct sbiret sbi_set_timer(uint64_t stime_value)
 {
 	/* TODO: read timebase from fdt, seems to be clocks/sec for accurate
 	 * timers */
 #if __riscv_xlen == 32
-	return sbi_ecall(EID_TIME, FID_SET_TIMER, stime_value, stime_value >> 32, 0, 0, 0, 0);
+	return sbi_ecall(EID_TIME, FID_SET_TIMER, stime_value,
+	                 stime_value >> 32, 0, 0, 0, 0);
 #else
 	return sbi_ecall(EID_TIME, FID_SET_TIMER, stime_value, 0, 0, 0, 0, 0);
 #endif
 }
 
-#define EID_SRST 0x53525354
+#define EID_SRST  0x53525354
 #define FID_RESET 0
-static inline struct sbiret sbi_system_reset(uint32_t reset_type, uint32_t reset_reason)
+static inline struct sbiret sbi_system_reset(uint32_t reset_type,
+                                             uint32_t reset_reason)
 {
-	return sbi_ecall(EID_SRST, FID_RESET, reset_type, reset_reason, 0, 0, 0, 0);
+	return sbi_ecall(EID_SRST, FID_RESET, reset_type, reset_reason, 0, 0, 0,
+	                 0);
 }
 
 #endif /* APOS_RISCV_SBI_H */

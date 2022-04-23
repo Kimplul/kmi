@@ -4,7 +4,7 @@
 #include <apos/types.h>
 #include <apos/attrs.h>
 
-enum poweroff_type {SHUTDOWN, COLD_REBOOT, WARM_REBOOT};
+enum poweroff_type { SHUTDOWN, COLD_REBOOT, WARM_REBOOT };
 stat_t poweroff(enum poweroff_type type);
 
 #endif

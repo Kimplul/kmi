@@ -35,8 +35,8 @@
 #define __page(x)                       ((x) / BASE_PAGE_SIZE)
 #define __addr(x)                       ((x)*BASE_PAGE_SIZE)
 #define __pages(x)                                                             \
-	(aligned((x), BASE_PAGE_SIZE) ? __page((x)) :                          \
-                                        __page((x) + BASE_PAGE_SIZE))
+	(is_aligned((x), BASE_PAGE_SIZE) ? __page((x)) :                       \
+                                           __page((x) + BASE_PAGE_SIZE))
 #define __bytes(x) (__addr(x))
 
 extern size_t __mm_shifts[10];

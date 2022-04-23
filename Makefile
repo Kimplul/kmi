@@ -90,7 +90,7 @@ apos.bin: init.bin kernel.bin
 
 format:
 	find arch lib common include -iname '*.[ch]' \
-		-exec clang-format -i -style=file {} \;
+		-exec clang-format -i -style=file {} \+
 
 clean:
 	$(RM) -r $(CLEANUP)

@@ -2,17 +2,17 @@
 
 /* --- START ARCH USER CONFIG VALUES --- */
 /* physical address to which the kernel will be loaded */
-#define RAM_BASE        0x80000000
-#define PM_KERN_BASE    (RAM_BASE + SZ_512K)
-#define PM_KERN_SIZE    (SZ_256K)
-#define PM_KERN_TOP     (PM_KERN_BASE + PM_KERN_SIZE)
+#define RAM_BASE      0x80000000
+#define PM_KERN_BASE  (RAM_BASE + SZ_512K)
+#define PM_KERN_SIZE  (SZ_256K)
+#define PM_KERN_TOP   (PM_KERN_BASE + PM_KERN_SIZE)
 /* --- END ARCH USER CONFIG VALUES --- */
 
 /* don't touch >:( */
 
-#define PM_STACK_BASE   (PM_KERN_BASE + SZ_256K)
-#define PM_STACK_SIZE   (SZ_256K)
-#define PM_STACK_TOP    (PM_STACK_BASE + PM_STACK_SIZE)
+#define PM_STACK_BASE (PM_KERN_BASE + SZ_256K)
+#define PM_STACK_SIZE (SZ_256K)
+#define PM_STACK_TOP  (PM_STACK_BASE + PM_STACK_SIZE)
 
 #if __riscv_xlen == 64
 /* 64bit */
