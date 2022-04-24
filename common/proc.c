@@ -46,11 +46,17 @@ stat_t init_proc(void *fdt, struct vm_branch *b)
 	if (!t->proc_stack)
 		return ERR_ADDR;
 
+	t->proc_stack_top = t->proc_stack + __proc_stack_size;
+
 	t->call_stack = setup_call_stack(t, __call_stack_size);
 	if (!t->call_stack)
 		return ERR_ADDR;
+	t->call_stack_top = t->call_stack + __call_stack_size;
 
 	flush_tlb();
+
+	/* set current tcb */
+	use_tcb(t);
 
 	/* TODO: move fdt into process space */
 	return jump_to_userspace(t, 1, 0);

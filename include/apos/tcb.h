@@ -16,8 +16,12 @@ struct tcb {
 	id_t tid;
 
 	vm_t callback;
+
 	vm_t proc_stack;
+	vm_t proc_stack_top;
+
 	vm_t call_stack;
+	vm_t call_stack_top;
 
 	/* entry point */
 	vm_t entry;

@@ -291,8 +291,11 @@ static vm_t __partition_region(struct mem_region_root *r, struct mem_region *m,
  * fs server */
 vm_t alloc_region(struct mem_region_root *r, size_t size, size_t *actual_size)
 {
-	*actual_size = align_up(size, BASE_PAGE_SIZE);
-	size_t pages = __page(*actual_size);
+	size_t asize = align_up(size, BASE_PAGE_SIZE);
+	if (actual_size)
+		*actual_size = asize;
+
+	size_t pages = __page(asize);
 
 	/* find best fitting, alignment etc. */
 	size_t align = 0;

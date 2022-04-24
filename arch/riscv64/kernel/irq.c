@@ -13,10 +13,8 @@ void init_irq(void *fdt)
 	info("CSR_SIE: %lx\n", s);
 }
 
-__aligned(4) void handle_irq()
+void handle_sys_irq()
 {
-	while (1)
-		;
 }
 
 /* very simple for now */
