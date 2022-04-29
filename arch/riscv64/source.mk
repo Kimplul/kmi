@@ -1,8 +1,9 @@
-KERNEL_LOCAL	!= echo arch/riscv64/kernel/*.[cS]
+KERNEL_LOCAL	!= echo $(ARCH_SOURCE)/kernel/*.[cS]
 KERNEL_SOURCES	+= $(KERNEL_LOCAL)
-INIT_SOURCES	+= arch/riscv64/init/*.[cS]
+INIT_SOURCES	+= $(ARCH_SOURCE)/init/*.[cS]
 
-CLEANUP_CMD	:= ./arch/riscv64/conf/rmimage.sh
+# this doesn't work for rv32, but fine for now */
+CLEANUP_CMD	:= $(ARCH_SOURCE)/conf/rmimage.sh
 
 ARCH_CFLAGS	:= -mcmodel=medany
 ARCH_LDFLAGS	:=
@@ -15,4 +16,9 @@ ARCH_LDFLAGS	:=
 #LINKFLAGS	:= -fuse-ld=bfd
 
 run:
-	./arch/riscv64/conf/mkimage.sh
+	$(ARCH_SOURCE)/conf/mkimage.sh
+
+include $(ARCH_SOURCE)/gen/source.mk
+
+# dependecy generation
+$(ARCH_BUILD)/kernel/head.o: $(ARCH_SOURCE)/include/gen/asm-offsets.h

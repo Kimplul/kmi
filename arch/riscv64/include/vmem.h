@@ -4,16 +4,20 @@
 #include <apos/types.h>
 #include <apos/attrs.h>
 
-#define RISCV_NUM_LEAVES (4096 / sizeof(void *))
+#if __riscv_xlen == 64
+#define RISCV_NUM_LEAVES 512
+#else
+#define RISCV_NUM_LEAVES 1024
+#endif
 
-#define VM_V             (1 << 0)
-#define VM_R             (1 << 1)
-#define VM_W             (1 << 2)
-#define VM_X             (1 << 3)
-#define VM_U             (1 << 4)
-#define VM_G             (1 << 5)
-#define VM_A             (1 << 6)
-#define VM_D             (1 << 7)
+#define VM_V (1 << 0)
+#define VM_R (1 << 1)
+#define VM_W (1 << 2)
+#define VM_X (1 << 3)
+#define VM_U (1 << 4)
+#define VM_G (1 << 5)
+#define VM_A (1 << 6)
+#define VM_D (1 << 7)
 
 enum mm_mode {
 	Sv48,

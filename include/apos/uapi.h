@@ -60,6 +60,9 @@ typedef vm_t (*sys_t)(vm_t, vm_t, vm_t, vm_t);
 	}                                                                      \
 	static vm_t __##name
 
+/* noop */
+SYSCALL_DECLARE(noop);
+
 /* memory */
 SYSCALL_DECLARE(req_mem);
 SYSCALL_DECLARE(req_pmem);

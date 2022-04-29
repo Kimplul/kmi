@@ -3,5 +3,6 @@
 *.bin
 *.elf
 *.ld
+include/apos/gen/*
 deps.mk
 *.img

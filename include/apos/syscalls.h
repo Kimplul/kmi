@@ -4,6 +4,10 @@
 /* enum for now, possibly macros in the future once I get an approximate idea of
  * which syscalls are necessary etc. */
 enum {
+	/* noop, for testing out how many syscalls per second can done I suppose
+	 * */
+	SYS_NOOP,
+
 	/* memory management */
 	SYS_REQ_MEM, /* request memory from anywhere */
 	SYS_REQ_PMEM, /* request physical address */

@@ -37,6 +37,7 @@ stat_t init_proc(void *fdt, struct vm_branch *b)
 
 	init_uvmem(t, UVMEM_START, UVMEM_END);
 
+	/* TODO: this stuff should be placed in __sys_exec */
 	/* the binary gets to choose first what memory regions it requires */
 	t->entry = load_elf(t, get_init_base(fdt));
 	if (!t->entry)

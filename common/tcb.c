@@ -19,8 +19,6 @@ static struct tcb *cpu_tcb[MAX_CPUS] = { 0 };
 
 void init_tcbs()
 {
-	/* assumption: init_tcb called after memory subsystem is initialized */
-	init_nodes(&root, sizeof(struct tcb));
 	/* MM_O1 is 2MiB on riscv64, so 262144 different possible thread ids.
 	 * Should be enough, if we're really strapped for memory I might try
 	 * something smaller but this is fine for now. */
@@ -55,8 +53,17 @@ struct tcb *new_thread()
 	if (unlikely(!tcbs))
 		return 0;
 
-	struct tcb *t = (struct tcb *)get_node(&root);
-	t->tid = __alloc_tid(t);
+	vm_t bottom = alloc_page(MM_O0, 0);
+	/* move tcb to top of kernel stack, keeping alignment in check
+	 * (hopefully) */
+	/* TODO: check alignment */
+	struct tcb *t = (struct tcb *)align_down(bottom + __o_size(MM_O0) - sizeof(struct tcb), sizeof(long));
+	memset(t, 0, sizeof(struct tcb));
+
+	id_t tid = __alloc_tid(t);
+	tcbs[tid] = t;
+	t->tid = tid;
+
 	return t;
 }
 
@@ -67,8 +74,10 @@ void destroy_thread(struct tcb *t)
 
 	/* remove thread id from list */
 	tcbs[t->tid] = 0;
-	/* free node associated with tcb */
-	free_node(&root, t);
+
+	/* free associated kernel stack */
+	vm_t bottom = align_down((vm_t)t, __o_size(MM_O0));
+	free_page(MM_O0, (pm_t)bottom);
 }
 
 struct tcb *cur_tcb()

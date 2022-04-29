@@ -64,3 +64,5 @@ SMP, IPC, timers a memory manager, everything else in userspace.
 + Choose between allowing the process manager to interrupt other cpus and each
 cpu starts its own process manager with a timer of some sort?
 + More const correctness, possibly better assembly but don't count on it.
++ Create some gdb scripts to ease debugging, sort of annoying to have to
+constantly switch between physical and virtual ram

@@ -1,6 +1,8 @@
 #include <apos/uapi.h>
 
 static const sys_t syscall_table[] = {
+	/* noop */
+	[SYS_NOOP] = sys_noop,
 	/* mem */
 	[SYS_REQ_MEM] = sys_req_mem,
 	[SYS_REQ_PMEM] = sys_req_pmem,
@@ -28,6 +30,11 @@ static const sys_t syscall_table[] = {
 	[SYS_CONF] = sys_conf,
 	[SYS_POWEROFF] = sys_poweroff,
 };
+
+SYSCALL_DEFINE0(noop)()
+{
+	return 0;
+}
 
 vm_t syscall_dispatch(vm_t syscall, vm_t a, vm_t b, vm_t c, vm_t d)
 {

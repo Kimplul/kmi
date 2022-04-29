@@ -3,6 +3,8 @@
 #include <arch/irq.h>
 #include <csr.h>
 
+extern void handle_irq(void);
+
 void init_irq(void *fdt)
 {
 	UNUSED(fdt);
