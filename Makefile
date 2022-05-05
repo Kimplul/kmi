@@ -17,6 +17,9 @@ ARCH_BUILD	= $(BUILD)/arch/$(ARCH)
 ARCH_SOURCE	= arch/$(ARCH)
 
 all: apos.bin
+# bmake requires us to run make depend to genereate deps.mk beforehand,
+# so create an empty rule that lets the rest of the script do its job
+depend:
 
 # default values, overwrite if/when needed
 ARCH		?= riscv64
@@ -72,7 +75,7 @@ INIT_OBJECTS	!= ./scripts/gen-deps --init --compile "$(INIT_SOURCES)"
 KERNEL_LD	!= ./scripts/gen-deps --kernel --link "$(KERNEL_LINK).S"
 INIT_LD		!= ./scripts/gen-deps --init --link "$(INIT_LINK).S"
 
-include deps.mk
+-include deps.mk
 
 $(INIT_LD): kernel.bin
 
