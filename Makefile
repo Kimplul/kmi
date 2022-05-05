@@ -32,7 +32,7 @@ COMPILER	!= [ $(LLVM) ] \
 
 
 KERNEL_SOURCES	!= echo common/*.c common/uapi/*.c lib/*.c
-CLEANUP		:= build deps.mk kernel.* init.* apos.bin
+CLEANUP		:= build kernel.* init.* apos.bin
 CLEANUP_CMD	:=
 INIT_SOURCES	:=
 
@@ -64,7 +64,7 @@ KERN_INFO	= sed "s/<KERNEL_SIZE>/$$($(KERN_SIZE))/"
 KERNEL_LINK	:= arch/$(ARCH)/conf/kernel-link
 INIT_LINK	:= arch/$(ARCH)/conf/init-link
 
-KERN_FLAGS	!= [ $(UBSAN) ] && echo -fsanitize=undefined
+KERN_FLAGS	!= [ $(UBSAN) ] && echo -fsanitize=undefined || echo
 INIT_FLAGS	:=
 
 KERNEL_OBJECTS	!= ./scripts/gen-deps --kernel --compile "$(KERNEL_SOURCES)"
@@ -96,6 +96,8 @@ apos.bin: init.bin kernel.bin
 format:
 	find arch lib common include -iname '*.[ch]' \
 		-exec clang-format -i -style=file {} \+
+
+RM	?= rm -f
 
 clean:
 	$(RM) -r $(CLEANUP)

@@ -6,25 +6,25 @@ gencommon () {
 	obj="build/${s%.*}${1}"
 
 	echo "${dep}:"		>> deps.mk
-	echo "include ${dep}"	>> deps.mk
+	echo "-include ${dep}"	>> deps.mk
 	echo "${obj}: ${s}"		>> deps.mk
 }
 
 genlink () {
 	gencommon ".ld"
 	if [ ${kern} ]; then
-		echo "	\$(GENLINK) $< | \$(STRIPLINK) > \$@" >> deps.mk
+		echo "	\$(GENLINK) ${s} | \$(STRIPLINK) > ${obj}" >> deps.mk
 	else
-		echo "	\$(GENLINK) $< | \$(STRIPLINK) | \$(KERN_INFO) > \$@" >> deps.mk;
+		echo "	\$(GENLINK) ${s} | \$(STRIPLINK) | \$(KERN_INFO) > ${obj}" >> deps.mk;
 	fi
 }
 
 genrule () {
 	gencommon "${1}"
-	echo "	\$(COMPILE) ${flags} -c \$< -o \$@"	>> deps.mk
+	echo "	\$(COMPILE) ${flags} -c ${s} -o ${obj}"	>> deps.mk
 
 	echo "${lint}: ${s}"			>> deps.mk
-	echo "	\$(LINT) ${flags} -c \$< -o /dev/null"	>> deps.mk
+	echo "	\$(LINT) ${flags} -c ${s} -o /dev/null"	>> deps.mk
 }
 
 case "${1}" in
@@ -47,8 +47,9 @@ case "${2}" in
 		func=genlink
 esac
 
+echo "${3}"
 # create all subdirectories
-mkdir -p $(echo "${3}" | xargs dirname | uniq | sed 's|^|build/|g')
+mkdir -p $(echo "${3}" | xargs -n 1 dirname | uniq | sed 's|^|build/|g')
 
 for s in ${3}
 do
