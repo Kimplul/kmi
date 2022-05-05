@@ -4,6 +4,6 @@
 *.elf
 *.ld
 include/apos/gen/*
-include/arch/*/gen/*
+arch/*/include/gen/*
 deps.mk
 *.img

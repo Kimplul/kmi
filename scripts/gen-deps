@@ -47,7 +47,6 @@ case "${2}" in
 		func=genlink
 esac
 
-echo "${3}"
 # create all subdirectories
 mkdir -p $(echo "${3}" | xargs -n 1 dirname | uniq | sed 's|^|build/|g')
 
