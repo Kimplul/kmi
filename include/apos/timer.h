@@ -17,7 +17,7 @@ struct timer {
 	ticks_t ticks;
 };
 
-void init_timer();
+void init_timer(const void *fdt);
 
 /* set up timer interrupt ticks from now */
 id_t new_rel_timer(id_t tid, ticks_t ticks);

@@ -15,6 +15,7 @@ enum {
 	SYS_FREE_MEM, /* free memory */
 
 	/* timers */
+	SYS_TIMEBASE,
 	SYS_REQ_REL_TIMER,
 	SYS_REQ_ABS_TIMER,
 	SYS_FREE_TIMER,
@@ -32,7 +33,6 @@ enum {
 	SYS_EXEC, /* execute new binary in process space */
 	SYS_SIGNAL, /* send signal to process (kill etc.) */
 	SYS_SWITCH, /* switch running process */
-	SYS_SYNC, /* used by init process to synchronize running processes, maybe not used */
 
 	/* kernel management */
 	SYS_CONF, /* config system parameters (stack size etc.) */

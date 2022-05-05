@@ -57,7 +57,8 @@ struct tcb *new_thread()
 	/* move tcb to top of kernel stack, keeping alignment in check
 	 * (hopefully) */
 	/* TODO: check alignment */
-	struct tcb *t = (struct tcb *)align_down(bottom + __o_size(MM_O0) - sizeof(struct tcb), sizeof(long));
+	struct tcb *t = (struct tcb *)align_down(
+		bottom + __o_size(MM_O0) - sizeof(struct tcb), sizeof(long));
 	memset(t, 0, sizeof(struct tcb));
 
 	id_t tid = __alloc_tid(t);

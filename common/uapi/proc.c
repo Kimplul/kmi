@@ -34,11 +34,3 @@ SYSCALL_DEFINE1(switch)(vm_t pid)
 	/* TODO: switch to process */
 	return 0;
 }
-
-SYSCALL_DEFINE2(sync)(vm_t buf, vm_t size)
-{
-	/* check that only the process manager can use this syscall, otherwise
-	 * just dump process info into the buffer (I guess, not sure if this
-	 * will be quite required */
-	return 0;
-}

@@ -3,7 +3,7 @@
 
 /* largely based on linux */
 #define DEFINE(sym, val)                                                       \
-	__asm__ volatile("\n-> " #sym " %0 " #val "\n" ::"i"(val))
+	__asm__ volatile("\n#-> " #sym " %0 " #val "\n" ::"i"(val))
 #define OFFSETOF(m, s) DEFINE(offsetof_##m, offsetof(s, m))
 #define SIZEOF(n, s)   DEFINE(sizeof_##n, sizeof(s))
 

@@ -9,7 +9,8 @@ CFLAGS		= -ffreestanding -nostdlib -std=c17 -Wall -Wextra -Wvla
 DEPFLAGS	= -MT $@ -MMD -MP -MF $@.d
 LINTFLAGS	= -fsyntax-only
 PREPROCESS	= -E
-LDFLAGS		= -static-libgcc -lgcc
+LDFLAGS		!= [ $(LLVM) ] \
+			|| echo -static-libgcc -lgcc
 
 BUILD		= build
 ARCH_BUILD	= $(BUILD)/arch/$(ARCH)

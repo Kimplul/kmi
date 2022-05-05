@@ -1,4 +1,5 @@
 #include <apos/mem_nodes.h>
+#include <apos/timer.h>
 #include <apos/attrs.h>
 #include <apos/proc.h>
 #include <apos/debug.h>
@@ -23,5 +24,6 @@ void __main main(void *fdt)
 	setup_io_dbg(b);
 
 	init_irq(fdt);
+	init_timer(fdt);
 	init_proc(fdt, b);
 }

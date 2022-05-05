@@ -66,3 +66,6 @@ cpu starts its own process manager with a timer of some sort?
 + More const correctness, possibly better assembly but don't count on it.
 + Create some gdb scripts to ease debugging, sort of annoying to have to
 constantly switch between physical and virtual ram
++ Save floating point registers?
++ Come up with a list of requirements for arch to be supported, from what I can
+tell there has to be timers and at least two tiered memory paging.

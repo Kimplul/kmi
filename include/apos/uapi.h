@@ -71,6 +71,7 @@ SYSCALL_DECLARE(req_sharedmem);
 SYSCALL_DECLARE(free_mem);
 
 /* timers */
+SYSCALL_DECLARE(timebase);
 SYSCALL_DECLARE(req_rel_timer);
 SYSCALL_DECLARE(req_abs_timer);
 SYSCALL_DECLARE(free_timer);
@@ -85,7 +86,6 @@ SYSCALL_DECLARE(fork);
 SYSCALL_DECLARE(exec);
 SYSCALL_DECLARE(signal);
 SYSCALL_DECLARE(switch);
-SYSCALL_DECLARE(sync);
 
 /* conf */
 SYSCALL_DECLARE(conf);
