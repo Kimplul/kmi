@@ -21,4 +21,4 @@ run:
 include $(ARCH_SOURCE)/gen/source.mk
 
 # dependecy generation
-$(ARCH_BUILD)/kernel/head.o: $(ARCH_SOURCE)/include/gen/asm-offsets.h
+$(ARCH_BUILD)/kernel/entry.o: $(ARCH_SOURCE)/include/gen/asm-offsets.h

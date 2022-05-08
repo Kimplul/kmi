@@ -1,26 +1,27 @@
 #include <apos/uapi.h>
 #include <apos/tcb.h>
 
-SYSCALL_DEFINE1(ipc_server)(vm_t callback)
+SYSCALL_DEFINE1(ipc_server)(sys_arg_t callback)
 {
 	struct tcb *r = cur_tcb();
 	if (r->callback) /* server can't be reinitialized */
-		return 1;
+		return (struct sys_ret){ ERR_EXT, 0 };
 
 	r->callback = callback;
-	return 0;
+	return (struct sys_ret){ OK, 0 };
 }
 
-SYSCALL_DEFINE4(ipc_req)(vm_t pid, vm_t d0, vm_t d1, vm_t d2)
+SYSCALL_DEFINE4(ipc_req)
+(sys_arg_t pid, sys_arg_t d0, sys_arg_t d1, sys_arg_t d2)
 {
 	struct tcb *t = get_tcb(pid);
 	/* something like jump_to_callback(t, d0, d1, d2) */
-	return 0;
+	return (struct sys_ret){ OK, 0 };
 }
 
-SYSCALL_DEFINE2(ipc_resp)(vm_t pid, vm_t ret)
+SYSCALL_DEFINE3(ipc_resp)(sys_arg_t pid, sys_arg_t ret, sys_arg_t val)
 {
 	struct tcb *r = get_tcb(pid);
 	/* something like return_from_callback(t, r) */
-	return 0; /* oh yeah probably unreachable? */
+	return (struct sys_ret){ ret, val };
 }

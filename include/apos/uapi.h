@@ -6,13 +6,23 @@
 
 /* syscall function type, let's start with four arguments and see where that
  * goes */
-typedef vm_t (*sys_t)(vm_t, vm_t, vm_t, vm_t);
+typedef struct sys_ret (*sys_t)(long, long, long, long);
+/* TODO: should this be arch specific? should be the size of an integer register */
+typedef long sys_arg_t;
 
-#define SYSCALL_DECLARE(name) vm_t sys_##name(vm_t a, vm_t b, vm_t c, vm_t d);
+struct sys_ret {
+	sys_arg_t err;
+	sys_arg_t val;
+};
+
+#define SYSCALL_DECLARE(name)                                                  \
+	struct sys_ret sys_##name(sys_arg_t a, sys_arg_t b, sys_arg_t c,       \
+	                          sys_arg_t d);
 
 #define SYSCALL_DEFINE0(name)                                                  \
-	static vm_t __##name();                                                \
-	vm_t sys_##name(vm_t a, vm_t b, vm_t c, vm_t d)                        \
+	static inline struct sys_ret __##name();                               \
+	struct sys_ret sys_##name(sys_arg_t a, sys_arg_t b, sys_arg_t c,       \
+	                          sys_arg_t d)                                 \
 	{                                                                      \
 		UNUSED(a);                                                     \
 		UNUSED(b);                                                     \
@@ -20,45 +30,51 @@ typedef vm_t (*sys_t)(vm_t, vm_t, vm_t, vm_t);
 		UNUSED(d);                                                     \
 		return __##name();                                             \
 	}                                                                      \
-	static vm_t __##name
+	static struct sys_ret __##name
 
 #define SYSCALL_DEFINE1(name)                                                  \
-	static vm_t __##name(vm_t);                                            \
-	vm_t sys_##name(vm_t a, vm_t b, vm_t c, vm_t d)                        \
+	static inline struct sys_ret __##name(sys_arg_t);                      \
+	struct sys_ret sys_##name(sys_arg_t a, sys_arg_t b, sys_arg_t c,       \
+	                          sys_arg_t d)                                 \
 	{                                                                      \
 		UNUSED(b);                                                     \
 		UNUSED(c);                                                     \
 		UNUSED(d);                                                     \
 		return __##name(a);                                            \
 	}                                                                      \
-	static vm_t __##name
+	static inline struct sys_ret __##name
 
 #define SYSCALL_DEFINE2(name)                                                  \
-	static vm_t __##name(vm_t, vm_t);                                      \
-	vm_t sys_##name(vm_t a, vm_t b, vm_t c, vm_t d)                        \
+	static inline struct sys_ret __##name(sys_arg_t, sys_arg_t);           \
+	struct sys_ret sys_##name(sys_arg_t a, sys_arg_t b, sys_arg_t c,       \
+	                          sys_arg_t d)                                 \
 	{                                                                      \
 		UNUSED(c);                                                     \
 		UNUSED(d);                                                     \
 		return __##name(a, b);                                         \
 	}                                                                      \
-	static vm_t __##name
+	static inline struct sys_ret __##name
 
 #define SYSCALL_DEFINE3(name)                                                  \
-	static vm_t __##name(vm_t, vm_t, vm_t);                                \
-	vm_t sys_##name(vm_t a, vm_t b, vm_t c, vm_t d)                        \
+	static inline struct sys_ret __##name(sys_arg_t, sys_arg_t,            \
+	                                      sys_arg_t);                      \
+	struct sys_ret sys_##name(sys_arg_t a, sys_arg_t b, sys_arg_t c,       \
+	                          sys_arg_t d)                                 \
 	{                                                                      \
 		UNUSED(d);                                                     \
 		return __##name(a, b, c);                                      \
 	}                                                                      \
-	static vm_t __##name
+	static inline struct sys_ret __##name
 
 #define SYSCALL_DEFINE4(name)                                                  \
-	static vm_t __##name(vm_t, vm_t, vm_t, vm_t);                          \
-	vm_t sys_##name(vm_t a, vm_t b, vm_t c, vm_t d)                        \
+	static inline struct sys_ret __##name(sys_arg_t, sys_arg_t, sys_arg_t, \
+	                                      sys_arg_t);                      \
+	struct sys_ret sys_##name(sys_arg_t a, sys_arg_t b, sys_arg_t c,       \
+	                          sys_arg_t d)                                 \
 	{                                                                      \
 		return __##name(a, b, c, d);                                   \
 	}                                                                      \
-	static vm_t __##name
+	static inline struct sys_ret __##name
 
 /* noop */
 SYSCALL_DECLARE(noop);
@@ -91,6 +107,7 @@ SYSCALL_DECLARE(switch);
 SYSCALL_DECLARE(conf);
 SYSCALL_DECLARE(poweroff);
 
-vm_t syscall_dispatch(vm_t syscall, vm_t a, vm_t b, vm_t c, vm_t d);
+struct sys_ret syscall_dispatch(sys_arg_t syscall, sys_arg_t a, sys_arg_t b,
+                                sys_arg_t c, sys_arg_t d);
 
 #endif /* APOS_UAPI_H */

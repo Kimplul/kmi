@@ -81,16 +81,21 @@ handle_syscall:
 	 * restore its context */
 	/* TODO: is a whole function call necessary? */
 	mv	s0, a0
+	mv	s1, a1
 	/* get current tcb */
 	call cur_tcb
 	mv	tp, a0
 	/* get associated kernel stack */
 	mv	sp, tp
 	addi	sp, sp, -sizeof_registers
+	/* restore system call result */
+	mv	a0, s0
+	mv	a1, s1
 	j	restore_noreturn
 
 restore_all:
-	lr      s0, offsetof_s0(sp)
+	lr	a0, offsetof_a0(sp)
+	lr      a1, offsetof_a1(sp)
 
 restore_noreturn:
 	/* restore registers besides possible return value, assume instruction
@@ -103,13 +108,13 @@ restore_noreturn:
 	lr      t0, offsetof_t0(sp)
 	lr      t1, offsetof_t1(sp)
 	lr      t2, offsetof_t2(sp)
-	lr      a0, offsetof_a0(sp)
-	lr      a1, offsetof_a1(sp)
+	/* a0 and a1 should not be restored when coming from a syscall */
 	lr      a2, offsetof_a2(sp)
 	lr      a3, offsetof_a3(sp)
 	lr      a4, offsetof_a4(sp)
 	lr      a5, offsetof_a5(sp)
 	lr      a6, offsetof_a6(sp)
+	lr	s0, offsetof_s0(sp)
 	lr	s1, offsetof_s1(sp)
 	lr	s2, offsetof_s2(sp)
 	lr	s3, offsetof_s3(sp)

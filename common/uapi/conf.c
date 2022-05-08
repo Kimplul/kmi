@@ -5,23 +5,23 @@
 size_t __proc_stack_size = SZ_2M;
 size_t __call_stack_size = SZ_2M;
 
-SYSCALL_DEFINE2(conf)(vm_t param, vm_t val)
+SYSCALL_DEFINE2(conf)(sys_arg_t param, sys_arg_t val)
 {
 	UNUSED(param);
 	UNUSED(val);
 	/* no parameters supported atm */
 
-	return OK;
+	return (struct sys_ret){ OK, 0 };
 }
 
-SYSCALL_DEFINE1(poweroff)(vm_t type)
+SYSCALL_DEFINE1(poweroff)(sys_arg_t type)
 {
 	switch (type) {
 	case SHUTDOWN:
 	case COLD_REBOOT:
 	case WARM_REBOOT:
-		return poweroff(type);
+		return (struct sys_ret){ OK, poweroff(type) };
 	};
 
-	return ERR_INVAL;
+	return (struct sys_ret){ ERR_INVAL, 0 };
 }

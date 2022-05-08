@@ -33,14 +33,15 @@ static const sys_t syscall_table[] = {
 
 SYSCALL_DEFINE0(noop)()
 {
-	return 0;
+	return (struct sys_ret){ OK, 0 };
 }
 
-vm_t syscall_dispatch(vm_t syscall, vm_t a, vm_t b, vm_t c, vm_t d)
+struct sys_ret syscall_dispatch(sys_arg_t syscall, sys_arg_t a, sys_arg_t b,
+                                sys_arg_t c, sys_arg_t d)
 {
 	sys_t call = syscall_table[syscall];
 	if (!call)
-		return ERR_INVAL;
+		return (struct sys_ret){ ERR_INVAL, 0 };
 
 	return call(a, b, c, d);
 }

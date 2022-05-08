@@ -3,31 +3,34 @@
 #include <apos/vmem.h>
 #include <apos/dmem.h>
 
-SYSCALL_DEFINE2(req_mem)(vm_t size, vm_t flags)
+SYSCALL_DEFINE2(req_mem)(sys_arg_t size, sys_arg_t flags)
 {
 	/* proc_tcb should give the tcb of the TID currently running */
 	struct tcb *r = cur_tcb();
-	return alloc_uvmem(r, size, flags);
+	return (struct sys_ret){ OK, alloc_uvmem(r, size, flags) };
 }
 
-SYSCALL_DEFINE3(req_fixmem)(vm_t start, vm_t size, vm_t flags)
+SYSCALL_DEFINE3(req_fixmem)(sys_arg_t start, sys_arg_t size, sys_arg_t flags)
 {
 	struct tcb *r = cur_tcb();
-	return alloc_fixed_uvmem(r, start, size, flags);
+	/* should probably check if the allocation succeeded...? TODO */
+	return (struct sys_ret){ OK, alloc_fixed_uvmem(r, start, size, flags) };
 }
 
-SYSCALL_DEFINE1(free_mem)(vm_t start)
+SYSCALL_DEFINE1(free_mem)(sys_arg_t start)
 {
 	struct tcb *r = cur_tcb();
-	if (start > __pre_top && start < __post_base)
-		free_uvmem(r, start);
+	vm_t vm_start = (vm_t)start;
+
+	if (vm_start > __pre_top && vm_start < __post_base)
+		free_uvmem(r, vm_start);
 	else
-		free_devmem(r, start);
+		free_devmem(r, vm_start);
 
-	return 0;
+	return (struct sys_ret){ OK, 0 };
 }
 
-SYSCALL_DEFINE3(req_pmem)(vm_t paddr, vm_t size, vm_t flags)
+SYSCALL_DEFINE3(req_pmem)(sys_arg_t paddr, sys_arg_t size, sys_arg_t flags)
 {
 	/* this will require some pondering, but essentially this syscall should
 	 * only be used for device access, so any addresses requested should be
@@ -35,13 +38,13 @@ SYSCALL_DEFINE3(req_pmem)(vm_t paddr, vm_t size, vm_t flags)
 	 * that keeps track of used regions outside of RAM. We'll see.
 	 */
 	struct tcb *r = cur_tcb();
-	return alloc_devmem(r, paddr, size, flags);
+	return (struct sys_ret){ OK, alloc_devmem(r, paddr, size, flags) };
 }
 
-SYSCALL_DEFINE4(req_sharedmem)(vm_t pid, vm_t start, vm_t size, vm_t flags)
+SYSCALL_DEFINE4(req_sharedmem)
+(sys_arg_t tid, sys_arg_t start, sys_arg_t size, sys_arg_t flags)
 {
-	/* take memory in PID's vaddr and map it somewhere in our own memory
-	 * region.
-	 */
-	return 0;
+	/* called by server, take memory allocation at start and map it into
+	 * tid's address space? */
+	return (struct sys_ret){ OK, 0 };
 }

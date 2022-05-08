@@ -1,7 +1,7 @@
 #include <apos/timer.h>
 #include <apos/uapi.h>
 
-static ticks_t scaled_ticks(vm_t ticks, vm_t repeat)
+static ticks_t scaled_ticks(sys_arg_t ticks, sys_arg_t repeat)
 {
 #if __WORDSIZE == 64
 	UNUSED(repeat);
@@ -13,25 +13,29 @@ static ticks_t scaled_ticks(vm_t ticks, vm_t repeat)
 
 SYSCALL_DEFINE0(timebase)()
 {
-	return secs_to_ticks(1);
+	return (struct sys_ret){ OK, secs_to_ticks(1) };
 }
 
-SYSCALL_DEFINE2(req_rel_timer)(vm_t ticks, vm_t repeat)
+SYSCALL_DEFINE2(req_rel_timer)(sys_arg_t ticks, sys_arg_t repeat)
 {
-	return new_rel_timer(cur_tcb()->tid, scaled_ticks(ticks, repeat));
+	return (struct sys_ret){
+		OK, new_rel_timer(cur_tcb()->tid, scaled_ticks(ticks, repeat))
+	};
 }
 
-SYSCALL_DEFINE2(req_abs_timer)(vm_t ticks, vm_t repeat)
+SYSCALL_DEFINE2(req_abs_timer)(sys_arg_t ticks, sys_arg_t repeat)
 {
-	return new_abs_timer(cur_tcb()->tid, scaled_ticks(ticks, repeat));
+	return (struct sys_ret){
+		OK, new_abs_timer(cur_tcb()->tid, scaled_ticks(ticks, repeat))
+	};
 }
 
-SYSCALL_DEFINE1(free_timer)(vm_t cid)
+SYSCALL_DEFINE1(free_timer)(sys_arg_t cid)
 {
 	struct timer *timer = find_timer(cid);
 	if (!timer)
-		return ERR_NF;
+		return (struct sys_ret){ ERR_NF, 0 };
 
 	remove_timer(timer);
-	return OK;
+	return (struct sys_ret){ OK, 0 };
 }

@@ -10,27 +10,28 @@
  * would have to periodically ask the kernel about all threads it is aware of
  * via sys_sync. Dunno.
  */
-SYSCALL_DEFINE1(fork)(vm_t pid)
+SYSCALL_DEFINE0(fork)()
 {
-	/* fork might not actually even need pid...? */
 	/* TODO: create new thread in the same process family */
-	return 0;
+	return (struct sys_ret){ OK, 0 };
 }
 
-SYSCALL_DEFINE4(exec)(vm_t pid, vm_t bin, vm_t argc, vm_t argv)
+SYSCALL_DEFINE3(exec)(sys_arg_t bin, sys_arg_t argc, sys_arg_t argv)
 {
-	/* TODO: execute new process */
-	return 0;
+	/* TODO: execute new process, probably with more sensible argc passing */
+	return (struct sys_ret){ OK, 0 };
 }
 
-SYSCALL_DEFINE2(signal)(vm_t pid, vm_t signal)
+SYSCALL_DEFINE2(signal)(sys_arg_t tid, sys_arg_t signal)
 {
 	/* TODO: signals? */
-	return 0;
+	return (struct sys_ret){ OK, 0 };
 }
 
-SYSCALL_DEFINE1(switch)(vm_t pid)
+SYSCALL_DEFINE1(switch)(sys_arg_t tid)
 {
 	/* TODO: switch to process */
-	return 0;
+	/* TODO: should switch return the registers of the new thread that would
+	 * be used for message passing? */
+	return (struct sys_ret){ OK, 0 };
 }
