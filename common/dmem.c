@@ -53,10 +53,10 @@ vm_t alloc_devmem(struct tcb *t, pm_t dev_start, size_t bytes, vmflags_t flags)
 {
 	vm_t region = 0;
 	if (dev_start < __pre_top)
-		region = alloc_region(&pre_ram, bytes, 0);
+		region = alloc_region(&pre_ram, bytes, 0, flags);
 
 	if (dev_start > __post_base)
-		region = alloc_region(&post_ram, bytes, 0);
+		region = alloc_region(&post_ram, bytes, 0, flags);
 
 	if (!region)
 		return 0;

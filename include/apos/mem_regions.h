@@ -28,10 +28,12 @@ struct mem_region {
 stat_t init_region(struct mem_region_root *r, vm_t start, size_t arena_size);
 void destroy_region(struct mem_region_root *r);
 
-vm_t alloc_region(struct mem_region_root *r, size_t size, size_t *actual_size);
+vm_t alloc_region(struct mem_region_root *r, size_t size, size_t *actual_size,
+                  vmflags_t flags);
 vm_t alloc_fixed_region(struct mem_region_root *r, vm_t start, size_t size,
-                        size_t *actual_size);
+                        size_t *actual_size, vmflags_t flags);
 stat_t free_region(struct mem_region_root *r, vm_t start);
+stat_t free_known_region(struct mem_region_root *r, struct mem_region *m);
 
 struct mem_region *find_used_region(struct mem_region_root *r, vm_t start);
 struct mem_region *find_closest_used_region(struct mem_region_root *r,

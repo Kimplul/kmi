@@ -39,6 +39,13 @@
                                            __page((x) + BASE_PAGE_SIZE))
 #define __bytes(x) (__addr(x))
 
+/* if memory region is used or not */
+#define MR_USED    (1 << 8)
+/* if memory region is shared */
+#define MR_SHARED  (1 << 9)
+/* owner of shared region */
+#define MR_OWNED   (1 << 10)
+
 extern size_t __mm_shifts[10];
 extern size_t __mm_widths[10];
 extern size_t __mm_sizes[10];

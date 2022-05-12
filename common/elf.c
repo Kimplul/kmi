@@ -30,6 +30,7 @@ static void __map_exec(struct tcb *t, vm_t bin, uint8_t ei_c, vm_t phstart,
 	 * filled with zeroes. */
 	/* TODO: in general, make this a low more clean. */
 	vm_t runner = phstart;
+	vmflags_t default_flags = VM_V | VM_R | VM_W | VM_X | VM_U;
 	for (size_t i = 0; i < phnum; ++i, runner += phsize) {
 		if (program_header_prop(ei_c, runner, p_type) != PT_LOAD)
 			continue;
@@ -37,15 +38,15 @@ static void __map_exec(struct tcb *t, vm_t bin, uint8_t ei_c, vm_t phstart,
 		vm_t va = program_header_prop(ei_c, runner, p_vaddr);
 		size_t vsz = program_header_prop(ei_c, runner, p_memsz);
 
-		vm_t start = alloc_fixed_region(&t->sp_r, va, vsz, &vsz);
+		vm_t start = alloc_fixed_region(&t->sp_r, va, vsz, &vsz,
+		                                default_flags);
 		if (!start)
 			return; /* out of memory or something */
 
 		uint8_t elf_flags = program_header_prop(ei_c, runner, p_flags);
 		uint8_t uvflags = __elf_to_uvflags(elf_flags);
 
-		map_allocd_region(t->b_r, start, vsz,
-		                  VM_V | VM_X | VM_R | VM_W | VM_U);
+		map_allocd_region(t->b_r, start, vsz, default_flags);
 
 		vm_t vo = bin + program_header_prop(ei_c, runner, p_offset);
 		vm_t vfz = program_header_prop(ei_c, runner, p_filesz);

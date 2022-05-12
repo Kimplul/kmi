@@ -41,10 +41,27 @@ SYSCALL_DEFINE3(req_pmem)(sys_arg_t paddr, sys_arg_t size, sys_arg_t flags)
 	return (struct sys_ret){ OK, alloc_devmem(r, paddr, size, flags) };
 }
 
-SYSCALL_DEFINE4(req_sharedmem)
-(sys_arg_t tid, sys_arg_t start, sys_arg_t size, sys_arg_t flags)
+SYSCALL_DEFINE2(req_sharedmem)
+(sys_arg_t size, sys_arg_t flags)
 {
-	/* called by server, take memory allocation at start and map it into
-	 * tid's address space? */
-	return (struct sys_ret){ OK, 0 };
+	/* TODO: check that requester is server */
+	struct tcb *t = cur_tcb();
+	vm_t start = 0;
+	if ((start = alloc_shared_uvmem(t, size, flags)))
+		return (struct sys_ret){ ERR_OOMEM, 0 };
+
+	return (struct sys_ret){ OK, start};
+}
+
+/* add a syscall like ref_sharedmem that adds a reference to an existing shared
+ * memory region to a new tid? */
+SYSCALL_DEFINE3(ref_sharedmem)(sys_arg_t tid, sys_arg_t va, sys_arg_t flags)
+{
+	struct tcb *t1 = cur_tcb();
+	struct tcb *t2 = get_tcb(tid);
+	vm_t start = 0;
+	if ((start = ref_shared_uvmem(t1, t2, va, flags)))
+		return (struct sys_ret){ERR_OOMEM, 0};
+
+	return (struct sys_ret) {OK, start};
 }

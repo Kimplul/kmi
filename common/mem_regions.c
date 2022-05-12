@@ -1,11 +1,12 @@
 #include <apos/mem_regions.h>
 #include <apos/mem_nodes.h>
 #include <apos/pmem.h>
+#include <apos/bits.h>
 #include <apos/mem.h>
 
-#define mark_region_used(r)   ((r) = 1)
-#define mark_region_unused(r) ((r) = 0)
-#define region_used(r)        (r)
+#define mark_region_used(r)   __set_bit(r, MR_USED)
+#define mark_region_unused(r) __clear_bit(r, MR_USED)
+#define region_used(r)        __is_set(r, MR_USED)
 
 /* pretty major slowdown when we get to some really massive numbers, not
  * entirely sure why. Will need to check up on this at some point, have I
@@ -245,7 +246,7 @@ struct mem_region *find_free_region(struct mem_region_root *r, size_t size,
 }
 
 static vm_t __partition_region(struct mem_region_root *r, struct mem_region *m,
-                               size_t pages, size_t align)
+                               size_t pages, size_t align, vmflags_t flags)
 {
 	sp_remove(&sp_root(&r->free_regions), &m->sp_n);
 
@@ -280,6 +281,7 @@ static vm_t __partition_region(struct mem_region_root *r, struct mem_region *m,
 
 	m->end = end;
 	m->start = start;
+	m->flags = flags;
 	mark_region_used(m->flags);
 	__insert_used_region(r, m);
 	return __addr(start);
@@ -289,7 +291,8 @@ static vm_t __partition_region(struct mem_region_root *r, struct mem_region *m,
  * just ignore them for now. Note that alloc_region should only be used when
  * mmap is called with MAP_ANON, all other situations should be handled in some
  * fs server */
-vm_t alloc_region(struct mem_region_root *r, size_t size, size_t *actual_size)
+vm_t alloc_region(struct mem_region_root *r, size_t size, size_t *actual_size,
+                  vmflags_t flags)
 {
 	size_t asize = align_up(size, BASE_PAGE_SIZE);
 	if (actual_size)
@@ -303,11 +306,11 @@ vm_t alloc_region(struct mem_region_root *r, size_t size, size_t *actual_size)
 	if (!m)
 		return 0;
 
-	return __partition_region(r, m, pages, align);
+	return __partition_region(r, m, pages, align, flags);
 }
 
 vm_t alloc_fixed_region(struct mem_region_root *r, vm_t start, size_t size,
-                        size_t *actual_size)
+                        size_t *actual_size, vmflags_t flags)
 {
 	size_t asize = align_up(size, BASE_PAGE_SIZE);
 	if (actual_size)
@@ -337,7 +340,7 @@ vm_t alloc_fixed_region(struct mem_region_root *r, vm_t start, size_t size,
 		return 0;
 
 	/* actually start marking region used */
-	return __partition_region(r, m, pages, start - m->start);
+	return __partition_region(r, m, pages, start - m->start, flags);
 }
 
 static void __try_coalesce_prev(struct mem_region_root *r, struct mem_region *m)
@@ -403,6 +406,11 @@ stat_t free_region(struct mem_region_root *r, vm_t start)
 	if (!m)
 		return ERR_NF;
 
+	return free_known_region(r, m);
+}
+
+stat_t free_known_region(struct mem_region_root *r, struct mem_region *m)
+{
 	sp_remove(&sp_root(&r->used_regions), &m->sp_n);
 	mark_region_unused(m->flags);
 

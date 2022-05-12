@@ -46,6 +46,7 @@ under a common process ID. (sort of done, not sure if linked lists even
 + Timers should use the sp_tree thing sorted by time of completion, and then
 each timer interrupt just pops the smallest value off and jumps to the
 associated program. Easy. (started)
++ Add more flags to memory regions, for example MR_SHARED and MR_OWNED?
 
 !!! FUTURE:
 + Cache locality?
