@@ -98,6 +98,7 @@ SYSCALL_DECLARE(ipc_req);
 SYSCALL_DECLARE(ipc_resp);
 
 /* proc */
+SYSCALL_DECLARE(create);
 SYSCALL_DECLARE(fork);
 SYSCALL_DECLARE(exec);
 SYSCALL_DECLARE(signal);

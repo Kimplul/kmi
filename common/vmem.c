@@ -106,8 +106,9 @@ stat_t alloc_uvmem_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr,
 	if (!*offset)
 		return INFO_TRGN; /* try again */
 
-	stat_t ret = map_vpage(b, *offset, vaddr, flags, order);
-	return ret;
+	stat_t *status = (stat_t *)data, ret;
+	ret = *status = map_vpage(b, *offset, vaddr, flags, order);
+	return (ret == INFO_SEFF) ? OK : ret;
 }
 
 stat_t alloc_shared_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr,
@@ -117,8 +118,10 @@ stat_t alloc_shared_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr,
 		return INFO_TRGN;
 
 	*offset = alloc_page(MM_O0, *offset);
-	map_vpage(b, *offset, vaddr, flags, order);
-	return OK;
+
+	stat_t *status = (stat_t *)data, ret;
+	ret = *status = map_vpage(b, *offset, vaddr, flags, order);
+	return (ret == INFO_SEFF) ? OK : ret;
 }
 
 stat_t free_uvmem_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr,
@@ -133,11 +136,11 @@ stat_t free_uvmem_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr,
 	if (order != v_order)
 		return INFO_TRGN;
 
-	stat_t *status = (stat_t *)data;
-	*status = unmap_vpage(b, vaddr);
+	stat_t *status = (stat_t *)data, ret;
+	ret = *status = unmap_vpage(b, vaddr);
 	/* don't free shared pages, unless they're owned */
 	if (!__is_set(flags, MR_SHARED) || __is_set(flags, MR_OWNED))
 		free_page(order, paddr);
 
-	return OK;
+	return (ret == INFO_SEFF) ? OK : ret;
 }

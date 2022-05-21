@@ -21,6 +21,7 @@ static const sys_t syscall_table[] = {
 	[SYS_IPC_RESP] = sys_ipc_resp,
 
 	/* proc */
+	[SYS_CREATE] = sys_create,
 	[SYS_FORK] = sys_fork,
 	[SYS_EXEC] = sys_exec,
 	[SYS_SIGNAL] = sys_signal,

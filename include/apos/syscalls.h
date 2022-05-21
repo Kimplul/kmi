@@ -29,8 +29,10 @@ enum {
 	SYS_IPC_RESP, /* IPC response from server */
 
 	/* process management */
+	SYS_CREATE, /* create new thread */
 	SYS_FORK, /* duplicate process */
 	SYS_EXEC, /* execute new binary in process space */
+	SYS_KILL, /* kill thread */
 	SYS_SIGNAL, /* send signal to process (kill etc.) */
 	SYS_SWITCH, /* switch running process */
 

@@ -1,5 +1,10 @@
 #include <apos/uapi.h>
 
+SYSCALL_DEFINE0(create)()
+{
+	return (struct sys_ret){ OK, 0 };
+}
+
 /* Not entirely sure how I should handle forks/execs etc, mostly whether I
  * should allow forks/execs to be called directly or only though the process
  * manager. Probably though the process manager, although that will add in a
@@ -12,7 +17,6 @@
  */
 SYSCALL_DEFINE0(fork)()
 {
-	/* TODO: create new thread in the same process family */
 	return (struct sys_ret){ OK, 0 };
 }
 
