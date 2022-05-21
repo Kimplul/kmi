@@ -28,6 +28,9 @@ struct tcb {
 
 	/* vm root branch */
 	struct vm_branch *b_r;
+
+	struct tcb *parent;
+	struct tcb *next;
 };
 
 void init_tcbs();
@@ -40,5 +43,7 @@ struct tcb *cur_tcb();
 void use_tcb(struct tcb *);
 
 struct tcb *get_tcb(id_t tid);
+
+stat_t clone_tcb_maps(struct tcb *);
 
 #endif /* APOS_TCB_H */

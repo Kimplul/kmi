@@ -41,11 +41,12 @@ struct mem_region *find_closest_used_region(struct mem_region_root *r,
 struct mem_region *find_free_region(struct mem_region_root *r, size_t size,
                                     size_t *align);
 
-#define REGION_TRY_AGAIN 1
 typedef stat_t region_callback_t(struct vm_branch *b, pm_t *offset, vm_t vaddr,
-                                 vmflags_t flags, enum mm_order order);
+                                 vmflags_t flags, enum mm_order order,
+                                 void *data);
 
 vm_t map_fill_region(struct vm_branch *b, region_callback_t *mem_handler,
-                     pm_t offset, vm_t start, size_t bytes, vmflags_t flags);
+                     pm_t offset, vm_t start, size_t bytes, vmflags_t flags,
+                     void *data);
 
 #endif /* APOS_MEM_REGIONS_H */

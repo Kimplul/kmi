@@ -46,7 +46,7 @@ static void __map_exec(struct tcb *t, vm_t bin, uint8_t ei_c, vm_t phstart,
 		uint8_t elf_flags = program_header_prop(ei_c, runner, p_flags);
 		uint8_t uvflags = __elf_to_uvflags(elf_flags);
 
-		map_allocd_region(t->b_r, start, vsz, default_flags);
+		map_allocd_region(t->b_r, start, vsz, default_flags, 0);
 
 		vm_t vo = bin + program_header_prop(ei_c, runner, p_offset);
 		vm_t vfz = program_header_prop(ei_c, runner, p_filesz);

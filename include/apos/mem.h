@@ -45,6 +45,8 @@
 #define MR_SHARED  (1 << 9)
 /* owner of shared region */
 #define MR_OWNED   (1 << 10)
+/* copy on write */
+#define MR_COW     (1 << 11)
 
 extern size_t __mm_shifts[10];
 extern size_t __mm_widths[10];

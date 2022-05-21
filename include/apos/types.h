@@ -197,6 +197,9 @@ enum {
 	ERR_ALIGN = -2, /* wrong alignment */
 	ERR_NF = -1, /* not found */
 	OK = 0, /* OK */
+	INFO_TRGN = 1, /* try again */
+	INFO_SEFF = 2, /* side effects */
+	INFO_CONT = 3, /* continue */
 };
 
 #include <types.h> /* arch-specific type definitions (pm_t/vm_t etc) */

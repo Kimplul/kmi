@@ -23,4 +23,6 @@ struct vm_branch *init_vmem(void *fdt);
 vm_t setup_kernel_io(struct vm_branch *b, vm_t paddr);
 #endif
 
+stat_t clone_vmbranch(struct vm_branch *, struct vm_branch *);
+
 #endif /* APOS_ARCH_PAGES_H */

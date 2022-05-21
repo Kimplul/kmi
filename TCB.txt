@@ -14,3 +14,7 @@ elevated to a process is a new one allocated. Only when the last thread in a
 process is released is the memory released. Will still need to figure out
 exactly how device memory should be freed, since it's handled globally instead
 of per thread atm.
+
+Also, I suspect I may have made my life a bit too difficult with different sized
+pages, as I'm having a hell of a time figuring out how `fork` should be
+implemented :D

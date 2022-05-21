@@ -2,7 +2,7 @@
 
 + Implement more type operators in dbg, mainly intmax/uintmax and size_t
 
-+ Add in mapping the same memory to two different processes
++ Add in mapping the same memory to two different processes (sort of?)
 + Create sensible thread handling
 + Add in init process loading
 + Make sure vmap is in 4K increments or whatever (fuck it, sure)
@@ -14,7 +14,7 @@ details dumbass
 + Primarily memory should be allocated to a process through mmap-like
 functionality, but brk/sbrk can probably still be emulated. If s/brk maps memory
 that's later attempted to mmap, it fails, and vice versa. Apparently should be
-acceptable by Unix standards.
+acceptable by Unix standards. (or just make brk in libc a noop?)
 + Alignment can maybe still be used, though more in the sense of using larger
 pages? YES, CHECK common/vmem.c:map_fill_region! Should be implemented there as
 well

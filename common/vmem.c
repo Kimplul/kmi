@@ -1,4 +1,6 @@
 #include <apos/mem_regions.h>
+#include <apos/assert.h>
+#include <apos/debug.h>
 #include <apos/bits.h>
 #include <apos/vmem.h>
 #include <arch/vmem.h>
@@ -10,23 +12,46 @@ stat_t init_uvmem(struct tcb *t, vm_t base, vm_t top)
 
 vm_t alloc_uvmem(struct tcb *t, size_t size, vmflags_t flags)
 {
-	vm_t v = alloc_region(&t->sp_r, size, &size, flags);
-	return map_allocd_region(t->b_r, v, size, flags);
+	/* t exists and is the root tcb of the current process */
+	hard_assert(t && !t->parent, ERR_INVAL);
+
+	stat_t status = OK;
+	const vm_t v = alloc_region(&t->sp_r, size, &size, flags);
+	const vm_t w = map_allocd_region(t->b_r, v, size, flags, &status);
+	if (status == INFO_SEFF)
+		clone_tcb_maps(t);
+
+	return w;
 }
 
 vm_t alloc_fixed_uvmem(struct tcb *t, vm_t start, size_t size, vmflags_t flags)
 {
-	vm_t v = alloc_fixed_region(&t->sp_r, start, size, &size, flags);
-	return map_allocd_region(t->b_r, v, size, flags);
+	hard_assert(t && !t->parent, ERR_INVAL);
+
+	stat_t status = OK;
+	const vm_t v = alloc_fixed_region(&t->sp_r, start, size, &size, flags);
+	const vm_t w = map_allocd_region(t->b_r, v, size, flags, &status);
+
+	if (status == INFO_SEFF)
+		clone_tcb_maps(t);
+
+	return w;
 }
 
 /* free_shared_uvmem shouldn't be needed, likely to work with free_uvmem */
 vm_t alloc_shared_uvmem(struct tcb *t, size_t size, vmflags_t flags)
 {
-	/* TODO: proper error handling */
-	vm_t v = alloc_region(&t->sp_r, size, &size,
-	                      flags | MR_SHARED | MR_OWNED);
-	return map_shared_region(t->b_r, v, size, flags);
+	hard_assert(t && t->parent, ERR_INVAL);
+
+	stat_t status = OK;
+	const vm_t v = alloc_region(&t->sp_r, size, &size,
+	                            flags | MR_SHARED | MR_OWNED);
+	const vm_t w = map_shared_region(t->b_r, v, size, flags, &status);
+
+	if (status == INFO_SEFF)
+		clone_tcb_maps(t);
+
+	return w;
 }
 
 vm_t ref_shared_uvmem(struct tcb *t1, struct tcb *t2, vm_t va, vmflags_t flags)
@@ -54,6 +79,7 @@ vm_t ref_shared_uvmem(struct tcb *t1, struct tcb *t2, vm_t va, vmflags_t flags)
 	return v;
 }
 
+/* TODO: assume tcb is root tcb? */
 stat_t free_uvmem(struct tcb *t, vm_t va)
 {
 	struct mem_region *m = find_used_region(&t->sp_r, va);
@@ -64,26 +90,31 @@ stat_t free_uvmem(struct tcb *t, vm_t va)
 
 	vmflags_t flags = m->flags;
 	free_region(&t->sp_r, va);
-	unmap_freed_region(t->b_r, va, pa, flags);
-	return 0;
+
+	stat_t status = OK;
+	unmap_freed_region(t->b_r, va, pa, flags, &status);
+	if (status == INFO_SEFF)
+		return clone_tcb_maps(t);
+
+	return status;
 }
 
 stat_t alloc_uvmem_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr,
-                           vmflags_t flags, enum mm_order order)
+                           vmflags_t flags, enum mm_order order, void *data)
 {
 	*offset = alloc_page(order, *offset);
 	if (!*offset)
-		return REGION_TRY_AGAIN; /* try again */
+		return INFO_TRGN; /* try again */
 
-	map_vpage(b, *offset, vaddr, flags, order);
-	return OK;
+	stat_t ret = map_vpage(b, *offset, vaddr, flags, order);
+	return ret;
 }
 
 stat_t alloc_shared_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr,
-                            vmflags_t flags, enum mm_order order)
+                            vmflags_t flags, enum mm_order order, void *data)
 {
 	if (order != MM_O0)
-		return REGION_TRY_AGAIN;
+		return INFO_TRGN;
 
 	*offset = alloc_page(MM_O0, *offset);
 	map_vpage(b, *offset, vaddr, flags, order);
@@ -91,7 +122,7 @@ stat_t alloc_shared_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr,
 }
 
 stat_t free_uvmem_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr,
-                          vmflags_t flags, enum mm_order order)
+                          vmflags_t flags, enum mm_order order, void *data)
 {
 	UNUSED(flags);
 	UNUSED(offset);
@@ -100,11 +131,13 @@ stat_t free_uvmem_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr,
 	enum mm_order v_order = 0;
 	stat_vpage(b, vaddr, &paddr, &v_order, 0);
 	if (order != v_order)
-		return REGION_TRY_AGAIN;
+		return INFO_TRGN;
 
-	unmap_vpage(b, vaddr);
+	stat_t *status = (stat_t *)data;
+	*status = unmap_vpage(b, vaddr);
 	/* don't free shared pages, unless they're owned */
 	if (!__is_set(flags, MR_SHARED) || __is_set(flags, MR_OWNED))
 		free_page(order, paddr);
+
 	return OK;
 }

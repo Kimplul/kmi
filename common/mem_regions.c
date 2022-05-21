@@ -426,7 +426,8 @@ stat_t free_known_region(struct mem_region_root *r, struct mem_region *m)
  * permutations etc. which would be slow and I don't want to implement it.
  */
 vm_t map_fill_region(struct vm_branch *b, region_callback_t *mem_handler,
-                     pm_t offset, vm_t start, size_t bytes, vmflags_t flags)
+                     pm_t offset, vm_t start, size_t bytes, vmflags_t flags,
+                     void *data)
 {
 	pm_t runner = __page(start);
 	size_t pages = __pages(bytes);
@@ -447,7 +448,7 @@ vm_t map_fill_region(struct vm_branch *b, region_callback_t *mem_handler,
 
 		while (pages >= o_pages) {
 			stat_t res = mem_handler(b, &offset, __addr(runner),
-			                         flags, top);
+			                         flags, top, data);
 			if (res > 0)
 				break;
 

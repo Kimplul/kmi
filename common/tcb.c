@@ -4,7 +4,9 @@
 #include <apos/pmem.h>
 #include <apos/nodes.h>
 #include <apos/types.h>
+#include <apos/assert.h>
 #include <apos/string.h>
+#include <arch/vmem.h>
 
 /* arguably exessively many globals... */
 static id_t start_tid;
@@ -97,4 +99,17 @@ struct tcb *get_tcb(id_t tid)
 		return 0;
 
 	return tcbs[tid];
+}
+
+stat_t clone_tcb_maps(struct tcb *r)
+{
+	hard_assert(r && !r->parent, ERR_INVAL);
+	struct tcb *t = r;
+	while ((t = t->next)) {
+		stat_t ret = clone_vmbranch(r->b_r, t->b_r);
+		if (ret)
+			return ret;
+	}
+
+	return OK;
 }

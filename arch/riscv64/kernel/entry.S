@@ -74,8 +74,11 @@ handle_exception:
 	j	restore_all
 
 handle_syscall:
-	/* TODO: CSR_EPC should be moved forward one instruction when dealing
-	 * with syscalls */
+	/* add 4 (size of ecall) to EPC to avoid running the same instruction
+	 * twice */
+	csrr    s0, CSR_SEPC
+	addi s0, s0, 4
+	csrw	CSR_SEPC, s0
 	jal	syscall_dispatch
 	/* if we had a thread switch, load kernel stack of current thread and
 	 * restore its context */

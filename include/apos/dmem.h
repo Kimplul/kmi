@@ -14,8 +14,8 @@ vm_t alloc_devmem(struct tcb *t, pm_t dev_start, size_t bytes, vmflags_t flags);
 stat_t free_devmem(struct tcb *t, vm_t dev_start);
 
 stat_t dev_free_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr,
-                        vmflags_t flags, enum mm_order t);
+                        vmflags_t flags, enum mm_order t, void *);
 stat_t dev_alloc_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr,
-                         vmflags_t flags, enum mm_order t);
+                         vmflags_t flags, enum mm_order t, void *);
 
 #endif /* APOS_DEV_H */

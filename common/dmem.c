@@ -27,15 +27,17 @@ stat_t init_devmem(pm_t ram_base, pm_t ram_top)
 }
 
 stat_t dev_alloc_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr,
-                         vmflags_t flags, enum mm_order order)
+                         vmflags_t flags, enum mm_order order, void *data)
 {
-	map_vpage(b, *offset, vaddr, flags, order);
+	stat_t *status = (stat_t *)data;
+	/* TODO: remember to do something with this status info */
+	*status = map_vpage(b, *offset, vaddr, flags, order);
 	*offset += __o_size(order);
 	return OK;
 }
 
 stat_t dev_free_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr,
-                        vmflags_t flags, enum mm_order order)
+                        vmflags_t flags, enum mm_order order, void *data)
 {
 	UNUSED(offset);
 	UNUSED(flags);
@@ -43,9 +45,10 @@ stat_t dev_free_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr,
 	enum mm_order v_order = 0;
 	stat_vpage(b, vaddr, &paddr, &v_order, 0);
 	if (order != v_order)
-		return REGION_TRY_AGAIN;
+		return INFO_TRGN;
 
-	unmap_vpage(b, vaddr);
+	stat_t *status = (stat_t *)data;
+	*status = unmap_vpage(b, vaddr);
 	return OK;
 }
 
@@ -62,7 +65,7 @@ vm_t alloc_devmem(struct tcb *t, pm_t dev_start, size_t bytes, vmflags_t flags)
 		return 0;
 
 	return map_fill_region(t->b_r, &dev_alloc_wrapper, dev_start, region,
-	                       bytes, flags);
+	                       bytes, flags, 0);
 }
 
 stat_t free_devmem(struct tcb *t, vm_t dev_start)
@@ -85,7 +88,7 @@ stat_t free_devmem(struct tcb *t, vm_t dev_start)
 
 	size_t region_size = __addr(m->end - m->start);
 	map_fill_region(t->b_r, &dev_free_wrapper, dev_paddr, dev_start,
-	                region_size, 0);
+	                region_size, 0, 0);
 
 	if (dev_paddr < __pre_top)
 		free_region(&pre_ram, dev_paddr);

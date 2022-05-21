@@ -45,10 +45,17 @@ static pm_t *__find_vmem(struct vm_branch *b, vm_t v, enum mm_order *o)
 stat_t mod_vpage(struct vm_branch *branch, vm_t vaddr, pm_t paddr,
                  vmflags_t flags)
 {
-	pm_t *pte = __find_vmem(branch, vaddr, 0);
+	enum mm_order order;
+	pm_t *pte = __find_vmem(branch, vaddr, &order);
 	if (pte) {
 		*pte = to_pte((pm_t)__pa(paddr), vp_flags(flags));
-		return OK;
+		/* if we're modifying a top level mapping, we will have to
+		 * update the same one for all the other threads in this process
+		 * */
+		if (order == __mm_max_order)
+			return INFO_SEFF;
+		else
+			return OK;
 	}
 
 	return ERR_NF;
@@ -115,7 +122,8 @@ stat_t map_vpage(struct vm_branch *branch, pm_t paddr, vm_t vaddr,
 
 	branch->leaf[idx] =
 		(struct vm_branch *)to_pte((pm_t)__pa(paddr), vp_flags(flags));
-	return OK;
+
+	return top == __mm_max_order ? INFO_SEFF : OK;
 }
 
 stat_t unmap_vpage(struct vm_branch *branch, vm_t vaddr)
@@ -191,3 +199,12 @@ vm_t setup_kernel_io(struct vm_branch *b, vm_t paddr)
 	return -SZ_1G + paddr - (gigapage * MM_GPAGE_SIZE);
 }
 #endif
+
+stat_t clone_vmbranch(struct vm_branch *r, struct vm_branch *b)
+{
+	/* TODO: error checking? */
+	for (size_t i = 0; i <= CSTACK_PAGE; ++i)
+		b->leaf[i] = r->leaf[i];
+
+	return OK;
+}
