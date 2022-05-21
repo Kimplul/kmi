@@ -5,6 +5,10 @@
 #define SATP_MODE_Sv39       0x8000000000000000
 #define SATP_MODE_Sv48       0x9000000000000000
 
+/* unprivileged CSR registers */
+#define CSR_TIME             0xc01
+#define CSR_TIMEH            0xc81
+
 /* supervisor CSR registers */
 #define CSR_SSTATUS          0x100
 #define CSR_SIE              0x104

@@ -20,8 +20,11 @@ void __dbg_fdt(const void *fdt, int node_offset, int depth);
 #define dbg_fdt(...)
 #endif
 
+#define fdt_load_int32_ptr(p) fdt32_to_cpu(get_unaligned((uint32_t *)p))
+
+#define fdt_load_int64_ptr(p) fdt64_to_cpu(get_unaligned((uint64_t *)p))
+
 #define fdt_load_int_ptr(c, p)                                                 \
-	((c) == 2 ? fdt64_to_cpu(get_unaligned((uint64_t *)p)) :               \
-                    fdt32_to_cpu(get_unaligned((uint32_t *)p)))
+	((c) == 2 ? fdt_load_int64_ptr(p) : fdt_load_int32_ptr(p))
 
 #endif

@@ -50,7 +50,7 @@ SYSCALL_DEFINE2(req_sharedmem)
 	if ((start = alloc_shared_uvmem(t, size, flags)))
 		return (struct sys_ret){ ERR_OOMEM, 0 };
 
-	return (struct sys_ret){ OK, start};
+	return (struct sys_ret){ OK, start };
 }
 
 /* add a syscall like ref_sharedmem that adds a reference to an existing shared
@@ -61,7 +61,7 @@ SYSCALL_DEFINE3(ref_sharedmem)(sys_arg_t tid, sys_arg_t va, sys_arg_t flags)
 	struct tcb *t2 = get_tcb(tid);
 	vm_t start = 0;
 	if ((start = ref_shared_uvmem(t1, t2, va, flags)))
-		return (struct sys_ret){ERR_OOMEM, 0};
+		return (struct sys_ret){ ERR_OOMEM, 0 };
 
-	return (struct sys_ret) {OK, start};
+	return (struct sys_ret){ OK, start };
 }

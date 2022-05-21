@@ -21,12 +21,11 @@ vm_t alloc_fixed_uvmem(struct tcb *t, vm_t start, size_t size, vmflags_t flags)
 }
 
 /* free_shared_uvmem shouldn't be needed, likely to work with free_uvmem */
-vm_t alloc_shared_uvmem(struct tcb *t, size_t size,
-                          vmflags_t flags)
+vm_t alloc_shared_uvmem(struct tcb *t, size_t size, vmflags_t flags)
 {
 	/* TODO: proper error handling */
 	vm_t v = alloc_region(&t->sp_r, size, &size,
-	                       flags | MR_SHARED | MR_OWNED);
+	                      flags | MR_SHARED | MR_OWNED);
 	return map_shared_region(t->b_r, v, size, flags);
 }
 
@@ -81,7 +80,7 @@ stat_t alloc_uvmem_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr,
 }
 
 stat_t alloc_shared_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr,
-		vmflags_t flags, enum mm_order order)
+                            vmflags_t flags, enum mm_order order)
 {
 	if (order != MM_O0)
 		return REGION_TRY_AGAIN;

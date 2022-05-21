@@ -1,6 +1,8 @@
 #ifndef SP_TREE_H
 #define SP_TREE_H
 
+#include <apos/types.h>
+
 #define sp_root(r)       ((r)->sp_r)
 #define sp_left(n)       ((n)->left)
 #define sp_right(n)      ((n)->right)
@@ -11,7 +13,7 @@
 #define sp_has_gparen(n) (sp_paren(n) && sp_gparen(n))
 
 struct sp_node {
-	short hint;
+	int_fast16_t hint;
 	struct sp_node *left;
 	struct sp_node *right;
 	struct sp_node *parent;

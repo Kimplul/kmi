@@ -8,8 +8,7 @@
 
 vm_t alloc_uvmem(struct tcb *r, size_t size, vmflags_t flags);
 vm_t alloc_fixed_uvmem(struct tcb *r, vm_t start, size_t size, vmflags_t flags);
-vm_t alloc_shared_uvmem(struct tcb *r, size_t size,
-                          vmflags_t flags);
+vm_t alloc_shared_uvmem(struct tcb *r, size_t size, vmflags_t flags);
 vm_t ref_shared_uvmem(struct tcb *r1, struct tcb *r2, vm_t va, vmflags_t flags);
 
 stat_t free_uvmem(struct tcb *r, vm_t a);
@@ -18,17 +17,17 @@ stat_t init_uvmem(struct tcb *r, vm_t base, vm_t top);
 stat_t alloc_uvmem_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr,
                            vmflags_t flags, enum mm_order order);
 stat_t alloc_shared_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr,
-		vmflags_t flags, enum mm_order order);
+                            vmflags_t flags, enum mm_order order);
 stat_t free_uvmem_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr,
                           vmflags_t flags, enum mm_order order);
 
 #define map_allocd_region(b, start, bytes, flags)                              \
 	map_fill_region(b, &alloc_uvmem_wrapper, 0, start, bytes, flags)
 
-#define map_shared_region(b, start, bytes, flags)\
+#define map_shared_region(b, start, bytes, flags)                              \
 	map_fill_region(b, &alloc_shared_wrapper, 0, start, bytes, flags)
 
-#define unmap_freed_region(b, start, bytes, flags)                                    \
+#define unmap_freed_region(b, start, bytes, flags)                             \
 	map_fill_region(b, &free_uvmem_wrapper, 0, start, bytes, flags)
 
 #define vm_flags(x) ((x) & ~0xff)

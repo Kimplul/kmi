@@ -3,6 +3,7 @@
 #include <apos/nodes.h>
 #include <apos/utils.h>
 #include <apos/timer.h>
+#include <apos/debug.h>
 #include <arch/timer.h>
 #include <arch/cpu.h>
 
@@ -27,6 +28,8 @@ static struct sp_root *__cpu_timers()
 void init_timer(const void *fdt)
 {
 	ticks_per_sec = stat_timer(fdt);
+	info("ticks_per_sec: %" PRIu64 "\n", ticks_per_sec);
+	info("current ticks: %" PRIu64 "\n", current_ticks());
 	init_nodes(&node_root, sizeof(struct timer_node));
 }
 
