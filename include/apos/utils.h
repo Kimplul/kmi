@@ -2,7 +2,7 @@
 #define APOS_UTILS_H
 
 /**
- * @file utils.
+ * @file utils.h
  * Misc utils and helpers.
  */
 

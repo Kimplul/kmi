@@ -2,7 +2,7 @@
 #define APOS_MM_NODES_H
 
 /**
- * @file mem_nodes.
+ * @file mem_nodes.h
  * Memory node subsystem. Used by the memory region subsystem.
  */
 

@@ -207,6 +207,6 @@ enum {
 	INFO_CONT = 3, /* continue */
 };
 
-#include <types.h> /* arch-specific type definitions (pm_t/vm_t etc) */
+#include <arch/types.h> /* arch-specific type definitions (pm_t/vm_t etc) */
 
 #endif /* APOS_TYPES_H */
