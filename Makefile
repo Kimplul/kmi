@@ -35,7 +35,7 @@ COMPILER	!= [ $(LLVM) ] \
 
 
 KERNEL_SOURCES	!= echo common/*.c common/uapi/*.c lib/*.c
-CLEANUP		:= build deps.mk kernel.* init.* apos.bin
+CLEANUP		:= build deps.mk kernel.* init.* apos.bin docs/output
 CLEANUP_CMD	:=
 INIT_SOURCES	:=
 
