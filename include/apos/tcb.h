@@ -5,14 +5,24 @@
 #include <apos/types.h>
 #include <tcb.h> /* arch-specific data */
 
+/* process(/main) threads don't have any previous threads */
+#define is_proc(t) (!t->prev)
+
 struct tcb {
 	struct arch_tcbd tcbd;
 
 	/* mapping data
 	 * TODO: should mem_region_root be renamed mem_root or something? feels
 	 * kind of clunky */
-	struct mem_region_root sp_r;
+	union {
+		/* if we're the main thread, we control the memory regions */
+		struct mem_region_root sp_r;
+		/* if we're not the main thread, we have a pointer to the main
+		 * thread */
+		struct tcb *proc;
+	};
 
+	id_t pid;
 	id_t tid;
 
 	vm_t callback;
@@ -29,15 +39,18 @@ struct tcb {
 	/* vm root branch */
 	struct vm_branch *b_r;
 
-	struct tcb *parent;
+	/* linked list of threads in this process */
 	struct tcb *next;
+	struct tcb *prev;
 };
 
 void init_tcbs();
 void destroy_tcbs();
 
-struct tcb *new_thread();
-void destroy_thread(struct tcb *);
+struct tcb *create_thread(struct tcb *p);
+struct tcb *create_proc(struct tcb *p);
+stat_t destroy_thread(struct tcb *t);
+stat_t destroy_proc(struct tcb *p);
 
 struct tcb *cur_tcb();
 void use_tcb(struct tcb *);

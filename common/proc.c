@@ -29,12 +29,13 @@ stat_t init_proc(void *fdt, struct vm_branch *b)
 {
 	init_tcbs();
 
-	/* todo: cleanup or something */
-	struct tcb *t = new_thread();
+	/* TODO: cleanup or something */
+	struct tcb *t = create_thread(NULL);
 	if (!t)
 		return ERR_OOMEM;
-	t->b_r = b;
 
+	/* use existing branch */
+	t->b_r = b;
 	init_uvmem(t, UVMEM_START, UVMEM_END);
 
 	/* TODO: this stuff should be placed in __sys_exec */

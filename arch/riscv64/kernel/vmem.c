@@ -168,16 +168,28 @@ static void __start_vmem(struct vm_branch *branch, enum mm_mode m)
 struct vm_branch *init_vmem(void *fdt)
 {
 	UNUSED(fdt);
-	struct vm_branch *b = (struct vm_branch *)alloc_page(MM_KPAGE, 0);
-	memset(b, 0, MM_KPAGE_SIZE);
-
-	populate_root_branch(b);
+	struct vm_branch *b = create_vmem();
 	/* update which memory branch to use */
 	__start_vmem(b, Sv39);
 	return b;
 }
 
-void populate_root_branch(struct vm_branch *b)
+struct vm_branch *create_vmem()
+{
+	struct vm_branch *b = (struct vm_branch *)alloc_page(MM_KPAGE, 0);
+	memset(b, 0, MM_KPAGE_SIZE);
+
+	populate_kvmem(b);
+	return b;
+}
+
+stat_t destroy_vmem(struct vm_branch *b)
+{
+	free_page(MM_KPAGE, (pm_t)b);
+	return OK;
+}
+
+stat_t populate_kvmem(struct vm_branch *b)
 {
 	size_t flags = VM_V | VM_R | VM_W | VM_X | VM_G;
 	for (size_t i = KSTART_PAGE; i < IO_PAGE; ++i)
@@ -187,6 +199,7 @@ void populate_root_branch(struct vm_branch *b)
 	/* map kernel IO to zero for now, this will be overridden later
 	 * (if at all) */
 	b->leaf[IO_PAGE] = (struct vm_branch *)to_pte(0, flags);
+	return OK;
 }
 
 #if defined(DEBUG)
@@ -200,7 +213,7 @@ vm_t setup_kernel_io(struct vm_branch *b, vm_t paddr)
 }
 #endif
 
-stat_t clone_vmbranch(struct vm_branch *r, struct vm_branch *b)
+stat_t clone_uvmem(struct vm_branch *r, struct vm_branch *b)
 {
 	/* TODO: error checking? */
 	for (size_t i = 0; i <= CSTACK_PAGE; ++i)

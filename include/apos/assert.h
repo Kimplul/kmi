@@ -8,24 +8,25 @@
 #if !defined(DNDEBUG)
 #define catastrophic_assert(x)                                                 \
 	do {                                                                   \
-		if (x) {                                                       \
-			err("catastrophic assertion failed: %s\n", QUOTE(x));  \
+		if (unlikely(!(x))) {                                          \
+			error("catastrophic assertion failed: %s\n",           \
+			      QUOTE(x));                                       \
 			while (1)                                              \
 				;                                              \
 		}                                                              \
 	} while (0);
 
 #define hard_assert(x, r)                                                      \
-	do {                                                                   \
-		if (x) {                                                       \
+	{                                                                      \
+		if (unlikely(!(x))) {                                          \
 			warn("hard assertion failed: %s\n", QUOTE(x));         \
 			return r;                                              \
 		}                                                              \
-	} while (0);
+	}
 
 #define soft_assert(x)                                                         \
 	do {                                                                   \
-		if (x) {                                                       \
+		if (unlikely(!(x))) {                                          \
 			info("soft assertion failed: %s\n", QUOTE(x));         \
 		}                                                              \
 	} while (0);

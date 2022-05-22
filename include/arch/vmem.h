@@ -16,13 +16,15 @@ stat_t stat_vpage(struct vm_branch *branch, vm_t vaddr, pm_t *paddr,
 void flush_tlb();
 void flush_tlb_all();
 
-void populate_root_branch(struct vm_branch *b);
+stat_t populate_kvmem(struct vm_branch *b);
 struct vm_branch *init_vmem(void *fdt);
 
 #if defined(DEBUG)
 vm_t setup_kernel_io(struct vm_branch *b, vm_t paddr);
 #endif
 
-stat_t clone_vmbranch(struct vm_branch *, struct vm_branch *);
+struct vm_branch *create_vmem();
+stat_t destroy_vmem(struct vm_branch *);
+stat_t clone_uvmem(struct vm_branch *, struct vm_branch *);
 
 #endif /* APOS_ARCH_PAGES_H */

@@ -6,7 +6,6 @@
 
 #define mark_region_used(r)   __set_bit(r, MR_USED)
 #define mark_region_unused(r) __clear_bit(r, MR_USED)
-#define region_used(r)        __is_set(r, MR_USED)
 
 /* pretty major slowdown when we get to some really massive numbers, not
  * entirely sure why. Will need to check up on this at some point, have I
@@ -121,17 +120,22 @@ static void __destroy_region(struct sp_node *n)
 	if (!n)
 		return;
 
-	__destroy_region(sp_left(n));
-	__destroy_region(sp_right(n));
+	if (sp_left(n))
+		__destroy_region(sp_left(n));
+
+	if (sp_right(n))
+		__destroy_region(sp_right(n));
 
 	struct mem_region *m = mem_container(n);
 	free_mem_node(m);
 }
 
-void destroy_region(struct mem_region_root *r)
+stat_t destroy_region(struct mem_region_root *r)
 {
 	__destroy_region(sp_root(&r->free_regions));
 	__destroy_region(sp_root(&r->used_regions));
+	/* TODO: error checking? */
+	return OK;
 }
 
 /* interestingly this is now the main bottleneck :D
@@ -245,6 +249,18 @@ struct mem_region *find_free_region(struct mem_region_root *r, size_t size,
 	return quick_best;
 }
 
+struct mem_region *find_first_region(struct mem_region_root *r)
+{
+	/* get used region with smallest address, likely also close to the start
+	 * of the linked list */
+	struct mem_region *m = find_closest_used_region(r, 0);
+	while (m->prev) {
+		m = m->prev;
+	}
+
+	return m;
+}
+
 static vm_t __partition_region(struct mem_region_root *r, struct mem_region *m,
                                size_t pages, size_t align, vmflags_t flags)
 {
@@ -332,7 +348,7 @@ vm_t alloc_fixed_region(struct mem_region_root *r, vm_t start, size_t size,
 	}
 
 	/* if region is already in use, forget it */
-	if (region_used(m->flags))
+	if (is_region_used(m))
 		return 0;
 
 	/* region is too small */
@@ -346,11 +362,11 @@ vm_t alloc_fixed_region(struct mem_region_root *r, vm_t start, size_t size,
 static void __try_coalesce_prev(struct mem_region_root *r, struct mem_region *m)
 {
 	while (m) {
-		if (!m || region_used(m->flags))
+		if (!m || is_region_used(m))
 			return;
 
 		struct mem_region *p = m->prev;
-		if (!p || region_used(p->flags))
+		if (!p || is_region_used(p))
 			return;
 
 		m->start = p->start;
@@ -369,11 +385,11 @@ static void __try_coalesce_prev(struct mem_region_root *r, struct mem_region *m)
 static void __try_coalesce_next(struct mem_region_root *r, struct mem_region *m)
 {
 	while (m) {
-		if (!m || region_used(m->flags))
+		if (!m || is_region_used(m))
 			return;
 
 		struct mem_region *n = m->next;
-		if (!n || region_used(n->flags))
+		if (!n || is_region_used(n))
 			return;
 
 		m->end = n->end;

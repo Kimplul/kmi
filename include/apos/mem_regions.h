@@ -7,10 +7,12 @@
 #include <arch/vmem.h>
 
 #define mem_container(ptr) container_of(ptr, struct mem_region, sp_n)
+#define is_region_used(r)  __is_set(r->flags, MR_USED)
 
 struct mem_region_root {
 	struct sp_root free_regions;
 	struct sp_root used_regions;
+	struct mem_region *first;
 };
 
 struct mem_region {
@@ -26,7 +28,7 @@ struct mem_region {
 };
 
 stat_t init_region(struct mem_region_root *r, vm_t start, size_t arena_size);
-void destroy_region(struct mem_region_root *r);
+stat_t destroy_region(struct mem_region_root *r);
 
 vm_t alloc_region(struct mem_region_root *r, size_t size, size_t *actual_size,
                   vmflags_t flags);
@@ -35,6 +37,7 @@ vm_t alloc_fixed_region(struct mem_region_root *r, vm_t start, size_t size,
 stat_t free_region(struct mem_region_root *r, vm_t start);
 stat_t free_known_region(struct mem_region_root *r, struct mem_region *m);
 
+struct mem_region *find_first_region(struct mem_region_root *r);
 struct mem_region *find_used_region(struct mem_region_root *r, vm_t start);
 struct mem_region *find_closest_used_region(struct mem_region_root *r,
                                             vm_t start);

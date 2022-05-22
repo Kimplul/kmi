@@ -17,7 +17,8 @@ static const sys_t syscall_table[] = {
 
 	/* ipc */
 	[SYS_IPC_SERVER] = sys_ipc_server,
-	[SYS_IPC_REQ] = sys_ipc_req,
+	[SYS_IPC_REQ_PROC] = sys_ipc_req_proc,
+	[SYS_IPC_REQ_THREAD] = sys_ipc_req_thread,
 	[SYS_IPC_RESP] = sys_ipc_resp,
 
 	/* proc */

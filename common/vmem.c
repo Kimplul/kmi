@@ -10,10 +10,33 @@ stat_t init_uvmem(struct tcb *t, vm_t base, vm_t top)
 	return init_region(&t->sp_r, base, top);
 }
 
+static stat_t __free_mapped_region(struct tcb *t, struct mem_region *m)
+{
+	stat_t status = OK;
+	pm_t pa = __addr(m->end - m->start);
+	if (unmap_freed_region(t->b_r, m->start, pa, m->flags, &status))
+		return ERR_MISC;
+
+	return status;
+}
+
+stat_t destroy_uvmem(struct tcb *t)
+{
+	struct mem_region *m = find_first_region(&t->sp_r);
+	while (m) {
+		/* free all memory associated with used regions */
+		if (is_region_used(m))
+			__free_mapped_region(t, m);
+	}
+
+	/* destroy region tree itself */
+	return destroy_region(&t->sp_r);
+}
+
 vm_t alloc_uvmem(struct tcb *t, size_t size, vmflags_t flags)
 {
-	/* t exists and is the root tcb of the current process */
-	hard_assert(t && !t->parent, ERR_INVAL);
+	/* t exists and is the process tcb of the current process */
+	hard_assert(t && is_proc(t), ERR_INVAL);
 
 	stat_t status = OK;
 	const vm_t v = alloc_region(&t->sp_r, size, &size, flags);
@@ -26,7 +49,7 @@ vm_t alloc_uvmem(struct tcb *t, size_t size, vmflags_t flags)
 
 vm_t alloc_fixed_uvmem(struct tcb *t, vm_t start, size_t size, vmflags_t flags)
 {
-	hard_assert(t && !t->parent, ERR_INVAL);
+	hard_assert(t && is_proc(t), ERR_INVAL);
 
 	stat_t status = OK;
 	const vm_t v = alloc_fixed_region(&t->sp_r, start, size, &size, flags);
@@ -41,7 +64,7 @@ vm_t alloc_fixed_uvmem(struct tcb *t, vm_t start, size_t size, vmflags_t flags)
 /* free_shared_uvmem shouldn't be needed, likely to work with free_uvmem */
 vm_t alloc_shared_uvmem(struct tcb *t, size_t size, vmflags_t flags)
 {
-	hard_assert(t && t->parent, ERR_INVAL);
+	hard_assert(t && is_proc(t), ERR_INVAL);
 
 	stat_t status = OK;
 	const vm_t v = alloc_region(&t->sp_r, size, &size,
@@ -86,13 +109,9 @@ stat_t free_uvmem(struct tcb *t, vm_t va)
 	if (!m)
 		return -1;
 
-	pm_t pa = __addr(m->end - m->start);
-
-	vmflags_t flags = m->flags;
 	free_region(&t->sp_r, va);
 
-	stat_t status = OK;
-	unmap_freed_region(t->b_r, va, pa, flags, &status);
+	stat_t status = __free_mapped_region(t, m);
 	if (status == INFO_SEFF)
 		return clone_tcb_maps(t);
 
@@ -107,7 +126,10 @@ stat_t alloc_uvmem_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr,
 		return INFO_TRGN; /* try again */
 
 	stat_t *status = (stat_t *)data, ret;
-	ret = *status = map_vpage(b, *offset, vaddr, flags, order);
+	ret = map_vpage(b, *offset, vaddr, flags, order);
+	if (status)
+		*status = ret;
+
 	return (ret == INFO_SEFF) ? OK : ret;
 }
 
@@ -120,7 +142,9 @@ stat_t alloc_shared_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr,
 	*offset = alloc_page(MM_O0, *offset);
 
 	stat_t *status = (stat_t *)data, ret;
-	ret = *status = map_vpage(b, *offset, vaddr, flags, order);
+	ret = map_vpage(b, *offset, vaddr, flags, order);
+	if (status)
+		*status = ret;
 	return (ret == INFO_SEFF) ? OK : ret;
 }
 
@@ -137,7 +161,10 @@ stat_t free_uvmem_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr,
 		return INFO_TRGN;
 
 	stat_t *status = (stat_t *)data, ret;
-	ret = *status = unmap_vpage(b, vaddr);
+	ret = unmap_vpage(b, vaddr);
+	if (status)
+		*status = ret;
+
 	/* don't free shared pages, unless they're owned */
 	if (!__is_set(flags, MR_SHARED) || __is_set(flags, MR_OWNED))
 		free_page(order, paddr);
