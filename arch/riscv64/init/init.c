@@ -6,7 +6,7 @@
 #include <csr.h>
 
 /* assume 64 bit for now */
-struct vm_branch *root_branch;
+struct vmem *root_branch;
 
 #define to_pte(a, f) (((a) >> 12) << 10 | (f))
 
@@ -16,22 +16,21 @@ void init_bootmem()
 	size_t flags = VM_V | VM_X | VM_R | VM_W;
 
 	extern char *__init_start;
-	root_branch = (struct vm_branch *)align_down(
+	root_branch = (struct vmem *)align_down(
 		(uintptr_t)&__init_start - SZ_4K, SZ_4K);
 
 	/* direct mapping (temp) */
 	for (size_t i = 0; i < CSTACK_PAGE; ++i)
-		root_branch->leaf[i] =
-			(struct vm_branch *)to_pte(SZ_1G * i, flags);
+		root_branch->leaf[i] = (struct vmem *)to_pte(SZ_1G * i, flags);
 
 	/* kernel (also sort of direct mapping) */
 	flags |= VM_G;
 	for (size_t i = KSTART_PAGE; i < IO_PAGE; ++i)
-		root_branch->leaf[i] = (struct vm_branch *)to_pte(
+		root_branch->leaf[i] = (struct vmem *)to_pte(
 			RAM_BASE + SZ_1G * (i - 256), flags);
 
 	/* kernel IO, map to 0 for now, will be updated in the future */
-	root_branch->leaf[IO_PAGE] = (struct vm_branch *)to_pte(0, flags);
+	root_branch->leaf[IO_PAGE] = (struct vmem *)to_pte(0, flags);
 
 	csr_write(CSR_SATP, SATP_MODE_Sv39 | ((uintptr_t)root_branch >> 12));
 }

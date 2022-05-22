@@ -5,6 +5,6 @@
 #include <apos/vmem.h>
 
 stat_t jump_to_userspace(struct tcb *t, int argc, char **argv);
-stat_t init_proc(void *fdt, struct vm_branch *b);
+stat_t init_proc(void *fdt, struct vmem *b);
 
 #endif /* APOS_PROC_H */

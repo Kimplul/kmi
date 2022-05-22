@@ -118,7 +118,7 @@ stat_t free_uvmem(struct tcb *t, vm_t va)
 	return status;
 }
 
-stat_t alloc_uvmem_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr,
+stat_t alloc_uvmem_wrapper(struct vmem *b, pm_t *offset, vm_t vaddr,
                            vmflags_t flags, enum mm_order order, void *data)
 {
 	*offset = alloc_page(order, *offset);
@@ -133,7 +133,7 @@ stat_t alloc_uvmem_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr,
 	return (ret == INFO_SEFF) ? OK : ret;
 }
 
-stat_t alloc_shared_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr,
+stat_t alloc_shared_wrapper(struct vmem *b, pm_t *offset, vm_t vaddr,
                             vmflags_t flags, enum mm_order order, void *data)
 {
 	if (order != MM_O0)
@@ -148,7 +148,7 @@ stat_t alloc_shared_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr,
 	return (ret == INFO_SEFF) ? OK : ret;
 }
 
-stat_t free_uvmem_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr,
+stat_t free_uvmem_wrapper(struct vmem *b, pm_t *offset, vm_t vaddr,
                           vmflags_t flags, enum mm_order order, void *data)
 {
 	UNUSED(flags);

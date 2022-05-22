@@ -23,7 +23,7 @@ void setup_dmap_dbg()
 	setup_dbg(dbg_info.dbg_ptr, dbg_info.dev);
 }
 
-void setup_io_dbg(struct vm_branch *b)
+void setup_io_dbg(struct vmem *b)
 {
 	vm_t io_ptr = setup_kernel_io(b, dbg_info.dbg_ptr);
 	setup_dbg(io_ptr, dbg_info.dev);

@@ -37,7 +37,7 @@ struct tcb {
 	vm_t entry;
 
 	/* vm root branch */
-	struct vm_branch *b_r;
+	struct vmem *b_r;
 
 	/* linked list of threads in this process */
 	struct tcb *next;

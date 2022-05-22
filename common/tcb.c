@@ -101,7 +101,7 @@ struct tcb *create_proc(struct tcb *p)
 
 static stat_t __destroy_thread_data(struct tcb *t)
 {
-	/* free vm_branch */
+	/* free vmem */
 	destroy_vmem(t->b_r);
 
 	/* free associated kernel stack and the structure itself */

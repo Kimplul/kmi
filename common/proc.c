@@ -25,7 +25,7 @@ static vm_t __setup_proc_stack(struct tcb *t, size_t bytes)
 	return alloc_uvmem(t, bytes, VM_V | VM_R | VM_W | VM_U);
 }
 
-stat_t init_proc(void *fdt, struct vm_branch *b)
+stat_t init_proc(void *fdt, struct vmem *b)
 {
 	init_tcbs();
 

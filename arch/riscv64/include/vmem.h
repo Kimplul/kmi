@@ -25,8 +25,8 @@ enum mm_mode {
 	Sv32,
 };
 
-struct vm_branch {
-	struct vm_branch *leaf[RISCV_NUM_LEAVES];
+struct vmem {
+	struct vmem *leaf[RISCV_NUM_LEAVES];
 };
 
 #endif /* APOS_RISCV_VMAP_H */

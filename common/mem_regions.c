@@ -161,8 +161,8 @@ struct mem_region *find_used_region(struct mem_region_root *r, vm_t start)
 }
 
 static struct mem_region *__create_region(vm_t start, vm_t end,
-                                        struct mem_region *prev,
-                                        struct mem_region *next)
+                                          struct mem_region *prev,
+                                          struct mem_region *next)
 {
 	struct mem_region *m = get_mem_node();
 	m->start = start;
@@ -441,7 +441,7 @@ stat_t free_known_region(struct mem_region_root *r, struct mem_region *m)
  * NOTE: not actually optimal, this doesn't bother to go through possible
  * permutations etc. which would be slow and I don't want to implement it.
  */
-vm_t map_fill_region(struct vm_branch *b, region_callback_t *mem_handler,
+vm_t map_fill_region(struct vmem *b, region_callback_t *mem_handler,
                      pm_t offset, vm_t start, size_t bytes, vmflags_t flags,
                      void *data)
 {

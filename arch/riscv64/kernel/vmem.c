@@ -17,7 +17,7 @@
 #define is_leaf(pte)      (is_active(pte) && (pte_flags(pte) & ~VM_V))
 #define is_branch(pte)    (is_active(pte) && !(pte_flags(pte) & ~VM_V))
 
-static pm_t *__find_vmem(struct vm_branch *b, vm_t v, enum mm_order *o)
+static pm_t *__find_vmem(struct vmem *b, vm_t v, enum mm_order *o)
 {
 	enum mm_order top = __mm_max_order;
 	if (o)
@@ -36,14 +36,13 @@ static pm_t *__find_vmem(struct vm_branch *b, vm_t v, enum mm_order *o)
 			return (pm_t *)&b->leaf[idx];
 		}
 
-		b = (struct vm_branch *)pte_addr(pte);
+		b = (struct vmem *)pte_addr(pte);
 	} while (top--);
 
 	return 0;
 }
 
-stat_t mod_vpage(struct vm_branch *branch, vm_t vaddr, pm_t paddr,
-                 vmflags_t flags)
+stat_t mod_vpage(struct vmem *branch, vm_t vaddr, pm_t paddr, vmflags_t flags)
 {
 	enum mm_order order;
 	pm_t *pte = __find_vmem(branch, vaddr, &order);
@@ -63,7 +62,7 @@ stat_t mod_vpage(struct vm_branch *branch, vm_t vaddr, pm_t paddr,
 
 /* huh, should probably add status flags etc. to all my API functions. Damn, I'm
  * lazy. */
-stat_t stat_vpage(struct vm_branch *branch, vm_t vaddr, pm_t *paddr,
+stat_t stat_vpage(struct vmem *branch, vm_t vaddr, pm_t *paddr,
                   enum mm_order *order, vmflags_t *flags)
 {
 	pm_t *pte = __find_vmem(branch, vaddr, order);
@@ -80,29 +79,28 @@ stat_t stat_vpage(struct vm_branch *branch, vm_t vaddr, pm_t *paddr,
 	return ERR_NF;
 }
 
-static struct vm_branch *__create_leaf()
+static struct vmem *__create_leaf()
 {
 	pm_t new_leaf = alloc_page(MM_KPAGE, 0);
-	memset((void *)new_leaf, 0, sizeof(struct vm_branch));
-	return (struct vm_branch *)to_pte((pm_t)__pa(new_leaf), VM_V);
+	memset((void *)new_leaf, 0, sizeof(struct vmem));
+	return (struct vmem *)to_pte((pm_t)__pa(new_leaf), VM_V);
 }
 
-static void __destroy_branch(struct vm_branch *b)
+static void __destroy_branch(struct vmem *b)
 {
 	if (!b)
 		return;
 
 	for (size_t i = 0; i < BASE_PAGE_SIZE / sizeof(pm_t); ++i) {
 		if (is_branch(b->leaf[i]))
-			__destroy_branch(
-				(struct vm_branch *)pte_addr(b->leaf[i]));
+			__destroy_branch((struct vmem *)pte_addr(b->leaf[i]));
 
 		free_page(MM_KPAGE, (pm_t)pte_addr(b->leaf[i]));
 	}
 }
 
-stat_t map_vpage(struct vm_branch *branch, pm_t paddr, vm_t vaddr,
-                 vmflags_t flags, enum mm_order order)
+stat_t map_vpage(struct vmem *branch, pm_t paddr, vm_t vaddr, vmflags_t flags,
+                 enum mm_order order)
 {
 	enum mm_order top = __mm_max_order;
 	while (top != order) {
@@ -111,7 +109,7 @@ stat_t map_vpage(struct vm_branch *branch, pm_t paddr, vm_t vaddr,
 		if (!branch->leaf[idx])
 			branch->leaf[idx] = __create_leaf();
 
-		branch = (struct vm_branch *)pte_addr(branch->leaf[idx]);
+		branch = (struct vmem *)pte_addr(branch->leaf[idx]);
 		top--;
 	}
 
@@ -121,12 +119,12 @@ stat_t map_vpage(struct vm_branch *branch, pm_t paddr, vm_t vaddr,
 		__destroy_branch(branch->leaf[idx]);
 
 	branch->leaf[idx] =
-		(struct vm_branch *)to_pte((pm_t)__pa(paddr), vp_flags(flags));
+		(struct vmem *)to_pte((pm_t)__pa(paddr), vp_flags(flags));
 
 	return top == __mm_max_order ? INFO_SEFF : OK;
 }
 
-stat_t unmap_vpage(struct vm_branch *branch, vm_t vaddr)
+stat_t unmap_vpage(struct vmem *branch, vm_t vaddr)
 {
 	pm_t *pte = __find_vmem(branch, vaddr, 0);
 	if (pte) {
@@ -147,9 +145,9 @@ void flush_tlb_all()
 	__asm__ volatile("sfence.vma\n" ::: "memory");
 }
 
-static void __start_vmem(struct vm_branch *branch, enum mm_mode m)
+static void __start_vmem(struct vmem *branch, enum mm_mode m)
 {
-	branch = (struct vm_branch *)__pa(branch);
+	branch = (struct vmem *)__pa(branch);
 
 	if (m == Sv32)
 		csr_write(CSR_SATP,
@@ -165,55 +163,54 @@ static void __start_vmem(struct vm_branch *branch, enum mm_mode m)
 	/* Sv57 && Sv64 in the future? */
 }
 
-struct vm_branch *init_vmem(void *fdt)
+struct vmem *init_vmem(void *fdt)
 {
 	UNUSED(fdt);
-	struct vm_branch *b = create_vmem();
+	struct vmem *b = create_vmem();
 	/* update which memory branch to use */
 	__start_vmem(b, Sv39);
 	return b;
 }
 
-struct vm_branch *create_vmem()
+struct vmem *create_vmem()
 {
-	struct vm_branch *b = (struct vm_branch *)alloc_page(MM_KPAGE, 0);
+	struct vmem *b = (struct vmem *)alloc_page(MM_KPAGE, 0);
 	memset(b, 0, MM_KPAGE_SIZE);
 
 	populate_kvmem(b);
 	return b;
 }
 
-stat_t destroy_vmem(struct vm_branch *b)
+stat_t destroy_vmem(struct vmem *b)
 {
 	free_page(MM_KPAGE, (pm_t)b);
 	return OK;
 }
 
-stat_t populate_kvmem(struct vm_branch *b)
+stat_t populate_kvmem(struct vmem *b)
 {
 	size_t flags = VM_V | VM_R | VM_W | VM_X | VM_G;
 	for (size_t i = KSTART_PAGE; i < IO_PAGE; ++i)
-		b->leaf[i] = (struct vm_branch *)to_pte(
+		b->leaf[i] = (struct vmem *)to_pte(
 			RAM_BASE + SZ_1G * (i - KSTART_PAGE), flags);
 
 	/* map kernel IO to zero for now, this will be overridden later
 	 * (if at all) */
-	b->leaf[IO_PAGE] = (struct vm_branch *)to_pte(0, flags);
+	b->leaf[IO_PAGE] = (struct vmem *)to_pte(0, flags);
 	return OK;
 }
 
 #if defined(DEBUG)
-vm_t setup_kernel_io(struct vm_branch *b, vm_t paddr)
+vm_t setup_kernel_io(struct vmem *b, vm_t paddr)
 {
 	/* assume Sv39 for now */
 	pm_t gigapage = paddr / MM_GPAGE_SIZE;
-	b->leaf[IO_PAGE] =
-		(struct vm_branch *)to_pte(gigapage, VM_V | VM_R | VM_W);
+	b->leaf[IO_PAGE] = (struct vmem *)to_pte(gigapage, VM_V | VM_R | VM_W);
 	return -SZ_1G + paddr - (gigapage * MM_GPAGE_SIZE);
 }
 #endif
 
-stat_t clone_uvmem(struct vm_branch *r, struct vm_branch *b)
+stat_t clone_uvmem(struct vmem *r, struct vmem *b)
 {
 	/* TODO: error checking? */
 	for (size_t i = 0; i <= CSTACK_PAGE; ++i)

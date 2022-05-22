@@ -16,11 +16,11 @@ stat_t free_uvmem(struct tcb *r, vm_t a);
 stat_t init_uvmem(struct tcb *r, vm_t base, vm_t top);
 stat_t destroy_uvmem(struct tcb *r);
 
-stat_t alloc_uvmem_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr,
+stat_t alloc_uvmem_wrapper(struct vmem *b, pm_t *offset, vm_t vaddr,
                            vmflags_t flags, enum mm_order order, void *data);
-stat_t alloc_shared_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr,
+stat_t alloc_shared_wrapper(struct vmem *b, pm_t *offset, vm_t vaddr,
                             vmflags_t flags, enum mm_order order, void *data);
-stat_t free_uvmem_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr,
+stat_t free_uvmem_wrapper(struct vmem *b, pm_t *offset, vm_t vaddr,
                           vmflags_t flags, enum mm_order order, void *data);
 
 #define map_allocd_region(b, start, bytes, flags, data)                        \

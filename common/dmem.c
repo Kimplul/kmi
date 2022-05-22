@@ -26,7 +26,7 @@ stat_t init_devmem(pm_t ram_base, pm_t ram_top)
 	return OK;
 }
 
-stat_t dev_alloc_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr,
+stat_t dev_alloc_wrapper(struct vmem *b, pm_t *offset, vm_t vaddr,
                          vmflags_t flags, enum mm_order order, void *data)
 {
 	stat_t *status = (stat_t *)data;
@@ -36,7 +36,7 @@ stat_t dev_alloc_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr,
 	return OK;
 }
 
-stat_t dev_free_wrapper(struct vm_branch *b, pm_t *offset, vm_t vaddr,
+stat_t dev_free_wrapper(struct vmem *b, pm_t *offset, vm_t vaddr,
                         vmflags_t flags, enum mm_order order, void *data)
 {
 	UNUSED(offset);
