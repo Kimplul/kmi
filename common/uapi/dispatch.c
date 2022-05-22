@@ -1,3 +1,8 @@
+/**
+ * @file dispatch.c
+ * Syscall dispatch.
+ */
+
 #include <apos/uapi.h>
 
 static const sys_t syscall_table[] = {

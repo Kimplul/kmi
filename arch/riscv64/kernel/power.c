@@ -1,3 +1,8 @@
+/**
+ * @file power.c
+ * riscv64 implementation of arch-specific power handling.
+ */
+
 #include <apos/power.h>
 #include <sbi.h>
 

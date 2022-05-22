@@ -1,3 +1,8 @@
+/**
+ * @file main.c
+ * riscv64 main
+ */
+
 #include <apos/utils.h>
 #include <arch/arch.h>
 #include <csr.h>

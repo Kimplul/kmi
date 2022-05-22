@@ -1,3 +1,8 @@
+/**
+ * @file initrd.c
+ * Handle initrd, implement cpio with newc format.
+ */
+
 #include <apos/initrd.h>
 #include <apos/vmem.h>
 #include <apos/string.h>

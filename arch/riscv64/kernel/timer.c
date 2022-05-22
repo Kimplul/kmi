@@ -1,3 +1,8 @@
+/**
+ * @file timer.c
+ * riscv64 implementation of arch-specific timers.
+ */
+
 #include <arch/timer.h>
 #include <libfdt.h>
 #include <csr.h>

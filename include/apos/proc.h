@@ -1,6 +1,12 @@
 #ifndef APOS_PROC_H
 #define APOS_PROC_H
 
+/**
+ * @file proc.h
+ * Process handling subsystem, should likely be merged into \ref
+ * include/apos/tcb.h.
+ */
+
 #include <apos/tcb.h>
 #include <apos/vmem.h>
 

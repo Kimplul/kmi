@@ -1,3 +1,13 @@
+/**
+ * @file sp_tree.c
+ * Implementation of my sp_trees. An sp_tree is a mix of rb-trees and avl-trees,
+ * with slightly faster insertion but worse tree depth on average.
+ *
+ * See https://github.com/Kimplul/sptree
+ *
+ * \todo Document sp_tree algorithm better.
+ */
+
 #include <apos/sp_tree.h>
 
 static void __sp_turn_left(struct sp_node *n)

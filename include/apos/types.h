@@ -1,6 +1,11 @@
 #ifndef APOS_TYPES_H
 #define APOS_TYPES_H
 
+/**
+ * @file types.h
+ * Shorthands for types, similar to stdint.h.
+ */
+
 typedef _Bool bool;
 #define true 1
 #define false 0

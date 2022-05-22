@@ -1,6 +1,12 @@
 #ifndef APOS_NODES_H
 #define APOS_NODES_H
 
+/**
+ * @file nodes.h
+ * Node subsystem. Used by a number of subsystems for allocating specific sizes
+ * of memory nodes smaller than memory pages.
+ */
+
 #include <apos/types.h>
 
 enum node_status { FREE = 0, USED = 1 };

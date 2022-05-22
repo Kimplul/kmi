@@ -1,6 +1,11 @@
 #ifndef APOS_UAPI_H
 #define APOS_UAPI_H
 
+/**
+ * @file uapi.h
+ * Userspace api, syscall declarations.
+ */
+
 #include <apos/syscalls.h>
 #include <apos/vmem.h>
 

@@ -1,3 +1,8 @@
+/**
+ * @file irq.c
+ * riscv64 implementation of irq handling.
+ */
+
 #include <apos/attrs.h>
 #include <apos/debug.h>
 #include <arch/irq.h>

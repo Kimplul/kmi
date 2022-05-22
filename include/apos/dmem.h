@@ -1,6 +1,11 @@
 #ifndef APOS_DEV_H
 #define APOS_DEV_H
 
+/**
+ * @file dmem.h
+ * Device memory handling, i.e. anything outside of RAM.
+ */
+
 #include <apos/types.h>
 #include <apos/vmem.h>
 

@@ -1,6 +1,11 @@
 #ifndef SP_TREE_H
 #define SP_TREE_H
 
+/**
+ * @file sp_tree.h
+ * sp_trees, a type of binary search trees.
+ */
+
 #include <apos/types.h>
 
 #define sp_root(r)       ((r)->sp_r)

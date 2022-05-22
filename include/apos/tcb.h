@@ -1,6 +1,11 @@
 #ifndef APOS_TCB_H
 #define APOS_TCB_H
 
+/**
+ * @file tcb.h
+ * Process/thread handling.
+ */
+
 #include <apos/mem_regions.h>
 #include <apos/types.h>
 #include <tcb.h> /* arch-specific data */

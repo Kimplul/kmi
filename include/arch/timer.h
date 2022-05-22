@@ -1,6 +1,12 @@
 #ifndef APOS_ARCH_TIMER_H
 #define APOS_ARCH_TIMER_H
 
+/**
+ * @file timer.h
+ * Arch-specific timer handling, generally implemented in
+ * arch/whatever/timer.c
+ */
+
 #include <apos/timer.h>
 
 /* return hardware timer frequency */

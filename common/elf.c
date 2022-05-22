@@ -1,3 +1,8 @@
+/**
+ * @file elf.c
+ * Handle elf executables, set up requested memory mappings etc.
+ */
+
 #include <apos/elf.h>
 #include <apos/vmem.h>
 #include <apos/bits.h>

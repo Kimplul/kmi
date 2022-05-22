@@ -1,6 +1,11 @@
 #ifndef APOS_BITS_H
 #define APOS_BITS_H
 
+/**
+ * @file bits.h
+ * Bit manipulations.
+ */
+
 #include <apos/types.h>
 #include <apos/builtin.h>
 

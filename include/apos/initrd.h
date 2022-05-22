@@ -1,6 +1,11 @@
 #ifndef APOS_INITRD_H
 #define APOS_INITRD_H
 
+/**
+ * @file initrd.h
+ * Initrd handling.
+ */
+
 #include <apos/types.h>
 #include <apos/pmem.h>
 #include <apos/vmem.h>

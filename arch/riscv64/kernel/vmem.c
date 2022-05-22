@@ -1,3 +1,8 @@
+/**
+ * @file vmem.c
+ * riscv64 implementation of arch-specific virtual memory handling.
+ */
+
 #include <apos/string.h>
 #include <apos/pmem.h>
 #include <apos/vmem.h>

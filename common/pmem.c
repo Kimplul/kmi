@@ -1,3 +1,25 @@
+/**
+ * @file pmem.c
+ * Physical memory subsystem. Allocates physical memory pages, with support for
+ * different ordered pages, depending on the underlying architecture.
+ *
+ * Quick overview of the physical memory subsystem: Somewhere in RAM there
+ * exists a number of buckets, each with an n-tree representing different order
+ * pages and their status (used/free). When a lower-order memory page (i.e.
+ * smaller) is allocated, it blocks allocation of higher-order pages (i.e.
+ * larger) whose addresses would overlap. This is avoided by marking all
+ * higher-order pages as used in their respective buckets.
+ *
+ * This approach is reasonably efficient at handling the different possible page
+ * sizes, but requires that the caller maintains some data about page sizes, as
+ * the algorithm doesn't keep any of that information. Allocating a region of a
+ * certain page order and freeing it as another could easily be a
+ * source of difficult to track bugs.
+ *
+ * \todo More in depth documentation about the physical memory algorithms,
+ * unfortunately it is quite difficult to follow.
+ */
+
 #include <apos/mem_nodes.h>
 #include <apos/pmem.h>
 #include <apos/dmem.h>

@@ -1,3 +1,9 @@
+/**
+ * @file mem_regions.c
+ * Memory region handling, used by both device memory and user virtual memory
+ * subsystems.
+ */
+
 #include <apos/mem_regions.h>
 #include <apos/mem_nodes.h>
 #include <apos/pmem.h>

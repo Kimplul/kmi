@@ -1,6 +1,12 @@
 #ifndef APOS_MEM_REGIONS_H
 #define APOS_MEM_REGIONS_H
 
+/**
+ * @file mem_regions.h
+ * Memory region subsytem. Mainly used by the virtual memory subsytems, i.e. device and
+ * user memory.
+ */
+
 #include <apos/mem.h>
 #include <apos/types.h>
 #include <apos/sp_tree.h>

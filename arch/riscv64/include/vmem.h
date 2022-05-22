@@ -1,6 +1,13 @@
 #ifndef APOS_RISCV_VMAP_H
 #define APOS_RISCV_VMAP_H
 
+/**
+ * @file vmem.h
+ * riscv64 definitions of arch-specific virtual memory data types and macros.
+ * Very likely VM_* should be moved to \ref include/apos/vmem.h and made
+ * architecture-nonspecific, but works for now.
+ */
+
 #include <apos/types.h>
 #include <apos/attrs.h>
 

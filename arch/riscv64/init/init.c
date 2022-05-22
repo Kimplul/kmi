@@ -1,3 +1,9 @@
+/**
+ * @file init.c
+ * riscv64 'bootstrap', move actual kernel into place and jump to virtual
+ * memory.
+ */
+
 #include <apos/types.h>
 #include <apos/attrs.h>
 #include <apos/utils.h>

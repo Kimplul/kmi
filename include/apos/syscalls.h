@@ -1,6 +1,11 @@
 #ifndef APOS_SYSCALLS_H
 #define APOS_SYSCALLS_H
 
+/**
+ * @file syscalls.h
+ * Table of system calls.
+ */
+
 /* enum for now, possibly macros in the future once I get an approximate idea of
  * which syscalls are necessary etc. */
 enum {

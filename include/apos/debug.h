@@ -1,6 +1,11 @@
 #ifndef APOS_DEBUG_H
 #define APOS_DEBUG_H
 
+/**
+ * @file debug.h
+ * Debug printing.
+ */
+
 #include <apos/attrs.h>
 #include <apos/pmem.h>
 #include <arch/vmem.h>

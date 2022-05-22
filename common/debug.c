@@ -1,3 +1,9 @@
+/**
+ * @file debug.c
+ * Handle printing to serial. Note that the serial drivers are only included
+ * when running a debug build to save space in release mode.
+ */
+
 #include <apos/types.h>
 #include <apos/debug.h>
 #include <apos/bits.h>

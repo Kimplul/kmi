@@ -1,6 +1,13 @@
 #ifndef APOS_ELF_H
 #define APOS_ELF_H
 
+/**
+ * @file elf.h
+ * ELF file handling.
+ *
+ * \todo Other file formats?
+ */
+
 #include <apos/attrs.h>
 #include <apos/types.h>
 #include <apos/vmem.h>

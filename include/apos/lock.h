@@ -1,5 +1,11 @@
-#ifndef LOCK_H
-#define LOCK_H
+#ifndef APOS_LOCK_H
+#define APOS_LOCK_H
+
+/**
+ * @file lock.h
+ * Atomic locks, currently only \ref spin_lock and \ref spin_unlock. Mutex is
+ * probably overkill for this project.
+ */
 
 #include <apos/atomic.h>
 #include <apos/irq.h>
@@ -23,4 +29,4 @@ static inline void spin_unlock(spinlock_t *lck)
 	enable_irq();
 }
 
-#endif /* LOCK_H */
+#endif /* APOS_LOCK_H */

@@ -1,3 +1,28 @@
+/**
+ * @file nodes.c
+ * The node subsystem. Each client has to initialize their own node system,
+ * after which they can request nodes of a size specified at init.
+ *
+ * Node allocation is implemented through a similar system used by jemalloc
+ * (https://github.com/jemalloc/jemalloc), but instead of having a number of
+ * different sized buckets there is only the one size specified by the user.
+ * This cuts down on complexity and improves performance, at a somewhat major
+ * flexibility cost. Still, this kernel generally only allocates nodes of the
+ * same size again and again, and this approach seems sensible.
+ *
+ *
+ * Quick overview of the allocator, all nodes live in memory pages. Each memory
+ * page has a small header at the front, with some metadata about number of free
+ * and used node slots. When a memory page is filled, a new one is allocated by
+ * the physical memory subsystem and the pages are linked together in a common
+ * list. At the same time, a second linked list is maintained which maintains
+ * which pages have empty slots. When a node is freed, the page it belonged to
+ * is added to the free list (if it didn't already exist there) and when a new
+ * node is requested, the free list is looked through first.
+ *
+ * \todo More in-depth documentation about the node algorithm.
+ */
+
 #include <apos/mem.h>
 #include <apos/pmem.h>
 #include <apos/bits.h>

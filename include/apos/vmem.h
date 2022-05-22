@@ -1,6 +1,11 @@
 #ifndef APOS_VMEM_H
 #define APOS_VMEM_H
 
+/**
+ * @file vmem.h
+ * Virtual memory handling.
+ */
+
 #include <apos/tcb.h>
 #include <apos/mem.h>
 #include <apos/pmem.h>

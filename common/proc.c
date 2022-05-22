@@ -1,3 +1,8 @@
+/**
+ * @file proc.c
+ * Process handling, might be merged into \ref common/tcb.c.
+ */
+
 #include <apos/elf.h>
 #include <apos/proc.h>
 #include <apos/conf.h>

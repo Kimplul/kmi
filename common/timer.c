@@ -1,3 +1,17 @@
+/**
+ * @file timer.c
+ * Timer handling implementation. Currently we only expect an architecture to
+ * support a single timer per core.
+ *
+ * By keeping all timers in a binary search
+ * tree ordered by time, we can just set the single timer to interrupt us when
+ * the next timer is due and with thread info call the thread that set the
+ * timer. From what I can tell, this is largely what Linux does.
+ *
+ * \todo Figure out if there are any advantages to having multiple concurrent
+ * timers.
+ */
+
 #include <apos/sp_tree.h>
 #include <apos/string.h>
 #include <apos/nodes.h>

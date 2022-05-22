@@ -1,6 +1,11 @@
 #ifndef APOS_STRING_H
 #define APOS_STRING_H
 
+/**
+ * @file string.h
+ * String handling, similar to cstdlib's string.h.
+ */
+
 #include <apos/types.h>
 #include <apos/builtin.h>
 

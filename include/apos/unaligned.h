@@ -1,6 +1,11 @@
 #ifndef APOS_UNALIGNED_H
 #define APOS_UNALIGNED_H
 
+/**
+ * @file unaligned.h
+ * Helpers for unaligned memory accesses. Largely lifted from Linux.
+ */
+
 #include <apos/types.h>
 #include <apos/attrs.h>
 

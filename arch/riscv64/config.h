@@ -1,3 +1,15 @@
+#ifndef APOS_RISCV_CONFIG_H
+#define APOS_RISCV_CONFIG_H
+
+/**
+ * @file config.h
+ * riscv64 specific configuration parameters, currently mixing user-specified
+ * and immutable parameters. Included on the command line by
+ * -include.
+ *
+ * @todo Consider separating user-specified and immutable parameters.
+ */
+
 #include <apos/sizes.h>
 
 /* --- START ARCH USER CONFIG VALUES --- */
@@ -52,3 +64,4 @@
 #define PROC_STACK_TOP  (SZ_4G)
 #define PROC_STACK_BASE (SZ_4G - SZ_8M)
 #endif
+#endif /* APOS_RISCV_CONFIG_H */

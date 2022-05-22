@@ -1,4 +1,10 @@
 #ifndef APOS_COMPILER_ATTRIBUTES_H
+#define APOS_COMPILER_ATTRIBUTES_H
+
+/**
+ * @file attrs.h
+ * Attribute shorthands.
+ */
 
 #define __section(section) __attribute__((__section__(section)))
 #define __fmt(x, y)        __attribute__((format(__printf__, x, y)))

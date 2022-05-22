@@ -1,3 +1,8 @@
+/**
+ * @file string.c
+ * Implementations of some string.h stdlib functions.
+ */
+
 #include <apos/string.h>
 #include <apos/types.h>
 #include <apos/attrs.h>

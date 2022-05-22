@@ -2,6 +2,11 @@
 /* take over libfdt */
 #define LIBFDT_ENV_H
 
+/**
+ * @file libfdt_env.h
+ * Set up apos environment for libfdt.
+ */
+
 #include <apos/types.h>
 #include <apos/string.h>
 #include <apos/bits.h>

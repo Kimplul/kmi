@@ -1,6 +1,12 @@
 #ifndef APOS_ARCH_PAGES_H
 #define APOS_ARCH_PAGES_H
 
+/**
+ * @file vmem.h
+ * Arch-specific virtual memory handling, generally implemented in
+ * arch/whatever/kernel/vmem.c
+ */
+
 #include <vmem.h>
 
 stat_t map_vpage(struct vmem *branch, pm_t paddr, vm_t vaddr, vmflags_t flags,

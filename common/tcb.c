@@ -1,3 +1,8 @@
+/**
+ * @file tcb.c
+ * Thread control block handling implementation.
+ */
+
 #include <apos/tcb.h>
 #include <arch/cpu.h>
 #include <apos/mem.h>

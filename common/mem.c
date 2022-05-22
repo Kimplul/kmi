@@ -1,3 +1,8 @@
+/**
+ * @file mem.c
+ * Generic memory handling, used both by physical and virtual memory.
+ */
+
 #include <apos/types.h>
 #include <apos/mem.h>
 #include <apos/vmem.h>

@@ -1,3 +1,8 @@
+/**
+ * @file mem.c
+ * Memory handling syscall implementations.
+ */
+
 #include <apos/uapi.h>
 #include <apos/utils.h>
 #include <apos/vmem.h>

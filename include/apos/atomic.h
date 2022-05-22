@@ -1,6 +1,12 @@
 #ifndef ATOMIC_H
 #define ATOMIC_H
 
+/**
+ * @file atomic.h
+ * Atomics, closely modeled after C17 stdatomic.h. Largely dependent on the
+ * compiler at the moment.
+ */
+
 #include <apos/utils.h> /* GLUE */
 
 typedef enum {

@@ -1,6 +1,11 @@
 #ifndef APOS_MEM_H
 #define APOS_MEM_H
 
+/**
+ * @file mem.h
+ * Generic memory, common to both physical and virtual memory.
+ */
+
 #include <apos/utils.h>
 #include <apos/types.h>
 

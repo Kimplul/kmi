@@ -1,3 +1,8 @@
+/**
+ * @file proc.c
+ * riscv64 implementation of arch-specific process handling.
+ */
+
 #include <apos/tcb.h>
 #include <apos/elf.h>
 #include <regs.h>

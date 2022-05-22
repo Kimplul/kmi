@@ -1,6 +1,11 @@
 #ifndef APOS_CSR_H
 #define APOS_CSR_H
 
+/**
+ * @file csr.h
+ * riscv64-specific header for CSR handling
+ */
+
 #define SATP_MODE_Sv32       0x80000000
 #define SATP_MODE_Sv39       0x8000000000000000
 #define SATP_MODE_Sv48       0x9000000000000000

@@ -1,6 +1,11 @@
 #ifndef APOS_RISCV_SBI_H
 #define APOS_RISCV_SBI_H
 
+/**
+ * @file sbi.h
+ * riscv64-specific OpenSBI definitions.
+ */
+
 #include <apos/types.h>
 
 struct sbiret {

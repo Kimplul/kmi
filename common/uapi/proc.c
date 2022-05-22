@@ -1,3 +1,8 @@
+/**
+ * @file proc.c
+ * Process/thread handling syscall implementations.
+ */
+
 #include <apos/uapi.h>
 
 SYSCALL_DEFINE0(create)()

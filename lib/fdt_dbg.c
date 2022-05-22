@@ -1,3 +1,8 @@
+/**
+ * @file fdt_dbg.c
+ * Dump fdt info to serial.
+ */
+
 #include <apos/debug.h>
 #include <libfdt.h>
 

@@ -1,3 +1,8 @@
+/**
+ * @file bits.c
+ * Bit manipulation helper implementations, currently just byte swaps.
+ */
+
 #include <apos/types.h>
 #include <apos/attrs.h>
 #include <apos/bits.h>

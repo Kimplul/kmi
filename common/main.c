@@ -1,3 +1,8 @@
+/**
+ * @file main.c
+ * Entry point for actual kernel setup.
+ */
+
 #include <apos/mem_nodes.h>
 #include <apos/timer.h>
 #include <apos/attrs.h>

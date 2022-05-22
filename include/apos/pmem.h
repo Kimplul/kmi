@@ -1,6 +1,11 @@
 #ifndef APOS_PMEM_H
 #define APOS_PMEM_H
 
+/**
+ * @file pmem.h
+ * Physical memory subsystem. Used to allocate and free physical memory pages.
+ */
+
 #include <apos/mem.h>
 #include <apos/types.h>
 #include <arch/pmem.h>

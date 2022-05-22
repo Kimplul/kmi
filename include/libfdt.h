@@ -1,5 +1,11 @@
 #ifndef APOS_LIBFDT_H
 #define APOS_LIBFDT_H
+
+/**
+ * @file libfdt.h
+ * Main include file in apos for functions in libfdt.
+ */
+
 #include "../dtc/libfdt/libfdt.h"
 #include <apos/unaligned.h>
 #include <apos/types.h>

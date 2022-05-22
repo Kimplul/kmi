@@ -1,3 +1,10 @@
+/**
+ * @file dmem.c
+ * Handle device memory, i.e. anything outside the physical RAM.
+ *
+ * \todo Handle NUMA.
+ */
+
 #include <apos/dmem.h>
 
 static struct mem_region_root pre_ram = { 0 };

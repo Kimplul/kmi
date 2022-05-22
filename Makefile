@@ -100,8 +100,14 @@ format:
 	find arch lib common include -iname '*.[ch]' \
 		-exec clang-format -i -style=file {} \+
 
+.PHONY: docs
+docs:
+	./scripts/warn-undocumented
+	doxygen docs/doxygen.conf
+
 RM	?= rm -f
 
+.PHONY: clean
 clean:
 	$(RM) -r $(CLEANUP)
 

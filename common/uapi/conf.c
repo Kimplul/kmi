@@ -1,3 +1,10 @@
+/**
+ * @file conf.c
+ * Runtime configuration sycall implementations.
+ *
+ * At the moment there are not runtime configuration parameters.
+ */
+
 #include <apos/power.h>
 #include <apos/sizes.h>
 #include <apos/uapi.h>

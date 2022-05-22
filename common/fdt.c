@@ -1,3 +1,8 @@
+/**
+ * @file fdt.c
+ * Helper functions for handling the global FDT.
+ */
+
 #include <libfdt.h>
 
 struct cell_info get_cellinfo(const void *fdt, const int offset)

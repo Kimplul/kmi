@@ -1,6 +1,11 @@
 #ifndef APOS_UTILS_H
 #define APOS_UTILS_H
 
+/**
+ * @file utils.
+ * Misc utils and helpers.
+ */
+
 #define ABS(a)        (a < 0 ? -a : a)
 
 #define MAX(a, b)     ((a) >= (b) ? (a) : (b))

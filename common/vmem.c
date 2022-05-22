@@ -1,3 +1,8 @@
+/**
+ * @file vmem.c
+ * Virtual memory handling, mainly userspace virtual memory.
+ */
+
 #include <apos/mem_regions.h>
 #include <apos/assert.h>
 #include <apos/debug.h>

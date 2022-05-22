@@ -1,3 +1,8 @@
+/**
+ * @file timers.c
+ * Timer syscall implementations.
+ */
+
 #include <apos/timer.h>
 #include <apos/uapi.h>
 

@@ -1,3 +1,8 @@
+/**
+ * @file ipc.c
+ * Interprocess communication syscall implementations.
+ */
+
 #include <apos/uapi.h>
 #include <apos/tcb.h>
 

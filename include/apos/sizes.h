@@ -1,6 +1,11 @@
 #ifndef APOS_SIZES_H
 #define APOS_SIZES_H
 
+/**
+ * @file sizes.h
+ * Shorthands for some power-of-two sizes.
+ */
+
 #if defined(__ASSEMBLER__)
 
 #define SZ_1    0x000000000001
