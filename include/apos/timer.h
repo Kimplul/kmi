@@ -1,6 +1,11 @@
 #ifndef APOS_TIMER_H
 #define APOS_TIMER_H
 
+/**
+ * @file timer.h
+ * Timer handling.
+ */
+
 #include <apos/types.h>
 
 /* GCC will compile uint64_t even on 32bit platforms, just with some runtime
@@ -17,11 +22,29 @@ struct timer {
 	ticks_t ticks;
 };
 
+/**
+ * Initialize timers.
+ *
+ * @param fdt Pointer to global FDT
+ */
 void init_timer(const void *fdt);
 
-/* set up timer interrupt ticks from now */
+/**
+ * Set up timer interrupt ticks from now.
+ *
+ * @param tid Thread id for callback.
+ * @param ticks Ticks from \ref current_ticks().
+ * @return Id of created timer.
+ */
 id_t new_rel_timer(id_t tid, ticks_t ticks);
-/* set up timer interrupt at ticks (from startup I suppose) */
+
+/**
+ * Set up timer interrupt at ticks.
+ *
+ * @param tid Thread id for callback.
+ * @param ticks Ticks from \ref current_ticks().
+ * @return Id of created timer.
+ */
 id_t new_abs_timer(id_t tid, ticks_t ticks);
 
 struct timer *newest_timer();

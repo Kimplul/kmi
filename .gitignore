@@ -3,6 +3,7 @@
 *.bin
 *.elf
 *.ld
+docs/output
 include/apos/gen/*
 arch/*/include/gen/*
 deps.mk
