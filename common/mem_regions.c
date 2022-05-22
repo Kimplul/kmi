@@ -160,7 +160,7 @@ struct mem_region *find_used_region(struct mem_region_root *r, vm_t start)
 	return 0;
 }
 
-static struct mem_region *create_region(vm_t start, vm_t end,
+static struct mem_region *__create_region(vm_t start, vm_t end,
                                         struct mem_region *prev,
                                         struct mem_region *next)
 {
@@ -277,7 +277,7 @@ static vm_t __partition_region(struct mem_region_root *r, struct mem_region *m,
 
 	if (pre_start != pre_end) {
 		struct mem_region *n =
-			create_region(pre_start, pre_end, m->prev, m);
+			__create_region(pre_start, pre_end, m->prev, m);
 		m->prev = n;
 		if (n->prev)
 			n->prev->next = n;
@@ -287,7 +287,7 @@ static vm_t __partition_region(struct mem_region_root *r, struct mem_region *m,
 
 	if (post_start != post_end) {
 		struct mem_region *n =
-			create_region(post_start, post_end, m, m->next);
+			__create_region(post_start, post_end, m, m->next);
 		m->next = n;
 		if (n->next)
 			n->next->prev = n;

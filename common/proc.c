@@ -6,7 +6,7 @@
 #include <arch/arch.h>
 
 /* TODO: add error checking */
-static vm_t setup_call_stack(struct tcb *t, size_t bytes)
+static vm_t __setup_call_stack(struct tcb *t, size_t bytes)
 {
 	pm_t offset = 0;
 	size_t pages = __pages(bytes);
@@ -20,7 +20,7 @@ static vm_t setup_call_stack(struct tcb *t, size_t bytes)
 	return PROC_STACK_TOP - BASE_PAGE_SIZE * pages;
 }
 
-static vm_t setup_proc_stack(struct tcb *t, size_t bytes)
+static vm_t __setup_proc_stack(struct tcb *t, size_t bytes)
 {
 	return alloc_uvmem(t, bytes, VM_V | VM_R | VM_W | VM_U);
 }
@@ -44,13 +44,13 @@ stat_t init_proc(void *fdt, struct vm_branch *b)
 	if (!t->entry)
 		return ERR_ADDR;
 
-	t->proc_stack = setup_proc_stack(t, __proc_stack_size);
+	t->proc_stack = __setup_proc_stack(t, __proc_stack_size);
 	if (!t->proc_stack)
 		return ERR_ADDR;
 
 	t->proc_stack_top = t->proc_stack + __proc_stack_size;
 
-	t->call_stack = setup_call_stack(t, __call_stack_size);
+	t->call_stack = __setup_call_stack(t, __call_stack_size);
 	if (!t->call_stack)
 		return ERR_ADDR;
 	t->call_stack_top = t->call_stack + __call_stack_size;
