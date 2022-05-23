@@ -1,4 +1,4 @@
-#include "../gen/asm-offsets.h"
+#include "../kernel/gen/asm-offsets.h"
 #include "../kernel/csr.h"
 
 #if __riscv_xlen == 64

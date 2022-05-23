@@ -4,7 +4,8 @@
 *.elf
 *.ld
 docs/output
-include/apos/gen/*
-arch/*/include/gen/*
 deps.mk
 *.img
+
+# keep gitkeep files wherever they are
+!.gitkeep
