@@ -25,8 +25,8 @@
 		if (unlikely(!(x))) {                                          \
 			error("catastrophic assertion failed: %s\n",           \
 			      QUOTE(x));                                       \
-			while (1)                                              \
-				;                                              \
+			while (1) {                                            \
+			}                                                      \
 		}                                                              \
 	} while (0);
 
@@ -51,7 +51,7 @@
 #endif
 
 /* use when return value doesn't exist, like hard_assert(x,
-	 * RETURN_VOID); */
+ * RETURN_VOID); */
 #define RETURN_VOID
 
 #endif /* APOS_ASSERT_H */

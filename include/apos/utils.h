@@ -20,7 +20,7 @@
 	(MIN3(a, b, c) <= MIN3(b, c, d) ? MIN3(a, b, c) : MIN3(b, c, d))
 /* etc... */
 
-#define GLUE2(x, y) x##y
+#define GLUE2(x, y) x ## y
 #define GLUE(x, y)  GLUE2(x, y)
 
 #define QUOTE2(x)   #x
@@ -33,7 +33,7 @@
 #if __has_builtin(__builtin_offsetof)
 #define offsetof(type, member) __builtin_offsetof(type, member)
 #else
-#define offsetof(type, member) ((uintptr_t) & ((type *)0)->member)
+#define offsetof(type, member) ((uintptr_t) &((type *)0)->member)
 #endif
 
 #if __has_builtin(__builtin_expect)
@@ -63,7 +63,7 @@
 	         : align_up_l, signed long long                                \
 	         : align_up_ll,                                                \
                                                                                \
-	           unsigned char                                               \
+	         unsigned char                                               \
 	         : align_up_uc, unsigned short                                 \
 	         : align_up_us, unsigned int                                   \
 	         : align_up_ui, unsigned long                                  \
@@ -71,15 +71,17 @@
 	         : align_up_ull)((x), (y))
 
 #define DEFINE_ALIGN_UP(name, type)                                            \
-	static inline type align_up_##name(type val, type a)                   \
+	static inline type align_up_ ## name(type val, type a)                   \
 	{                                                                      \
-		if (!a)                                                        \
+		if (!a) {                                                      \
 			return val;                                            \
+		}                                                              \
                                                                                \
 		type rem = val % a;                                            \
                                                                                \
-		if (rem == 0)                                                  \
+		if (rem == 0) {                                                \
 			return val;                                            \
+		}                                                              \
                                                                                \
 		return val + a - rem;                                          \
 	}
@@ -104,7 +106,7 @@ DEFINE_ALIGN_UP(ull, unsigned long long);
 	         : align_down_l, signed long long                              \
 	         : align_down_ll,                                              \
                                                                                \
-	           unsigned char                                               \
+	         unsigned char                                               \
 	         : align_down_uc, unsigned short                               \
 	         : align_down_us, unsigned int                                 \
 	         : align_down_ui, unsigned long                                \
@@ -112,10 +114,11 @@ DEFINE_ALIGN_UP(ull, unsigned long long);
 	         : align_down_ull)((x), (y))
 
 #define DEFINE_ALIGN_DOWN(name, type)                                          \
-	static inline type align_down_##name(type val, type a)                 \
+	static inline type align_down_ ## name(type val, type a)                 \
 	{                                                                      \
-		if (!a)                                                        \
+		if (!a) {                                                      \
 			return val;                                            \
+		}                                                              \
                                                                                \
 		return val - (val % a);                                        \
 	}
@@ -140,7 +143,7 @@ DEFINE_ALIGN_DOWN(ull, unsigned long long);
 	         : is_aligned_l, signed long long                              \
 	         : is_aligned_ll,                                              \
                                                                                \
-	           unsigned char                                               \
+	         unsigned char                                               \
 	         : is_aligned_uc, unsigned short                               \
 	         : is_aligned_us, unsigned int                                 \
 	         : is_aligned_ui, unsigned long                                \
@@ -148,10 +151,11 @@ DEFINE_ALIGN_DOWN(ull, unsigned long long);
 	         : is_aligned_ll)((x), (y))
 
 #define DEFINE_ALIGNED(name, type)                                             \
-	static inline bool is_aligned_##name(type val, type a)                 \
+	static inline bool is_aligned_ ## name(type val, type a)                 \
 	{                                                                      \
-		if (!a)                                                        \
+		if (!a) {                                                      \
 			return true;                                           \
+		}                                                              \
                                                                                \
 		return val % a == 0;                                           \
 	}
