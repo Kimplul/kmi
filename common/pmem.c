@@ -32,14 +32,14 @@
 /* NOTE: these are all for pnum_t, i.e. O0_SHIFT is from 0 */
 #define __foreach_page(var, start, end, attr, neg)                             \
 	for (size_t i = num_indexes(start); i < num_elems(end); ++i)           \
-		if (var->attr[i] == (mm_info_t)(-1))                           \
-			continue;                                              \
-		else                                                           \
-			for (pnum_t page = i * MM_OINFO_WIDTH, j = 0;          \
-			     j < (pnum_t)MIN((end)-i * MM_OINFO_WIDTH,         \
-			                     MM_OINFO_WIDTH);                  \
-			     ++j, ++page)                                      \
-				if (neg(__is_nset(var->attr[i], j)))
+	if (var->attr[i] == (mm_info_t)(-1))                           \
+	continue;                                              \
+	else                                                           \
+	for (pnum_t page = i * MM_OINFO_WIDTH, j = 0;          \
+	     j < (pnum_t)MIN((end)-i * MM_OINFO_WIDTH,         \
+	                     MM_OINFO_WIDTH);                  \
+	     ++j, ++page)                                      \
+	if (neg(__is_nset(var->attr[i], j)))
 
 #define NEG !
 #define foreach_full_page(var, start, order)                                   \

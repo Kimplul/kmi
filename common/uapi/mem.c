@@ -46,8 +46,7 @@ SYSCALL_DEFINE3(req_pmem)(sys_arg_t paddr, sys_arg_t size, sys_arg_t flags)
 	return (struct sys_ret){ OK, alloc_devmem(r, paddr, size, flags) };
 }
 
-SYSCALL_DEFINE2(req_sharedmem)
-(sys_arg_t size, sys_arg_t flags)
+SYSCALL_DEFINE2(req_sharedmem)(sys_arg_t size, sys_arg_t flags)
 {
 	/* TODO: check that requester is server */
 	struct tcb *t = cur_tcb();

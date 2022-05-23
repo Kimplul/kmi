@@ -341,7 +341,7 @@ static size_t __print_integral(ssize_t value, size_t base, size_t flags,
 
 void dbg(const char *fmt, ...)
 {
-	/* largely inspired by 
+	/* largely inspired by
 	 * https://github.com/mpaland/printf/blob/master/printf.c
 	 */
 
@@ -533,7 +533,7 @@ void dbg(const char *fmt, ...)
 				width = precision;
 
 			/* formatting doesn't apply to decimal integers
-				 * */
+			 * */
 			if (*fmt != 'i' && *fmt != 'd') {
 				__clear_bit(flags, SIGN_FLAG);
 				__set_bit(flags, UNSIGN_FLAG);

@@ -113,7 +113,8 @@ typedef _Atomic __UINTMAX_TYPE__ atomic_uintmax_t;
 
 #define atomic_load_explicit(obj, mode) N_ATOMIC(load)(obj, mode)
 
-#define atomic_load(obj)                atomic_load_explicit(obj, ATOMIC_SEQ_CST)
+#define atomic_load(obj)                atomic_load_explicit(obj, \
+	                                                     ATOMIC_SEQ_CST)
 
 #define atomic_exchange_explicit(obj, val, mode)                               \
 	N_ATOMIC(exchange)(obj, val, mode)

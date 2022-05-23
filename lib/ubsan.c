@@ -109,7 +109,8 @@ void __ubsan_handle_pointer_overflow(struct tu_overflow_data *data)
 	tu_print_location("pointer overflow", data->location);
 }
 
-void __ubsan_handle_shift_out_of_bounds(struct tu_shift_out_of_bounds_data *data)
+void __ubsan_handle_shift_out_of_bounds(
+	struct tu_shift_out_of_bounds_data *data)
 {
 	tu_print_location("shift out of bounds", data->location);
 }

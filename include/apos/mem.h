@@ -13,14 +13,16 @@
 
 #define pnum_to_index(pnum, order)                                             \
 	(((pnum) >> __o_offset(order)) & (__o_width(order) - 1))
-#define pm_to_index(paddr, order)       (pnum_to_index(pm_to_pnum(paddr), (order)))
+#define pm_to_index(paddr, \
+	            order)       (pnum_to_index(pm_to_pnum(paddr), (order)))
 #define pm_to_pnum(paddr)               ((paddr) >> __mm_page_shift)
 #define pnum_to_paddr(pnum)             ((pnum) << __mm_page_shift)
 
 #define move_forward(var, num)          (((var) += (num)) - (num))
 
 #define move_paddr(paddr, base, offset) ((((pm_t)(paddr)) - (base)) + (offset))
-#define num_elems(num)                  (((num) + MM_OINFO_WIDTH - 1) / MM_OINFO_WIDTH)
+#define num_elems(num)                  (((num) + MM_OINFO_WIDTH - 1) / \
+	                                 MM_OINFO_WIDTH)
 #define num_indexes(num)                ((num) / MM_OINFO_WIDTH)
 #define index_elems(num)                ((num) / MM_OINFO_WIDTH)
 #define state_elems(num)                (sizeof(mm_info_t) * (num_elems(num)))
@@ -35,13 +37,15 @@
 #define __o_container(idx)              ((idx) / MM_OINFO_WIDTH)
 #define __o_bit(idx)                    ((idx) & (MM_OINFO_WIDTH - 1))
 
-#define __va(x)                         (void *)(((uintptr_t)(x)) + VM_DMAP - RAM_BASE)
-#define __pa(x)                         (void *)(((uintptr_t)(x)) - VM_DMAP + RAM_BASE)
+#define __va(x)                         (void *)(((uintptr_t)(x)) + VM_DMAP - \
+	                                         RAM_BASE)
+#define __pa(x)                         (void *)(((uintptr_t)(x)) - VM_DMAP + \
+	                                         RAM_BASE)
 #define __page(x)                       ((x) / BASE_PAGE_SIZE)
 #define __addr(x)                       ((x)*BASE_PAGE_SIZE)
 #define __pages(x)                                                             \
 	(is_aligned((x), BASE_PAGE_SIZE) ? __page((x)) :                       \
-                                           __page((x) + BASE_PAGE_SIZE))
+	 __page((x) + BASE_PAGE_SIZE))
 #define __bytes(x) (__addr(x))
 
 /* if memory region is used or not */

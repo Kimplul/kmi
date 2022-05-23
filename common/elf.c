@@ -61,10 +61,10 @@ static void __map_exec(struct tcb *t, vm_t bin, uint8_t ei_c, vm_t phstart,
 		 * TODO: also fix, this modifies only the first region. Create new
 		 * function?
 		 *
-		pm_t paddr = 0;
-		stat_vpage(t->b_r, va, &paddr, 0, 0);
-		mod_vpage(t->b_r, va, paddr, uvflags);
-		*/
+		   pm_t paddr = 0;
+		   stat_vpage(t->b_r, va, &paddr, 0, 0);
+		   mod_vpage(t->b_r, va, paddr, uvflags);
+		 */
 	}
 }
 

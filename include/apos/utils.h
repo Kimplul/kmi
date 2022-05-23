@@ -20,7 +20,7 @@
 	(MIN3(a, b, c) <= MIN3(b, c, d) ? MIN3(a, b, c) : MIN3(b, c, d))
 /* etc... */
 
-#define GLUE2(x, y) x ## y
+#define GLUE2(x, y) x##y
 #define GLUE(x, y)  GLUE2(x, y)
 
 #define QUOTE2(x)   #x
@@ -71,7 +71,7 @@
 	         : align_up_ull)((x), (y))
 
 #define DEFINE_ALIGN_UP(name, type)                                            \
-	static inline type align_up_ ## name(type val, type a)                   \
+	static inline type align_up_##name(type val, type a)                   \
 	{                                                                      \
 		if (!a) {                                                      \
 			return val;                                            \
@@ -114,7 +114,7 @@ DEFINE_ALIGN_UP(ull, unsigned long long);
 	         : align_down_ull)((x), (y))
 
 #define DEFINE_ALIGN_DOWN(name, type)                                          \
-	static inline type align_down_ ## name(type val, type a)                 \
+	static inline type align_down_##name(type val, type a)                 \
 	{                                                                      \
 		if (!a) {                                                      \
 			return val;                                            \
@@ -151,7 +151,7 @@ DEFINE_ALIGN_DOWN(ull, unsigned long long);
 	         : is_aligned_ll)((x), (y))
 
 #define DEFINE_ALIGNED(name, type)                                             \
-	static inline bool is_aligned_ ## name(type val, type a)                 \
+	static inline bool is_aligned_##name(type val, type a)                 \
 	{                                                                      \
 		if (!a) {                                                      \
 			return true;                                           \

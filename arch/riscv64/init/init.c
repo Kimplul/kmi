@@ -56,9 +56,9 @@ void move_kernel()
 #define __va_reg(reg)                                                          \
 	{                                                                      \
 		vm_t reg = 0;                                                  \
-		__asm__("mv %0, " QUOTE(reg) : "=r"(reg)::);                   \
+		__asm__ ("mv %0, " QUOTE(reg) : "=r" (reg)::);                   \
 		reg = (vm_t)__va(reg);                                         \
-		__asm__("mv " QUOTE(reg) ", %0" ::"rK"(reg) :);                \
+		__asm__ ("mv " QUOTE(reg) ", %0" ::"rK" (reg) :);                \
 	}
 
 void init(void *fdt)

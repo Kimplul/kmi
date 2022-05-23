@@ -24,14 +24,18 @@ SYSCALL_DEFINE0(timebase)()
 SYSCALL_DEFINE2(req_rel_timer)(sys_arg_t ticks, sys_arg_t repeat)
 {
 	return (struct sys_ret){
-		OK, new_rel_timer(cur_tcb()->tid, scaled_ticks(ticks, repeat))
+		       OK,
+		       new_rel_timer(cur_tcb()->tid,
+		                     scaled_ticks(ticks, repeat))
 	};
 }
 
 SYSCALL_DEFINE2(req_abs_timer)(sys_arg_t ticks, sys_arg_t repeat)
 {
 	return (struct sys_ret){
-		OK, new_abs_timer(cur_tcb()->tid, scaled_ticks(ticks, repeat))
+		       OK,
+		       new_abs_timer(cur_tcb()->tid,
+		                     scaled_ticks(ticks, repeat))
 	};
 }
 

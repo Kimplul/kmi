@@ -97,8 +97,8 @@ apos.bin: init.bin kernel.bin
 	cat init.bin kernel.bin > apos.bin
 
 format:
-	find arch lib common include -iname '*.[ch]' \
-		-exec clang-format -i -style=file {} \+
+	find arch lib common include -iname '*.[ch]' |\
+		uncrustify -c uncrustify.conf --no-backup -F -
 
 .PHONY: docs
 docs:
