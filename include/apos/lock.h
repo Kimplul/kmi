@@ -3,16 +3,31 @@
 
 /**
  * @file lock.h
- * Atomic locks, currently only \ref spin_lock and \ref spin_unlock. Mutex is
+ * Atomic locks, currently only \ref spin_lock() and \ref spin_unlock(). Mutex is
  * probably overkill for this project.
  */
 
 #include <apos/atomic.h>
 #include <apos/irq.h>
+
+/**
+ * Typedef for atomic_int.
+ *
+ * In apos, spinlocks are implemented with compiler-intrinsic atomic integers,
+ * that essentially just contain some flags. Currently all spinlocks
+ * enable/disable irqs.
+ *
+ * \todo irq contexts?
+ */
 typedef atomic_int spinlock_t;
 
-#include <lock.h>
+#include <arch/lock.h>
 
+/**
+ * Lock a spinlock.
+ *
+ * @param lck Pointer to lock.
+ */
 static inline void spin_lock(spinlock_t *lck)
 {
 	disable_irq();
@@ -23,6 +38,11 @@ static inline void spin_lock(spinlock_t *lck)
 	} while (atomic_exchange_explicit(lck, 1, memory_order_acq_rel));
 }
 
+/**
+ * Unlock a spinlock.
+ *
+ * @param lck Pointer to lock.
+ */
 static inline void spin_unlock(spinlock_t *lck)
 {
 	atomic_store_explicit(lck, 0, memory_order_release);

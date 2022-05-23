@@ -3,7 +3,7 @@
  * Tiny undefined behaviour sanitizer, mostly lifted from
  * https://github.com/Abb1x/tinyubsan/blob/master/src/tinyubsan.c
  *
- * \todo: Add in more runtime info.
+ * \todo Add in more runtime info.
  */
 
 #include <apos/types.h>

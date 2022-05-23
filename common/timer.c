@@ -133,13 +133,15 @@ struct timer *find_timer(id_t cid)
 	return 0;
 }
 
-void remove_timer(struct timer *t)
+stat_t remove_timer(struct timer *t)
 {
 	if (!t)
 		return;
 
 	struct sp_node *n = &timer_node_container(t)->sp_n;
 	sp_remove(&sp_root(__cpu_timers()), n);
+
+	return OK;
 }
 
 ticks_t nsecs_to_ticks(tunit_t nsecs)
