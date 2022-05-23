@@ -31,15 +31,14 @@ static const sys_t syscall_table[] = {
 	[SYS_FORK] = sys_fork,
 	[SYS_EXEC] = sys_exec,
 	[SYS_SIGNAL] = sys_signal,
-	[SYS_SWITCH] = sys_switch,
+	[SYS_SWAP] = sys_swap,
 
 	/* conf */
 	[SYS_CONF] = sys_conf,
 	[SYS_POWEROFF] = sys_poweroff,
 };
 
-SYSCALL_DEFINE0(noop)()
-{
+SYSCALL_DEFINE0(noop)(){
 	return (struct sys_ret){ OK, 0 };
 }
 
@@ -47,6 +46,7 @@ struct sys_ret syscall_dispatch(sys_arg_t syscall, sys_arg_t a, sys_arg_t b,
                                 sys_arg_t c, sys_arg_t d)
 {
 	sys_t call = syscall_table[syscall];
+
 	if (!call)
 		return (struct sys_ret){ ERR_INVAL, 0 };
 
