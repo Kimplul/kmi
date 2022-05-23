@@ -5,8 +5,8 @@
 
 #include <arch/timer.h>
 #include <libfdt.h>
-#include <csr.h>
-#include <sbi.h>
+#include "csr.h"
+#include "sbi.h"
 
 ticks_t stat_timer(const void *fdt)
 {

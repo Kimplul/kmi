@@ -5,7 +5,7 @@
 
 #include <apos/utils.h>
 #include <arch/arch.h>
-#include <csr.h>
+#include "csr.h"
 
 stat_t setup_arch(void *fdt)
 {

@@ -40,7 +40,7 @@ enum {
 	SYS_EXEC,   /* execute new binary in process space */
 	SYS_KILL,   /* kill thread */
 	SYS_SIGNAL, /* send signal to process (kill etc.) */
-	SYS_SWAP /* switch running process */
+	SYS_SWAP, /* switch running process */
 
 	/* kernel management */
 	SYS_CONF,     /* config system parameters (stack size etc.) */

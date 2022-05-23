@@ -8,8 +8,8 @@
 #include <apos/attrs.h>
 #include <apos/utils.h>
 #include <apos/vmem.h>
-#include <vmem.h>
-#include <csr.h>
+#include <arch/vmem.h>
+#include "../kernel/csr.h"
 
 /* assume 64 bit for now */
 struct vmem *root_branch;

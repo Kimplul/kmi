@@ -5,7 +5,7 @@
  */
 
 #include <apos/utils.h>
-#include <regs.h>
+#include "../kernel/regs.h"
 
 /* largely based on linux */
 #define DEFINE(sym, val)                                                       \

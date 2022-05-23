@@ -4,7 +4,7 @@
  */
 
 #include <apos/power.h>
-#include <sbi.h>
+#include "sbi.h"
 
 /* shutdown reason */
 #define SBI_NO_REASON   0

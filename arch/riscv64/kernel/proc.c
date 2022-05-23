@@ -5,8 +5,8 @@
 
 #include <apos/tcb.h>
 #include <apos/elf.h>
-#include <regs.h>
-#include <csr.h>
+#include "regs.h"
+#include "csr.h"
 
 stat_t jump_to_userspace(struct tcb *t, int argc, char **argv)
 {

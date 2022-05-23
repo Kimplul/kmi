@@ -3,7 +3,7 @@
  * riscv64 specific OpenSBI handling.
  */
 
-#include <sbi.h>
+#include "sbi.h"
 
 struct sbiret sbi_ecall(int ext, int fid, unsigned long arg0,
                         unsigned long arg1, unsigned long arg2,

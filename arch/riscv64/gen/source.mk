@@ -1,4 +1,4 @@
-OFFSET_HEADER	:= $(ARCH_SOURCE)/include/gen/asm-offsets.h
+OFFSET_HEADER	:= $(ARCH_SOURCE)/gen/asm-offsets.h
 OFFSET_SOURCE	:= $(ARCH_SOURCE)/gen/asm-offsets.c
 
 $(OFFSET_HEADER): $(OFFSET_SOURCE)
@@ -8,4 +8,4 @@ $(OFFSET_HEADER): $(OFFSET_SOURCE)
 		awk '($$1 == "#->") { print "#define " $$2 " " $$3 }' >> $(OFFSET_HEADER)
 	echo "#endif /* APOS_ASM_OFFSETS_H */" >> $(OFFSET_HEADER)
 
-CLEANUP	+= $(ARCH_SOURCE)/include/gen/*
+CLEANUP	+= $(ARCH_SOURCE)/gen/asm-offsets.h

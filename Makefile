@@ -5,7 +5,7 @@ DEBUGFLAGS	!= [ $(RELEASE) ] \
 			&& echo "-flto -O2 -g -DNDEBUG" \
 			|| echo "-O0 -g -DDEBUG"
 
-CFLAGS		= -ffreestanding -nostdlib -std=c17 -Wall -Wextra -Wvla
+CFLAGS		= -ffreestanding -nostdlib -std=c17 -Wall -Wextra -Wvla -D$(ARCH)
 DEPFLAGS	= -MT $@ -MMD -MP -MF $@.d
 LINTFLAGS	= -fsyntax-only
 PREPROCESS	= -E
@@ -35,7 +35,7 @@ COMPILER	!= [ $(LLVM) ] \
 
 
 KERNEL_SOURCES	!= echo common/*.c common/uapi/*.c lib/*.c
-CLEANUP		:= build deps.mk kernel.* init.* apos.bin docs/output
+CLEANUP		:= build deps.mk kernel.* init.* apos.bin
 CLEANUP_CMD	:=
 INIT_SOURCES	:=
 
@@ -44,8 +44,7 @@ include arch/$(ARCH)/source.mk
 COMPILE_FLAGS	:= $(CFLAGS) $(ARCH_CFLAGS)
 LINK_FLAGS	:= $(LDFLAGS) $(ARCH_LDFLAGS)
 
-INCLUDE_FLAGS	:= -I include -I arch/$(ARCH)/include\
-	-include config.h -include arch/$(ARCH)/config.h
+INCLUDE_FLAGS	:= -I include -include config.h -include arch/$(ARCH)/config.h
 
 # This makes sure .bss is loaded into the binary
 OBJCOPY_FLAGS	?= -Obinary --set-section-flags .bss=alloc,load,contents
@@ -111,5 +110,10 @@ RM	?= rm -f
 clean:
 	$(RM) -r $(CLEANUP)
 
-clean_run: clean
+.PHONY: clean_run
+clean_run:
 	$(CLEANUP_CMD)
+
+.PHONY: clean_docs
+clean_docs:
+	$(RM) -r docs/output

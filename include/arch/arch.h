@@ -9,6 +9,12 @@
 
 #include <apos/types.h>
 
+#if defined(riscv64)
+#include "../../arch/riscv64/include/arch.h"
+#elif defined(riscv32)
+#include "../../arch/riscv32/include/arch.h"
+#endif
+
 stat_t setup_arch(void *fdt);
 
 #endif /* APOS_ARCH_H */

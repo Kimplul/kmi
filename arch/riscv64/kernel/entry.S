@@ -1,5 +1,5 @@
-#include <gen/asm-offsets.h>
-#include <csr.h>
+#include "../gen/asm-offsets.h"
+#include "../kernel/csr.h"
 
 #if __riscv_xlen == 64
 #define sr sd

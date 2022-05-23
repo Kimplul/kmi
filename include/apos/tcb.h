@@ -8,7 +8,7 @@
 
 #include <apos/mem_regions.h>
 #include <apos/types.h>
-#include <tcb.h> /* arch-specific data */
+#include <arch/tcb.h> /* arch-specific data */
 
 /* process(/main) threads don't have any previous threads */
 #define is_proc(t) (!t->prev)

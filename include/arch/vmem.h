@@ -7,7 +7,11 @@
  * arch/whatever/kernel/vmem.c
  */
 
-#include <vmem.h>
+#if defined(riscv64)
+#include "../../arch/riscv64/include/vmem.h"
+#elif defined(riscv32)
+#include "../../arch/riscv32/include/vmem.h"
+#endif
 
 stat_t map_vpage(struct vmem *branch, pm_t paddr, vm_t vaddr, vmflags_t flags,
                  enum mm_order order);

@@ -8,7 +8,12 @@
  */
 
 #include <apos/types.h>
-#include <cpu.h>
+
+#if defined(riscv64)
+#include "../../arch/riscv64/include/cpu.h"
+#elif defined(riscv32)
+#include "../../arch/riscv32/include/cpu.h"
+#endif
 
 id_t cpu_id();
 /* TODO: add more cpu handling functions */

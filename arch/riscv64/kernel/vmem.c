@@ -9,8 +9,8 @@
 #include <apos/mem.h>
 #include <apos/debug.h>
 #include <arch/cpu.h>
-#include <pages.h>
-#include <csr.h>
+#include "pages.h"
+#include "csr.h"
 
 #define pte_ppn(pte)      (((pm_t)(pte)) >> 10)
 #define pte_flags(pte)    (((pm_t)(pte)) & 0xff)

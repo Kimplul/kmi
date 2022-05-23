@@ -11,6 +11,10 @@
  * \todo Fix incorrect include file reference in doxygen.
  */
 
-#include <types.h>
+#if defined(riscv64)
+#include "../../arch/riscv64/include/types.h"
+#elif defined(riscv32)
+#include "../../arch/riscv64/include/types.h"
+#endif
 
 #endif /* APOS_ARCH_TYPES_H */

@@ -9,6 +9,12 @@
 
 #include <apos/timer.h>
 
+#if defined(riscv64)
+#include "../../arch/riscv64/include/timer.h"
+#elif defined(riscv32)
+#include "../../arch/riscv32/include/timer.h"
+#endif
+
 /* return hardware timer frequency */
 ticks_t stat_timer();
 
