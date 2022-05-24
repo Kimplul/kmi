@@ -32,14 +32,11 @@ struct tcb {
 
 	vm_t callback;
 
-	vm_t proc_stack;
-	vm_t proc_stack_top;
+	vm_t thread_stack;
+	vm_t thread_stack_top;
 
 	vm_t call_stack;
 	vm_t call_stack_top;
-
-	/* entry point */
-	vm_t entry;
 
 	/* vm root branch */
 	struct vmem *b_r;
@@ -63,5 +60,6 @@ void use_tcb(struct tcb *);
 struct tcb *get_tcb(id_t tid);
 
 stat_t clone_tcb_maps(struct tcb *);
+stat_t alloc_stacks(struct tcb *);
 
 #endif /* APOS_TCB_H */

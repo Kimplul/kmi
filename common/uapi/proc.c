@@ -5,6 +5,7 @@
 
 #include <apos/elf.h>
 #include <apos/uapi.h>
+#include <apos/proc.h>
 #include <apos/bits.h>
 #include <apos/mem_regions.h>
 
@@ -53,9 +54,7 @@ SYSCALL_DEFINE2(exec)(sys_arg_t bin, sys_arg_t interp){
 	if (interp)
 		clear_bit(b->flags, MR_KEEP);
 
-	/* TODO: set entry? */
-	load_elf(r, b, i);
-	return (struct sys_ret){ OK, 0 };
+	return (struct sys_ret){ prepare_proc(r, bin, interp), 0 };
 }
 
 SYSCALL_DEFINE2(signal)(sys_arg_t tid, sys_arg_t signal){

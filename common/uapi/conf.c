@@ -9,7 +9,7 @@
 #include <apos/sizes.h>
 #include <apos/uapi.h>
 
-size_t __proc_stack_size = SZ_2M;
+size_t __thread_stack_size = SZ_2M;
 size_t __call_stack_size = SZ_2M;
 
 SYSCALL_DEFINE2(conf)(sys_arg_t param, sys_arg_t val)

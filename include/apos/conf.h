@@ -9,7 +9,7 @@
 
 #include <apos/types.h>
 
-extern size_t __proc_stack_size;
+extern size_t __thread_stack_size;
 extern size_t __call_stack_size;
 
 #endif /* APOS_CONF_H */

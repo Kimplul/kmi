@@ -96,12 +96,12 @@ static void __destroy_branch(struct vmem *b)
 	if (!b)
 		return;
 
-	for (size_t i = 0; i < BASE_PAGE_SIZE / sizeof(pm_t); ++i) {
+	for (size_t i = 0; i < RISCV_NUM_LEAVES; ++i) {
 		if (is_branch(b->leaf[i]))
 			__destroy_branch((struct vmem *)pte_addr(b->leaf[i]));
-
-		free_page(MM_KPAGE, (pm_t)pte_addr(b->leaf[i]));
 	}
+
+	free_page(MM_KPAGE, (pm_t)__pa(b));
 }
 
 stat_t map_vpage(struct vmem *branch, pm_t paddr, vm_t vaddr, vmflags_t flags,
@@ -150,7 +150,7 @@ void flush_tlb_all()
 	__asm__ volatile ("sfence.vma\n" ::: "memory");
 }
 
-static void __start_vmem(struct vmem *branch, enum mm_mode m)
+static void __use_vmem(struct vmem *branch, enum mm_mode m)
 {
 	branch = (struct vmem *)__pa(branch);
 
@@ -173,7 +173,7 @@ struct vmem *init_vmem(void *fdt)
 	UNUSED(fdt);
 	struct vmem *b = create_vmem();
 	/* update which memory branch to use */
-	__start_vmem(b, Sv39);
+	use_vmem(b);
 	return b;
 }
 
@@ -186,9 +186,15 @@ struct vmem *create_vmem()
 	return b;
 }
 
+stat_t use_vmem(struct vmem *b)
+{
+	__use_vmem(b, Sv39);
+	return OK;
+}
+
 stat_t destroy_vmem(struct vmem *b)
 {
-	free_page(MM_KPAGE, (pm_t)b);
+	__destroy_branch(b);
 	return OK;
 }
 

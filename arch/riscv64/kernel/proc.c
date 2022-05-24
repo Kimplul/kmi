@@ -8,33 +8,32 @@
 #include "regs.h"
 #include "csr.h"
 
-stat_t jump_to_userspace(struct tcb *t, int argc, char **argv)
+/* TODO: actually map fdt into the target address space */
+stat_t run_init(struct tcb *t, void *fdt)
 {
-	csr_write(CSR_SEPC, t->entry);
 	csr_write(CSR_SSCRATCH, t);
-	__asm__ volatile ("mv sp, %0\n" : : "r" (t->proc_stack_top) : "memory");
+	__asm__ volatile ("mv sp, %0\n" : : "r" (t->thread_stack_top) : "memory");
+	__asm__ volatile ("mv a0, %0\n" : : "r" (fdt) : );
 	__asm__ volatile ("sret\n" ::: "memory");
 	/* we should never reach this */
 	return ERR_ADDR;
 }
 
-stat_t return_to_userspace(struct tcb *t)
+stat_t set_return(vm_t v)
 {
-	/* lol */
-	return ERR_ADDR;
+	csr_write(CSR_SEPC, v);
+	return OK;
 }
 
 stat_t prepare_thread(struct tcb *t)
 {
 	/* get location of registers in memory */
 	/* TODO: check alignment, should be fine but just to be sure */
-	struct riscv_regs *r = (struct riscv_regs *)t;
-	r--;
+	struct riscv_regs *r = (struct riscv_regs *)(--t);
 
-	r->sp = (long)t->proc_stack_top;
+	/* insert important values into register slots */
+	r->sp = (long)t->thread_stack_top;
 	r->tp = (long)t;
 
-	/* set entry point */
-	csr_write(CSR_SEPC, t->entry);
 	return OK;
 }

@@ -10,6 +10,7 @@
 #include <apos/debug.h>
 #include <apos/vmem.h>
 #include <arch/arch.h>
+#include <arch/proc.h>
 #include <arch/irq.h>
 #include <libfdt.h>
 
@@ -23,6 +24,7 @@ void __main main(void *fdt)
 	setup_arch(fdt);
 
 	init_pmem(fdt);
+	/* setup temporary virtual memory */
 	struct vmem *b = init_vmem(fdt);
 
 	/* start up debugging in kernel IO */
@@ -30,5 +32,11 @@ void __main main(void *fdt)
 
 	init_irq(fdt);
 	init_timer(fdt);
-	init_proc(fdt, b);
+	init_proc(fdt);
+	/* free temporary virtual memory now that we're in the init process
+	 * space */
+	destroy_vmem(b);
+
+	/* start running init program */
+	run_init(cur_tcb(), fdt);
 }

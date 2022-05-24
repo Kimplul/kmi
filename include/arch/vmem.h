@@ -33,6 +33,7 @@ vm_t setup_kernel_io(struct vmem *b, vm_t paddr);
 #endif
 
 struct vmem *create_vmem();
+stat_t use_vmem(struct vmem *);
 stat_t destroy_vmem(struct vmem *);
 stat_t clone_uvmem(struct vmem *, struct vmem *);
 

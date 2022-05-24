@@ -6,6 +6,7 @@
 #include <apos/tcb.h>
 #include <arch/cpu.h>
 #include <apos/mem.h>
+#include <apos/conf.h>
 #include <apos/pmem.h>
 #include <apos/vmem.h>
 #include <apos/nodes.h>
@@ -54,6 +55,45 @@ static id_t __alloc_tid(struct tcb *t)
 	return ERR_NF;
 }
 
+/* TODO: add error checking */
+static vm_t __setup_call_stack(struct tcb *t, size_t bytes)
+{
+	pm_t offset = 0;
+	size_t pages = __pages(bytes);
+	vmflags_t flags = VM_V | VM_R | VM_W | VM_U;
+	for (size_t i = 1; i <= pages; ++i) {
+		offset = alloc_page(BASE_PAGE, offset);
+		map_vpage(t->b_r, offset, PROC_STACK_TOP - BASE_PAGE_SIZE * i,
+		          flags, BASE_PAGE);
+	}
+
+	return PROC_STACK_TOP - BASE_PAGE_SIZE * pages;
+}
+
+static vm_t __setup_thread_stack(struct tcb *t, size_t bytes)
+{
+	return alloc_uvmem(t, bytes, VM_V | VM_R | VM_W | VM_U);
+}
+
+stat_t alloc_stacks(struct tcb *t)
+{
+	struct tcb *p = is_proc(t) ? t : t->proc;
+
+	t->thread_stack = __setup_thread_stack(p, __thread_stack_size);
+	if (!t->thread_stack)
+		return ERR_OOMEM;
+
+	t->call_stack = __setup_call_stack(p, __call_stack_size);
+	if (!t->call_stack)
+		return ERR_OOMEM;
+
+	/* TODO: this only allows for a global stack size, what if a user wants
+	 * per thread stack sizes? */
+	t->thread_stack_top = t->thread_stack + __thread_stack_size;
+	t->call_stack_top = t->call_stack + __call_stack_size;
+	return OK;
+}
+
 struct tcb *create_thread(struct tcb *p)
 {
 	hard_assert(tcbs, 0);
@@ -70,12 +110,16 @@ struct tcb *create_thread(struct tcb *p)
 	tcbs[tid] = t;
 	t->tid = tid;
 
-	if (p) {
+	if (likely(p)) {
 		t->pid = p->pid;
 		t->proc = p;
 	} else {
+		init_uvmem(t, UVMEM_START, UVMEM_END);
 		t->pid = t->tid;
+		p = t;
 	}
+
+	t->b_r = create_vmem();
 
 	return t;
 }
@@ -93,13 +137,12 @@ struct tcb *create_proc(struct tcb *p)
 	hard_assert(tcbs, 0);
 
 	/* create a new thread outside the current process */
-	struct tcb *n = create_thread(0);
-	n->b_r = create_vmem();
+	struct tcb *n = create_thread(NULL);
+	if (!n)
+		return 0;
 
 	if (likely(p))
 		__clone_proc(p, n); /* we have a parent thread */
-	else
-		init_uvmem(n, UVMEM_START, UVMEM_END);
 
 	return n;
 }

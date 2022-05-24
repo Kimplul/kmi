@@ -10,7 +10,7 @@
 #include <apos/tcb.h>
 #include <apos/vmem.h>
 
-stat_t jump_to_userspace(struct tcb *t, int argc, char **argv);
-stat_t init_proc(void *fdt, struct vmem *b);
+stat_t prepare_proc(struct tcb *t, vm_t bin, vm_t interp);
+stat_t init_proc(void *fdt);
 
 #endif /* APOS_PROC_H */

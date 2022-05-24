@@ -21,7 +21,6 @@
 struct mem_region_root {
 	struct sp_root free_regions;
 	struct sp_root used_regions;
-	struct mem_region *first;
 };
 
 struct mem_region {
