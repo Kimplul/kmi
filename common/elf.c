@@ -76,7 +76,7 @@ static vm_t __map_dyn(struct tcb *t, vm_t bin, uint8_t ei_c, vm_t phstart,
 	 * hacky, I know.*/
 }
 
-static vm_t __prepare_proc(struct tcb *t, uint8_t ei_c, vm_t elf)
+static vm_t __prepare_proc(struct tcb *t, uint8_t ei_c, vm_t elf, vm_t interp)
 {
 	short e_type = elf_header_prop(ei_c, elf, e_type);
 	if (e_type != ET_DYN && e_type != ET_EXEC)
@@ -97,9 +97,9 @@ static vm_t __prepare_proc(struct tcb *t, uint8_t ei_c, vm_t elf)
 }
 
 /* sets up all memory regions etc, returns the entry address */
-vm_t load_elf(struct tcb *t, vm_t b)
+vm_t load_elf(struct tcb *t, vm_t elf, vm_t interp)
 {
-	struct elf_ident *i = (struct elf_ident *)b;
+	struct elf_ident *i = (struct elf_ident *)elf;
 	if (i->ei_magic != cpu_to_be32(EI_MAGIC))
 		return 0;
 
@@ -107,5 +107,5 @@ vm_t load_elf(struct tcb *t, vm_t b)
 		return 0;
 
 	/* more sanity checks? */
-	return __prepare_proc(t, i->ei_class, b);
+	return __prepare_proc(t, i->ei_class, elf, interp);
 }

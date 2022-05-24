@@ -25,15 +25,26 @@ static stat_t __free_mapped_region(struct tcb *t, struct mem_region *m)
 	return status;
 }
 
-stat_t destroy_uvmem(struct tcb *t)
+stat_t clear_uvmem(struct tcb *t, bool force)
 {
 	struct mem_region *m = find_first_region(&t->sp_r);
 	while (m) {
-		/* free all memory associated with used regions */
-		if (is_region_used(m))
+		/* if force is not set, free only regions that are not marked to
+		 * be kept and are owned.
+		 *
+		 * if force is set, free all owned regions.
+		 */
+		if (is_region_owned(m) && (force || !is_region_kept(m)))
 			__free_mapped_region(t, m);
 	}
 
+	return OK;
+}
+
+stat_t destroy_uvmem(struct tcb *t)
+{
+	/* force clear all regions */
+	clear_uvmem(t, true);
 	/* destroy region tree itself */
 	return destroy_region(&t->sp_r);
 }

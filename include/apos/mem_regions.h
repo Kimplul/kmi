@@ -14,6 +14,9 @@
 
 #define mem_container(ptr) container_of(ptr, struct mem_region, sp_n)
 #define is_region_used(r)  __is_set(r->flags, MR_USED)
+#define is_region_owned(r) __is_set(r->flags, MR_OWNED)
+#define is_region_shared(r) __is_set(r->flags, MR_SHARED)
+#define is_region_kept(r) __is_set(r->flags, MR_KEEP)
 
 struct mem_region_root {
 	struct sp_root free_regions;
@@ -53,6 +56,9 @@ struct mem_region *find_free_region(struct mem_region_root *r, size_t size,
 typedef stat_t region_callback_t(struct vmem *b, pm_t *offset, vm_t vaddr,
                                  vmflags_t flags, enum mm_order order,
                                  void *data);
+
+stat_t stat_region(struct mem_region_root *r, vm_t va, vmflags_t *flags);
+stat_t mod_region(struct mem_region_root *r, vm_t va, vmflags_t flags);
 
 vm_t map_fill_region(struct vmem *b, region_callback_t *mem_handler,
                      pm_t offset, vm_t start, size_t bytes, vmflags_t flags,

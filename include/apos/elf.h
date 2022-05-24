@@ -194,6 +194,6 @@ struct __packed section64_header {
 #define section_header_prop(c, e, p)                                           \
 	(c == ELFCLASS64 ? section64_header(e)->p : section32_header(e)->p)
 
-vm_t load_elf(struct tcb *t, vm_t b);
+vm_t load_elf(struct tcb *t, vm_t binary, vm_t interp);
 
 #endif /* APOS_ELF_H */

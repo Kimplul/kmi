@@ -4,6 +4,8 @@
  */
 
 #include <apos/uapi.h>
+#include <apos/bits.h>
+#include <apos/mem_regions.h>
 
 SYSCALL_DEFINE0(create)(){
 	return (struct sys_ret){ OK, 0 };
@@ -23,8 +25,35 @@ SYSCALL_DEFINE0(fork)(){
 	return (struct sys_ret){ OK, 0 };
 }
 
-SYSCALL_DEFINE3(exec)(sys_arg_t bin, sys_arg_t argc, sys_arg_t argv){
+SYSCALL_DEFINE2(exec)(sys_arg_t bin, sys_arg_t interp){
 	/* TODO: execute new process, probably with more sensible argc passing */
+	struct tcb *r = cur_tcb();
+
+	/* mark binary to be kept */
+	struct mem_region *b = find_used_region(&r->sp_r, bin);
+	if (!b)
+		return (struct sys_ret){ERR_INVAL, 0};
+	__set_bit(b->flags, MR_KEEP);
+
+	struct mem_region *i = 0;
+	if (interp) {
+		/* mark interpreter to be kept */
+		i = find_used_region(&r->sp_r, interp);
+		if (!i)
+			return (struct sys_ret){ERR_INVAL, 1};
+		__set_bit(i->flags, MR_KEEP);
+	}
+
+	/* free everything except regions to be kept */
+	clear_uvmem(r, false);
+
+	/* restore to normal */
+	__clear_bit(b->flags, MR_KEEP);
+	if (interp)
+		__clear_bit(b->flags, MR_KEEP);
+
+	/* TODO: set entry? */
+	load_elf(r, b, i);
 	return (struct sys_ret){ OK, 0 };
 }
 

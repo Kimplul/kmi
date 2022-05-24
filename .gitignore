@@ -3,6 +3,7 @@
 *.bin
 *.elf
 *.ld
+*/kernel/gen/*
 docs/output
 deps.mk
 *.img

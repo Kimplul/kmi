@@ -83,7 +83,7 @@ void __dbg_fdt(const void *fdt, int node_offset, int depth);
 
 /**
  * Load int{32,64} from FDT at location specified by pointer.
- * 
+ *
  * @param c Size of int, where 2 == int64 and everything else int32. Query int
  * size from FDT with \ref get_cellinfo() and \ref get_reginfo().
  * @param p Pointer to int{32,64} inside the global FDT.

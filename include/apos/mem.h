@@ -48,14 +48,16 @@
 	 __page((x) + BASE_PAGE_SIZE))
 #define __bytes(x) (__addr(x))
 
-/* if memory region is used or not */
+/** If memory region is used or not */
 #define MR_USED    (1 << 8)
-/* if memory region is shared */
+/** If memory region is shared */
 #define MR_SHARED  (1 << 9)
-/* owner of shared region */
+/** Owner of shared region */
 #define MR_OWNED   (1 << 10)
-/* copy on write */
+/** Copy on write. */
 #define MR_COW     (1 << 11)
+/** Don't free memory on flush. */
+#define MR_KEEP    (1 << 12)
 
 extern size_t __mm_shifts[10];
 extern size_t __mm_widths[10];

@@ -136,7 +136,7 @@ struct timer *find_timer(id_t cid)
 stat_t remove_timer(struct timer *t)
 {
 	if (!t)
-		return;
+		return ERR_INVAL;
 
 	struct sp_node *n = &timer_node_container(t)->sp_n;
 	sp_remove(&sp_root(__cpu_timers()), n);

@@ -16,10 +16,10 @@
  * riscv64.
  */
 #if __riscv_xlen == 64
- /** When running riscv64, each page table has 512 8byte entries. */
+/** When running riscv64, each page table has 512 8byte entries. */
 #define RISCV_NUM_LEAVES 512
 #else
- /** When running riscv32, each page table has 1024 4byte entries. */
+/** When running riscv32, each page table has 1024 4byte entries. */
 #define RISCV_NUM_LEAVES 1024
 #endif
 
