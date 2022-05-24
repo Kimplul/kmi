@@ -174,15 +174,15 @@ static size_t __integral_val(ssize_t value, size_t base, size_t flags,
 	c = (x)value % (x)base;                                                \
 	value = (x)value / (x)base;
 
-	if (!__is_set(flags, UNSIGN_FLAG)) {
+	if (!is_set(flags, UNSIGN_FLAG)) {
 		/* signed values, only with i format */
-		if (__is_set(flags, LLONG_FLAG)) {
+		if (is_set(flags, LLONG_FLAG)) {
 			handle_type(signed long long);
-		} else if (__is_set(flags, LONG_FLAG)) {
+		} else if (is_set(flags, LONG_FLAG)) {
 			handle_type(signed long);
-		} else if (__is_set(flags, SHORT_FLAG)) {
+		} else if (is_set(flags, SHORT_FLAG)) {
 			handle_type(signed short);
-		} else if (__is_set(flags, CHAR_FLAG)) {
+		} else if (is_set(flags, CHAR_FLAG)) {
 			handle_type(signed char);
 		} else {
 			handle_type(signed int);
@@ -193,13 +193,13 @@ static size_t __integral_val(ssize_t value, size_t base, size_t flags,
 
 	} else {
 		/* unsigned values, everything else */
-		if (__is_set(flags, LLONG_FLAG)) {
+		if (is_set(flags, LLONG_FLAG)) {
 			handle_type(unsigned long long);
-		} else if (__is_set(flags, LONG_FLAG)) {
+		} else if (is_set(flags, LONG_FLAG)) {
 			handle_type(unsigned long);
-		} else if (__is_set(flags, SHORT_FLAG)) {
+		} else if (is_set(flags, SHORT_FLAG)) {
 			handle_type(unsigned short);
-		} else if (__is_set(flags, CHAR_FLAG)) {
+		} else if (is_set(flags, CHAR_FLAG)) {
 			handle_type(unsigned char);
 		} else {
 			handle_type(unsigned int);
@@ -260,13 +260,13 @@ static size_t __print_padding(size_t pad, char pad_char)
 
 static size_t __print_sign(ssize_t value, size_t flags)
 {
-	if (__is_set(flags, LLONG_FLAG))
+	if (is_set(flags, LLONG_FLAG))
 		value = (signed long long)value;
-	else if (__is_set(flags, LONG_FLAG))
+	else if (is_set(flags, LONG_FLAG))
 		value = (signed long)value;
-	else if (__is_set(flags, SHORT_FLAG))
+	else if (is_set(flags, SHORT_FLAG))
 		value = (signed short)value;
-	else if (__is_set(flags, CHAR_FLAG))
+	else if (is_set(flags, CHAR_FLAG))
 		value = (signed char)value;
 	else
 		value = (signed int)value;
@@ -290,34 +290,34 @@ static size_t __print_integral(ssize_t value, size_t base, size_t flags,
 
 	size_t ret = 0;
 	size_t raw_len = __integral_len(value, base, flags);
-	ssize_t pad = __is_set(flags, PAD_FLAG) ? width - raw_len : 0;
+	ssize_t pad = is_set(flags, PAD_FLAG) ? width - raw_len : 0;
 
 	/* depending on which flags are set, the prefix, sign and right justify has to
 	 * be ordereder differently. */
-	if (__is_set(flags, ZERO_FLAG)) {
-		if (!__is_set(flags, UNSIGN_FLAG))
+	if (is_set(flags, ZERO_FLAG)) {
+		if (!is_set(flags, UNSIGN_FLAG))
 			ret += __print_sign(value, flags);
 
-		if (__is_set(flags, HASH_FLAG))
+		if (is_set(flags, HASH_FLAG))
 			ret += __print_prefix(base);
 
-		if (pad > 0 && !__is_set(flags, LEFT_FLAG))
+		if (pad > 0 && !is_set(flags, LEFT_FLAG))
 			ret += __print_padding(pad, '0');
 
-	} else if (__is_set(flags, SPACE_FLAG)) {
-		if (pad > 0 && !__is_set(flags, LEFT_FLAG))
+	} else if (is_set(flags, SPACE_FLAG)) {
+		if (pad > 0 && !is_set(flags, LEFT_FLAG))
 			ret += __print_padding(pad, ' ');
 
-		if (!__is_set(flags, UNSIGN_FLAG))
+		if (!is_set(flags, UNSIGN_FLAG))
 			ret += __print_sign(value, flags);
 
-		if (__is_set(flags, HASH_FLAG))
+		if (is_set(flags, HASH_FLAG))
 			ret += __print_prefix(base);
 	} else {
-		if (!__is_set(flags, UNSIGN_FLAG))
+		if (!is_set(flags, UNSIGN_FLAG))
 			ret += __print_sign(value, flags);
 
-		if (__is_set(flags, HASH_FLAG))
+		if (is_set(flags, HASH_FLAG))
 			ret += __print_prefix(base);
 	}
 
@@ -325,11 +325,11 @@ static size_t __print_integral(ssize_t value, size_t base, size_t flags,
 	ret += __integral_print(value, base, flags);
 
 	/* left-justify */
-	if (__is_set(flags, ZERO_FLAG)) {
-		if (pad > 0 && __is_set(flags, LEFT_FLAG))
+	if (is_set(flags, ZERO_FLAG)) {
+		if (pad > 0 && is_set(flags, LEFT_FLAG))
 			ret += __print_padding(pad, '0');
-	} else if (__is_set(flags, SPACE_FLAG)) {
-		if (pad > 0 && __is_set(flags, LEFT_FLAG))
+	} else if (is_set(flags, SPACE_FLAG)) {
+		if (pad > 0 && is_set(flags, LEFT_FLAG))
 			ret += __print_padding(pad, ' ');
 	}
 
@@ -374,37 +374,37 @@ void dbg(const char *fmt, ...)
 		do {
 			switch (*fmt) {
 			case ' ':
-				__set_bit(flags, SPACE_FLAG);
+				set_bit(flags, SPACE_FLAG);
 				fmt++;
 				a = CONT;
 				break;
 
 			case '-':
-				__set_bit(flags, LEFT_FLAG);
+				set_bit(flags, LEFT_FLAG);
 				fmt++;
 				a = CONT;
 				break;
 
 			case '+':
-				__set_bit(flags, SIGN_FLAG);
+				set_bit(flags, SIGN_FLAG);
 				fmt++;
 				a = CONT;
 				break;
 
 			case '#':
-				__set_bit(flags, HASH_FLAG);
+				set_bit(flags, HASH_FLAG);
 				fmt++;
 				a = CONT;
 				break;
 
 			case '0':
-				__set_bit(flags, ZERO_FLAG);
+				set_bit(flags, ZERO_FLAG);
 				fmt++;
 				a = CONT;
 				break;
 
 			case '\'':
-				__set_bit(flags, FMT_FLAG);
+				set_bit(flags, FMT_FLAG);
 				fmt++;
 				a = CONT;
 				break;
@@ -419,16 +419,16 @@ void dbg(const char *fmt, ...)
 		size_t width = 0;
 		if (__is_digit(*fmt)) {
 			width = __atoi(fmt++);
-			__set_bit(flags, WIDTH_FLAG | PAD_FLAG | SPACE_FLAG);
+			set_bit(flags, WIDTH_FLAG | PAD_FLAG | SPACE_FLAG);
 		} else if (*fmt == '*') {
 			int w = va_arg(vl, int);
 			if (w < 0) {
 				width = -w;
-				__set_bit(flags, LEFT_FLAG);
+				set_bit(flags, LEFT_FLAG);
 			} else {
 				width = w;
 			}
-			__set_bit(flags, WIDTH_FLAG | PAD_FLAG | SPACE_FLAG);
+			set_bit(flags, WIDTH_FLAG | PAD_FLAG | SPACE_FLAG);
 			fmt++;
 		}
 
@@ -436,7 +436,7 @@ void dbg(const char *fmt, ...)
 		size_t precision = 0;
 		if (*fmt == '.') {
 			fmt++;
-			__set_bit(flags, PRECS_FLAG | PAD_FLAG | ZERO_FLAG);
+			set_bit(flags, PRECS_FLAG | PAD_FLAG | ZERO_FLAG);
 			if (__is_digit(*fmt)) {
 				precision = __atoi(fmt++);
 			} else if (*fmt == '*') {
@@ -450,45 +450,45 @@ void dbg(const char *fmt, ...)
 		case 'l':
 			fmt++;
 			if (*fmt == 'l') {
-				__set_bit(flags, LLONG_FLAG);
+				set_bit(flags, LLONG_FLAG);
 				fmt++;
 			} else {
-				__set_bit(flags, LONG_FLAG);
+				set_bit(flags, LONG_FLAG);
 			}
 			break;
 
 		case 'h':
 			fmt++;
 			if (*fmt == 'h') {
-				__set_bit(flags, CHAR_FLAG);
+				set_bit(flags, CHAR_FLAG);
 				fmt++;
 			} else {
-				__set_bit(flags, SHORT_FLAG);
+				set_bit(flags, SHORT_FLAG);
 			}
 			break;
 
 		case 'j':
 			fmt++;
 			if (sizeof(intmax_t) == sizeof(long))
-				__set_bit(flags, LONG_FLAG);
+				set_bit(flags, LONG_FLAG);
 			else
-				__set_bit(flags, LLONG_FLAG);
+				set_bit(flags, LLONG_FLAG);
 			break;
 
 		case 'z':
 			fmt++;
 			if (sizeof(size_t) == sizeof(long))
-				__set_bit(flags, LONG_FLAG);
+				set_bit(flags, LONG_FLAG);
 			else
-				__set_bit(flags, LLONG_FLAG);
+				set_bit(flags, LLONG_FLAG);
 			break;
 
 		case 't':
 			fmt++;
 			if (sizeof(ptrdiff_t) == sizeof(long))
-				__set_bit(flags, LONG_FLAG);
+				set_bit(flags, LONG_FLAG);
 			else
-				__set_bit(flags, LLONG_FLAG);
+				set_bit(flags, LLONG_FLAG);
 			break;
 		}
 
@@ -526,22 +526,22 @@ void dbg(const char *fmt, ...)
 			}
 
 			if (base == 10)
-				__clear_bit(flags, HASH_FLAG);
+				clear_bit(flags, HASH_FLAG);
 
 			/* precision takes precedence */
-			if (__is_set(flags, PRECS_FLAG))
+			if (is_set(flags, PRECS_FLAG))
 				width = precision;
 
 			/* formatting doesn't apply to decimal integers
 			 * */
 			if (*fmt != 'i' && *fmt != 'd') {
-				__clear_bit(flags, SIGN_FLAG);
-				__set_bit(flags, UNSIGN_FLAG);
+				clear_bit(flags, SIGN_FLAG);
+				set_bit(flags, UNSIGN_FLAG);
 			}
 
-			if (__is_set(flags, LLONG_FLAG))
+			if (is_set(flags, LLONG_FLAG))
 				value = va_arg(vl, long long);
-			else if (__is_set(flags, LONG_FLAG))
+			else if (is_set(flags, LONG_FLAG))
 				value = va_arg(vl, long);
 			else
 				value = va_arg(vl, int);
@@ -561,7 +561,7 @@ void dbg(const char *fmt, ...)
 		case 's':
 			s = va_arg(vl, const char *);
 
-			if (__is_set(flags, PRECS_FLAG))
+			if (is_set(flags, PRECS_FLAG))
 				i = precision;
 
 			for (; *s && i--;) {
@@ -573,12 +573,12 @@ void dbg(const char *fmt, ...)
 
 		case 'p':
 			p = va_arg(vl, void *);
-			__set_bit(flags, UNSIGN_FLAG | HASH_FLAG);
+			set_bit(flags, UNSIGN_FLAG | HASH_FLAG);
 
 			if (sizeof(void *) == sizeof(long))
-				__set_bit(flags, LONG_FLAG);
+				set_bit(flags, LONG_FLAG);
 			else
-				__set_bit(flags, LLONG_FLAG);
+				set_bit(flags, LLONG_FLAG);
 
 			chars_written +=
 				__print_integral((ssize_t)p, 16, flags, width);

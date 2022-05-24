@@ -13,10 +13,10 @@
 #include <arch/vmem.h>
 
 #define mem_container(ptr) container_of(ptr, struct mem_region, sp_n)
-#define is_region_used(r)  __is_set(r->flags, MR_USED)
-#define is_region_owned(r) __is_set(r->flags, MR_OWNED)
-#define is_region_shared(r) __is_set(r->flags, MR_SHARED)
-#define is_region_kept(r) __is_set(r->flags, MR_KEEP)
+#define is_region_used(r)  is_set(r->flags, MR_USED)
+#define is_region_owned(r) is_set(r->flags, MR_OWNED)
+#define is_region_shared(r) is_set(r->flags, MR_SHARED)
+#define is_region_kept(r) is_set(r->flags, MR_KEEP)
 
 struct mem_region_root {
 	struct sp_root free_regions;

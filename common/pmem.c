@@ -26,7 +26,7 @@
 #include <apos/debug.h>
 #include <apos/initrd.h>
 #include <apos/string.h> /* memset */
-#include <apos/bits.h> /* __is_nset etc */
+#include <apos/bits.h> /* is_nset etc */
 #include <libfdt.h>
 
 /* NOTE: these are all for pnum_t, i.e. O0_SHIFT is from 0 */
@@ -39,7 +39,7 @@
 	     j < (pnum_t)MIN((end)-i * MM_OINFO_WIDTH,         \
 	                     MM_OINFO_WIDTH);                  \
 	     ++j, ++page)                                      \
-	if (neg(__is_nset(var->attr[i], j)))
+	if (neg(is_nset(var->attr[i], j)))
 
 #define NEG !
 #define foreach_full_page(var, start, order)                                   \
@@ -87,7 +87,7 @@ static void __mark_free(mm_node_t *op, pnum_t pnum, enum mm_order tgt,
 
 	if (src == dst) {
 		struct mm_leaf_t *o = (struct mm_leaf_t *)op;
-		__clear_nbit(o->used[__o_container(idx)], __o_bit(idx));
+		clear_nbit(o->used[__o_container(idx)], __o_bit(idx));
 		return;
 	}
 
@@ -96,7 +96,7 @@ static void __mark_free(mm_node_t *op, pnum_t pnum, enum mm_order tgt,
 		__mark_free(o->next[idx], pnum, tgt, src - 1, dst);
 
 	/* freeing a page results in always clearing a full bit? */
-	__clear_nbit(o->full[__o_container(idx)], __o_bit(idx));
+	clear_nbit(o->full[__o_container(idx)], __o_bit(idx));
 }
 
 /* this could probably use an int for status, but eh */
@@ -126,7 +126,7 @@ static bool __mark_used(mm_node_t *op, pnum_t pnum, enum mm_order tgt,
 
 	if (src == dst) {
 		struct mm_leaf_t *o = (struct mm_leaf_t *)op;
-		__set_nbit(o->used[__o_container(idx)], __o_bit(idx));
+		set_nbit(o->used[__o_container(idx)], __o_bit(idx));
 
 		if (idx == max_index(src))
 			return true;
@@ -136,7 +136,7 @@ static bool __mark_used(mm_node_t *op, pnum_t pnum, enum mm_order tgt,
 
 	struct mm_branch_t *o = (struct mm_branch_t *)op;
 	if (src == tgt) {
-		__set_nbit(o->full[__o_container(idx)], __o_bit(idx));
+		set_nbit(o->full[__o_container(idx)], __o_bit(idx));
 
 		if (idx == max_index(src))
 			return true;
@@ -145,7 +145,7 @@ static bool __mark_used(mm_node_t *op, pnum_t pnum, enum mm_order tgt,
 	}
 
 	if (__mark_used(o->next[idx], pnum, tgt, src - 1, dst)) {
-		__set_nbit(o->full[__o_container(idx)], __o_bit(idx));
+		set_nbit(o->full[__o_container(idx)], __o_bit(idx));
 
 		if (idx == max_index(src))
 			return true;

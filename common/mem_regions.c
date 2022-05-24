@@ -10,8 +10,8 @@
 #include <apos/bits.h>
 #include <apos/mem.h>
 
-#define mark_region_used(r)   __set_bit(r, MR_USED)
-#define mark_region_unused(r) __clear_bit(r, MR_USED)
+#define mark_region_used(r)   set_bit(r, MR_USED)
+#define mark_region_unused(r) clear_bit(r, MR_USED)
 
 /* pretty major slowdown when we get to some really massive numbers, not
  * entirely sure why. Will need to check up on this at some point, have I

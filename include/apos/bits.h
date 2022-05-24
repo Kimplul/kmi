@@ -9,20 +9,20 @@
 #include <apos/types.h>
 #include <apos/builtin.h>
 
-#define __is_set(x, y)     ((x) & (y))
-#define __set_bit(x, y)    ((x) |= (y))
-#define __clear_bit(x, y)  ((x) &= ~(y))
+#define is_set(x, y)     ((x) & (y))
+#define set_bit(x, y)    ((x) |= (y))
+#define clear_bit(x, y)  ((x) &= ~(y))
 
-#define __is_nset(x, y)    (__is_set((x), 1UL << (y)))
-#define __set_nbit(x, y)   (__set_bit((x), 1UL << (y)))
-#define __clear_nbit(x, y) (__clear_bit((x), 1UL << (y)))
+#define is_nset(x, y)    (is_set((x), 1UL << (y)))
+#define set_nbit(x, y)   (set_bit((x), 1UL << (y)))
+#define clear_nbit(x, y) (clear_bit((x), 1UL << (y)))
 
 static inline bool bitmap_is_set(void *bmap, size_t n)
 {
 	uint8_t *bitmap = bmap;
 	size_t i = n / 8;
 	size_t r = n - (i * 8);
-	return __is_nset(bitmap[i], r);
+	return is_nset(bitmap[i], r);
 }
 
 static inline void bitmap_set(void *bmap, size_t n)
@@ -30,7 +30,7 @@ static inline void bitmap_set(void *bmap, size_t n)
 	uint8_t *bitmap = bmap;
 	size_t i = n / 8;
 	size_t r = n - (i * 8);
-	__set_nbit(bitmap[i], r);
+	set_nbit(bitmap[i], r);
 }
 
 static inline void bitmap_clear(void *bmap, size_t n)
@@ -38,7 +38,7 @@ static inline void bitmap_clear(void *bmap, size_t n)
 	uint8_t *bitmap = bmap;
 	size_t i = n / 8;
 	size_t r = n - (i * 8);
-	__clear_nbit(bitmap[i], r);
+	clear_nbit(bitmap[i], r);
 }
 
 uint16_t __bswap16(uint16_t u);

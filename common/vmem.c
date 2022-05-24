@@ -99,7 +99,7 @@ vm_t ref_shared_uvmem(struct tcb *t1, struct tcb *t2, vm_t va, vmflags_t flags)
 	if (!m)
 		return 0;
 
-	if (!__is_set(m->flags, MR_OWNED))
+	if (!is_set(m->flags, MR_OWNED))
 		return 0;
 
 	/* loop over all pages in this region */
@@ -182,7 +182,7 @@ stat_t free_uvmem_wrapper(struct vmem *b, pm_t *offset, vm_t vaddr,
 		*status = ret;
 
 	/* don't free shared pages, unless they're owned */
-	if (!__is_set(flags, MR_SHARED) || __is_set(flags, MR_OWNED))
+	if (!is_set(flags, MR_SHARED) || is_set(flags, MR_OWNED))
 		free_page(order, paddr);
 
 	return (ret == INFO_SEFF) ? OK : ret;
