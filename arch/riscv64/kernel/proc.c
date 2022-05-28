@@ -25,6 +25,14 @@ stat_t set_return(vm_t v)
 	return OK;
 }
 
+stat_t set_ipc(struct tcb *t, id_t pid, id_t tid)
+{
+	struct riscv_regs *r = (struct riscv_regs *)(--t);
+	r->a2 = (long)pid;
+	r->a3 = (long)tid;
+	return OK;
+}
+
 stat_t set_thread(struct tcb *t, vm_t stack)
 {
 	/* get location of registers in memory */
