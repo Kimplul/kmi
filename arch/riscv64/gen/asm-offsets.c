@@ -1,6 +1,6 @@
 /**
  * @file asm-offsets.c
- * riscv64 file used to generate offsets to register slots in stack. See \ref
+ * riscv64 file used to generate offsets to register slots in stack. Used by
  * _save_context.
  */
 

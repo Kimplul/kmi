@@ -48,11 +48,11 @@
 	 __page((x) + BASE_PAGE_SIZE))
 #define __bytes(x) (__addr(x))
 
-/** If memory region is used or not */
+/** Memory region is used. */
 #define MR_USED    (1 << 8)
-/** If memory region is shared */
+/** Memory region is shared. */
 #define MR_SHARED  (1 << 9)
-/** Owner of shared region */
+/** Owner of shared region. */
 #define MR_OWNED   (1 << 10)
 /** Copy on write. */
 #define MR_COW     (1 << 11)

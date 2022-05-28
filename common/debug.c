@@ -19,20 +19,24 @@ static struct dbg_info {
 	enum serial_dev dev;
 } dbg_info = (struct dbg_info){ 0 };
 
+/* forward declarations. */
+static void __setup_dbg(pm_t pt, enum serial_dev dev);
+static struct dbg_info __dbg_from_fdt(const void *fdt);
+
 void init_dbg(const void *fdt)
 {
-	dbg_info = dbg_from_fdt(fdt);
+	dbg_info = __dbg_from_fdt(fdt);
 }
 
 void setup_dmap_dbg()
 {
-	setup_dbg(dbg_info.dbg_ptr, dbg_info.dev);
+	__setup_dbg(dbg_info.dbg_ptr, dbg_info.dev);
 }
 
 void setup_io_dbg(struct vmem *b)
 {
 	vm_t io_ptr = setup_kernel_io(b, dbg_info.dbg_ptr);
-	setup_dbg(io_ptr, dbg_info.dev);
+	__setup_dbg(io_ptr, dbg_info.dev);
 }
 
 /* if there arises a need for more supported serial drivers, I should probably
@@ -95,7 +99,7 @@ static enum serial_dev __serial_dev_enum(const char *dev_name)
 	return -1;
 }
 
-struct dbg_info dbg_from_fdt(const void *fdt)
+static struct dbg_info __dbg_from_fdt(const void *fdt)
 {
 	int chosen_offset = fdt_path_offset(fdt, "/chosen");
 	const char *stdout =
@@ -118,7 +122,7 @@ struct dbg_info dbg_from_fdt(const void *fdt)
 	return (struct dbg_info){ dbg_ptr, dev };
 }
 
-void setup_dbg(vm_t pt, enum serial_dev dev)
+void __setup_dbg(vm_t pt, enum serial_dev dev)
 {
 	switch (dev) {
 	case NS16550A:

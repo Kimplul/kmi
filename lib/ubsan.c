@@ -3,164 +3,319 @@
  * Tiny undefined behaviour sanitizer, mostly lifted from
  * https://github.com/Abb1x/tinyubsan/blob/master/src/tinyubsan.c
  *
- * \todo Add in more runtime info.
+ * @todo Add in more runtime info.
+ *
+ * Note that this file's documentation is pretty vague, as I don't know the ins
+ * and outs of the undefined behaviour sanitizer subsystem.
  */
 
 #include <apos/types.h>
 #include <apos/debug.h>
 
-struct tu_source_location {
+/**
+ * Describes a source file location.
+ */
+struct source_location {
+	/** Filename. */
 	const char *file;
+	/** Line number. */
 	uint32_t line;
+	/** Column number. */
 	uint32_t column;
 };
 
-struct tu_type_descriptor {
+/**
+ * Describes the type of undefined behaviour.
+ *
+ * Currently largely unused, @todo implement better undefined behaviour bug
+ * messages.
+ */
+struct type_descriptor {
+	/** Type kind. */
 	uint16_t kind;
+	/** Additional type info. */
 	uint16_t info;
+	/** Type name. */
 	char name[];
 };
 
-struct tu_overflow_data {
-	struct tu_source_location location;
-	struct tu_type_descriptor *type;
+/**
+ * Describes overflows.
+ */
+struct overflow_data {
+	/** Corresponding source location. */
+	struct source_location location;
+	/** Extra information. */
+	struct type_descriptor *type;
 };
 
-struct tu_shift_out_of_bounds_data {
-	struct tu_source_location location;
-	struct tu_type_descriptor *left_type;
-	struct tu_type_descriptor *right_type;
+/**
+ * Describes out of bounds shifts.
+ */
+struct shift_out_of_bounds_data {
+	/** Corresponding source location. */
+	struct source_location location;
+	/** Extra information #1 */
+	struct type_descriptor *left_type;
+	/** Extra information #2 */
+	struct type_descriptor *right_type;
 };
 
-struct tu_invalid_value_data {
-	struct tu_source_location location;
-	struct tu_type_descriptor *type;
+/**
+ * Describes invalid values.
+ */
+struct invalid_value_data {
+	/** Corresponding source location. */
+	struct source_location location;
+	/** Extra information. */
+	struct type_descriptor *type;
 };
 
-struct tu_array_out_of_bounds_data {
-	struct tu_source_location location;
-	struct tu_type_descriptor *array_type;
-	struct tu_type_descriptor *index_type;
+/**
+ * Describes out of bounds array accesses.
+ */
+struct array_out_of_bounds_data {
+	/** Corresponding source location. */
+	struct source_location location;
+	/** Information about the array. */
+	struct type_descriptor *array_type;
+	/** Information about the access. */
+	struct type_descriptor *index_type;
 };
 
-struct tu_type_mismatch_v1_data {
-	struct tu_source_location location;
-	struct tu_type_descriptor *type;
+/**
+ * Describes mismatched types. Incorrect pointers at least, possibly other stuff
+ * as well.
+ */
+struct type_mismatch_v1_data {
+	/** Corresponding source location. */
+	struct source_location location;
+	/** Extra information. */
+	struct type_descriptor *type;
+	/** Alignment. */
 	unsigned char log_alignment;
+	/** Kind (?). */
 	unsigned char type_check_kind;
 };
 
-struct tu_negative_vla_data {
-	struct tu_source_location location;
-	struct tu_type_descriptor *type;
+/**
+ * Describes negative VLAs. Note that this kernel explicitly disallows VLAs,
+ * as does the Linux kernel.
+ */
+struct negative_vla_data {
+	/** Corresponding source location. */
+	struct source_location location;
+	/** Extra information. */
+	struct type_descriptor *type;
 };
 
-struct tu_nonnull_return_data {
-	struct tu_source_location location;
+/**
+ * Describes nonnull return. A function is marked with nonnull, but still
+ * returns null.
+ */
+struct nonnull_return_data {
+	/** Corresponding source location. */
+	struct source_location location;
 };
 
-struct tu_nonnull_arg_data {
-	struct tu_source_location location;
+/**
+ * Describes nonnull arguments.  Situations where an argument is marked with
+ * __attribute__("null"), but is given a value.
+ */
+struct nonnull_arg_data {
+	/** Corresponding source location. */
+	struct source_location location;
 };
 
-struct tu_unreachable_data {
-	struct tu_source_location location;
+/**
+ * Describes unreachable conditions. Mainly for __builtin_unreachable().
+ */
+struct unreachable_data {
+	/** Corresponding source location. */
+	struct source_location location;
 };
 
-struct tu_invalid_builtin_data {
-	struct tu_source_location location;
+/**
+ * Describes invalid builtin data.  Incorrect usage of __builtin_*().
+ */
+struct invalid_builtin_data {
+	/** Corresponding source location. */
+	struct source_location location;
+	/** Extra information (?) */
 	unsigned char kind;
 };
 
-static void tu_print_location(const char *message,
-                              struct tu_source_location loc)
+/**
+ * Wrapper around \ref bug(). Prepends location information to the message.
+ *
+ * @param message Message to be printed.
+ * @param loc Location information.
+ */
+static void print_location(const char *message,
+                           struct source_location loc)
 {
 	bug("ubsan: %s at file %s, line %ju, column %ju\n", message, loc.file,
 	    (uintmax_t)loc.line, (uintmax_t)loc.column);
 }
 
-void __ubsan_handle_add_overflow(struct tu_overflow_data *data)
+/**
+ * Handle overflow during addition.
+ *
+ * @param data Overflow information, generated by the compiler.
+ */
+void __ubsan_handle_add_overflow(struct overflow_data *data)
 {
-	tu_print_location("addition overflow", data->location);
+	print_location("addition overflow", data->location);
 }
 
-void __ubsan_handle_sub_overflow(struct tu_overflow_data *data)
+/**
+ * Handle overflow during subtraction.
+ *
+ * @param data Overflow information, generated by the compiler.
+ */
+void __ubsan_handle_sub_overflow(struct overflow_data *data)
 {
-	tu_print_location("subtraction overflow", data->location);
+	print_location("subtraction overflow", data->location);
 }
 
-void __ubsan_handle_mul_overflow(struct tu_overflow_data *data)
+/**
+ * Handle overflow during multiplication.
+ *
+ * @param data Overflow information, generated by the compiler.
+ */
+void __ubsan_handle_mul_overflow(struct overflow_data *data)
 {
-	tu_print_location("multiplication overflow", data->location);
+	print_location("multiplication overflow", data->location);
 }
 
-void __ubsan_handle_divrem_overflow(struct tu_overflow_data *data)
+/**
+ * Handle overflow during division or taking a remainder.
+ *
+ * @param data Overflow information, generated by the compiler.
+ */
+void __ubsan_handle_divrem_overflow(struct overflow_data *data)
 {
-	tu_print_location("division overflow", data->location);
+	print_location("division overflow", data->location);
 }
 
-void __ubsan_handle_negate_overflow(struct tu_overflow_data *data)
+/**
+ * Handle overflow during negation.
+ *
+ * @param data Overflow information, generated by the compiler.
+ */
+void __ubsan_handle_negate_overflow(struct overflow_data *data)
 {
-	tu_print_location("negation overflow", data->location);
+	print_location("negation overflow", data->location);
 }
 
-void __ubsan_handle_pointer_overflow(struct tu_overflow_data *data)
+/**
+ * Handle pointer overflow.
+ *
+ * @param data Overflow information, generated by the compiler.
+ */
+void __ubsan_handle_pointer_overflow(struct overflow_data *data)
 {
-	tu_print_location("pointer overflow", data->location);
+	print_location("pointer overflow", data->location);
 }
 
+/**
+ * Handle out of bounds shifts.
+ *
+ * @param data Out of bounds information, generated by the compiler.
+ */
 void __ubsan_handle_shift_out_of_bounds(
-	struct tu_shift_out_of_bounds_data *data)
+	struct shift_out_of_bounds_data *data)
 {
-	tu_print_location("shift out of bounds", data->location);
+	print_location("shift out of bounds", data->location);
 }
 
-void __ubsan_handle_load_invalid_value(struct tu_invalid_value_data *data)
+/**
+ * Handle invalid load values.
+ *
+ * @param data Load information, generated by the compiler.
+ */
+void __ubsan_handle_load_invalid_value(struct invalid_value_data *data)
 {
-	tu_print_location("invalid load value", data->location);
+	print_location("invalid load value", data->location);
 }
 
-void __ubsan_handle_out_of_bounds(struct tu_array_out_of_bounds_data *data)
+/**
+ * Handle array out of bounds accesses.
+ *
+ * @param data Out of bounds information, generated by the compiler.
+ */
+void __ubsan_handle_out_of_bounds(struct array_out_of_bounds_data *data)
 {
-	tu_print_location("array out of bounds", data->location);
+	print_location("array out of bounds", data->location);
 }
 
-void __ubsan_handle_type_mismatch_v1(struct tu_type_mismatch_v1_data *data,
+/**
+ * Handle type mismatch, one format.
+ *
+ * @param data Type mismatch information, generated by the compiler.
+ * @param ptr Pointer that caused a mismatch.
+ */
+void __ubsan_handle_type_mismatch_v1(struct type_mismatch_v1_data *data,
                                      uintptr_t ptr)
 {
 	if (!ptr) {
-		tu_print_location("use of NULL pointer", data->location);
+		print_location("use of NULL pointer", data->location);
 	}
 
 	else if (ptr & ((1 << data->log_alignment) - 1)) {
-		tu_print_location("use of misaligned pointer", data->location);
+		print_location("use of misaligned pointer", data->location);
 	} else {
-		tu_print_location("no space for object", data->location);
+		print_location("no space for object", data->location);
 	}
 }
 
-void __ubsan_handle_vla_bound_not_positive(struct tu_negative_vla_data *data)
+/**
+ * Handle negative VLA.
+ *
+ * @param data VLA information, generated by the compiler.
+ */
+void __ubsan_handle_vla_bound_not_positive(struct negative_vla_data *data)
 {
-	tu_print_location("variable-length argument is negative",
-	                  data->location);
+	print_location("variable-length argument is negative",
+	               data->location);
 }
 
-void __ubsan_handle_nonnull_return(struct tu_nonnull_return_data *data)
+/**
+ * Handle nonnull return.
+ *
+ * @param data Return information, generated by compiler.
+ */
+void __ubsan_handle_nonnull_return(struct nonnull_return_data *data)
 {
-	tu_print_location("non-null return is null", data->location);
+	print_location("non-null return is null", data->location);
 }
 
-void __ubsan_handle_nonnull_arg(struct tu_nonnull_arg_data *data)
+/**
+ * Handle nonnull argument.
+ *
+ * @param data Argument information, generated by compiler.
+ */
+void __ubsan_handle_nonnull_arg(struct nonnull_arg_data *data)
 {
-	tu_print_location("non-null argument is null", data->location);
+	print_location("non-null argument is null", data->location);
 }
 
-void __ubsan_handle_builtin_unreachable(struct tu_unreachable_data *data)
+/**
+ * Handle unreachable code.
+ *
+ * @param data Unreachable code information, generated by compiler.
+ */
+void __ubsan_handle_builtin_unreachable(struct unreachable_data *data)
 {
-	tu_print_location("unreachable code reached", data->location);
+	print_location("unreachable code reached", data->location);
 }
 
-void __ubsan_handle_invalid_builtin(struct tu_invalid_builtin_data *data)
+/**
+ * Handle invalid builtin.
+ *
+ * @param data Builtin information, generated by compiler.
+ */
+void __ubsan_handle_invalid_builtin(struct invalid_builtin_data *data)
 {
-	tu_print_location("invalid builtin", data->location);
+	print_location("invalid builtin", data->location);
 }

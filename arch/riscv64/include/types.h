@@ -9,7 +9,10 @@
 
 #include <apos/types.h>
 
+/** Virtual memory address. */
 typedef uintptr_t vm_t;
+
+/** Physical memory address. */
 typedef uintptr_t pm_t;
 
 #endif /* APOS_RISCV_TYPES_H */

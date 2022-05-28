@@ -23,8 +23,7 @@
 #define catastrophic_assert(x)                                                 \
 	do {                                                                   \
 		if (unlikely(!(x))) {                                          \
-			error("catastrophic assertion failed: %s\n",           \
-			      QUOTE(x));                                       \
+			error("catastrophic assertion failed: " QUOTE(x) "\n"); \
 			while (1) {                                            \
 			}                                                      \
 		}                                                              \
@@ -33,7 +32,7 @@
 #define hard_assert(x, r)                                                      \
 	{                                                                      \
 		if (unlikely(!(x))) {                                          \
-			warn("hard assertion failed: %s\n", QUOTE(x));         \
+			warn("hard assertion failed: " QUOTE(x) "\n");         \
 			return r;                                              \
 		}                                                              \
 	}
@@ -41,7 +40,7 @@
 #define soft_assert(x)                                                         \
 	do {                                                                   \
 		if (unlikely(!(x))) {                                          \
-			info("soft assertion failed: %s\n", QUOTE(x));         \
+			info("soft assertion failed: "  QUOTE(x) "\n");        \
 		}                                                              \
 	} while (0);
 #else
