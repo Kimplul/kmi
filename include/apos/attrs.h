@@ -6,6 +6,11 @@
  * Attribute shorthands.
  */
 
+/* TODO: figure out which attributes are necessary and which are good to have */
+#if !defined(__has_attribute)
+#define __has_attribute(x) 0
+#endif
+
 #define __section(section) __attribute__((__section__(section)))
 #define __fmt(x, y)        __attribute__((format(__printf__, x, y)))
 #define __aligned(a)       __attribute__((aligned(a)))
