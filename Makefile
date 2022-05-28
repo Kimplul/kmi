@@ -117,3 +117,6 @@ clean_run:
 .PHONY: clean_docs
 clean_docs:
 	$(RM) -r docs/output
+
+.PHONY: clean_all
+clean_all: clean clean_run clean_docs
