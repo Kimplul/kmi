@@ -6,9 +6,13 @@
  * riscv64 definitions of arch-specific tcb data.
  */
 
+/**
+ * riscv-specific thread handling stuff.
+ *
+ * Empty for now, but should probably be filled with stuff like register
+ * saving of something
+ */
 struct arch_tcbd {
-	/* empty for now, but should probably be filled with stuff like register
-	 * saving of something */
 };
 
 #endif /* ARCH_RISCV_TCB_H */

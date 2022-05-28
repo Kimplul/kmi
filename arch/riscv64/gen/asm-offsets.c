@@ -7,12 +7,36 @@
 #include <apos/utils.h>
 #include "../kernel/regs.h"
 
-/* largely based on linux */
+/**
+ * Insert assembly comment with calculated value.
+ * Largely based on linux
+ *
+ * @param sym Name of symbol.
+ * @param val Value of symbol.
+ */
 #define DEFINE(sym, val)                                                       \
 	__asm__ volatile ("\n#-> " #sym " %0 " #val "\n" : : "i" (val))
+
+/**
+ * Insert offset of member in structure.
+ *
+ * @param m Member.
+ * @param s Structure.
+ */
 #define OFFSETOF(m, s) DEFINE(offsetof_##m, offsetof(s, m))
+
+/**
+ * Insert size of structure.
+ *
+ * @param n Name of structure.
+ * @param s Structure.
+ */
 #define SIZEOF(n, s)   DEFINE(sizeof_##n, sizeof(s))
 
+/**
+ * Generate assembly with calculated offsets and sizes.
+ * See arch/riscv64/gen/source.mk for how the assembly is used.
+ */
 void asm_offsets()
 {
 	OFFSETOF(ra, struct riscv_regs);

@@ -1,5 +1,6 @@
 .section .init.start
 .global _start
+/* Entry point to the kernel loader. */
 _start:
 li sp, PM_STACK_TOP
 call init

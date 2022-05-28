@@ -11,13 +11,22 @@
 #include <arch/vmem.h>
 #include "../kernel/csr.h"
 
-/* assume 64 bit for now */
+/** Temporary virtual memory space.
+ * Assume 64bit riscv for now.
+ */
 struct vmem *root_branch;
 
+/**
+ * Create page table entry.
+ * Copy from \ref arch/riscv64/kernel/vmem.c.
+ *
+ * @param a Virtual address.
+ * @param f PTE flags.
+ */
 #define to_pte(a, f) (((a) >> 12) << 10 | (f))
 
-/* assume Sv39 for now */
-void init_bootmem()
+/** Jump into virtual memory. */
+static void init_bootmem()
 {
 	size_t flags = VM_V | VM_X | VM_R | VM_W;
 
@@ -41,7 +50,8 @@ void init_bootmem()
 	csr_write(CSR_SATP, SATP_MODE_Sv39 | ((uintptr_t)root_branch >> 12));
 }
 
-void move_kernel()
+/** Relocate kernel proper. */
+static void move_kernel()
 {
 	extern char *__init_end;
 	extern char *__kernel_size;
@@ -53,6 +63,12 @@ void move_kernel()
 		dst[i] = src[i];
 }
 
+/**
+ * Convert an existing physical address in a register to a virtual address.
+ * There is probably an easier way to do this, but this seems to work alright.
+ *
+ * @param reg Register to modify.
+ */
 #define __va_reg(reg)                                                          \
 	{                                                                      \
 		vm_t reg = 0;                                                  \
@@ -61,6 +77,11 @@ void move_kernel()
 		__asm__ ("mv " QUOTE(reg) ", %0" ::"rK" (reg) :);                \
 	}
 
+/**
+ * Main driver for the init loader.
+ *
+ * @param fdt Global FDT pointer, provided by bootloader.
+ */
 void init(void *fdt)
 {
 	extern char *__init_end;

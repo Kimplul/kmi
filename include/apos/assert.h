@@ -20,6 +20,12 @@
 
 /* TODO: should this exit or do something explosive like that? */
 #if !defined(DNDEBUG)
+
+/**
+ * The kernel is in an irrepairable state, just give up.
+ *
+ * @param x Condition to check for.
+ */
 #define catastrophic_assert(x)                                                 \
 	do {                                                                   \
 		if (unlikely(!(x))) {                                          \
@@ -29,6 +35,15 @@
 		}                                                              \
 	} while (0);
 
+/**
+ * The function cannot continue without this assertion, but doesn't necessarily
+ * mean that the kernel is borked.
+ *
+ * @warning Implicit return.
+ *
+ * @param x Condition to check for.
+ * @param r Return value on failed check.
+ */
 #define hard_assert(x, r)                                                      \
 	{                                                                      \
 		if (unlikely(!(x))) {                                          \
@@ -37,6 +52,11 @@
 		}                                                              \
 	}
 
+/**
+ * Unexpected case, but not likely to cause problems, likely a bug.
+ *
+ * @param x Condition to check for.
+ */
 #define soft_assert(x)                                                         \
 	do {                                                                   \
 		if (unlikely(!(x))) {                                          \
@@ -49,8 +69,14 @@
 #define soft_assert(x)
 #endif
 
-/* use when return value doesn't exist, like hard_assert(x,
- * RETURN_VOID); */
+/**
+ * Use when return value doesn't exist.
+ *
+ * Example:
+ * @code{.c}
+ * void func() { hard_assert(x, RETURN_VOID); }
+ * @endcode
+ */
 #define RETURN_VOID
 
 #endif /* APOS_ASSERT_H */

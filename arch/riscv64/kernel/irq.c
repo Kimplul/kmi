@@ -8,7 +8,13 @@
 #include <arch/irq.h>
 #include "csr.h"
 
-extern void handle_irq(void);
+/** Defined in arch/riscv64/kernel/entry.S. */
+extern void handle_irq();
+
+/** Called from arch/riscv64/kernel/entry.S. */
+void handle_sys_irq()
+{
+}
 
 void init_irq(void *fdt)
 {
@@ -18,10 +24,6 @@ void init_irq(void *fdt)
 	long s = 0;
 	csr_read(CSR_SIE, s);
 	info("CSR_SIE: %lx\n", s);
-}
-
-void handle_sys_irq()
-{
 }
 
 /* very simple for now */
