@@ -99,8 +99,8 @@ SYSCALL_DECLARE(free_timer);
 
 /* ipc */
 SYSCALL_DECLARE(ipc_server);
-SYSCALL_DECLARE(ipc_req_proc);
-SYSCALL_DECLARE(ipc_req_thread);
+SYSCALL_DECLARE(ipc_req);
+SYSCALL_DECLARE(ipc_fwd);
 SYSCALL_DECLARE(ipc_resp);
 
 /* proc */

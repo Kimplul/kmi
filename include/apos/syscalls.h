@@ -30,8 +30,8 @@ enum {
 	 * structure of the OS, but these following syscalls are probably
 	 * required */
 	SYS_IPC_SERVER,     /* inform kernel that process should be treated as a server */
-	SYS_IPC_REQ_PROC,   /* IPC request to server on behalf of process */
-	SYS_IPC_REQ_THREAD, /* IPC request to server on behalf of thread */
+	SYS_IPC_REQ,   /* IPC request to server */
+	SYS_IPC_FWD, /* IPC request forwarding */
 	SYS_IPC_RESP,       /* IPC response from server */
 
 	/* process management */
