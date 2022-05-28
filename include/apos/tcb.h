@@ -11,23 +11,31 @@
 #include <arch/tcb.h> /* arch-specific data */
 
 /* process(/main) threads don't have any previous threads */
-#define is_proc(t) (!t->prev)
+#define is_proc(t) (t->rid == t->tid)
+#define is_rpc(t) (t->rid == t->pid)
+
+#define get_proc(t) (get_tcb(t->eid))
+#define get_rproc(t) (get_tcb(t->rid))
+
+/* forward declaration */
+struct tcb;
+
+struct tcb_ctx {
+	struct vmem *vmem;
+	struct tcb *next;
+	struct tcb *prev;
+};
 
 struct tcb {
 	struct arch_tcbd tcbd;
 
-	/* mapping data
-	 * TODO: should mem_region_root be renamed mem_root or something? feels
-	 * kind of clunky */
-	union {
-		/* if we're the main thread, we control the memory regions */
-		struct mem_region_root sp_r;
-		/* if we're not the main thread, we have a pointer to the main
-		 * thread */
-		struct tcb *proc;
-	};
+	/* mapping data */
+	struct mem_region_root sp_r;
 
+	id_t eid;
 	id_t pid;
+
+	id_t rid;
 	id_t tid;
 
 	vm_t callback;
@@ -35,15 +43,8 @@ struct tcb {
 	vm_t thread_stack;
 	vm_t thread_stack_top;
 
-	vm_t call_stack;
-	vm_t call_stack_top;
-
-	/* vm root branch */
-	struct vmem *b_r;
-
-	/* linked list of threads in this process */
-	struct tcb *next;
-	struct tcb *prev;
+	struct tcb_ctx proc;
+	struct tcb_ctx rpc;
 };
 
 void init_tcbs();
@@ -54,12 +55,18 @@ struct tcb *create_proc(struct tcb *p);
 stat_t destroy_thread(struct tcb *t);
 stat_t destroy_proc(struct tcb *p);
 
+stat_t attach_rpc(struct tcb *r, struct tcb *t);
+stat_t detach_rpc(struct tcb *r, struct tcb *t);
+stat_t attach_proc(struct tcb *r, struct tcb *t);
+stat_t detach_proc(struct tcb *r, struct tcb *t);
+
 struct tcb *cur_tcb();
 void use_tcb(struct tcb *);
 
 struct tcb *get_tcb(id_t tid);
 
-stat_t clone_tcb_maps(struct tcb *);
+stat_t clone_proc_maps(struct tcb *);
+stat_t clone_rpc_maps(struct tcb *);
 stat_t alloc_stacks(struct tcb *);
 
 #endif /* APOS_TCB_H */

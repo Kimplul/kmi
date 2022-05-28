@@ -148,11 +148,11 @@ struct dbg_info dbg_from_fdt(const void *fdt);
 
 #define COMMON_FORMAT  "[%s] %s:%d\n\t"
 #define COMMON_ARGS(s) s, __FILE__, __LINE__
-#define bug(fmt, ...)  dbg(COMMON_FORMAT fmt, COMMON_ARGS("BUG"), __VA_ARGS__)
-#define warn(fmt, ...) dbg(COMMON_FORMAT fmt, COMMON_ARGS("WARN"), __VA_ARGS__)
-#define info(fmt, ...) dbg(COMMON_FORMAT fmt, COMMON_ARGS("INFO"), __VA_ARGS__)
+#define bug(fmt, ...)  dbg(COMMON_FORMAT fmt, COMMON_ARGS("BUG"),##__VA_ARGS__)
+#define warn(fmt, ...) dbg(COMMON_FORMAT fmt, COMMON_ARGS("WARN"),##__VA_ARGS__)
+#define info(fmt, ...) dbg(COMMON_FORMAT fmt, COMMON_ARGS("INFO"),##__VA_ARGS__)
 #define error(fmt, ...)                                                        \
-	dbg(COMMON_FORMAT fmt, COMMON_ARGS("ERROR"), __VA_ARGS__)
+	dbg(COMMON_FORMAT fmt, COMMON_ARGS("ERROR"),##__VA_ARGS__)
 
 #else
 

@@ -19,7 +19,7 @@ static stat_t __free_mapped_region(struct tcb *t, struct mem_region *m)
 {
 	stat_t status = OK;
 	pm_t pa = __addr(m->end - m->start);
-	if (unmap_freed_region(t->b_r, m->start, pa, m->flags, &status))
+	if (unmap_freed_region(t->proc.vmem, m->start, pa, m->flags, &status))
 		return ERR_MISC;
 
 	return status;
@@ -56,9 +56,13 @@ vm_t alloc_uvmem(struct tcb *t, size_t size, vmflags_t flags)
 
 	stat_t status = OK;
 	const vm_t v = alloc_region(&t->sp_r, size, &size, flags);
-	const vm_t w = map_allocd_region(t->b_r, v, size, flags, &status);
-	if (status == INFO_SEFF)
-		clone_tcb_maps(t);
+	const vm_t w = map_allocd_region(t->proc.vmem, v, size, flags, &status);
+	/* TODO: this could be changed so that each thread allocated the memory
+	 * region for itself to start with, and only when someone tries to
+	 * access it from some other thread, is it actually cloned. Would likely
+	 * need some major reworkings, so this is good enough for now. */
+	if (is_rpc(t) && status == INFO_SEFF)
+		clone_rpc_maps(t);
 
 	return w;
 }
@@ -69,10 +73,10 @@ vm_t alloc_fixed_uvmem(struct tcb *t, vm_t start, size_t size, vmflags_t flags)
 
 	stat_t status = OK;
 	const vm_t v = alloc_fixed_region(&t->sp_r, start, size, &size, flags);
-	const vm_t w = map_allocd_region(t->b_r, v, size, flags, &status);
+	const vm_t w = map_allocd_region(t->proc.vmem, v, size, flags, &status);
 
-	if (status == INFO_SEFF)
-		clone_tcb_maps(t);
+	if (is_rpc(t) && status == INFO_SEFF)
+		clone_rpc_maps(t);
 
 	return w;
 }
@@ -85,10 +89,10 @@ vm_t alloc_shared_uvmem(struct tcb *t, size_t size, vmflags_t flags)
 	stat_t status = OK;
 	const vm_t v = alloc_region(&t->sp_r, size, &size,
 	                            flags | MR_SHARED | MR_OWNED);
-	const vm_t w = map_shared_region(t->b_r, v, size, flags, &status);
+	const vm_t w = map_shared_region(t->proc.vmem, v, size, flags, &status);
 
-	if (status == INFO_SEFF)
-		clone_tcb_maps(t);
+	if (is_rpc(t) && status == INFO_SEFF)
+		clone_rpc_maps(t);
 
 	return w;
 }
@@ -110,8 +114,8 @@ vm_t ref_shared_uvmem(struct tcb *t1, struct tcb *t2, vm_t va, vmflags_t flags)
 	vm_t runner = v;
 	for (; pages; --pages) {
 		pm_t paddr;
-		stat_vpage(t1->b_r, v, &paddr, 0, 0);
-		map_vpage(t2->b_r, paddr, runner, flags, MM_O0);
+		stat_vpage(t1->proc.vmem, v, &paddr, 0, 0);
+		map_vpage(t2->proc.vmem, paddr, runner, flags, MM_O0);
 		runner += __o_size(MM_O0);
 	}
 
@@ -128,8 +132,8 @@ stat_t free_uvmem(struct tcb *t, vm_t va)
 	free_region(&t->sp_r, va);
 
 	stat_t status = __free_mapped_region(t, m);
-	if (status == INFO_SEFF)
-		return clone_tcb_maps(t);
+	if (is_rpc(t) && status == INFO_SEFF)
+		return clone_rpc_maps(t);
 
 	return status;
 }

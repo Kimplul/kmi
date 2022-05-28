@@ -18,7 +18,7 @@ stat_t prepare_proc(struct tcb *t, vm_t bin, vm_t interp)
 		return ERR_INVAL;
 
 	alloc_stacks(t);
-	prepare_thread(t);
+	set_thread(t, t->thread_stack_top);
 	set_return(entry);
 	return OK;
 }
@@ -34,7 +34,7 @@ stat_t init_proc(void *fdt)
 
 	/* set current tcb */
 	use_tcb(t);
-	use_vmem(t->b_r);
+	use_vmem(t->proc.vmem);
 
 	/* allocate stacks after ELF file to make sure nothing of importance
 	 * clashes */

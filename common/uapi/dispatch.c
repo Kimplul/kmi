@@ -3,6 +3,7 @@
  * Syscall dispatch.
  */
 
+#include <apos/debug.h>
 #include <apos/uapi.h>
 
 static const sys_t syscall_table[] = {
@@ -39,6 +40,7 @@ static const sys_t syscall_table[] = {
 };
 
 SYSCALL_DEFINE0(noop)(){
+	info("sys_noop\n");
 	return (struct sys_ret){ OK, 0 };
 }
 

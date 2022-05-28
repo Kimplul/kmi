@@ -63,7 +63,8 @@ static vm_t __setup_call_stack(struct tcb *t, size_t bytes)
 	vmflags_t flags = VM_V | VM_R | VM_W | VM_U;
 	for (size_t i = 1; i <= pages; ++i) {
 		offset = alloc_page(BASE_PAGE, offset);
-		map_vpage(t->b_r, offset, PROC_STACK_TOP - BASE_PAGE_SIZE * i,
+		map_vpage(t->proc.vmem, offset,
+		          PROC_STACK_TOP - BASE_PAGE_SIZE * i,
 		          flags, BASE_PAGE);
 	}
 
@@ -77,20 +78,21 @@ static vm_t __setup_thread_stack(struct tcb *t, size_t bytes)
 
 stat_t alloc_stacks(struct tcb *t)
 {
-	struct tcb *p = is_proc(t) ? t : t->proc;
+	/* get parent process */
+	struct tcb *p = get_tcb(t->eid);
 
 	t->thread_stack = __setup_thread_stack(p, __thread_stack_size);
 	if (!t->thread_stack)
 		return ERR_OOMEM;
 
-	t->call_stack = __setup_call_stack(p, __call_stack_size);
-	if (!t->call_stack)
+	/* call stack always starts at the same place in vmem.
+	 * TODO: is this a security issue? */
+	if (!__setup_call_stack(p, __call_stack_size))
 		return ERR_OOMEM;
 
 	/* TODO: this only allows for a global stack size, what if a user wants
 	 * per thread stack sizes? */
 	t->thread_stack_top = t->thread_stack + __thread_stack_size;
-	t->call_stack_top = t->call_stack + __call_stack_size;
 	return OK;
 }
 
@@ -112,14 +114,17 @@ struct tcb *create_thread(struct tcb *p)
 
 	if (likely(p)) {
 		t->pid = p->pid;
-		t->proc = p;
+		t->proc.vmem = p->proc.vmem;
 	} else {
 		init_uvmem(t, UVMEM_START, UVMEM_END);
+		t->proc.vmem = create_vmem();
 		t->pid = t->tid;
 		p = t;
 	}
 
-	t->b_r = create_vmem();
+	t->eid = t->pid;
+	t->rid = p->rid;
+	t->rpc.vmem = create_vmem();
 
 	return t;
 }
@@ -149,12 +154,14 @@ struct tcb *create_proc(struct tcb *p)
 
 static stat_t __destroy_thread_data(struct tcb *t)
 {
-	/* free vmem */
-	destroy_vmem(t->b_r);
+	/* free rpc vmem */
+	destroy_vmem(t->rpc.vmem);
 
 	/* free associated kernel stack and the structure itself */
 	vm_t bottom = align_down((vm_t)t, __o_size(MM_O0));
 	free_page(MM_O0, (pm_t)bottom);
+
+	/* TODO: free stacks */
 
 	return OK;
 }
@@ -168,11 +175,7 @@ stat_t destroy_thread(struct tcb *t)
 	tcbs[t->tid] = 0;
 
 	/* remove thread from process list */
-	if (t->next)
-		t->next->prev = t->prev;
-
-	if (t->prev)
-		t->prev->next = t->next;
+	detach_proc(get_rproc(t), t);
 
 	return __destroy_thread_data(t);
 }
@@ -182,12 +185,46 @@ stat_t destroy_proc(struct tcb *p)
 	hard_assert(tcbs, ERR_NOINIT);
 	hard_assert(is_proc(p), ERR_INVAL);
 
-	for (struct tcb *iter = p; (iter = iter->next);)
+	for (struct tcb *iter = p; (iter = iter->proc.next);)
 		destroy_thread(iter);
 
 	catastrophic_assert(destroy_uvmem(p));
 	return __destroy_thread_data(p);
 }
+
+#define DEFINE_ATTACH(name, type) \
+	stat_t name(struct tcb *r, struct tcb *t) \
+	{ \
+		hard_assert(r != t, ERR_INVAL); \
+		struct tcb *next = r->type.next; \
+		t->type.next = next; \
+\
+		if (next) { next->type.prev = t; } \
+\
+		t->type.prev = r; \
+		r->type.next = t; \
+		return OK; \
+	}
+
+DEFINE_ATTACH(attach_rpc, rpc);
+DEFINE_ATTACH(attach_proc, proc);
+
+#define DEFINE_DETACH(name, type) \
+	stat_t name(struct tcb *r, struct tcb *t) \
+	{ \
+		MAYBE_UNUSED(r); \
+		hard_assert(r != t, ERR_INVAL); \
+		struct tcb *prev = t->type.prev; \
+		struct tcb *next = t->type.next; \
+\
+		if (prev) { prev->type.next = next; } \
+		if (next) { next->type.prev = prev; } \
+\
+		return OK; \
+	}
+
+DEFINE_DETACH(detach_rpc, rpc);
+DEFINE_DETACH(detach_proc, proc);
 
 struct tcb *cur_tcb()
 {
@@ -197,10 +234,7 @@ struct tcb *cur_tcb()
 struct tcb *cur_proc()
 {
 	struct tcb *t = cur_tcb();
-	if (likely(is_proc(t)))
-		return t;
-	else
-		return t->proc;
+	return get_tcb(t->eid);
 }
 
 void use_tcb(struct tcb *t)
@@ -215,12 +249,25 @@ struct tcb *get_tcb(id_t tid)
 	return tcbs[tid];
 }
 
-stat_t clone_tcb_maps(struct tcb *r)
+stat_t clone_rpc_maps(struct tcb *r)
 {
 	hard_assert(r && is_proc(r), ERR_INVAL);
 	struct tcb *t = r;
-	while ((t = t->next)) {
-		stat_t ret = clone_uvmem(r->b_r, t->b_r);
+	while ((t = t->rpc.next)) {
+		stat_t ret = clone_uvmem(r->proc.vmem, t->rpc.vmem);
+		if (ret)
+			return ret;
+	}
+
+	return OK;
+}
+
+stat_t clone_proc_maps(struct tcb *r)
+{
+	hard_assert(r && is_proc(r), ERR_INVAL);
+	struct tcb *t = r;
+	while ((t = t->proc.next)) {
+		stat_t ret = clone_uvmem(r->proc.vmem, t->proc.vmem);
 		if (ret)
 			return ret;
 	}

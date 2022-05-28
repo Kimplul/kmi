@@ -7,6 +7,7 @@
 #include <apos/vmem.h>
 #include <apos/bits.h>
 #include <apos/string.h>
+#include <apos/assert.h>
 
 static uint8_t __elf_to_uvflags(uint8_t elf_flags)
 {
@@ -27,6 +28,8 @@ static uint8_t __elf_to_uvflags(uint8_t elf_flags)
 static void __map_exec(struct tcb *t, vm_t bin, uint8_t ei_c, vm_t phstart,
                        size_t phnum, size_t phsize)
 {
+	hard_assert(t && is_proc(t), RETURN_VOID);
+
 	/* TODO: take alignment into consideration? */
 	/* TODO: take overlapping memory regions into account, probably mostly
 	 * by keeping track of previously allocated area and seeing if the
@@ -51,7 +54,7 @@ static void __map_exec(struct tcb *t, vm_t bin, uint8_t ei_c, vm_t phstart,
 		uint8_t elf_flags = program_header_prop(ei_c, runner, p_flags);
 		uint8_t uvflags = __elf_to_uvflags(elf_flags);
 
-		map_allocd_region(t->b_r, start, vsz, default_flags, 0);
+		map_allocd_region(t->proc.vmem, start, vsz, default_flags, 0);
 
 		vm_t vo = bin + program_header_prop(ei_c, runner, p_offset);
 		vm_t vfz = program_header_prop(ei_c, runner, p_filesz);

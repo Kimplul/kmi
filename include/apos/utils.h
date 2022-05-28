@@ -27,6 +27,7 @@
 #define QUOTE(x)    QUOTE2(x)
 
 #define UNUSED(x)   ((void)(x))
+#define MAYBE_UNUSED(x) UNUSED(x)
 
 #include <apos/builtin.h>
 

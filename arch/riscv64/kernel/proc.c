@@ -25,14 +25,14 @@ stat_t set_return(vm_t v)
 	return OK;
 }
 
-stat_t prepare_thread(struct tcb *t)
+stat_t set_thread(struct tcb *t, vm_t stack)
 {
 	/* get location of registers in memory */
 	/* TODO: check alignment, should be fine but just to be sure */
 	struct riscv_regs *r = (struct riscv_regs *)(--t);
 
 	/* insert important values into register slots */
-	r->sp = (long)t->thread_stack_top;
+	r->sp = (long)stack;
 	r->tp = (long)t;
 
 	return OK;

@@ -5,6 +5,7 @@
  * \todo Handle NUMA.
  */
 
+#include <apos/assert.h>
 #include <apos/dmem.h>
 
 static struct mem_region_root pre_ram = { 0 };
@@ -61,6 +62,8 @@ stat_t dev_free_wrapper(struct vmem *b, pm_t *offset, vm_t vaddr,
 
 vm_t alloc_devmem(struct tcb *t, pm_t dev_start, size_t bytes, vmflags_t flags)
 {
+	hard_assert(t && is_proc(t), ERR_INVAL);
+
 	vm_t region = 0;
 	if (dev_start < __pre_top)
 		region = alloc_region(&pre_ram, bytes, 0, flags);
@@ -71,14 +74,22 @@ vm_t alloc_devmem(struct tcb *t, pm_t dev_start, size_t bytes, vmflags_t flags)
 	if (!region)
 		return 0;
 
-	return map_fill_region(t->b_r, &dev_alloc_wrapper, dev_start, region,
-	                       bytes, flags, 0);
+	stat_t status = OK;
+	const vm_t w = map_fill_region(t->proc.vmem, &dev_alloc_wrapper,
+	                               dev_start, region,
+	                               bytes, flags, &status);
+	if (is_rpc(t) && status == INFO_SEFF)
+		clone_rpc_maps(t);
+
+	return w;
 }
 
 stat_t free_devmem(struct tcb *t, vm_t dev_start)
 {
+	hard_assert(t && is_proc(t), ERR_INVAL);
+
 	pm_t dev_paddr = 0;
-	stat_vpage(t->b_r, dev_start, &dev_paddr, 0, 0);
+	stat_vpage(t->proc.vmem, dev_start, &dev_paddr, 0, 0);
 
 	if (dev_paddr >= __pre_top && dev_paddr <= __post_base)
 		return ERR_ADDR;
@@ -94,8 +105,11 @@ stat_t free_devmem(struct tcb *t, vm_t dev_start)
 		return ERR_NF;
 
 	size_t region_size = __addr(m->end - m->start);
-	map_fill_region(t->b_r, &dev_free_wrapper, dev_paddr, dev_start,
-	                region_size, 0, 0);
+	stat_t status = OK;
+	map_fill_region(t->proc.vmem, &dev_free_wrapper, dev_paddr, dev_start,
+	                region_size, 0, &status);
+	if (is_rpc(t) && status == INFO_SEFF)
+		clone_rpc_maps(t);
 
 	if (dev_paddr < __pre_top)
 		free_region(&pre_ram, dev_paddr);
