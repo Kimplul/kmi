@@ -157,7 +157,7 @@ typedef _Atomic __UINTMAX_TYPE__ atomic_uintmax_t;
  * @param PTR Pointer to where value should be stored.
  * @param VAL Value to store.
  */
-#define atomic_init(PTR, VAL)  atomic_store_explicit(PTR, VAL, __ATOMIC_RELAXED)
+#define atomic_init(PTR, VAL) atomic_store_explicit(PTR, VAL, __ATOMIC_RELAXED)
 
 /**
  * Kill dependency.
@@ -166,7 +166,7 @@ typedef _Atomic __UINTMAX_TYPE__ atomic_uintmax_t;
  * @param y Value whose dependencies should be killed.
  * @return \c y
  */
-#define kill_dependency(y)     (y)
+#define kill_dependency(y) (y)
 
 /**
  * Check if given type is lock free.
@@ -182,10 +182,10 @@ typedef _Atomic __UINTMAX_TYPE__ atomic_uintmax_t;
 #endif
 
 /** Whether \ref atomic_bool is lock free. \see CMPLR_LOCK_FREE(). */
-#define ATOMIC_BOOL_LOCK_FREE     CMPLR_LOCK_FREE(BOOL)
+#define ATOMIC_BOOL_LOCK_FREE CMPLR_LOCK_FREE(BOOL)
 
 /** Whether \ref atomic_char is lock free. \see CMPLR_LOCK_FREE(). */
-#define ATOMIC_CHAR_LOCK_FREE     CMPLR_LOCK_FREE(CHAR)
+#define ATOMIC_CHAR_LOCK_FREE CMPLR_LOCK_FREE(CHAR)
 
 /** Whether \ref atomic_char16_t is lock free. \see CMPLR_LOCK_FREE(). */
 #define ATOMIC_CHAR16_T_LOCK_FREE CMPLR_LOCK_FREE(CHAR16_T)
@@ -194,22 +194,22 @@ typedef _Atomic __UINTMAX_TYPE__ atomic_uintmax_t;
 #define ATOMIC_CHAR32_T_LOCK_FREE CMPLR_LOCK_FREE(CHAR32_T)
 
 /** Whether \ref atomic_wchar_t is lock free. \see CMPLR_LOCK_FREE(). */
-#define ATOMIC_WCHAR_T_LOCK_FREE  CMPLR_LOCK_FREE(WCHAR32_T)
+#define ATOMIC_WCHAR_T_LOCK_FREE CMPLR_LOCK_FREE(WCHAR32_T)
 
 /** Whether \ref atomic_short is lock free. \see CMPLR_LOCK_FREE(). */
-#define ATOMIC_SHORT_LOCK_FREE    CMPLR_LOCK_FREE(SHORT)
+#define ATOMIC_SHORT_LOCK_FREE CMPLR_LOCK_FREE(SHORT)
 
 /** Whether \ref atomic_int is lock free. \see CMPLR_LOCK_FREE(). */
-#define ATOMIC_INT_LOCK_FREE      CMPLR_LOCK_FREE(INT)
+#define ATOMIC_INT_LOCK_FREE CMPLR_LOCK_FREE(INT)
 
 /** Whether \ref atomic_long is lock free. \see CMPLR_LOCK_FREE(). */
-#define ATOMIC_LONG_LOCK_FREE     CMPLR_LOCK_FREE(LONG)
+#define ATOMIC_LONG_LOCK_FREE CMPLR_LOCK_FREE(LONG)
 
 /** Whether \ref atomic_llong is lock free. \see CMPLR_LOCK_FREE(). */
-#define ATOMIC_LLONG_LOCK_FREE    CMPLR_LOCK_FREE(LLONG)
+#define ATOMIC_LLONG_LOCK_FREE CMPLR_LOCK_FREE(LLONG)
 
 /** Whether atomic pointers are lock free. \see CMPLR_LOCK_FREE(). */
-#define ATOMIC_POINTER_LOCK_FREE  CMPLR_LOCK_FREE(POINTER)
+#define ATOMIC_POINTER_LOCK_FREE CMPLR_LOCK_FREE(POINTER)
 
 /**
  * Helper macro for creating builtin symbols.

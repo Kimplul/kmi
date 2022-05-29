@@ -6,13 +6,25 @@
 #include <apos/power.h>
 #include "sbi.h"
 
-/* shutdown reason */
-#define SBI_NO_REASON   0
+/**
+ * Shutdown without any particular reason. Only reason kernel is likely to
+ * need.
+ */
+#define SBI_NO_REASON 0
 
-/* shutdown type */
-#define SBI_SHUTDOWN    0
+/** @name Shutdown types. */
+/** @{ */
+
+/** Regular shutdown. */
+#define SBI_SHUTDOWN 0
+
+/** Cold reboot. */
 #define SBI_COLD_REBOOT 1
+
+/** Warm reboot. */
 #define SBI_WARM_REBOOT 2
+
+/** @} */
 
 stat_t poweroff(enum poweroff_type type)
 {

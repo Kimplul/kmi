@@ -87,7 +87,7 @@ static void __mark_free(mm_node_t *op, pnum_t pnum, enum mm_order tgt,
 
 	if (src == dst) {
 		struct mm_leaf_t *o = (struct mm_leaf_t *)op;
-		clear_nbit(o->used[__o_container(idx)], __o_bit(idx));
+		clear_nbit(o->used[order_container(idx)], order_bit(idx));
 		return;
 	}
 
@@ -96,7 +96,7 @@ static void __mark_free(mm_node_t *op, pnum_t pnum, enum mm_order tgt,
 		__mark_free(o->next[idx], pnum, tgt, src - 1, dst);
 
 	/* freeing a page results in always clearing a full bit? */
-	clear_nbit(o->full[__o_container(idx)], __o_bit(idx));
+	clear_nbit(o->full[order_container(idx)], order_bit(idx));
 }
 
 /* this could probably use an int for status, but eh */
@@ -126,7 +126,7 @@ static bool __mark_used(mm_node_t *op, pnum_t pnum, enum mm_order tgt,
 
 	if (src == dst) {
 		struct mm_leaf_t *o = (struct mm_leaf_t *)op;
-		set_nbit(o->used[__o_container(idx)], __o_bit(idx));
+		set_nbit(o->used[order_container(idx)], order_bit(idx));
 
 		if (idx == max_index(src))
 			return true;
@@ -136,7 +136,7 @@ static bool __mark_used(mm_node_t *op, pnum_t pnum, enum mm_order tgt,
 
 	struct mm_branch_t *o = (struct mm_branch_t *)op;
 	if (src == tgt) {
-		set_nbit(o->full[__o_container(idx)], __o_bit(idx));
+		set_nbit(o->full[order_container(idx)], order_bit(idx));
 
 		if (idx == max_index(src))
 			return true;
@@ -144,8 +144,9 @@ static bool __mark_used(mm_node_t *op, pnum_t pnum, enum mm_order tgt,
 		return false;
 	}
 
+	/** TODO: Should I switch over to bitmaps? */
 	if (__mark_used(o->next[idx], pnum, tgt, src - 1, dst)) {
-		set_nbit(o->full[__o_container(idx)], __o_bit(idx));
+		set_nbit(o->full[order_container(idx)], order_bit(idx));
 
 		if (idx == max_index(src))
 			return true;
@@ -182,7 +183,7 @@ static pnum_t __enum_order(mm_node_t *op, pnum_t offset, enum mm_order src,
 		struct mm_leaf_t *o = (struct mm_leaf_t *)op;
 		foreach_not_used_page(o, idx, src)
 		{
-			return page << __o_offset(src);
+			return page << order_offset(src);
 		}
 
 		return -1;
@@ -200,7 +201,7 @@ static pnum_t __enum_order(mm_node_t *op, pnum_t offset, enum mm_order src,
 		pnum_t ret = __enum_order(o->next[page], offset, src - 1, dst);
 
 		if (!(ret < 0))
-			return (page << __o_offset(src)) + ret;
+			return (page << order_offset(src)) + ret;
 	}
 
 	return -1;
@@ -232,7 +233,7 @@ pm_t alloc_page(enum mm_order order, pm_t offset)
 	if (pnum < 0)
 		return 0;
 
-	pm_t paddr = pnum_to_paddr(pnum) + omap->base;
+	pm_t paddr = pnum_to_pm(pnum) + omap->base;
 	mark_used(order, paddr);
 	return paddr;
 }
@@ -265,7 +266,7 @@ static pm_t __populate_order(mm_node_t **op, pm_t cont, enum mm_order src,
 
 	for (size_t i = 0; i < num; ++i) {
 		cont = __populate_order(&o->next[i], cont, src - 1, dst,
-		                        __o_width(src - 1));
+		                        order_width(src - 1));
 	}
 
 	*op = (mm_node_t *)o;
@@ -287,7 +288,7 @@ static pm_t __probe_order(pm_t cont, enum mm_order src, enum mm_order dst,
 	cont += next_elems(num);
 
 	for (size_t i = 0; i < num; ++i)
-		cont = __probe_order(cont, src - 1, dst, __o_width(src - 1));
+		cont = __probe_order(cont, src - 1, dst, order_width(src - 1));
 
 	return cont;
 }
@@ -478,7 +479,7 @@ void init_pmem(void *fdt)
 	/* mark reserved mem */
 	__mark_reserved_mem(fdt);
 
-	init_mem_blocks();
+	init_mem_nodes();
 
 	init_devmem((pm_t)__pa(ram_base), (pm_t)__pa(ram_base + ram_size));
 }

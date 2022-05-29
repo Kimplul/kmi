@@ -8,13 +8,13 @@
 
 #include <apos/types.h>
 
-#define sp_root(r)       ((r)->sp_r)
-#define sp_left(n)       ((n)->left)
-#define sp_right(n)      ((n)->right)
-#define sp_rparen(n)     (sp_right(n)->parent)
-#define sp_lparen(n)     (sp_left(n)->parent)
-#define sp_paren(n)      ((n)->parent)
-#define sp_gparen(n)     ((n)->parent->parent)
+#define sp_root(r) ((r)->sp_r)
+#define sp_left(n) ((n)->left)
+#define sp_right(n) ((n)->right)
+#define sp_rparen(n) (sp_right(n)->parent)
+#define sp_lparen(n) (sp_left(n)->parent)
+#define sp_paren(n) ((n)->parent)
+#define sp_gparen(n) ((n)->parent->parent)
 #define sp_has_gparen(n) (sp_paren(n) && sp_gparen(n))
 
 struct sp_node {

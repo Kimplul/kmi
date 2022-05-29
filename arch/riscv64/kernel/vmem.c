@@ -12,15 +12,15 @@
 #include "pages.h"
 #include "csr.h"
 
-#define pte_ppn(pte)      (((pm_t)(pte)) >> 10)
-#define pte_flags(pte)    (((pm_t)(pte)) & 0xff)
-#define to_pte(p, f)      ((pm_to_pnum(p) << 10) | (f))
-#define pte_addr(pte)     __va(pnum_to_paddr(pte_ppn(pte)))
-#define pte_paddr(pte)    (pnum_to_paddr(pte_ppn(pte)))
+#define pte_ppn(pte) (((pm_t)(pte)) >> 10)
+#define pte_flags(pte) (((pm_t)(pte)) & 0xff)
+#define to_pte(p, f) ((pm_to_pnum(p) << 10) | (f))
+#define pte_addr(pte) __va(pnum_to_pm(pte_ppn(pte)))
+#define pte_paddr(pte) (pnum_to_pm(pte_ppn(pte)))
 #define vm_to_index(a, o) (pm_to_index(a, o))
-#define is_active(pte)    (pte_flags(pte) & VM_V)
-#define is_leaf(pte)      (is_active(pte) && (pte_flags(pte) & ~VM_V))
-#define is_branch(pte)    (is_active(pte) && !(pte_flags(pte) & ~VM_V))
+#define is_active(pte) (pte_flags(pte) & VM_V)
+#define is_leaf(pte) (is_active(pte) && (pte_flags(pte) & ~VM_V))
+#define is_branch(pte) (is_active(pte) && !(pte_flags(pte) & ~VM_V))
 
 static pm_t *__find_vmem(struct vmem *b, vm_t v, enum mm_order *o)
 {

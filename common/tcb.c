@@ -31,8 +31,8 @@ void init_tcbs()
 	 * Should be enough, if we're really strapped for memory I might try
 	 * something smaller but this is fine for now. */
 	tcbs = (struct tcb **)alloc_page(MM_O1, 0);
-	num_tids = __o_size(MM_O1) / sizeof(struct tcb *);
-	memset(tcbs, 0, __o_size(MM_O1));
+	num_tids = order_size(MM_O1) / sizeof(struct tcb *);
+	memset(tcbs, 0, order_size(MM_O1));
 }
 
 void destroy_tcbs()
@@ -105,7 +105,7 @@ struct tcb *create_thread(struct tcb *p)
 	 * (hopefully) */
 	/* TODO: check alignment */
 	struct tcb *t = (struct tcb *)align_down(
-		bottom + __o_size(MM_O0) - sizeof(struct tcb), sizeof(long));
+		bottom + order_size(MM_O0) - sizeof(struct tcb), sizeof(long));
 	memset(t, 0, sizeof(struct tcb));
 
 	id_t tid = __alloc_tid(t);
@@ -158,7 +158,7 @@ static stat_t __destroy_thread_data(struct tcb *t)
 	destroy_vmem(t->rpc.vmem);
 
 	/* free associated kernel stack and the structure itself */
-	vm_t bottom = align_down((vm_t)t, __o_size(MM_O0));
+	vm_t bottom = align_down((vm_t)t, order_size(MM_O0));
 	free_page(MM_O0, (pm_t)bottom);
 
 	/* TODO: free stacks */

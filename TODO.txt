@@ -74,3 +74,4 @@ constantly switch between physical and virtual ram
 + Save floating point registers?
 + Come up with a list of requirements for arch to be supported, from what I can
 tell there has to be timers and at least two tiered memory paging.
++ TLS!

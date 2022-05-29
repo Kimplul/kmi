@@ -31,7 +31,7 @@
  * @param n Name of structure.
  * @param s Structure.
  */
-#define SIZEOF(n, s)   DEFINE(sizeof_##n, sizeof(s))
+#define SIZEOF(n, s) DEFINE(sizeof_##n, sizeof(s))
 
 /**
  * Generate assembly with calculated offsets and sizes.

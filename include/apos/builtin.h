@@ -10,6 +10,14 @@
  * we'll be golden.
  */
 
+/**
+ * Check whether compiler supports the builtin.
+ * Note that this definition is only for when the compiler doesn't provide it
+ * automatically.
+ *
+ * @param x Base name of builtin to check for.
+ * @return \c 0 when not supported, non-zero when supported.
+ */
 #ifndef __has_builtin
 #define __has_builtin(x) (0)
 #endif

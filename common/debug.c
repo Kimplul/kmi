@@ -64,14 +64,14 @@ struct __packed ns16550a {
 	uint8_t scr;
 };
 
-#define LSR_DR   (1 << 0)
-#define LSR_OE   (1 << 1)
-#define LSR_PE   (1 << 2)
-#define LSR_FE   (1 << 3)
-#define LSR_BI   (1 << 4)
+#define LSR_DR (1 << 0)
+#define LSR_OE (1 << 1)
+#define LSR_PE (1 << 2)
+#define LSR_FE (1 << 3)
+#define LSR_BI (1 << 4)
 #define LSR_THRE (1 << 5)
 #define LSR_TEMT (1 << 6)
-#define LSR_ERR  (1 << 7)
+#define LSR_ERR (1 << 7)
 
 static struct ns16550a *port = 0;
 
@@ -134,23 +134,23 @@ void __setup_dbg(vm_t pt, enum serial_dev dev)
 	 * defaults (set by U-boot) seem to work alright */
 }
 
-#define LEFT_FLAG   (1 << 0)
-#define SIGN_FLAG   (1 << 1)
-#define HASH_FLAG   (1 << 2)
-#define ZERO_FLAG   (1 << 3)
-#define FMT_FLAG    (1 << 4)
-#define SPACE_FLAG  (1 << 5)
-#define LONG_FLAG   (1 << 6)
-#define LLONG_FLAG  (1 << 7)
-#define SHORT_FLAG  (1 << 8)
-#define CHAR_FLAG   (1 << 9)
-#define PRECS_FLAG  (1 << 11)
+#define LEFT_FLAG (1 << 0)
+#define SIGN_FLAG (1 << 1)
+#define HASH_FLAG (1 << 2)
+#define ZERO_FLAG (1 << 3)
+#define FMT_FLAG (1 << 4)
+#define SPACE_FLAG (1 << 5)
+#define LONG_FLAG (1 << 6)
+#define LLONG_FLAG (1 << 7)
+#define SHORT_FLAG (1 << 8)
+#define CHAR_FLAG (1 << 9)
+#define PRECS_FLAG (1 << 11)
 #define UNSIGN_FLAG (1 << 12)
-#define WIDTH_FLAG  (1 << 13)
-#define PAD_FLAG    (1 << 14)
+#define WIDTH_FLAG (1 << 13)
+#define PAD_FLAG (1 << 14)
 
-#define CONT        1
-#define STOP        0
+#define CONT 1
+#define STOP 0
 
 static bool __is_digit(char c)
 {
@@ -289,7 +289,7 @@ static size_t __print_sign(ssize_t value, size_t flags)
 static size_t __print_integral(ssize_t value, size_t base, size_t flags,
                                size_t width)
 {
-#define __integral_len(a, b, c)   __integral_val((a), (b), (c), false)
+#define __integral_len(a, b, c) __integral_val((a), (b), (c), false)
 #define __integral_print(a, b, c) __integral_val((a), (b), (c), true)
 
 	size_t ret = 0;

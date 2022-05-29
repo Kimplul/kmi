@@ -42,6 +42,7 @@ struct tcb {
 
 	vm_t thread_stack;
 	vm_t thread_stack_top;
+	vm_t thread_storage;
 
 	struct tcb_ctx proc;
 	struct tcb_ctx rpc;
@@ -61,6 +62,7 @@ stat_t attach_proc(struct tcb *r, struct tcb *t);
 stat_t detach_proc(struct tcb *r, struct tcb *t);
 
 struct tcb *cur_tcb();
+struct tcb *cur_proc();
 void use_tcb(struct tcb *);
 
 struct tcb *get_tcb(id_t tid);

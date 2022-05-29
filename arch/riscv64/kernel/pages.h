@@ -7,16 +7,16 @@
  */
 
 /** riscv64 4KiB page, order 0. */
-#define MM_KPAGE      MM_O0
+#define MM_KPAGE MM_O0
 
 /** riscv64 2MiB page, order 1. */
-#define MM_MPAGE      MM_O1
+#define MM_MPAGE MM_O1
 
 /** riscv64 1GiB page, order 2. */
-#define MM_GPAGE      MM_O2
+#define MM_GPAGE MM_O2
 
 /** riscv64 512GiB page, order 3. */
-#define MM_TPAGE      MM_O3
+#define MM_TPAGE MM_O3
 
 /** riscv64 4KiB page size. */
 #define MM_KPAGE_SIZE SZ_4K

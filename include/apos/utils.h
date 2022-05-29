@@ -6,27 +6,27 @@
  * Misc utils and helpers.
  */
 
-#define ABS(a)        (a < 0 ? -a : a)
+#define ABS(a) (a < 0 ? -a : a)
 
-#define MAX(a, b)     ((a) >= (b) ? (a) : (b))
+#define MAX(a, b) ((a) >= (b) ? (a) : (b))
 #define MAX3(a, b, c) (MAX(a, b) >= MAX(b, c) ? MAX(a, b) : MAX(b, c))
 #define MAX4(a, b, c, d) \
 	(MAX3(a, b, c) >= MAX3(b, c, d) ? MAX3(a, b, c) : MAX3(b, c, d))
 /* etc... */
 
-#define MIN(a, b)     ((a) <= (b) ? (a) : (b))
+#define MIN(a, b) ((a) <= (b) ? (a) : (b))
 #define MIN3(a, b, c) (MIN(a, b) <= MIN(b, c) ? MIN(a, b) : MIN(b, c))
 #define MIN4(a, b, c, d) \
 	(MIN3(a, b, c) <= MIN3(b, c, d) ? MIN3(a, b, c) : MIN3(b, c, d))
 /* etc... */
 
 #define GLUE2(x, y) x##y
-#define GLUE(x, y)  GLUE2(x, y)
+#define GLUE(x, y) GLUE2(x, y)
 
-#define QUOTE2(x)   #x
-#define QUOTE(x)    QUOTE2(x)
+#define QUOTE2(x) #x
+#define QUOTE(x) QUOTE2(x)
 
-#define UNUSED(x)   ((void)(x))
+#define UNUSED(x) ((void)(x))
 #define MAYBE_UNUSED(x) UNUSED(x)
 
 #include <apos/builtin.h>
@@ -38,10 +38,10 @@
 #endif
 
 #if __has_builtin(__builtin_expect)
-#define likely(x)   __builtin_expect(!!(x), 1)
+#define likely(x) __builtin_expect(!!(x), 1)
 #define unlikely(x) __builtin_expect(!!(x), 0)
 #else
-#define likely(x)   (x)
+#define likely(x) (x)
 #define unlikely(x) (x)
 #endif
 
@@ -51,7 +51,7 @@
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 #define ALIGNED(x, a) ((x) % a == 0)
 
-#define ptradd(x, y)  (((vm_t)(x)) + ((vm_t)(y)))
+#define ptradd(x, y) (((vm_t)(x)) + ((vm_t)(y)))
 
 #include <apos/types.h>
 

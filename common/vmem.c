@@ -116,7 +116,7 @@ vm_t ref_shared_uvmem(struct tcb *t1, struct tcb *t2, vm_t va, vmflags_t flags)
 		pm_t paddr;
 		stat_vpage(t1->proc.vmem, v, &paddr, 0, 0);
 		map_vpage(t2->proc.vmem, paddr, runner, flags, MM_O0);
-		runner += __o_size(MM_O0);
+		runner += order_size(MM_O0);
 	}
 
 	return v;

@@ -30,7 +30,7 @@ struct timer_node {
 	struct timer timer;
 };
 
-#define timer_container(ptr)      container_of(ptr, struct timer_node, sp_n)
+#define timer_container(ptr) container_of(ptr, struct timer_node, sp_n)
 
 #define timer_node_container(ptr) container_of(ptr, struct timer_node, timer)
 

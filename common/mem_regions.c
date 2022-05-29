@@ -10,7 +10,7 @@
 #include <apos/bits.h>
 #include <apos/mem.h>
 
-#define mark_region_used(r)   set_bit(r, MR_USED)
+#define mark_region_used(r) set_bit(r, MR_USED)
 #define mark_region_unused(r) clear_bit(r, MR_USED)
 
 /* pretty major slowdown when we get to some really massive numbers, not
@@ -183,8 +183,8 @@ static struct mem_region *__create_region(vm_t start, vm_t end,
 static size_t po_align(size_t s)
 {
 	for (size_t o = __mm_max_order; o > 0; --o) {
-		if (s >= __o_size(o))
-			return __o_size(o);
+		if (s >= order_size(o))
+			return order_size(o);
 	}
 
 	return 0;
@@ -459,7 +459,7 @@ vm_t map_fill_region(struct vmem *b, region_callback_t *mem_handler,
 	start = __addr(runner);
 
 	for (; pages; top--) {
-		size_t o_size = __o_size(top);
+		size_t o_size = order_size(top);
 		size_t o_pages = __pages(o_size);
 
 		/* NULL does pass this check, so technically all NULL pages are

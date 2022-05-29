@@ -13,7 +13,7 @@
 #include <arch/vmem.h>
 
 #define mem_container(ptr) container_of(ptr, struct mem_region, sp_n)
-#define is_region_used(r)  is_set(r->flags, MR_USED)
+#define is_region_used(r) is_set(r->flags, MR_USED)
 #define is_region_owned(r) is_set(r->flags, MR_OWNED)
 #define is_region_shared(r) is_set(r->flags, MR_SHARED)
 #define is_region_kept(r) is_set(r->flags, MR_KEEP)
@@ -52,7 +52,22 @@ struct mem_region *find_closest_used_region(struct mem_region_root *r,
 struct mem_region *find_free_region(struct mem_region_root *r, size_t size,
                                     size_t *align);
 
-typedef stat_t region_callback_t(struct vmem *b, pm_t *offset, vm_t vaddr,
+/**
+ * Helper functions for converting between memory regions and page
+ * mappings. Called by \ref map_fill_region().
+ * \see map_fill_region() for further explanation.
+ *
+ * @param vmem Virtual memory space in which the operation is to be done.
+ * @param offset Offset from where to start looking for next physical page. \see
+ * alloc_page().
+ * @param vaddr Current virtual address.
+ * @param flags Virtual memory allocation flags.
+ * @param order Order of physical page.
+ * @param data Custom data.
+ * @return \ref OK if succesful, \c INFO_TRGN if page order should be decreased,
+ * anything else means error.
+ */
+typedef stat_t region_callback_t(struct vmem *vmem, pm_t *offset, vm_t vaddr,
                                  vmflags_t flags, enum mm_order order,
                                  void *data);
 

@@ -19,19 +19,19 @@
 
 /* --- START ARCH USER CONFIG VALUES --- */
 /** Physical address to where the OS image will be loaded. */
-#define RAM_BASE      0x80000000
+#define RAM_BASE 0x80000000
 /* --- END ARCH USER CONFIG VALUES --- */
 
 /* don't touch >:( */
 
 /** Physical address to where the kernel proper will be relocated. */
-#define PM_KERN_BASE  (RAM_BASE + SZ_512K)
+#define PM_KERN_BASE (RAM_BASE + SZ_512K)
 
 /** Maximum size of the kernel proper. Largely arbitrary. */
-#define PM_KERN_SIZE  (SZ_256K)
+#define PM_KERN_SIZE (SZ_256K)
 
 /** Highest allowed physical address where kernel stuff may lie. */
-#define PM_KERN_TOP   (PM_KERN_BASE + PM_KERN_SIZE)
+#define PM_KERN_TOP (PM_KERN_BASE + PM_KERN_SIZE)
 
 /** Physical memory stack base. In this case, right after the kernel. */
 #define PM_STACK_BASE (PM_KERN_BASE + PM_KERN_SIZE)
@@ -40,34 +40,34 @@
 #define PM_STACK_SIZE (SZ_256K)
 
 /** Top of physical memory stack. */
-#define PM_STACK_TOP  (PM_STACK_BASE + PM_STACK_SIZE)
+#define PM_STACK_TOP (PM_STACK_BASE + PM_STACK_SIZE)
 
 #if defined(riscv64)
 /* 64bit */
 
 /** Direct map offset. */
-#define VM_DMAP         (0xffffffc000000000) /* testing for now */
+#define VM_DMAP (0xffffffc000000000)         /* testing for now */
 
 /** Virtual address of kernel proper inside direct mapping. */
-#define VM_KERN         (VM_DMAP + SZ_256K)
+#define VM_KERN (VM_DMAP + SZ_256K)
 
 /** Page reserved for kernel I/O. */
-#define IO_PAGE         511UL
+#define IO_PAGE 511UL
 
 /** Direct mapping starts from this page. */
-#define KSTART_PAGE     256UL
+#define KSTART_PAGE 256UL
 
 /** The RPC stack page. */
-#define CSTACK_PAGE     255UL
+#define CSTACK_PAGE 255UL
 
 /** User virtual memory space start. */
-#define UVMEM_START     (SZ_4K)
+#define UVMEM_START (SZ_4K)
 
 /**  User virtual memory space end. */
-#define UVMEM_END       (SZ_256G - SZ_1G)
+#define UVMEM_END (SZ_256G - SZ_1G)
 
 /** RPC stack top. */
-#define RPC_STACK_TOP  (SZ_256G)
+#define RPC_STACK_TOP (SZ_256G)
 
 /** RPC stack base. */
 #define RPC_STACK_BASE (SZ_256G - SZ_1G)
@@ -76,19 +76,19 @@
 /* 32bit */
 
 /* TODO: figure this stuff out */
-#define VM_DMAP         (0x000000000)
-#define VM_KERN         (VM_DMAP + SZ_256K)
-#define ROOT_PTE        (0UL)
-#define ROOT_REGION     (SZ_4K)
+#define VM_DMAP (0x000000000)
+#define VM_KERN (VM_DMAP + SZ_256K)
+#define ROOT_PTE (0UL)
+#define ROOT_REGION (SZ_4K)
 
-#define IO_PAGE         1023UL
-#define KSTART_PAGE     512UL
-#define CSTACK_PAGE     511UL
+#define IO_PAGE 1023UL
+#define KSTART_PAGE 512UL
+#define CSTACK_PAGE 511UL
 
-#define UVMEM_START     (SZ_4K)
-#define UVMEM_END       (SZ_4G - SZ_8M)
+#define UVMEM_START (SZ_4K)
+#define UVMEM_END (SZ_4G - SZ_8M)
 
-#define PROC_STACK_TOP  (SZ_4G)
+#define PROC_STACK_TOP (SZ_4G)
 #define PROC_STACK_BASE (SZ_4G - SZ_8M)
 #endif
 #endif /* APOS_RISCV_CONFIG_H */

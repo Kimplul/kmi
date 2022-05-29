@@ -18,7 +18,7 @@
 
 /** Long integer prefix. Approximate, but probably good enough */
 #if _LP64
-#define __PRI64_PREFIX  "l"
+#define __PRI64_PREFIX "l"
 #else
 #define __PRI64_PREFIX "ll"
 #endif
@@ -36,19 +36,19 @@
 /** @{ */
 
 /** Decimal format specifief for \ref int8_t */
-#define PRId8       "d"
+#define PRId8 "d"
 
 /** Decimal format specifier for \ref int16_t */
-#define PRId16      "d"
+#define PRId16 "d"
 
 /** Decimal format specifier for \ref int32_t */
-#define PRId32      "d"
+#define PRId32 "d"
 
 /** Decimal format specifier for int16_t */
-#define PRId64      __PRI64_PREFIX "d"
+#define PRId64 __PRI64_PREFIX "d"
 
 /** Decimal format specifier for \ref int_least8_t. */
-#define PRIdLEAST8  "d"
+#define PRIdLEAST8 "d"
 
 /** Decimal format specifier for \ref int_least16_t. */
 #define PRIdLEAST16 "d"
@@ -60,22 +60,22 @@
 #define PRIdLEAST64 __PRI64_PREFIX "d"
 
 /** Decimal format specifier for \ref int_fast8_t. */
-#define PRIdFAST8   "d"
+#define PRIdFAST8 "d"
 
 /** Decimal format specifier for \ref int_fast16_t. */
-#define PRIdFAST16  __PRIPTR_PREFIX "d"
+#define PRIdFAST16 __PRIPTR_PREFIX "d"
 
 /** Decimal format specifier for \ref int_fast32_t. */
-#define PRIdFAST32  __PRIPTR_PREFIX "d"
+#define PRIdFAST32 __PRIPTR_PREFIX "d"
 
 /** Decimal format specifier for \ref int_fast64_t. */
-#define PRIdFAST64  __PRI64_PREFIX "d"
+#define PRIdFAST64 __PRI64_PREFIX "d"
 
 /** Decimal format specifier for \ref intmax_t. */
-#define PRIdMAX     __PRI64_PREFIX "d"
+#define PRIdMAX __PRI64_PREFIX "d"
 
 /** Decimal format specifier for \ref intptr_t. */
-#define PRIdPTR     __PRIPTR_PREFIX "d"
+#define PRIdPTR __PRIPTR_PREFIX "d"
 
 /** @} */
 
@@ -83,19 +83,19 @@
 /** @{ */
 
 /** Integer format specifier for \ref int8_t. */
-#define PRIi8       "i"
+#define PRIi8 "i"
 
 /** Integer format specifier for \ref int16_t. */
-#define PRIi16      "i"
+#define PRIi16 "i"
 
 /** Integer format specifier for \ref int32_t. */
-#define PRIi32      "i"
+#define PRIi32 "i"
 
 /** Integer format specifier for \ref int64_t. */
-#define PRIi64      __PRI64_PREFIX "i"
+#define PRIi64 __PRI64_PREFIX "i"
 
 /** Integer format specifier for \ref int_least8_t. */
-#define PRIiLEAST8  "i"
+#define PRIiLEAST8 "i"
 
 /** Integer format specifier for \ref int_least16_t. */
 #define PRIiLEAST16 "i"
@@ -107,22 +107,22 @@
 #define PRIiLEAST64 __PRI64_PREFIX "i"
 
 /** Integer format specifier for \ref int_fast8_t. */
-#define PRIiFAST8   "i"
+#define PRIiFAST8 "i"
 
 /** Integer format specifier for \ref int_fast16_t. */
-#define PRIiFAST16  __PRIPTR_PREFIX "i"
+#define PRIiFAST16 __PRIPTR_PREFIX "i"
 
 /** Integer format specifier for \ref int_fast32_t. */
-#define PRIiFAST32  __PRIPTR_PREFIX "i"
+#define PRIiFAST32 __PRIPTR_PREFIX "i"
 
 /** Integer format specifier for \ref int_fast64_t. */
-#define PRIiFAST64  __PRI64_PREFIX "i"
+#define PRIiFAST64 __PRI64_PREFIX "i"
 
 /** Integer format specifier for \ref intmax_t. */
-#define PRIiMAX     __PRI64_PREFIX "i"
+#define PRIiMAX __PRI64_PREFIX "i"
 
 /** Integer format specifier for \ref intptr_t. */
-#define PRIiPTR     __PRIPTR_PREFIX "i"
+#define PRIiPTR __PRIPTR_PREFIX "i"
 
 /** @} */
 
@@ -130,19 +130,19 @@
 /** @{ */
 
 /** Octal format specifier for \ref int8_t. */
-#define PRIo8       "o"
+#define PRIo8 "o"
 
 /** Octal format specifier for \ref int16_t. */
-#define PRIo16      "o"
+#define PRIo16 "o"
 
 /** Octal format specifier for \ref int32_t. */
-#define PRIo32      "o"
+#define PRIo32 "o"
 
 /** Octal format specifier for \ref int64_t. */
-#define PRIo64      __PRI64_PREFIX "o"
+#define PRIo64 __PRI64_PREFIX "o"
 
 /** Octal format specifier for \ref int_least8_t. */
-#define PRIoLEAST8  "o"
+#define PRIoLEAST8 "o"
 
 /** Octal format specifier for \ref int_least16_t. */
 #define PRIoLEAST16 "o"
@@ -154,22 +154,22 @@
 #define PRIoLEAST64 __PRI64_PREFIX "o"
 
 /** Octal format specifier for \ref int_fast8_t. */
-#define PRIoFAST8   "o"
+#define PRIoFAST8 "o"
 
 /** Octal format specifier for \ref int_fast16_t. */
-#define PRIoFAST16  __PRIPTR_PREFIX "o"
+#define PRIoFAST16 __PRIPTR_PREFIX "o"
 
 /** Octal format specifier for \ref int_fast32_t. */
-#define PRIoFAST32  __PRIPTR_PREFIX "o"
+#define PRIoFAST32 __PRIPTR_PREFIX "o"
 
 /** Octal format specifier for \ref int_fast64_t. */
-#define PRIoFAST64  __PRI64_PREFIX "o"
+#define PRIoFAST64 __PRI64_PREFIX "o"
 
 /** Octal format specifier for \ref uintmax_t. */
-#define PRIoMAX     __PRI64_PREFIX "o"
+#define PRIoMAX __PRI64_PREFIX "o"
 
 /** Octal format specifier for \ref uintptr_t. */
-#define PRIoPTR     __PRIPTR_PREFIX "o"
+#define PRIoPTR __PRIPTR_PREFIX "o"
 
 /** @} */
 
@@ -177,19 +177,19 @@
 /** @{ */
 
 /** Unsigned decimal format specifier for \ref uint8_t. */
-#define PRIu8       "u"
+#define PRIu8 "u"
 
 /** Unsigned decimal format specifier for \ref uint16_t. */
-#define PRIu16      "u"
+#define PRIu16 "u"
 
 /** Unsigned decimal format specifier for \ref uint32_t. */
-#define PRIu32      "u"
+#define PRIu32 "u"
 
 /** Unsigned decimal format specifier for \ref uint64_t. */
-#define PRIu64      __PRI64_PREFIX "u"
+#define PRIu64 __PRI64_PREFIX "u"
 
 /** Unsigned decimal format specifier for \ref uint_least8_t. */
-#define PRIuLEAST8  "u"
+#define PRIuLEAST8 "u"
 
 /** Unsigned decimal format specifier for \ref uint_least16_t. */
 #define PRIuLEAST16 "u"
@@ -201,22 +201,22 @@
 #define PRIuLEAST64 __PRI64_PREFIX "u"
 
 /** Unsigned decimal format specifier for \ref uint_fast8_t. */
-#define PRIuFAST8   "u"
+#define PRIuFAST8 "u"
 
 /** Unsigned decimal format specifier for \ref uint_fast16_t. */
-#define PRIuFAST16  __PRIPTR_PREFIX "u"
+#define PRIuFAST16 __PRIPTR_PREFIX "u"
 
 /** Unsigned decimal format specifier for \ref uint_fast32_t. */
-#define PRIuFAST32  __PRIPTR_PREFIX "u"
+#define PRIuFAST32 __PRIPTR_PREFIX "u"
 
 /** Unsigned decimal format specifier for \ref uint_fast64_t. */
-#define PRIuFAST64  __PRI64_PREFIX "u"
+#define PRIuFAST64 __PRI64_PREFIX "u"
 
 /** Unsigned decimal format specifier for \ref uintmax_t. */
-#define PRIuMAX     __PRI64_PREFIX "u"
+#define PRIuMAX __PRI64_PREFIX "u"
 
 /** Unsigned decimal format specifier for \ref uintptr_t. */
-#define PRIuPTR     __PRIPTR_PREFIX "u"
+#define PRIuPTR __PRIPTR_PREFIX "u"
 
 /** @} */
 
@@ -224,19 +224,19 @@
 /** @{ */
 
 /** Hex format specifier for \ref uint8_t. */
-#define PRIx8       "x"
+#define PRIx8 "x"
 
 /** Hex format specifier for \ref uint16_t. */
-#define PRIx16      "x"
+#define PRIx16 "x"
 
 /** Hex format specifier for \ref uint32_t. */
-#define PRIx32      "x"
+#define PRIx32 "x"
 
 /** Hex format specifier for \ref uint64_t. */
-#define PRIx64      __PRI64_PREFIX "x"
+#define PRIx64 __PRI64_PREFIX "x"
 
 /** Hex format specifier for \ref uint_least8_t. */
-#define PRIxLEAST8  "x"
+#define PRIxLEAST8 "x"
 
 /** Hex format specifier for \ref uint_least16_t. */
 #define PRIxLEAST16 "x"
@@ -248,22 +248,22 @@
 #define PRIxLEAST64 __PRI64_PREFIX "x"
 
 /** Hex format specifier for \ref uint_fast8_t. */
-#define PRIxFAST8   "x"
+#define PRIxFAST8 "x"
 
 /** Hex format specifier for \ref uint_fast16_t. */
-#define PRIxFAST16  __PRIPTR_PREFIX "x"
+#define PRIxFAST16 __PRIPTR_PREFIX "x"
 
 /** Hex format specifier for \ref uint_fast32_t. */
-#define PRIxFAST32  __PRIPTR_PREFIX "x"
+#define PRIxFAST32 __PRIPTR_PREFIX "x"
 
 /** Hex format specifier for \ref uint_fast64_t. */
-#define PRIxFAST64  __PRI64_PREFIX "x"
+#define PRIxFAST64 __PRI64_PREFIX "x"
 
 /** Hex format specifier for \ref uintmax_t. */
-#define PRIxMAX     __PRI64_PREFIX "x"
+#define PRIxMAX __PRI64_PREFIX "x"
 
 /** Hex format specifier for \ref uintptr_t. */
-#define PRIxPTR     __PRIPTR_PREFIX "x"
+#define PRIxPTR __PRIPTR_PREFIX "x"
 
 /** @} */
 
@@ -271,19 +271,19 @@
 /** @{ */
 
 /** Binary format specifier for \ref uint8_t. */
-#define PRIX8       "X"
+#define PRIX8 "X"
 
 /** Binary format specifier for \ref uint16_t. */
-#define PRIX16      "X"
+#define PRIX16 "X"
 
 /** Binary format specifier for \ref uint32_t. */
-#define PRIX32      "X"
+#define PRIX32 "X"
 
 /** Binary format specifier for \ref uint64_t. */
-#define PRIX64      __PRI64_PREFIX "X"
+#define PRIX64 __PRI64_PREFIX "X"
 
 /** Binary format specifier for \ref uint_least8_t. */
-#define PRIXLEAST8  "X"
+#define PRIXLEAST8 "X"
 
 /** Binary format specifier for \ref uint_least16_t. */
 #define PRIXLEAST16 "X"
@@ -295,22 +295,22 @@
 #define PRIXLEAST64 __PRI64_PREFIX "X"
 
 /** Binary format specifier for \ref uint_fast8_t. */
-#define PRIXFAST8   "X"
+#define PRIXFAST8 "X"
 
 /** Binary format specifier for \ref uint_fast16_t. */
-#define PRIXFAST16  __PRIPTR_PREFIX "X"
+#define PRIXFAST16 __PRIPTR_PREFIX "X"
 
 /** Binary format specifier for \ref uint_fast32_t. */
-#define PRIXFAST32  __PRIPTR_PREFIX "X"
+#define PRIXFAST32 __PRIPTR_PREFIX "X"
 
 /** Binary format specifier for \ref uint_fast64_t. */
-#define PRIXFAST64  __PRI64_PREFIX "X"
+#define PRIXFAST64 __PRI64_PREFIX "X"
 
 /** Binary format specifier for \ref uintmax_t. */
-#define PRIXMAX     __PRI64_PREFIX "X"
+#define PRIXMAX __PRI64_PREFIX "X"
 
 /** Binary format specifier for \ref uintptr_t. */
-#define PRIXPTR     __PRIPTR_PREFIX "X"
+#define PRIXPTR __PRIPTR_PREFIX "X"
 
 /** @} */
 
@@ -354,7 +354,7 @@ void setup_io_dbg(struct vmem *vmem);
  * Format to append to helper debugging classes.
  * See \ref bug(), \ref warn(), \ref info() and \ref error().
  */
-#define COMMON_FORMAT  "[%s] %s:%d\n\t"
+#define COMMON_FORMAT "[%s] %s:%d\n\t"
 
 /**
  * Helper for helper classes.
@@ -369,7 +369,7 @@ void setup_io_dbg(struct vmem *vmem);
  *
  * @param fmt Message, integer subset of regular printf.
  */
-#define bug(fmt, ...)  dbg(COMMON_FORMAT fmt, COMMON_ARGS("BUG"),##__VA_ARGS__)
+#define bug(fmt, ...) dbg(COMMON_FORMAT fmt, COMMON_ARGS("BUG"),##__VA_ARGS__)
 
 /**
  * Print a warning message to the serial lines.
