@@ -15,12 +15,12 @@
 
 static struct node_root root;
 
-void init_mem_blocks()
+void init_mem_nodes()
 {
 	init_nodes(&root, sizeof(struct mem_region));
 }
 
-void destroy_mem_blocks()
+void destroy_mem_nodes()
 {
 	destroy_nodes(&root);
 }

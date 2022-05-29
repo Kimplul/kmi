@@ -16,8 +16,12 @@
  * certain page order and freeing it as another could easily be a
  * source of difficult to track bugs.
  *
- * \todo More in depth documentation about the physical memory algorithms,
+ * @todo More in depth documentation about the physical memory algorithms,
  * unfortunately it is quite difficult to follow.
+ *
+ * @todo See if there are improvements to be made, either to the implementation
+ * or code in general. Could I use bitmaps, for example, and maybe calculate the
+ * next pointer instead of storing it?
  */
 
 #include <apos/mem_nodes.h>
@@ -30,55 +34,51 @@
 #include <libfdt.h>
 
 /* NOTE: these are all for pnum_t, i.e. O0_SHIFT is from 0 */
-#define __foreach_page(var, start, end, attr, neg)                   \
-	for (size_t i = num_indexes(start); i < num_elems(end); ++i) \
-	if (var->attr[i] == (mm_info_t)(-1))                         \
-	continue;                                                    \
-	else                                                         \
-	for (pnum_t page = i * MM_OINFO_WIDTH, j = 0;                \
-	     j < (pnum_t)MIN((end)-i * MM_OINFO_WIDTH,               \
-	                     MM_OINFO_WIDTH);                        \
-	     ++j, ++page)                                            \
-	if (neg(is_nset(var->attr[i], j)))
+#define __foreach_page(var, start, end, attr, neg)          \
+	for (pnum_t page = start; page < end; ++page)       \
+	if (neg (bitmap_is_set(var->attr, page))) continue; \
+	else                                                \
 
 #define NEG !
 #define foreach_full_page(var, start, order) \
-	__foreach_page(var, start, var->entries, full, )
-
-#define foreach_not_full_page(var, start, order) \
 	__foreach_page(var, start, var->entries, full, NEG)
 
-#define foreach_used_page(var, start, order) \
-	__foreach_page(var, start, var->entries, used, )
+#define foreach_not_full_page(var, start, order) \
+	__foreach_page(var, start, var->entries, full, )
 
-#define foreach_not_used_page(var, start, order) \
+#define foreach_used_page(var, start, order) \
 	__foreach_page(var, start, var->entries, used, NEG)
 
-typedef uint32_t mm_info_t;
+#define foreach_not_used_page(var, start, order) \
+	__foreach_page(var, start, var->entries, used, )
+
+/* curiously, all my optimisation efforts were in vain, and eight bits is the
+ * best alternative. */
+typedef uint8_t mm_info_t;
 typedef void mm_node_t;
 
-struct mm_leaf_t {
-	size_t entries;
+struct mm_leaf {
+	pnum_t entries;
 	mm_info_t *used;
 };
 
-struct mm_branch_t {
-	size_t entries;
+struct mm_branch {
+	pnum_t entries;
 	mm_info_t *full;
 	mm_node_t **next;
 };
 
-struct mm_omap_t {
+struct mm_omap {
 	pm_t base;
 	mm_node_t **orders;
 	enum mm_order order;
 };
 
-struct mm_pmap_t {
-	struct mm_omap_t *omap[9];
+struct mm_pmap {
+	struct mm_omap *omap[9];
 };
 
-static struct mm_pmap_t *pmap = 0;
+static struct mm_pmap *pmap = 0;
 
 static void __mark_free(mm_node_t *op, pnum_t pnum, enum mm_order tgt,
                         enum mm_order src, enum mm_order dst)
@@ -86,17 +86,17 @@ static void __mark_free(mm_node_t *op, pnum_t pnum, enum mm_order tgt,
 	size_t idx = pnum_to_index(pnum, src);
 
 	if (src == dst) {
-		struct mm_leaf_t *o = (struct mm_leaf_t *)op;
-		clear_nbit(o->used[order_container(idx)], order_bit(idx));
+		struct mm_leaf *o = (struct mm_leaf *)op;
+		bitmap_clear(o->used, idx);
 		return;
 	}
 
-	struct mm_branch_t *o = (struct mm_branch_t *)op;
+	struct mm_branch *o = (struct mm_branch *)op;
 	if (src != tgt)
 		__mark_free(o->next[idx], pnum, tgt, src - 1, dst);
 
 	/* freeing a page results in always clearing a full bit? */
-	clear_nbit(o->full[order_container(idx)], order_bit(idx));
+	bitmap_clear(o->full, idx);
 }
 
 /* this could probably use an int for status, but eh */
@@ -106,7 +106,7 @@ void free_page(enum mm_order order, pm_t paddr)
 		if (!pmap->omap[i])
 			continue;
 
-		struct mm_omap_t *omap = pmap->omap[i];
+		struct mm_omap *omap = pmap->omap[i];
 		if (paddr < omap->base)
 			continue;
 
@@ -125,8 +125,8 @@ static bool __mark_used(mm_node_t *op, pnum_t pnum, enum mm_order tgt,
 	size_t idx = pnum_to_index(pnum, src);
 
 	if (src == dst) {
-		struct mm_leaf_t *o = (struct mm_leaf_t *)op;
-		set_nbit(o->used[order_container(idx)], order_bit(idx));
+		struct mm_leaf *o = (struct mm_leaf *)op;
+		bitmap_set(o->used, idx);
 
 		if (idx == max_index(src))
 			return true;
@@ -134,9 +134,9 @@ static bool __mark_used(mm_node_t *op, pnum_t pnum, enum mm_order tgt,
 		return false;
 	}
 
-	struct mm_branch_t *o = (struct mm_branch_t *)op;
+	struct mm_branch *o = (struct mm_branch *)op;
 	if (src == tgt) {
-		set_nbit(o->full[order_container(idx)], order_bit(idx));
+		bitmap_set(o->full, idx);
 
 		if (idx == max_index(src))
 			return true;
@@ -144,9 +144,8 @@ static bool __mark_used(mm_node_t *op, pnum_t pnum, enum mm_order tgt,
 		return false;
 	}
 
-	/** TODO: Should I switch over to bitmaps? */
 	if (__mark_used(o->next[idx], pnum, tgt, src - 1, dst)) {
-		set_nbit(o->full[order_container(idx)], order_bit(idx));
+		bitmap_set(o->full, idx);
 
 		if (idx == max_index(src))
 			return true;
@@ -161,7 +160,7 @@ void mark_used(enum mm_order order, pm_t paddr)
 		if (!pmap->omap[i])
 			continue;
 
-		struct mm_omap_t *omap = pmap->omap[i];
+		struct mm_omap *omap = pmap->omap[i];
 		if (paddr < omap->base)
 			continue;
 
@@ -180,7 +179,7 @@ static pnum_t __enum_order(mm_node_t *op, pnum_t offset, enum mm_order src,
 	size_t idx = pnum_to_index(offset, src);
 
 	if (src == dst) {
-		struct mm_leaf_t *o = (struct mm_leaf_t *)op;
+		struct mm_leaf *o = (struct mm_leaf *)op;
 		foreach_not_used_page(o, idx, src)
 		{
 			return page << order_offset(src);
@@ -189,7 +188,7 @@ static pnum_t __enum_order(mm_node_t *op, pnum_t offset, enum mm_order src,
 		return -1;
 	}
 
-	struct mm_branch_t *o = (struct mm_branch_t *)op;
+	struct mm_branch *o = (struct mm_branch *)op;
 	foreach_not_full_page(o, idx, src)
 	{
 		/* if the suggested search index is full, the following level
@@ -214,7 +213,7 @@ pm_t alloc_page(enum mm_order order, pm_t offset)
 
 	pnum_t pnum = -1;
 	pm_t base = 0;
-	struct mm_omap_t *omap;
+	struct mm_omap *omap;
 	for (size_t i = order; i <= __mm_max_order; ++i) {
 		if (!pmap->omap[i])
 			continue;
@@ -243,8 +242,8 @@ static pm_t __populate_order(mm_node_t **op, pm_t cont, enum mm_order src,
                              enum mm_order dst, size_t num)
 {
 	if (src == dst) {
-		struct mm_leaf_t *o = (struct mm_leaf_t *)move_forward(
-			cont, sizeof(struct mm_leaf_t));
+		struct mm_leaf *o = (struct mm_leaf *)move_forward(
+			cont, sizeof(struct mm_leaf));
 
 		o->entries = num;
 		o->used = (mm_info_t *)move_forward(cont, state_elems(num));
@@ -254,8 +253,8 @@ static pm_t __populate_order(mm_node_t **op, pm_t cont, enum mm_order src,
 		return cont;
 	}
 
-	struct mm_branch_t *o = (struct mm_branch_t *)move_forward(
-		cont, sizeof(struct mm_branch_t));
+	struct mm_branch *o = (struct mm_branch *)move_forward(
+		cont, sizeof(struct mm_branch));
 
 	o->entries = num;
 	o->full = (mm_info_t *)move_forward(cont, state_elems(num));
@@ -277,12 +276,12 @@ static pm_t __probe_order(pm_t cont, enum mm_order src, enum mm_order dst,
                           size_t num)
 {
 	if (src == dst) {
-		cont += sizeof(struct mm_leaf_t);
+		cont += sizeof(struct mm_leaf);
 		cont += state_elems(num);
 		return cont;
 	}
 
-	cont += sizeof(struct mm_branch_t);
+	cont += sizeof(struct mm_branch);
 	cont += state_elems(num);
 	cont = align_up(cont, sizeof(void *));
 	cont += next_elems(num);
@@ -293,12 +292,12 @@ static pm_t __probe_order(pm_t cont, enum mm_order src, enum mm_order dst,
 	return cont;
 }
 
-static pm_t __populate_omap(struct mm_omap_t **omap, pm_t cont, pm_t base,
+static pm_t __populate_omap(struct mm_omap **omap, pm_t cont, pm_t base,
                             size_t entries, enum mm_order order)
 {
-	struct mm_omap_t *lomap = (struct mm_omap_t *)move_forward(
-		cont, sizeof(struct mm_omap_t));
-	memset(lomap, 0, sizeof(struct mm_omap_t));
+	struct mm_omap *lomap = (struct mm_omap *)move_forward(
+		cont, sizeof(struct mm_omap));
+	memset(lomap, 0, sizeof(struct mm_omap));
 
 	lomap->orders = (mm_node_t **)move_forward(
 		cont, (order + 1) * sizeof(mm_node_t **));
@@ -317,7 +316,7 @@ static pm_t __populate_omap(struct mm_omap_t **omap, pm_t cont, pm_t base,
 
 static pm_t __probe_omap(pm_t cont, size_t entries, enum mm_order order)
 {
-	cont += sizeof(struct mm_omap_t);
+	cont += sizeof(struct mm_omap);
 	cont += (order + 1) * sizeof(mm_node_t **);
 
 	for (size_t i = 0; i <= order; ++i)
@@ -330,8 +329,8 @@ static pm_t __probe_omap(pm_t cont, size_t entries, enum mm_order order)
 pm_t populate_pmap(pm_t ram_base, size_t ram_size, pm_t cont)
 {
 	pm_t start = cont;
-	pmap = (struct mm_pmap_t *)move_forward(cont, sizeof(struct mm_pmap_t));
-	memset(pmap, 0, sizeof(struct mm_pmap_t));
+	pmap = (struct mm_pmap *)move_forward(cont, sizeof(struct mm_pmap));
+	memset(pmap, 0, sizeof(struct mm_pmap));
 
 	pm_t ram_region = ram_base;
 	size_t ram_left = ram_size;
@@ -358,7 +357,7 @@ pm_t probe_pmap(pm_t ram_base, size_t ram_size)
 {
 	pm_t cont = 0;
 
-	cont += sizeof(struct mm_pmap_t);
+	cont += sizeof(struct mm_pmap);
 
 	pm_t ram_region = ram_base;
 	size_t ram_left = ram_size;
