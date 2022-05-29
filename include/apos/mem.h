@@ -159,6 +159,8 @@
  */
 #define order_bit(idx) ((idx) & (MM_OINFO_WIDTH - 1))
 
+/** @todo Get rid of slightly ugly __* syntax, as these aren't static. */
+
 /**
  * Convert physical address to virtual address in direct mapping.
  *
@@ -178,7 +180,7 @@
 /**
  * Get page number of physical address.
  *
- * @todo Isn't this the same as \ref pnum_to_pm()?
+ * @todo Isn't this the same as \ref pm_to_pnum()?
  *
  * @param x Physical address.
  * @return Corresponding page number.
@@ -214,7 +216,7 @@
 #define MR_OWNED (1 << 10)
 /** Copy on write. */
 #define MR_COW (1 << 11)
-/** Don't free memory on flush. */
+/** Don't free memory on clear. */
 #define MR_KEEP (1 << 12)
 
 /** @} */
