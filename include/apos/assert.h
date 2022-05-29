@@ -26,13 +26,13 @@
  *
  * @param x Condition to check for.
  */
-#define catastrophic_assert(x)                                                 \
-	do {                                                                   \
-		if (unlikely(!(x))) {                                          \
+#define catastrophic_assert(x)                                                  \
+	do {                                                                    \
+		if (unlikely(!(x))) {                                           \
 			error("catastrophic assertion failed: " QUOTE(x) "\n"); \
-			while (1) {                                            \
-			}                                                      \
-		}                                                              \
+			while (1) {                                             \
+			}                                                       \
+		}                                                               \
 	} while (0);
 
 /**
@@ -44,12 +44,12 @@
  * @param x Condition to check for.
  * @param r Return value on failed check.
  */
-#define hard_assert(x, r)                                                      \
-	{                                                                      \
-		if (unlikely(!(x))) {                                          \
-			warn("hard assertion failed: " QUOTE(x) "\n");         \
-			return r;                                              \
-		}                                                              \
+#define hard_assert(x, r)                                              \
+	{                                                              \
+		if (unlikely(!(x))) {                                  \
+			warn("hard assertion failed: " QUOTE(x) "\n"); \
+			return r;                                      \
+		}                                                      \
 	}
 
 /**
@@ -57,11 +57,11 @@
  *
  * @param x Condition to check for.
  */
-#define soft_assert(x)                                                         \
-	do {                                                                   \
-		if (unlikely(!(x))) {                                          \
-			info("soft assertion failed: "  QUOTE(x) "\n");        \
-		}                                                              \
+#define soft_assert(x)                                                  \
+	do {                                                            \
+		if (unlikely(!(x))) {                                   \
+			info("soft assertion failed: "  QUOTE(x) "\n"); \
+		}                                                       \
 	} while (0);
 #else
 #define catastrophic_assert(x)

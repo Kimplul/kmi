@@ -192,35 +192,35 @@ stat_t destroy_proc(struct tcb *p)
 	return __destroy_thread_data(p);
 }
 
-#define DEFINE_ATTACH(name, type) \
-	stat_t name(struct tcb *r, struct tcb *t) \
-	{ \
-		hard_assert(r != t, ERR_INVAL); \
-		struct tcb *next = r->type.next; \
-		t->type.next = next; \
-\
+#define DEFINE_ATTACH(name, type)                  \
+	stat_t name(struct tcb *r, struct tcb *t)  \
+	{                                          \
+		hard_assert(r != t, ERR_INVAL);    \
+		struct tcb *next = r->type.next;   \
+		t->type.next = next;               \
+                                                   \
 		if (next) { next->type.prev = t; } \
-\
-		t->type.prev = r; \
-		r->type.next = t; \
-		return OK; \
+                                                   \
+		t->type.prev = r;                  \
+		r->type.next = t;                  \
+		return OK;                         \
 	}
 
 DEFINE_ATTACH(attach_rpc, rpc);
 DEFINE_ATTACH(attach_proc, proc);
 
-#define DEFINE_DETACH(name, type) \
-	stat_t name(struct tcb *r, struct tcb *t) \
-	{ \
-		MAYBE_UNUSED(r); \
-		hard_assert(r != t, ERR_INVAL); \
-		struct tcb *prev = t->type.prev; \
-		struct tcb *next = t->type.next; \
-\
+#define DEFINE_DETACH(name, type)                     \
+	stat_t name(struct tcb *r, struct tcb *t)     \
+	{                                             \
+		MAYBE_UNUSED(r);                      \
+		hard_assert(r != t, ERR_INVAL);       \
+		struct tcb *prev = t->type.prev;      \
+		struct tcb *next = t->type.next;      \
+                                                      \
 		if (prev) { prev->type.next = next; } \
 		if (next) { next->type.prev = prev; } \
-\
-		return OK; \
+                                                      \
+		return OK;                            \
 	}
 
 DEFINE_DETACH(detach_rpc, rpc);

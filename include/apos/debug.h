@@ -390,7 +390,7 @@ void setup_io_dbg(struct vmem *vmem);
  *
  * @param fmt Message, integer subset of regular printf.
  */
-#define error(fmt, ...)                                                        \
+#define error(fmt, ...) \
 	dbg(COMMON_FORMAT fmt, COMMON_ARGS("ERROR"),##__VA_ARGS__)
 
 #else

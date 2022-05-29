@@ -11,7 +11,7 @@
 
 #define MM_OINFO_WIDTH (sizeof(mm_info_t) * 8)
 
-#define pnum_to_index(pnum, order)                                             \
+#define pnum_to_index(pnum, order) \
 	(((pnum) >> __o_offset(order)) & (__o_width(order) - 1))
 #define pm_to_index(paddr, \
 	            order)       (pnum_to_index(pm_to_pnum(paddr), (order)))
@@ -43,8 +43,8 @@
 	                                         RAM_BASE)
 #define __page(x)                       ((x) / BASE_PAGE_SIZE)
 #define __addr(x)                       ((x)*BASE_PAGE_SIZE)
-#define __pages(x)                                                             \
-	(is_aligned((x), BASE_PAGE_SIZE) ? __page((x)) :                       \
+#define __pages(x)                                       \
+	(is_aligned((x), BASE_PAGE_SIZE) ? __page((x)) : \
 	 __page((x) + BASE_PAGE_SIZE))
 #define __bytes(x) (__addr(x))
 

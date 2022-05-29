@@ -20,55 +20,55 @@ struct sys_ret {
 	sys_arg_t val;
 };
 
-#define SYSCALL_DECLARE(name)                                                  \
-	struct sys_ret sys_##name(sys_arg_t a, sys_arg_t b, sys_arg_t c,       \
+#define SYSCALL_DECLARE(name)                                            \
+	struct sys_ret sys_##name(sys_arg_t a, sys_arg_t b, sys_arg_t c, \
 	                          sys_arg_t d);
 
-#define SYSCALL_DEFINE0(name)                                                  \
-	static inline struct sys_ret __##name();                               \
-	struct sys_ret sys_##name(sys_arg_t a, sys_arg_t b, sys_arg_t c,       \
-	                          sys_arg_t d)                                 \
-	{                                                                      \
-		UNUSED(a);                                                     \
-		UNUSED(b);                                                     \
-		UNUSED(c);                                                     \
-		UNUSED(d);                                                     \
-		return __##name();                                             \
-	}                                                                      \
+#define SYSCALL_DEFINE0(name)                                            \
+	static inline struct sys_ret __##name();                         \
+	struct sys_ret sys_##name(sys_arg_t a, sys_arg_t b, sys_arg_t c, \
+	                          sys_arg_t d)                           \
+	{                                                                \
+		UNUSED(a);                                               \
+		UNUSED(b);                                               \
+		UNUSED(c);                                               \
+		UNUSED(d);                                               \
+		return __##name();                                       \
+	}                                                                \
 	static struct sys_ret __##name
 
-#define SYSCALL_DEFINE1(name)                                                  \
-	static inline struct sys_ret __##name(sys_arg_t);                      \
-	struct sys_ret sys_##name(sys_arg_t a, sys_arg_t b, sys_arg_t c,       \
-	                          sys_arg_t d)                                 \
-	{                                                                      \
-		UNUSED(b);                                                     \
-		UNUSED(c);                                                     \
-		UNUSED(d);                                                     \
-		return __##name(a);                                            \
-	}                                                                      \
+#define SYSCALL_DEFINE1(name)                                            \
+	static inline struct sys_ret __##name(sys_arg_t);                \
+	struct sys_ret sys_##name(sys_arg_t a, sys_arg_t b, sys_arg_t c, \
+	                          sys_arg_t d)                           \
+	{                                                                \
+		UNUSED(b);                                               \
+		UNUSED(c);                                               \
+		UNUSED(d);                                               \
+		return __##name(a);                                      \
+	}                                                                \
 	static inline struct sys_ret __##name
 
-#define SYSCALL_DEFINE2(name)                                                  \
-	static inline struct sys_ret __##name(sys_arg_t, sys_arg_t);           \
-	struct sys_ret sys_##name(sys_arg_t a, sys_arg_t b, sys_arg_t c,       \
-	                          sys_arg_t d)                                 \
-	{                                                                      \
-		UNUSED(c);                                                     \
-		UNUSED(d);                                                     \
-		return __##name(a, b);                                         \
-	}                                                                      \
+#define SYSCALL_DEFINE2(name)                                            \
+	static inline struct sys_ret __##name(sys_arg_t, sys_arg_t);     \
+	struct sys_ret sys_##name(sys_arg_t a, sys_arg_t b, sys_arg_t c, \
+	                          sys_arg_t d)                           \
+	{                                                                \
+		UNUSED(c);                                               \
+		UNUSED(d);                                               \
+		return __##name(a, b);                                   \
+	}                                                                \
 	static inline struct sys_ret __##name
 
-#define SYSCALL_DEFINE3(name)                                                  \
-	static inline struct sys_ret __##name(sys_arg_t, sys_arg_t,            \
-	                                      sys_arg_t);                      \
-	struct sys_ret sys_##name(sys_arg_t a, sys_arg_t b, sys_arg_t c,       \
-	                          sys_arg_t d)                                 \
-	{                                                                      \
-		UNUSED(d);                                                     \
-		return __##name(a, b, c);                                      \
-	}                                                                      \
+#define SYSCALL_DEFINE3(name)                                            \
+	static inline struct sys_ret __##name(sys_arg_t, sys_arg_t,      \
+	                                      sys_arg_t);                \
+	struct sys_ret sys_##name(sys_arg_t a, sys_arg_t b, sys_arg_t c, \
+	                          sys_arg_t d)                           \
+	{                                                                \
+		UNUSED(d);                                               \
+		return __##name(a, b, c);                                \
+	}                                                                \
 	static inline struct sys_ret __##name
 
 #define SYSCALL_DEFINE4(name)                                                  \

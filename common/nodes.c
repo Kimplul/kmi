@@ -38,7 +38,7 @@
  * being free)
  */
 
-#define node_region(r)                                                         \
+#define node_region(r) \
 	((struct node_region *)((uintptr_t)(r) & ~(BASE_PAGE_SIZE - 1)))
 
 static struct node_region *__create_region()

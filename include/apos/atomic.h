@@ -315,7 +315,7 @@ typedef _Atomic __UINTMAX_TYPE__ atomic_uintmax_t;
  * @param mode Memory ordering. \see memory_order.
  * @return Value at \c obj.
  */
-#define atomic_exchange_explicit(obj, val, mode)                               \
+#define atomic_exchange_explicit(obj, val, mode) \
 	N_ATOMIC(exchange)(obj, val, mode)
 
 /**
@@ -326,7 +326,7 @@ typedef _Atomic __UINTMAX_TYPE__ atomic_uintmax_t;
  * @param val Value to be inserted at \c obj.
  * @return Value at \c obj.
  */
-#define atomic_exchange(obj, val)                                              \
+#define atomic_exchange(obj, val) \
 	atomic_exchange_explicit(obj, val, __ATOMIC_SEQ_CST)
 
 /**
@@ -344,10 +344,10 @@ typedef _Atomic __UINTMAX_TYPE__ atomic_uintmax_t;
  * @return \ref true if \c obj and \c val equal, \ref false otherwise.
  */
 #if defined(__GNUC__)
-#define atomic_compare_exchange_strong_explicit(obj, val, des, suc, fail)      \
+#define atomic_compare_exchange_strong_explicit(obj, val, des, suc, fail) \
 	N_ATOMIC(compare_exchange)(obj, val, des, 0, suc, fail)
 #elif defined(__clang__)
-#define atomic_compare_exchange_strong_explicit(obj, val, des, suc, fail)      \
+#define atomic_compare_exchange_strong_explicit(obj, val, des, suc, fail) \
 	N_ATOMIC(compare_exchange_strong)(obj, val, des, suc, fail)
 #endif
 
@@ -361,8 +361,8 @@ typedef _Atomic __UINTMAX_TYPE__ atomic_uintmax_t;
  * @param des Value to be copied if \c obj and \c val equal.
  * @return \ref true if \c obj and \c val equal, \ref false otherwise.
  */
-#define atomic_compare_exchange_strong(obj, val, des)                          \
-	atomic_compare_exchange_strong_explicit(                               \
+#define atomic_compare_exchange_strong(obj, val, des) \
+	atomic_compare_exchange_strong_explicit(      \
 		obj, val, des, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST)
 
 /**
@@ -381,10 +381,10 @@ typedef _Atomic __UINTMAX_TYPE__ atomic_uintmax_t;
  * false otherwise.
  */
 #if defined(__GNUC__)
-#define atomic_compare_exchange_weak_explicit(obj, val, des, suc, fail)        \
+#define atomic_compare_exchange_weak_explicit(obj, val, des, suc, fail) \
 	N_ATOMIC(compare_exchange)(obj, val, des, 1, suc, fail)
 #elif defined(__clang__)
-#define atomic_compare_exchange_weak_explicit(obj, val, des, suc, fail)        \
+#define atomic_compare_exchange_weak_explicit(obj, val, des, suc, fail) \
 	N_ATOMIC(compare_exchange_weak)(obj, val, des, suc, fail)
 #endif
 
@@ -412,7 +412,7 @@ typedef _Atomic __UINTMAX_TYPE__ atomic_uintmax_t;
  * @param mode Memory ordering. \see memory_order.
  * @return Contents of \c obj before addition.
  */
-#define atomic_fetch_add_explicit(obj, val, mode)                              \
+#define atomic_fetch_add_explicit(obj, val, mode) \
 	C11_ATOMIC(fetch_add)(obj, val, mode)
 
 /**
@@ -423,7 +423,7 @@ typedef _Atomic __UINTMAX_TYPE__ atomic_uintmax_t;
  * @param val Value to be added to object.
  * @return Contents of \c obj before addition.
  */
-#define atomic_fetch_add(obj, val)                                             \
+#define atomic_fetch_add(obj, val) \
 	atomic_fetch_add_explicit(obj, val, __ATOMIC_SEQ_CST)
 
 /**
@@ -435,7 +435,7 @@ typedef _Atomic __UINTMAX_TYPE__ atomic_uintmax_t;
  * @param mode Memory ordering. \see memory_order.
  * @return Contents of \c obj before subtraction.
  */
-#define atomic_fetch_sub_explicit(obj, val, mode)                              \
+#define atomic_fetch_sub_explicit(obj, val, mode) \
 	C11_ATOMIC(fetch_sub)(obj, val, mode)
 
 /**
@@ -446,7 +446,7 @@ typedef _Atomic __UINTMAX_TYPE__ atomic_uintmax_t;
  * @param val Value to be subtracted from object.
  * @return Contents of \c obj before subtraction.
  */
-#define atomic_fetch_sub(obj, val)                                             \
+#define atomic_fetch_sub(obj, val) \
 	atomic_fetch_sub_explicit(obj, val, __ATOMIC_SEQ_CST)
 
 /**
@@ -458,7 +458,7 @@ typedef _Atomic __UINTMAX_TYPE__ atomic_uintmax_t;
  * @param mode Memory ordering. \see memory_order.
  * @return Contents of \c obj before bitwise \c AND.
  */
-#define atomic_fetch_and_explicit(obj, val, mode)                              \
+#define atomic_fetch_and_explicit(obj, val, mode) \
 	C11_ATOMIC(fetch_and)(obj, val, mode)
 
 /**
@@ -469,7 +469,7 @@ typedef _Atomic __UINTMAX_TYPE__ atomic_uintmax_t;
  * @param val Value to bitwise \c AND with contents of object.
  * @return Contents of \c obj before bitwise \c AND.
  */
-#define atomic_fetch_and(obj, val)                                             \
+#define atomic_fetch_and(obj, val) \
 	atomic_fetch_and_explicit(obj, val, __ATOMIC_SEQ_CST)
 
 /**
@@ -481,7 +481,7 @@ typedef _Atomic __UINTMAX_TYPE__ atomic_uintmax_t;
  * @param mode Memory ordering. \see memory_order.
  * @return Contents of \c obj before bitwise \c XOR.
  */
-#define atomic_fetch_xor_explicit(obj, val, mode)                              \
+#define atomic_fetch_xor_explicit(obj, val, mode) \
 	C11_ATOMIC(fetch_xor)(obj, val, mode)
 
 /**
@@ -492,7 +492,7 @@ typedef _Atomic __UINTMAX_TYPE__ atomic_uintmax_t;
  * @param val Value to bitwise \c XOR with contents of object.
  * @return Contents of \c obj before bitwise \c XOR.
  */
-#define atomic_fetch_xor(obj, val)                                             \
+#define atomic_fetch_xor(obj, val) \
 	atomic_fetch_xor_explicit(obj, val, __ATOMIC_SEQ_CST)
 
 /**
@@ -504,7 +504,7 @@ typedef _Atomic __UINTMAX_TYPE__ atomic_uintmax_t;
  * @param mode Memory ordering. \see memory_order.
  * @return Contents of \c obj before bitwise \c OR.
  */
-#define atomic_fetch_or_explicit(obj, val, mode)                               \
+#define atomic_fetch_or_explicit(obj, val, mode) \
 	C11_ATOMIC(fetch_or)(obj, val, mode)
 
 /**
@@ -515,7 +515,7 @@ typedef _Atomic __UINTMAX_TYPE__ atomic_uintmax_t;
  * @param val Value to bitwise \c OR with contents of object.
  * @return Contents of \c obj before bitwise \c OR.
  */
-#define atomic_fetch_or(obj, val)                                              \
+#define atomic_fetch_or(obj, val) \
 	atomic_fetch_or_explicit(obj, val, __ATOMIC_SEQ_CST)
 
 /**
@@ -527,7 +527,7 @@ typedef _Atomic __UINTMAX_TYPE__ atomic_uintmax_t;
  * @param mode Memory ordering. \see memory_order.
  * @return Contents of \c obj before bitwise \c NAND.
  */
-#define atomic_fetch_nand_explicit(obj, val, mode)                             \
+#define atomic_fetch_nand_explicit(obj, val, mode) \
 	C11_ATOMIC(fetch_nand)(obj, val, mode)
 
 /**
@@ -538,7 +538,7 @@ typedef _Atomic __UINTMAX_TYPE__ atomic_uintmax_t;
  * @param val Value to bitwise \c NAND with contents of object.
  * @return Contents of \c obj before bitwise \c NAND.
  */
-#define atomic_fetch_nand(obj, val)                                            \
+#define atomic_fetch_nand(obj, val) \
 	atomic_fetch_nand_explicit(obj, val, __ATOMIC_SEQ_CST)
 
 /* skip atomic flags, probably not needed */

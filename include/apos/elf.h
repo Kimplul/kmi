@@ -187,11 +187,11 @@ struct __packed section64_header {
 #define section64_header(s) ((struct section64_header *)s)
 #define section32_header(s) ((struct section32_header *)s)
 
-#define elf_header_prop(c, e, p)                                               \
+#define elf_header_prop(c, e, p) \
 	(c == ELFCLASS64 ? elf64_header(e)->p : elf32_header(e)->p)
-#define program_header_prop(c, e, p)                                           \
+#define program_header_prop(c, e, p) \
 	(c == ELFCLASS64 ? program64_header(e)->p : program32_header(e)->p)
-#define section_header_prop(c, e, p)                                           \
+#define section_header_prop(c, e, p) \
 	(c == ELFCLASS64 ? section64_header(e)->p : section32_header(e)->p)
 
 vm_t load_elf(struct tcb *t, vm_t binary, vm_t interp);

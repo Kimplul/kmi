@@ -174,8 +174,8 @@ static size_t __integral_val(ssize_t value, size_t base, size_t flags,
 	size_t ret = 0;
 	signed char c = 0;
 
-#define handle_type(x)                                                         \
-	c = (x)value % (x)base;                                                \
+#define handle_type(x)          \
+	c = (x)value % (x)base; \
 	value = (x)value / (x)base;
 
 	if (!is_set(flags, UNSIGN_FLAG)) {

@@ -14,7 +14,7 @@
  * @param sym Name of symbol.
  * @param val Value of symbol.
  */
-#define DEFINE(sym, val)                                                       \
+#define DEFINE(sym, val) \
 	__asm__ volatile ("\n#-> " #sym " %0 " #val "\n" : : "i" (val))
 
 /**

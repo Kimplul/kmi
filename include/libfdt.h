@@ -89,7 +89,7 @@ void __dbg_fdt(const void *fdt, int node_offset, int depth);
  * @param p Pointer to int{32,64} inside the global FDT.
  * @return Value of integer at location p.
  */
-#define fdt_load_int_ptr(c, p)                                                 \
+#define fdt_load_int_ptr(c, p) \
 	((c) == 2 ? fdt_load_int64_ptr(p) : fdt_load_int32_ptr(p))
 
 #endif

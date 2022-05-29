@@ -31,16 +31,16 @@ stat_t clone_allocd_wrapper(struct vmem *b, pm_t *offset, vm_t vaddr,
 stat_t free_uvmem_wrapper(struct vmem *b, pm_t *offset, vm_t vaddr,
                           vmflags_t flags, enum mm_order order, void *data);
 
-#define map_allocd_region(b, start, bytes, flags, data)                        \
+#define map_allocd_region(b, start, bytes, flags, data) \
 	map_fill_region(b, &alloc_uvmem_wrapper, 0, start, bytes, flags, data)
 
-#define map_shared_region(b, start, bytes, flags, data)                        \
+#define map_shared_region(b, start, bytes, flags, data) \
 	map_fill_region(b, &alloc_shared_wrapper, 0, start, bytes, flags, data)
 
 #define clone_allocd_region(b, start, bytes, flags, data) \
 	map_fill_region(b, &clone_allocd_wrapper, 0, start, bytes, flags, data)
 
-#define unmap_freed_region(b, start, bytes, flags, data)                       \
+#define unmap_freed_region(b, start, bytes, flags, data) \
 	map_fill_region(b, &free_uvmem_wrapper, 0, start, bytes, flags, data)
 
 #define vm_flags(x) ((x) & ~0xff)
