@@ -10,6 +10,13 @@
 
 #include <apos/sp_tree.h>
 
+/**
+ * Basic BST left turn.
+ * Drop node \c n down to the left side of the right node, letting it take
+ * the place of \c n.
+ *
+ * @param n Node to turn left.
+ */
 static void __sp_turn_left(struct sp_node *n)
 {
 	struct sp_node *l = sp_left(n);
@@ -29,6 +36,15 @@ static void __sp_turn_left(struct sp_node *n)
 		sp_lparen(n) = n;
 }
 
+/**
+ * Basic BST right turn.
+ * Drop node \c n down to the right side of the left node, letting it take the
+ * place of \c n.
+ *
+ * Does not check if right node exists.
+ *
+ * @param n Node to turn right.
+ */
 static void __sp_turn_right(struct sp_node *n)
 {
 	struct sp_node *r = sp_right(n);
@@ -48,10 +64,16 @@ static void __sp_turn_right(struct sp_node *n)
 		sp_rparen(n) = n;
 }
 
-static int __sp_balance(struct sp_node *n)
+/**
+ * Calculate approximate balance of node, based on height hints.
+ *
+ * @param n Node to calculate balance for.
+ * @return Balance of node.
+ */
+static int_fast16_t __sp_balance(struct sp_node *n)
 {
-	int l = 0;
-	int r = 0;
+	int_fast16_t l = 0;
+	int_fast16_t r = 0;
 
 	if (sp_left(n))
 		l = sp_left(n)->hint + 1;
@@ -62,10 +84,16 @@ static int __sp_balance(struct sp_node *n)
 	return l - r;
 }
 
-static int __sp_max_hint(struct sp_node *n)
+/**
+ * Get highest hint.
+ * 
+ * @param n Node to calculate highest hint for.
+ * @return Highest hint.
+ */
+static int_fast16_t __sp_max_hint(struct sp_node *n)
 {
-	int l = 0;
-	int r = 0;
+	int_fast16_t l = 0;
+	int_fast16_t r = 0;
 
 	if (sp_left(n))
 		l = sp_left(n)->hint + 1;
@@ -79,6 +107,12 @@ static int __sp_max_hint(struct sp_node *n)
 		return r;
 }
 
+/**
+ * Balance tree, moving up from c n.
+ *
+ * @param root Root of tree.
+ * @param n Node to start balancing operation from.
+ */
 static void __sp_update(struct sp_node **root, struct sp_node *n)
 {
 	while (n) {
@@ -127,6 +161,12 @@ void sp_insert(struct sp_node **root, struct sp_node *p, struct sp_node *n,
 	__sp_update(root, n);
 }
 
+/**
+ * Replace node \c n with \c l, pulling of the righthand side of \n.
+ *
+ * @param n Node to replace.
+ * @param r Node to replace with.
+ */
 static void __sp_replace_right(struct sp_node *n, struct sp_node *r)
 {
 	struct sp_node *p = sp_paren(n);
@@ -158,6 +198,12 @@ static void __sp_replace_right(struct sp_node *n, struct sp_node *r)
 		sp_lparen(n) = r;
 }
 
+/**
+ * Replace node \c n with node \c l, pulling up the lefthand side of \c n.
+ *
+ * @param n Node to replace.
+ * @param l Node to replace with.
+ */
 static void __sp_replace_left(struct sp_node *n, struct sp_node *l)
 {
 	struct sp_node *p = sp_paren(n);
@@ -189,7 +235,6 @@ static void __sp_replace_left(struct sp_node *n, struct sp_node *l)
 		sp_rparen(n) = l;
 }
 
-/* TODO: handle root better */
 void sp_remove(struct sp_node **root, struct sp_node *del)
 {
 	if (sp_right(del)) {

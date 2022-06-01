@@ -10,24 +10,58 @@
 #include <apos/attrs.h>
 #include <libfdt.h>
 
-/* GNU cpio, use POSIX 'newc' format */
+/** GNU cpio, POSIX 'newc' format header. */
 struct __packed cpio_header {
+	/** Magic bytes. */
 	char c_magic[6];
+
+	/** File inode. */
 	char c_ino[8];
+
+	/** File type and permissions. */
 	char c_mode[8];
+
+	/** User ID. */
 	char c_uid[8];
+
+	/** Group ID. */
 	char c_gid[8];
+
+	/** Number of links to this file. */
 	char c_nlink[8];
+
+	/** Modification time. */
 	char c_mtime[8];
+
+	/** Size of file. */
 	char c_filesize[8];
+
+	/** Device major. */
 	char c_devmajor[8];
+
+	/** Device minor. */
 	char c_devminor[8];
+
+	/** Block device major. */
 	char c_rdevmajor[8];
+
+	/** Block device minor. */
 	char c_rdevminor[8];
+
+	/** Length of filename. */
 	char c_namesize[8];
+
+	/** CRC check. */
 	char c_check[8];
 };
 
+/**
+ * Get next file in archive.
+ * Does not check for out of bounds.
+ *
+ * @param cp Pointer to current file header.
+ * @return Pointer to next file header.
+ */
 static struct cpio_header *__next_entry(struct cpio_header *cp)
 {
 	size_t blen = align_up(
@@ -37,6 +71,14 @@ static struct cpio_header *__next_entry(struct cpio_header *cp)
 	return (struct cpio_header *)(((char *)cp) + blen + tlen);
 }
 
+/**
+ * Get file with name in archive.
+ *
+ * @param c Pointer to initrd.
+ * @param fname Filename to look for.
+ * @param fname_len Length of filename.
+ * @return Pointer to corresponding file header if found, \c NULL otherwise.
+ */
 static struct cpio_header *__find_file(const char *c, const char *fname,
                                        size_t fname_len)
 {
@@ -44,7 +86,7 @@ static struct cpio_header *__find_file(const char *c, const char *fname,
 	for (; cp; cp = __next_entry(cp)) {
 		size_t namelen = convnum(cp->c_namesize, 8, 16);
 		if (namelen == 0)
-			return 0;
+			return NULL;
 
 		if (namelen < fname_len)
 			continue;
@@ -57,8 +99,14 @@ static struct cpio_header *__find_file(const char *c, const char *fname,
 			return cp;
 	}
 
-	return 0;
+	return NULL;
 }
+
+/** Name of \c init program. */
+static char init_n[] = "init";
+
+/** Length of \c init name. */
+static size_t init_nlen = ARRAY_SIZE(init_n) - 1; /* ignore trailing NULL */
 
 pm_t get_initrdtop(const void *fdt)
 {
@@ -83,8 +131,6 @@ pm_t get_initrdbase(const void *fdt)
 	return (pm_t)__va(fdt_load_int_ptr(ci.addr_cells, initrd_base_ptr));
 }
 
-static char init_n[] = "init";
-static size_t init_nlen = ARRAY_SIZE(init_n) - 1; /* ignore trailing NULL */
 
 size_t get_init_size(const void *fdt)
 {
@@ -101,7 +147,7 @@ vm_t get_init_base(const void *fdt)
 	return ((vm_t)cp) + align_up(sizeof(struct cpio_header) + name_len, 4);
 }
 
-void move_init(const void *fdt, void *target)
+stat_t move_init(const void *fdt, void *target)
 {
 	const char *c = (const char *)get_initrdbase(fdt);
 
@@ -113,4 +159,5 @@ void move_init(const void *fdt, void *target)
 	fp += align_up(sizeof(struct cpio_header) + name_len, 4);
 
 	memmove(target, fp, file_len);
+	return OK;
 }

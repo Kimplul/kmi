@@ -9,7 +9,7 @@
 
 /* we need to undef the macros in string.h, otherwise the names get mangled */
 #undef strcpy
-__weak char *strcpy(char *dst, const char *src)
+__weak char *strcpy(char * restrict dst, const char * restrict src)
 {
 	const char *s1 = src;
 	char *s2 = dst;
@@ -21,7 +21,7 @@ __weak char *strcpy(char *dst, const char *src)
 }
 
 #undef strncpy
-__weak char *strncpy(char *dst, const char *src, size_t num)
+__weak char *strncpy(char * restrict dst, const char * restrict src, size_t num)
 {
 	const char *s1 = src;
 	char *s2 = dst;
@@ -41,7 +41,7 @@ __weak char *strncpy(char *dst, const char *src, size_t num)
 }
 
 #undef strcat
-__weak char *strcat(char *dst, const char *src)
+__weak char *strcat(char * restrict dst, const char * restrict src)
 {
 	const char *s1 = src;
 	size_t l1 = strlen(s1);
@@ -57,7 +57,7 @@ __weak char *strcat(char *dst, const char *src)
 }
 
 #undef strncat
-__weak char *strncat(char *dst, const char *src, size_t num)
+__weak char *strncat(char * restrict dst, const char * restrict src, size_t num)
 {
 	const char *s1 = src;
 	size_t l1 = strlen(s1);
@@ -112,7 +112,7 @@ __weak char *strchr(const char *str, int chr)
 }
 
 #undef strtok
-__weak char *strtok(char *str, const char *delims)
+__weak char *strtok(char * restrict str, const char * restrict delims)
 {
 	static char *cont = 0;
 	const char *s1 = str;
@@ -284,7 +284,7 @@ __weak void *memchr(const void *ptr, int val, size_t num)
 }
 
 #undef memcpy
-__weak void *memcpy(void *dst, const void *src, size_t num)
+__weak void *memcpy(void * restrict dst, const void * restrict src, size_t num)
 {
 	const char *m1 = (const char *)src;
 	char *m2 = (char *)dst;

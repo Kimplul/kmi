@@ -10,7 +10,26 @@
 #include <apos/types.h>
 #include <apos/attrs.h>
 
-enum poweroff_type { SHUTDOWN, COLD_REBOOT, WARM_REBOOT };
+/** Types of powering off. Still unclear what difference there is between warm
+ * and cold reboot. */
+enum poweroff_type {
+	/** Shut down. */
+	SHUTDOWN,
+
+	/** Cold or complete reboot. */
+	COLD_REBOOT,
+
+	/** Warm or partial reboot. */
+	WARM_REBOOT
+};
+
+/**
+ * Power off the system.
+ *
+ * @param type Type of powering off. \see poweroff_type.
+ * @return Nothing on success (system shuts down), \ref ERR_INVAL on invalid
+ * poweroff type or ERR_MISC if studown was not succesful.
+ */
 stat_t poweroff(enum poweroff_type type);
 
 #endif

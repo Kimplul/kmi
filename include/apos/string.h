@@ -11,34 +11,205 @@
 
 /* follow C library functions, drop location and error functions */
 
-char *strcpy(char *dst, const char *src);
-char *strncpy(char *dst, const char *src, size_t num);
+/**
+ * Copy \c NULL -terminated string.
+ * \c dst may not overlap \c src.
+ *
+ * @param dst Destination of copy.
+ * @param src Source of copy.
+ * @return \c dst.
+ */
+char *strcpy(char * restrict dst, const char * restrict src);
 
-char *strcat(char *dst, const char *src);
-char *strncat(char *dst, const char *src, size_t num);
+/**
+ * Copy \c NULL -terminated string, or first \c num characters.
+ * \c dst may not overlap \c src.
+ *
+ * @param dst Destination of copy.
+ * @param src Source of copy.
+ * @param num Maximum number of bytes to copy.
+ * @return \c dst.
+ */
+char *strncpy(char * restrict dst, const char * restrict src, size_t num);
 
+/**
+ * Concatenate \c NULL -terminated strings, placing \c src after \c dst.
+ * \c dst may not overlap \c src.
+ *
+ * @param dst Destination of concatenation.
+ * @param src String to append to \c dst.
+ * @return \c dst.
+ */
+char *strcat(char * restrict dst, const char * restrict src);
+
+/**
+ * Concatenate \c NULL -terminated strings, max \c num characters, placing \c
+ * src after \c dst.
+ * \c dst may not overlap \c src.
+ *
+ * @param dst Destination of concatenation.
+ * @param src String to append to \c dst.
+ * @param num Max number of characters to concatenate.
+ * @return \c dst.
+ */
+char *strncat(char * restrict dst, const char * restrict src, size_t num);
+
+/**
+ * Compare two \c NULL -terminated strings.
+ *
+ * @param str1 First string to compare.
+ * @param str2 Second string to compare.
+ * @return \c 0 if strings are equal, else \code str1[i] - str2[i] \endcode for
+ * first differing character.
+ */
 int strcmp(const char *str1, const char *str2);
+
+/**
+ * Compare two \c NULL -terminated strings, max \c num characters.
+ *
+ * @param str1 First string to compare.
+ * @param str2 Second string to compare.
+ * @param num Maximum number of characters to compare.
+ * @return \c 0 if strings are equal, else \code str[i] - str2[i] \endcode for
+ * first differint character.
+ */
 int strncmp(const char *str1, const char *str2, size_t num);
 
+/**
+ * Find first character occurence of \c chr in \c str.
+ *
+ * @param str String to look in.
+ * @param chr Character to look for.
+ * @return Pointer to first \c chr in \c str, else \c 0.
+ */
 char *strchr(const char *str, int chr);
-char *strtok(char *str, const char *delims);
+
+/**
+ * Tokenize string at delimiters. Each stop character is replaced with a \c
+ * NULL. Each following call after the initial found should be a \c NULL. Note
+ * that this kernel's implementation is not thread safe.
+ *
+ * @param str String to look in.
+ * @param delims String of characters to stop on.
+ * @return Start of found token, \c NULL otherwise.
+ */
+char *strtok(char * restrict str, const char * restrict delims);
+
+/**
+ * Find first occurence of \c str2 in \c str1.
+ *
+ * @param str1 String to look in.
+ * @param str2 String to look for.
+ * @return Pointer to start of first occurence, \c NULL otherwise.
+ */
 char *strstr(const char *str1, const char *str2);
 
+/**
+ * Find last occurence of \c chr in \c str.
+ *
+ * @param str String to look in.
+ * @param chr Character to look for.
+ * @return Pointer to last occurence.
+ */
 char *strrchr(const char *str, int chr);
+
+/**
+ * Find first occurence in \c str1 of any of characters in \c str2.
+ *
+ * @param str1 String to look in.
+ * @param str2 String of characters to look for.
+ * @return Pointer to first occurence.
+ */
 char *strpbrk(const char *str1, const char *str2);
 
+/**
+ * Get span of characters in \c str2 in \c str1.
+ *
+ * @param str1 String to look in.
+ * @param str2 String of characters to look for.
+ * @return Number of characters at start of \c str1 that are also in \c str2.
+ */
 size_t strspn(const char *str1, const char *str2);
+
+/**
+ * Get span of characters not in \c str2 in \c str1.
+ *
+ * @param str1 String to look in.
+ * @param str2 String of characters to look out for.
+ * @return Number of characters at start of \c str1 that are not in \c str2.
+ */
 size_t strcspn(const char *str1, const char *str2);
 
+/**
+ * Length of \c NULL-terminated string.
+ *
+ * @param str String.
+ * @return Length of \c str.
+ */
 size_t strlen(const char *str);
-/* only addition on top of libc */
+/**
+ * Length of \c NULL-terminated string, max \c num.
+ * Only addition on top of functions found in libc.
+ *
+ * @param str String.
+ * @param num Max number of characters to count.
+ * @return Length of \c str or \c num.
+ */
 size_t strnlen(const char *str, size_t num);
 
+/**
+ * Initialize memory to some value.
+ *
+ * @param ptr Pointer to memory to initialize.
+ * @param value Value to initialize to. \note Will be truncated to byte.
+ * @param num Number of bytes to initialize.
+ * @return \c ptr.
+ */
 void *memset(void *ptr, int value, size_t num);
+
+/**
+ * Look for value in memory.
+ *
+ * @param ptr Pointer to memory to look in.
+ * @param val Value to look for. \note Will be truncated to byte.
+ * @param num Number of bytes to look.
+ * @return Pointer to first occurence of \c val.
+ */
 void *memchr(const void *ptr, int val, size_t num);
-void *memcpy(void *dst, const void *src, size_t num);
+
+/**
+ * Copy memory byte for byte.
+ * \c dst may not overlap \c src.
+ *
+ * @param dst Destination of copy.
+ * @param src Source of copy.
+ * @param num Number of bytes to copy.
+ * @return \c dst.
+ */
+void *memcpy(void * restrict dst, const void * restrict src, size_t num);
+
+/**
+ * Move memory byte by byte.
+ * \note Essentially identical to \ref memcpy(), but the memory regions may
+ * overlap.
+ *
+ * @param dst Destination of move.
+ * @param src Source of move.
+ * @param num Number of bytes to move.
+ * @return \c dst.
+ */
 void *memmove(void *dst, const void *src, size_t num);
 
+/**
+ * Compare memory byte by byte.
+ *
+ * @param ptr1 Memory to compare 1.
+ * @param ptr2 Memory to compare 2.
+ * @param num Bytes to compare.
+ * @return \c 0 when equal, else
+ * \code (unsigned char *)ptr1[i] - (unsigned char *)ptr2[i] \endcode
+ * at first differing byte.
+ */
 int memcmp(const void *ptr1, const void *ptr2, size_t num);
 
 /* Honorable mentions:

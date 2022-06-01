@@ -42,4 +42,13 @@ pm_t get_initrdtop(const void *fdt);
  */
 pm_t get_initrdbase(const void *fdt);
 
+/**
+ * Move \c init program to some other region in memory.
+ *
+ * @param fdt Global FDT pointer.
+ * @param target Where to move to.
+ * @return OK on success.
+ */
+stat_t move_init(const void *fdt, void *target);
+
 #endif /* APOS_INITRD_H */
