@@ -51,7 +51,7 @@ static id_t __insert_timer(struct timer_node *ti)
 {
 	struct sp_root *root = __cpu_timers();
 	struct sp_node *n = sp_root(root), *p = NULL;
-	enum sp_dir d;
+	enum sp_dir d = LEFT;
 	while (n) {
 		struct timer_node *t = container_of(n, struct timer_node, sp_n);
 		if (ti->timer.cid == t->timer.cid) {
