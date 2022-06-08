@@ -6,45 +6,89 @@
  * Table of system calls.
  */
 
-/* enum for now, possibly macros in the future once I get an approximate idea of
+/** enum for now, possibly macros in the future once I get an approximate idea of
  * which syscalls are necessary etc. */
 enum {
-	/* noop, for testing out how many syscalls per second can done I suppose
-	 * */
+	/** @name Misc. */
+	/** @{ */
+	/** Noop, mainly for testing syscall subsystem and sanity checking. */
 	SYS_NOOP,
+	/** @} */
 
-	/* memory management */
-	SYS_REQ_MEM,    /* request memory from anywhere */
-	SYS_REQ_PMEM,   /* request physical address */
-	SYS_REQ_FIXMEM, /* request memory at fixed address */
-	SYS_FREE_MEM,   /* free memory */
+	/* @name Memory management. */
+	/** @{ */
+	/** Request memory from anywhere. */
+	SYS_REQ_MEM,
 
-	/* timers */
+	/** Request memory with physical address. */
+	SYS_REQ_PMEM,
+
+	/** Request memory at fixed virtual address. */
+	SYS_REQ_FIXMEM,
+
+	/** Free memory. */
+	SYS_FREE_MEM,
+	/** @} */
+
+	/** @name Timers */
+	/** @{ */
+	/** Get accuracy of clock in Hertz. */
 	SYS_TIMEBASE,
+
+	/** Request relative timer (number of ticks from now). */
 	SYS_REQ_REL_TIMER,
+
+	/** Request absolute timer (timepoint in ticks). */
 	SYS_REQ_ABS_TIMER,
+
+	/** Remove timer. */
 	SYS_FREE_TIMER,
+	/** @} */
 
-	/* IPC */
-	/* I really should try to find my notes about the server/client
-	 * structure of the OS, but these following syscalls are probably
-	 * required */
-	SYS_IPC_SERVER,     /* inform kernel that process should be treated as a server */
+	/** @name IPC. */
+	/** @{ */
+	/** Inform kernel that process should be treated as server. */
+	SYS_IPC_SERVER,
+
+	/** Send IPC request as client. */
 	SYS_IPC_REQ,   /* IPC request to server */
-	SYS_IPC_FWD, /* IPC request forwarding */
-	SYS_IPC_RESP,       /* IPC response from server */
 
-	/* process management */
-	SYS_CREATE, /* create new thread */
-	SYS_FORK,   /* duplicate process */
-	SYS_EXEC,   /* execute new binary in process space */
-	SYS_KILL,   /* kill thread */
-	SYS_SIGNAL, /* send signal to process (kill etc.) */
-	SYS_SWAP, /* switch running process */
+	/** Forward IPC request from client. */
+	SYS_IPC_FWD,
 
-	/* kernel management */
-	SYS_CONF,     /* config system parameters (stack size etc.) */
-	SYS_POWEROFF, /* shutdown/reboot etc. */
+	/** IPC response from server. */
+	SYS_IPC_RESP,
+	/** @} */
+
+	/** @name Process management. */
+	/** @{ */
+	/** Create new thread. */
+	SYS_CREATE,
+
+	/** Duplicate process. */
+	SYS_FORK,
+
+	/** Execute new binary in process space. */
+	SYS_EXEC,
+
+	/** Kill thread. */
+	SYS_KILL,
+
+	/** Send signal to thread. */
+	SYS_SIGNAL,
+
+	/** Switch running process. */
+	SYS_SWAP,
+	/** @} */
+
+	/** @name Kernel management. */
+	/** @{ */
+	/** Configure system parameters (stack size etc.). */
+	SYS_CONF,
+
+	/** Shutdown, reboot, etc. */
+	SYS_POWEROFF,
+	/** @} */
 };
 
 /* function declarations should be somewhere else, this file could be used in
