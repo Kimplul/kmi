@@ -96,7 +96,7 @@ struct mem_region {
  * @param start Start of memory arena.
  * @param arena_size Size of memory arena.
  * @return \ref OK on success.
- * @todo Document error codes when I actually implement them properly.
+ * \todo Document error codes when I actually implement them properly.
  */
 stat_t init_region(struct mem_region_root *r, vm_t start, size_t arena_size);
 
@@ -156,7 +156,7 @@ stat_t free_region(struct mem_region_root *r, vm_t start);
  * @param r Memory region root.
  * @param m Memory region to free.
  * @return \ref OK.
- * @todo Improve error checking.
+ * \todo Improve error checking.
  */
 stat_t free_known_region(struct mem_region_root *r, struct mem_region *m);
 
@@ -231,7 +231,7 @@ typedef stat_t region_callback_t(struct vmem *vmem, pm_t *offset, vm_t vaddr,
  * @param va Address that is within memory region.
  * @param flags Memory region flags.
  * @return \ref OK when succesful.
- * @todo Implement.
+ * \todo Implement.
  */
 stat_t stat_region(struct mem_region_root *r, vm_t va, vmflags_t *flags);
 
@@ -242,7 +242,7 @@ stat_t stat_region(struct mem_region_root *r, vm_t va, vmflags_t *flags);
  * @param va Address that is within memory region.
  * @param flags New flags of region.
  * @return \ref OK when succesful.
- * @todo Implement.
+ * \todo Implement.
  */
 stat_t mod_region(struct mem_region_root *r, vm_t va, vmflags_t flags);
 

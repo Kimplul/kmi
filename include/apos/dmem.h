@@ -4,7 +4,7 @@
 /**
  * @file dmem.h
  * Device memory handling, i.e. anything outside of RAM.
- * @todo Make global parameters functions instead.
+ * \todo Make global parameters functions instead.
  */
 
 #include <apos/types.h>

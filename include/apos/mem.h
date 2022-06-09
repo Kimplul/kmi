@@ -159,7 +159,7 @@
  */
 #define order_bit(idx) ((idx) & (MM_OINFO_WIDTH - 1))
 
-/** @todo Get rid of slightly ugly __* syntax, as these aren't static. */
+/** \todo Get rid of slightly ugly __* syntax, as these aren't static. */
 
 /**
  * Convert physical address to virtual address in direct mapping.
@@ -180,7 +180,7 @@
 /**
  * Get page number of physical address.
  *
- * @todo Isn't this the same as \ref pm_to_pnum()?
+ * \todo Isn't this the same as \ref pm_to_pnum()?
  *
  * @param x Physical address.
  * @return Corresponding page number.
@@ -281,7 +281,7 @@ typedef ssize_t pnum_t;
  * @param max_order Maximum order the current system supports.
  * @param shifts Offsets to start of each memory order in address.
  * @param page_shift Width in bits of base page size.
- * @todo Should likely also be stat_t?
+ * \todo Should likely also be stat_t?
  */
 void init_mem(size_t max_order, size_t shifts[10], size_t page_shift);
 

@@ -97,7 +97,7 @@ struct tcb {
 	/** Thread ID. */
 	id_t tid;
 
-	/* TODO: implement cpu_id to hardware cpu ID translation, first in
+	/* \todo: implement cpu_id to hardware cpu ID translation, first in
 	 * riscv. */
 	/** Cpu currently executing this thread. */
 	id_t cpu_id;
@@ -111,7 +111,7 @@ struct tcb {
 	/** Address of this thread's stack top. */
 	vm_t thread_stack_top;
 
-	/* TODO: Check if each thread should be allowed more than just one
+	/* \todo: Check if each thread should be allowed more than just one
 	 * region of thread local storage. */
 	/** Possible thread local storage. */
 	vm_t thread_storage;
@@ -145,7 +145,7 @@ void destroy_tcbs();
  *
  * Userspace stack is allocated with \ref alloc_stacks().
  *
- * @todo Thread local storage?
+ * \todo Thread local storage?
  *
  * @param p Process context within to create the thread.
  * @return Pointer to created \ref tcb.
@@ -157,9 +157,9 @@ struct tcb *create_thread(struct tcb *p);
  *
  * Sets up a new thread in a new process context. If there is a parent thread,
  * its memory regions are copied but made COW.
- * @see create_thread().
+ * \see create_thread().
  *
- * @todo COW handling.
+ * \todo COW handling.
  *
  * @param p Parent process.
  * @return Pointer to created \ref tcb.
@@ -172,7 +172,7 @@ struct tcb *create_proc(struct tcb *p);
  * Frees data associated with thread and frees up the thread ID.
  * At least currently does not allow \c t to be a process thread.
  *
- * @todo Other return values?
+ * \todo Other return values?
  *
  * @param t Thread to destroy.
  * @return \ref OK on success, \ref ERR_NOINIT if called without initializing
@@ -213,7 +213,7 @@ stat_t attach_rpc(struct tcb *r, struct tcb *t);
  * @param t Thread to detach.
  * @return \ref OK on success, \ref ERR_INVAL if pointers are the same.
  *
- * @todo Should probably check that thread exists in the process?
+ * \todo Should probably check that thread exists in the process?
  */
 stat_t detach_rpc(struct tcb *r, struct tcb *t);
 
@@ -272,18 +272,18 @@ struct tcb *get_tcb(id_t tid);
  *
  * @param p Process whose memory mappings to clone.
  * @return \ref OK on success, something else otherwise.
- * @todo Check up on return codes.
+ * \todo Check up on return codes.
  */
 stat_t clone_proc_maps(struct tcb *p);
 
 /**
  * Clone RPC context memory mappings.
  *
- * @see clone_proc_maps().
+ * \see clone_proc_maps().
  *
  * @param r Server whose memory mappings to clone to threads in RPC to it.
  * @return \ref OK on success, something else otherwise.
- * @todo Check up on return codes.
+ * \todo Check up on return codes.
  */
 stat_t clone_rpc_maps(struct tcb *r);
 

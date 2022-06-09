@@ -12,7 +12,12 @@
 size_t __thread_stack_size = SZ_2M;
 size_t __call_stack_size = SZ_2M;
 
-SYSCALL_DEFINE2(conf)(sys_arg_t param, sys_arg_t val)
+SYSCALL_DEFINE1(conf_get)(sys_arg_t param)
+{
+	return (struct sys_ret){ OK, 0 };
+}
+
+SYSCALL_DEFINE2(conf_set)(sys_arg_t param, sys_arg_t val)
 {
 	UNUSED(param);
 	UNUSED(val);

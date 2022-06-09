@@ -3,7 +3,7 @@
  * Tiny undefined behaviour sanitizer, mostly lifted from
  * https://github.com/Abb1x/tinyubsan/blob/master/src/tinyubsan.c
  *
- * @todo Add in more runtime info.
+ * \todo Add in more runtime info.
  *
  * Note that this file's documentation is pretty vague, as I don't know the ins
  * and outs of the undefined behaviour sanitizer subsystem.
@@ -27,7 +27,7 @@ struct source_location {
 /**
  * Describes the type of undefined behaviour.
  *
- * Currently largely unused, @todo implement better undefined behaviour bug
+ * Currently largely unused, \todo implement better undefined behaviour bug
  * messages.
  */
 struct type_descriptor {

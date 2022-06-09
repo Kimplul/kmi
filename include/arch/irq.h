@@ -6,7 +6,7 @@
  * Arch-specific interrupt handling, generally implemented in
  * arch/whatever/kernel/irq.c
  *
- * @todo These should probably also be stat_t...
+ * \todo These should probably also be stat_t...
  */
 
 #if defined(riscv64)

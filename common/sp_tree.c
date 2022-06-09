@@ -86,7 +86,7 @@ static int_fast16_t __sp_balance(struct sp_node *n)
 
 /**
  * Get highest hint.
- * 
+ *
  * @param n Node to calculate highest hint for.
  * @return Highest hint.
  */

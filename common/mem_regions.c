@@ -140,7 +140,7 @@ stat_t destroy_region(struct mem_region_root *r)
 {
 	__destroy_region(sp_root(&r->free_regions));
 	__destroy_region(sp_root(&r->used_regions));
-	/* TODO: error checking? */
+	/* \todo: error checking? */
 	return OK;
 }
 
@@ -178,7 +178,7 @@ static struct mem_region *__create_region(vm_t start, vm_t end,
 	return m;
 }
 
-/* TODO: should probably check if this actually works :D seems to do, but that's
+/* \todo: should probably check if this actually works :D seems to do, but that's
  * just from really quick checking */
 static size_t po_align(size_t s)
 {

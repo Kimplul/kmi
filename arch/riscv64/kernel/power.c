@@ -28,7 +28,7 @@
 
 stat_t poweroff(enum poweroff_type type)
 {
-	/* TODO: this only shuts down the cpu itself, but may leave the SOC
+	/* \todo: this only shuts down the cpu itself, but may leave the SOC
 	 * active. Should read from fdt poweroff and syscon-poweroff etc */
 	switch (type) {
 	case SHUTDOWN:

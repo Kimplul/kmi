@@ -11,8 +11,8 @@
  * instead. First 4K is reserved for NULL, but I suppose it could be mapped
  * later if *absolutely* necessary.
  *
- * @todo Consider separating user-specified and immutable parameters.
- * @todo Write more thorough documentation, maybe a separate .md file?
+ * \todo Consider separating user-specified and immutable parameters.
+ * \todo Write more thorough documentation, maybe a separate .md file?
  */
 
 #include <apos/sizes.h>
@@ -75,7 +75,7 @@
 #else
 /* 32bit */
 
-/* TODO: figure this stuff out */
+/* \todo: figure this stuff out */
 #define VM_DMAP (0x000000000)
 #define VM_KERN (VM_DMAP + SZ_256K)
 #define ROOT_PTE (0UL)

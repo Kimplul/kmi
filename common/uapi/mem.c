@@ -18,7 +18,7 @@ SYSCALL_DEFINE2(req_mem)(sys_arg_t size, sys_arg_t flags)
 SYSCALL_DEFINE3(req_fixmem)(sys_arg_t start, sys_arg_t size, sys_arg_t flags)
 {
 	struct tcb *r = cur_proc();
-	/* should probably check if the allocation succeeded...? TODO */
+	/* should probably check if the allocation succeeded...? \todo */
 	return (struct sys_ret){ OK, alloc_fixed_uvmem(r, start, size, flags) };
 }
 
@@ -48,7 +48,7 @@ SYSCALL_DEFINE3(req_pmem)(sys_arg_t paddr, sys_arg_t size, sys_arg_t flags)
 
 SYSCALL_DEFINE2(req_sharedmem)(sys_arg_t size, sys_arg_t flags)
 {
-	/* TODO: check that requester is server */
+	/* \todo: check that requester is server */
 	struct tcb *t = cur_proc();
 	vm_t start = 0;
 	if ((start = alloc_shared_uvmem(t, size, flags)))
@@ -69,3 +69,5 @@ SYSCALL_DEFINE3(ref_sharedmem)(sys_arg_t tid, sys_arg_t va, sys_arg_t flags)
 
 	return (struct sys_ret){ OK, start };
 }
+
+/** \todo add some way to specify who gets to access the shared memory? */

@@ -50,7 +50,7 @@ enum sbi_ecodes {
  * @param arg4 Argument 4.
  * @param arg5 Argument 5.
  * @return SBI call return. \see sbiret.
- * @todo Query which extensions are available.
+ * \todo Query which extensions are available.
  */
 struct sbiret sbi_ecall(int ext, int fid, unsigned long arg0,
                         unsigned long arg1, unsigned long arg2,
@@ -68,7 +68,7 @@ struct sbiret sbi_ecall(int ext, int fid, unsigned long arg0,
  *
  * @param stime_value Absolute timepoint in ticks.
  * @return SBI call return. \see sbiret.
- * @todo Read timebase from fdt, seems to be clocks/sec for accurate timers.
+ * \todo Read timebase from fdt, seems to be clocks/sec for accurate timers.
  */
 static inline struct sbiret sbi_set_timer(uint64_t stime_value)
 {
@@ -94,7 +94,7 @@ static inline struct sbiret sbi_set_timer(uint64_t stime_value)
  * @param reset_reason Reason for reset. Optional, probably won't be used by the
  * kernel.
  * @return SBI call return \see sbiret.
- * @todo Should \ref SBI_SHUTDOWN etc. be defined in this file instead?
+ * \todo Should \ref SBI_SHUTDOWN etc. be defined in this file instead?
  */
 static inline struct sbiret sbi_system_reset(uint32_t reset_type,
                                              uint32_t reset_reason)

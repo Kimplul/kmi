@@ -16,10 +16,10 @@
  * certain page order and freeing it as another could easily be a
  * source of difficult to track bugs.
  *
- * @todo More in depth documentation about the physical memory algorithms,
+ * \todo More in depth documentation about the physical memory algorithms,
  * unfortunately it is quite difficult to follow.
  *
- * @todo See if there are improvements to be made, either to the implementation
+ * \todo See if there are improvements to be made, either to the implementation
  * or code in general. Could I use bitmaps, for example, and maybe calculate the
  * next pointer instead of storing it?
  */

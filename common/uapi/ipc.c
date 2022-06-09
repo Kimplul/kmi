@@ -19,7 +19,7 @@ SYSCALL_DEFINE1(ipc_server)(sys_arg_t callback)
 SYSCALL_DEFINE3(ipc_req)(sys_arg_t pid, sys_arg_t d0, sys_arg_t d1)
 {
 	struct tcb *r = get_tcb(pid);
-	/* TODO: something like jump_to_callback(t) */
+	/* \todo: something like jump_to_callback(t) */
 	/* remember difference between ipc_req and ipc_fwd! */
 	return (struct sys_ret){ d0, d1 };
 }

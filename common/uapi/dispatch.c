@@ -35,7 +35,8 @@ static const sys_t syscall_table[] = {
 	[SYS_SWAP] = sys_swap,
 
 	/* conf */
-	[SYS_CONF] = sys_conf,
+	[SYS_CONF_SET] = sys_conf_set,
+	[SYS_CONF_GET] = sys_conf_get,
 	[SYS_POWEROFF] = sys_poweroff,
 };
 

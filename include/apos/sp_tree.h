@@ -21,7 +21,7 @@
  *
  * @param n Node to read.
  * @return Left node of read node.
- * @see sp_right().
+ * \see sp_right().
  */
 #define sp_left(n) ((n)->left)
 
@@ -30,7 +30,7 @@
  *
  * @param n Node to read.
  * @return Right node of read node.
- * @see sp_left().
+ * \see sp_left().
  */
 #define sp_right(n) ((n)->right)
 
@@ -41,7 +41,7 @@
  *
  * @param n Node to read.
  * @return Parent of right node of read node.
- * @see sp_lparen().
+ * \see sp_lparen().
  */
 #define sp_rparen(n) (sp_right(n)->parent)
 
@@ -50,7 +50,7 @@
  *
  * @param n Node to read.
  * @return Parent of left node of read node.
- * @see sp_rparen().
+ * \see sp_rparen().
  */
 #define sp_lparen(n) (sp_left(n)->parent)
 
@@ -67,7 +67,7 @@
  *
  * @param n Node to read.
  * @return Grandparent of read node.
- * @see sp_has_gparen().
+ * \see sp_has_gparen().
  */
 #define sp_gparen(n) ((n)->parent->parent)
 
@@ -75,7 +75,7 @@
  *
  * @param n Node to read.
  * @return Non-zero if node has grandparent, \c 0 otherwise.
- * @see sp_gparen().
+ * \see sp_gparen().
  */
 #define sp_has_gparen(n) (sp_paren(n) && sp_gparen(n))
 

@@ -47,7 +47,7 @@
  * ...
  * @endcode
  *
- * @todo Move documentation into its own .md
+ * \todo Move documentation into its own .md
  *
  * @param fdt Global FDT pointer.
  * @param max_order Highest order pages the arch supports.

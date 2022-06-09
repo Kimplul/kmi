@@ -12,7 +12,7 @@
  *
  * @param x Attribute whose existence should be checked.
  * @return Non-zero when available, \c 0 when not available.
- * @todo Figure out which attributes are necessary and which are good to have
+ * \todo Figure out which attributes are necessary and which are good to have
  */
 #if !defined(__has_attribute)
 #define __has_attribute(x) 0

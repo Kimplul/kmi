@@ -84,7 +84,10 @@ enum {
 	/** @name Kernel management. */
 	/** @{ */
 	/** Configure system parameters (stack size etc.). */
-	SYS_CONF,
+	SYS_CONF_SET,
+
+	/** Get system parameters. */
+	SYS_CONF_GET,
 
 	/** Shutdown, reboot, etc. */
 	SYS_POWEROFF,

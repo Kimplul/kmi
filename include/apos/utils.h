@@ -512,7 +512,7 @@ DEFINE_ALIGN_DOWN(ull, unsigned long long);
 
 /**
  * Helper macro for defining type specific alignment checks.
- * 
+ *
  * @param name Name of type in function name.
  * @param type Actual type.
  */

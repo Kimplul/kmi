@@ -18,7 +18,7 @@
  * @param bin Address of binary to load.
  * @param interp Optional interpreter, mainly for PIE ELF binaries.
  * @return \ref OK on success, \ref ERR_INVAL if loading binary failed.
- * @todo Handle out of memory better?
+ * \todo Handle out of memory better?
  */
 stat_t prepare_proc(struct tcb *t, vm_t bin, vm_t interp);
 

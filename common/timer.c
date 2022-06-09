@@ -156,5 +156,5 @@ void update_timers()
 	struct timer *t = newest_timer();
 	remove_timer(t);
 
-	/* TODO: handle timer thread ID */
+	/* \todo: handle timer thread ID */
 }

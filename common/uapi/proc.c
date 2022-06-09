@@ -28,7 +28,7 @@ SYSCALL_DEFINE0(fork)(){
 }
 
 SYSCALL_DEFINE2(exec)(sys_arg_t bin, sys_arg_t interp){
-	/* TODO: execute new process, probably with more sensible argc passing */
+	/* \todo: execute new process, probably with more sensible argc passing */
 	struct tcb *r = cur_tcb();
 
 	/* mark binary to be kept */
@@ -58,13 +58,13 @@ SYSCALL_DEFINE2(exec)(sys_arg_t bin, sys_arg_t interp){
 }
 
 SYSCALL_DEFINE2(signal)(sys_arg_t tid, sys_arg_t signal){
-	/* TODO: signals? */
+	/* \todo: signals? */
 	return (struct sys_ret){ OK, 0 };
 }
 
 SYSCALL_DEFINE1(swap)(sys_arg_t tid){
-	/* TODO: switch to process */
-	/* TODO: should switch return the registers of the new thread that would
+	/* \todo: switch to process */
+	/* \todo: should switch return the registers of the new thread that would
 	 * be used for message passing? */
 	return (struct sys_ret){ OK, 0 };
 }

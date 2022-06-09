@@ -161,7 +161,7 @@ typedef _Atomic __UINTMAX_TYPE__ atomic_uintmax_t;
 
 /**
  * Kill dependency.
- * @todo Figure out what it means.
+ * \todo Figure out what it means.
  *
  * @param y Value whose dependencies should be killed.
  * @return \c y

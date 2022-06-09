@@ -14,7 +14,7 @@
 
 stat_t set_return(vm_t r);
 stat_t set_ipc(struct tcb *t, id_t pid, id_t tid);
-/*TODO: should this be in arch/tcb.h or something? */
+/*\todo: should this be in arch/tcb.h or something? */
 stat_t set_thread(struct tcb *t, vm_t stack);
 stat_t run_init(struct tcb *t, void *fdt);
 

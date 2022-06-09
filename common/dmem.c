@@ -39,7 +39,7 @@ static stat_t dev_alloc_wrapper(struct vmem *b, pm_t *offset, vm_t vaddr,
                                 void *data)
 {
 	stat_t *status = (stat_t *)data;
-	/* TODO: remember to do something with this status info */
+	/* \todo: remember to do something with this status info */
 	*status = map_vpage(b, *offset, vaddr, flags, order);
 	*offset += order_size(order);
 	return OK;

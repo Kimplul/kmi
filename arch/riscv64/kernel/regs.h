@@ -7,7 +7,7 @@
  * _save_context. Used in \ref arch/riscv64/gen/asm-offsets.c to generate a list
  * of offsets usable from assembly.
  *
- * @todo Implement sacing floating point, vector, etc. registers.
+ * \todo Implement sacing floating point, vector, etc. registers.
  */
 
 /**
