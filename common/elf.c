@@ -30,13 +30,13 @@ static void __map_exec(struct tcb *t, vm_t bin, uint8_t ei_c, vm_t phstart,
 {
 	hard_assert(t && is_proc(t), RETURN_VOID);
 
-	/* \todo: take alignment into consideration? */
-	/* \todo: take overlapping memory regions into account, probably mostly
+	/** \todo take alignment into consideration? */
+	/** \todo take overlapping memory regions into account, probably mostly
 	 * by keeping track of previously allocated area and seeing if the
 	 * segment fits into it */
-	/* \todo: check if p_memsz is larger than p_filesz, the segment should be
+	/** \todo check if p_memsz is larger than p_filesz, the segment should be
 	 * filled with zeroes. */
-	/* \todo: in general, make this a low more clean. */
+	/** \todo in general, make this a low more clean. */
 	vm_t runner = phstart;
 	vmflags_t default_flags = VM_V | VM_R | VM_W | VM_X | VM_U;
 	for (size_t i = 0; i < phnum; ++i, runner += phsize) {
@@ -74,7 +74,7 @@ static void __map_exec(struct tcb *t, vm_t bin, uint8_t ei_c, vm_t phstart,
 static vm_t __map_dyn(struct tcb *t, vm_t bin, uint8_t ei_c, vm_t phstart,
                       size_t phnum, size_t phsize)
 {
-	/* \todo: this path should only be taken when no PT_INTERP is defined, as
+	/** \todo this path should only be taken when no PT_INTERP is defined, as
 	 * making sure ld is loaded should be done in userspace. Maybe a bit
 	 * hacky, I know.*/
 }

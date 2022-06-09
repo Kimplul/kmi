@@ -75,7 +75,7 @@
 #else
 /* 32bit */
 
-/* \todo: figure this stuff out */
+/** \todo figure this stuff out */
 #define VM_DMAP (0x000000000)
 #define VM_KERN (VM_DMAP + SZ_256K)
 #define ROOT_PTE (0UL)

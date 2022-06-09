@@ -57,7 +57,7 @@ vm_t alloc_uvmem(struct tcb *t, size_t size, vmflags_t flags)
 	stat_t status = OK;
 	const vm_t v = alloc_region(&t->sp_r, size, &size, flags);
 	const vm_t w = map_allocd_region(t->proc.vmem, v, size, flags, &status);
-	/* \todo: this could be changed so that each thread allocated the memory
+	/** \todo this could be changed so that each thread allocated the memory
 	 * region for itself to start with, and only when someone tries to
 	 * access it from some other thread, is it actually cloned. Would likely
 	 * need some major reworkings, so this is good enough for now. */
@@ -122,7 +122,7 @@ vm_t ref_shared_uvmem(struct tcb *t1, struct tcb *t2, vm_t va, vmflags_t flags)
 	return v;
 }
 
-/* \todo: assume tcb is root tcb? */
+/** \todo assume tcb is root tcb? */
 stat_t free_uvmem(struct tcb *t, vm_t va)
 {
 	struct mem_region *m = find_used_region(&t->sp_r, va);

@@ -126,7 +126,7 @@ static inline ticks_t msecs_to_ticks(tunit_t msecs)
  */
 static inline ticks_t secs_to_ticks(tunit_t secs)
 {
-	/* \todo: likely not a problem on 64bit systems, not sure how to handle situation on
+	/** \todo likely not a problem on 64bit systems, not sure how to handle situation on
 	 * 32bit */
 	return msecs_to_ticks(secs * 1000);
 }

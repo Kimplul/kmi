@@ -42,7 +42,7 @@ void destroy_tcbs()
 
 static id_t __alloc_tid(struct tcb *t)
 {
-	/* \todo: this would need some locking or something... */
+	/** \todo this would need some locking or something... */
 	for (size_t i = start_tid; i < num_tids; ++i) {
 		if (tcbs[i])
 			continue;
@@ -55,7 +55,7 @@ static id_t __alloc_tid(struct tcb *t)
 	return ERR_NF;
 }
 
-/* \todo: add error checking */
+/** \todo add error checking */
 static vm_t __setup_rpc_stack(struct tcb *t, size_t bytes)
 {
 	pm_t offset = 0;
@@ -90,7 +90,7 @@ stat_t alloc_stacks(struct tcb *t)
 	if (!__setup_rpc_stack(p, __call_stack_size))
 		return ERR_OOMEM;
 
-	/* \todo: this only allows for a global stack size, what if a user wants
+	/** \todo this only allows for a global stack size, what if a user wants
 	 * per thread stack sizes? */
 	t->thread_stack_top = t->thread_stack + __thread_stack_size;
 	return OK;
@@ -103,7 +103,7 @@ struct tcb *create_thread(struct tcb *p)
 	vm_t bottom = alloc_page(MM_O0, 0);
 	/* move tcb to top of kernel stack, keeping alignment in check
 	 * (hopefully) */
-	/* \todo: check alignment */
+	/** \todo check alignment */
 	struct tcb *t = (struct tcb *)align_down(
 		bottom + order_size(MM_O0) - sizeof(struct tcb), sizeof(long));
 	memset(t, 0, sizeof(struct tcb));
@@ -131,7 +131,7 @@ struct tcb *create_thread(struct tcb *p)
 
 static stat_t __clone_proc(struct tcb *p, struct tcb *n)
 {
-	/* \todo: clone memory regions, and mark them MR_COW, as well as copy
+	/** \todo clone memory regions, and mark them MR_COW, as well as copy
 	 * bm_branch tree but with VM_W off, also at some point write COW
 	 * handler */
 	return OK;
@@ -161,7 +161,7 @@ static stat_t __destroy_thread_data(struct tcb *t)
 	vm_t bottom = align_down((vm_t)t, order_size(MM_O0));
 	free_page(MM_O0, (pm_t)bottom);
 
-	/* \todo: free stacks */
+	/** \todo free stacks */
 
 	return OK;
 }

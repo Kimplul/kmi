@@ -8,7 +8,7 @@
 #include "regs.h"
 #include "csr.h"
 
-/* \todo: actually map fdt into the target address space */
+/** \todo actually map fdt into the target address space */
 stat_t run_init(struct tcb *t, void *fdt)
 {
 	csr_write(CSR_SSCRATCH, t);
@@ -36,7 +36,7 @@ stat_t set_ipc(struct tcb *t, id_t pid, id_t tid)
 stat_t set_thread(struct tcb *t, vm_t stack)
 {
 	/* get location of registers in memory */
-	/* \todo: check alignment, should be fine but just to be sure */
+	/** \todo check alignment, should be fine but just to be sure */
 	struct riscv_regs *r = (struct riscv_regs *)(--t);
 
 	/* insert important values into register slots */

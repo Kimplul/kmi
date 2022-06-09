@@ -18,7 +18,7 @@
 #include <apos/debug.h>
 #include <apos/utils.h>
 
-/* \todo: should this exit or do something explosive like that? */
+/** \todo should this exit or do something explosive like that? */
 #if !defined(DNDEBUG)
 
 /**

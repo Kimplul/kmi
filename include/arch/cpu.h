@@ -24,6 +24,6 @@
  */
 id_t cpu_id();
 
-/* \todo: add more cpu handling functions */
+/** \todo add more cpu handling functions */
 
 #endif /* APOS_CPU_H */

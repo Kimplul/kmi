@@ -27,7 +27,7 @@ stat_t init_proc(void *fdt)
 {
 	init_tcbs();
 
-	/* \todo: cleanup or something */
+	/** \todo cleanup or something */
 	struct tcb *t = create_proc(NULL);
 	if (!t)
 		return ERR_OOMEM;

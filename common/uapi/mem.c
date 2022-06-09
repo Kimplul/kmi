@@ -48,7 +48,7 @@ SYSCALL_DEFINE3(req_pmem)(sys_arg_t paddr, sys_arg_t size, sys_arg_t flags)
 
 SYSCALL_DEFINE2(req_sharedmem)(sys_arg_t size, sys_arg_t flags)
 {
-	/* \todo: check that requester is server */
+	/** \todo check that requester is server */
 	struct tcb *t = cur_proc();
 	vm_t start = 0;
 	if ((start = alloc_shared_uvmem(t, size, flags)))

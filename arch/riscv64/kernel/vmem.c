@@ -223,7 +223,7 @@ vm_t setup_kernel_io(struct vmem *b, vm_t paddr)
 
 stat_t clone_uvmem(struct vmem *r, struct vmem *b)
 {
-	/* \todo: error checking? */
+	/** \todo error checking? */
 	for (size_t i = 0; i <= CSTACK_PAGE; ++i)
 		b->leaf[i] = r->leaf[i];
 

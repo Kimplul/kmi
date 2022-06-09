@@ -97,7 +97,7 @@ struct tcb {
 	/** Thread ID. */
 	id_t tid;
 
-	/* \todo: implement cpu_id to hardware cpu ID translation, first in
+	/** \todo implement cpu_id to hardware cpu ID translation, first in
 	 * riscv. */
 	/** Cpu currently executing this thread. */
 	id_t cpu_id;
@@ -111,7 +111,7 @@ struct tcb {
 	/** Address of this thread's stack top. */
 	vm_t thread_stack_top;
 
-	/* \todo: Check if each thread should be allowed more than just one
+	/** \todo Check if each thread should be allowed more than just one
 	 * region of thread local storage. */
 	/** Possible thread local storage. */
 	vm_t thread_storage;
