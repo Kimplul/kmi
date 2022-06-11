@@ -10,6 +10,7 @@
 #include <apos/initrd.h>
 #include <arch/arch.h>
 #include <arch/proc.h>
+#include <arch/cpu.h>
 
 stat_t prepare_proc(struct tcb *t, vm_t bin, vm_t interp)
 {
@@ -33,6 +34,7 @@ stat_t init_proc(void *fdt)
 		return ERR_OOMEM;
 
 	/* set current tcb */
+	cpu_assign(t);
 	use_tcb(t);
 	use_vmem(t->proc.vmem);
 

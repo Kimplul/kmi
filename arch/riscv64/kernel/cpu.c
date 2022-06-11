@@ -6,6 +6,11 @@
 #include <apos/tcb.h>
 #include <arch/cpu.h>
 
+void cpu_assign(struct tcb *t)
+{
+	__asm__ volatile ("mv tp, %0\n" : : "r" (t) :);
+}
+
 id_t cpu_id()
 {
 	/* yes, slightly weird situation where cur_tcb() call cpu_id() which

@@ -12,16 +12,88 @@
 #include "pages.h"
 #include "csr.h"
 
+/**
+ * Get page table entry physical page number.
+ *
+ * @param pte Page table entry.
+ * @return Corresponding physical page number.
+ */
 #define pte_ppn(pte) (((pm_t)(pte)) >> 10)
+
+/**
+ * Get page table entry flags.
+ *
+ * @param pte Page table entry.
+ * @return Corresponding flags.
+ */
 #define pte_flags(pte) (((pm_t)(pte)) & 0xff)
+
+/**
+ * Convert physical memory address to page table entry.
+ *
+ * @param p Physical memory address.
+ * @param f Flags to use.
+ * @return Corresponding page table entry.
+ */
 #define to_pte(p, f) ((pm_to_pnum(p) << 10) | (f))
+
+/**
+ * Get virtual address in page table entry.
+ *
+ * @param pte Page table entry.
+ * @return Corresponding virtual address.
+ */
 #define pte_addr(pte) __va(pnum_to_pm(pte_ppn(pte)))
+
+/**
+ * Get physical address in page table entry.
+ *
+ * @param pte Page table entry.
+ * @return Corresponding physical address.
+ */
 #define pte_paddr(pte) (pnum_to_pm(pte_ppn(pte)))
+
+/**
+ * Virtual memory address to page order index.
+ *
+ * @param a Virtual address.
+ * @param o Order of page.
+ * @return Corresponding page index.
+ */
 #define vm_to_index(a, o) (pm_to_index(a, o))
+
+/**
+ * Check if page table entry is active.
+ *
+ * @param pte Page table entry.
+ * @return \c 0 if entry is not active, non-zero otherwise.
+ */
 #define is_active(pte) (pte_flags(pte) & VM_V)
+
+/**
+ * Check if page table entry is a leaf.
+ *
+ * @param pte Page table entry.
+ * @return \c 0 if entry is not leaf, non-zero otherwise.
+ */
 #define is_leaf(pte) (is_active(pte) && (pte_flags(pte) & ~VM_V))
+
+/**
+ * Check if page table entry is a branch.
+ *
+ * @param pte Page table entry.
+ * @return \c 0 if entry is not branch, non-zero otherwise.
+ */
 #define is_branch(pte) (is_active(pte) && !(pte_flags(pte) & ~VM_V))
 
+/**
+ * Find page table entry corresponding to virtual address.
+ *
+ * @param b Virtual memory to work in.
+ * @param v Virtual address to look for.
+ * @param o Address where to return page order to.
+ * @return Physical address of page.
+ */
 static pm_t *__find_vmem(struct vmem *b, vm_t v, enum mm_order *o)
 {
 	enum mm_order top = __mm_max_order;
@@ -84,6 +156,11 @@ stat_t stat_vpage(struct vmem *branch, vm_t vaddr, pm_t *paddr,
 	return ERR_NF;
 }
 
+/**
+ * Create virtual memory leaf page table.
+ *
+ * @return New virtual memory leaf page table.
+ */
 static struct vmem *__create_leaf()
 {
 	pm_t new_leaf = alloc_page(MM_KPAGE, 0);
@@ -91,6 +168,11 @@ static struct vmem *__create_leaf()
 	return (struct vmem *)to_pte((pm_t)__pa(new_leaf), VM_V);
 }
 
+/**
+ * Destroy virtual memory page table branch.
+ *
+ * @param b Virtual memory to work in.
+ */
 static void __destroy_branch(struct vmem *b)
 {
 	if (!b)
@@ -150,6 +232,12 @@ void flush_tlb_all()
 	__asm__ volatile ("sfence.vma\n" ::: "memory");
 }
 
+/**
+ * Jump into virtual memory.
+ *
+ * @param branch Virtual memory address space to jump into.
+ * @param m Riscv memory mode to use.
+ */
 static void __use_vmem(struct vmem *branch, enum mm_mode m)
 {
 	branch = (struct vmem *)__pa(branch);

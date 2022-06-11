@@ -18,9 +18,10 @@
 /**
  * Get hardware timer frequency.
  *
+ * @param fdt Global FDT pointer.
  * @return Hardware timer frequency, ticks/sec.
  */
-ticks_t stat_timer();
+ticks_t stat_timer(const void *fdt);
 
 /**
  * Set up timer interrupt for absolute ticks.

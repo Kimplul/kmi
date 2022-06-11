@@ -33,6 +33,10 @@
  */
 #define __fmt(x, y) __attribute__((format(__printf__, x, y)))
 
+
+/** Printf formatting attribute to not confuse doxygen. */
+#define __printf __fmt(1, 2)
+
 /**
  * Align object.
  *

@@ -21,6 +21,11 @@ void set_timer(ticks_t ticks)
 	sbi_set_timer(ticks);
 }
 
+/**
+ * Get current ticks.
+ *
+ * @return Current ticks.
+ */
 #if __riscv_xlen == 64
 static ticks_t get_ticks64()
 {

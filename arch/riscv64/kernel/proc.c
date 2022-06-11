@@ -8,9 +8,9 @@
 #include "regs.h"
 #include "csr.h"
 
-/** \todo actually map fdt into the target address space */
 stat_t run_init(struct tcb *t, void *fdt)
 {
+	/** \todo actually map fdt into the target address space */
 	csr_write(CSR_SSCRATCH, t);
 	__asm__ volatile ("mv sp, %0\n" : : "r" (t->thread_stack_top) : "memory");
 	__asm__ volatile ("mv a0, %0\n" : : "r" (fdt) : );

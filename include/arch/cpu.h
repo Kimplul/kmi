@@ -8,6 +8,7 @@
  */
 
 #include <apos/types.h>
+#include <apos/tcb.h>
 
 #if defined(riscv64)
 #include "../../arch/riscv64/include/cpu.h"
@@ -24,6 +25,14 @@
  */
 id_t cpu_id();
 
-/** \todo add more cpu handling functions */
+/**
+ * Assign tcb to current cpu.
+ *
+ * @param t \ref tcb to assign to current cpu.
+ */
+void cpu_assign(struct tcb *t);
+
+/** \todo Should init be assigned one thread per core, or how should I handle
+ * giving out CPU IDs? */
 
 #endif /* APOS_CPU_H */

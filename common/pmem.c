@@ -33,53 +33,122 @@
 #include <apos/bits.h> /* is_nset etc */
 #include <libfdt.h>
 
-/* NOTE: these are all for pnum_t, i.e. O0_SHIFT is from 0 */
+/**
+ * Loop through all page usage bits in current bitmap.
+ *
+ * @param var Memory leaf or branch containing bitmap.
+ * @param start Start looking from this index.
+ * @param end Stop looking before this index.
+ * @param attr Attribute name of bitmap.
+ * @param neg Negate whether we're looking for full or empty pages.
+ *
+ * \note These are all for pnum_t, i.e. O0_SHIFT is from 0
+ */
 #define __foreach_page(var, start, end, attr, neg)          \
 	for (pnum_t page = start; page < end; ++page)       \
 	if (neg (bitmap_is_set(var->attr, page))) continue; \
 	else                                                \
 
+/** Easier to read negation. */
 #define NEG !
-#define foreach_full_page(var, start, order) \
+
+/**
+ * Loop through all full pages.
+ *
+ * @param var Memory leaf or branch containing bitmap.
+ * @param start Start looking from this index.
+ */
+#define foreach_full_page(var, start) \
 	__foreach_page(var, start, var->entries, full, NEG)
 
-#define foreach_not_full_page(var, start, order) \
+/**
+ * Loop through all not full pages.
+ *
+ * @param var Memory leaf or branch containing bitmap.
+ * @param start Start looking from this index.
+ */
+#define foreach_not_full_page(var, start) \
 	__foreach_page(var, start, var->entries, full, )
 
-#define foreach_used_page(var, start, order) \
+/**
+ * Loop through all used pages.
+ *
+ * @param var Memory leaf or branch containing bitmap.
+ * @param start Start looking from this index.
+ */
+#define foreach_used_page(var, start) \
 	__foreach_page(var, start, var->entries, used, NEG)
 
-#define foreach_not_used_page(var, start, order) \
+/**
+ * Loop through all not used pages.
+ *
+ * @param var Memory leaf or branch containing bitmap.
+ * @param start Start looking from this index.
+ */
+#define foreach_not_used_page(var, start) \
 	__foreach_page(var, start, var->entries, used, )
 
 /* curiously, all my optimisation efforts were in vain, and eight bits is the
  * best alternative. */
+
+/** Memory bitmap base size. */
 typedef uint8_t mm_info_t;
+
+/** Beauty typedef for void *, used for bitmaps in this file. */
 typedef void mm_node_t;
 
+/** Memory page leaf. */
 struct mm_leaf {
+	/** Number of entries in leaf. */
 	pnum_t entries;
+
+	/** Bitmap of used pages. */
 	mm_info_t *used;
 };
 
+/** Memory page branch. */
 struct mm_branch {
+	/** Number of entries in branch. */
 	pnum_t entries;
+
+	/** Bitmap of full nodes. */
 	mm_info_t *full;
+
+	/** Pointer to array of next order indexes. */
 	mm_node_t **next;
 };
 
+/** Order map. */
 struct mm_omap {
+	/** Base address of map. */
 	pm_t base;
+
+	/** Pointer to array of nodes. */
 	mm_node_t **orders;
+
+	/** Order of map. */
 	enum mm_order order;
 };
 
+/** Physical map. */
 struct mm_pmap {
-	struct mm_omap *omap[9];
+	/** Order map, one per order up to maximum order. */
+	struct mm_omap *omap[NUM_ORDERS];
 };
 
+/** Static physical map address. \note If I support NUMA, this should not be
+ * static, rather one physical map per NUMA region. */
 static struct mm_pmap *pmap = 0;
 
+/**
+ * Helper function for marking a page used.
+ *
+ * @param op Order node pointer.
+ * @param pnum Physical page number to mark free.
+ * @param tgt Target order.
+ * @param src Source order.
+ * @param dst Destination order.
+ */
 static void __mark_free(mm_node_t *op, pnum_t pnum, enum mm_order tgt,
                         enum mm_order src, enum mm_order dst)
 {
@@ -99,9 +168,9 @@ static void __mark_free(mm_node_t *op, pnum_t pnum, enum mm_order tgt,
 	bitmap_clear(o->full, idx);
 }
 
-/* this could probably use an int for status, but eh */
 void free_page(enum mm_order order, pm_t paddr)
 {
+	/** \todo This could probably use an int for status, but eh */
 	for (size_t i = MM_O0; i <= __mm_max_order; ++i) {
 		if (!pmap->omap[i])
 			continue;
@@ -119,6 +188,16 @@ void free_page(enum mm_order order, pm_t paddr)
 	}
 }
 
+/**
+ * Helper function for marking a page used.
+ *
+ * @param op Order node pointer.
+ * @param pnum Page number to mark used.
+ * @param tgt Target order.
+ * @param src Source order.
+ * @param dst Destination order.
+ * @return \ref true if order is filled, \ref false otherwise.
+ */
 static bool __mark_used(mm_node_t *op, pnum_t pnum, enum mm_order tgt,
                         enum mm_order src, enum mm_order dst)
 {
@@ -173,6 +252,15 @@ void mark_used(enum mm_order order, pm_t paddr)
 	}
 }
 
+/**
+ * Look for next free page.
+ *
+ * @param op Operand node pointer.
+ * @param offset Offset to where to start looking for available pages from.
+ * @param src Source order.
+ * @param dst Destination order.
+ * @return Page number of found index.
+ */
 static pnum_t __enum_order(mm_node_t *op, pnum_t offset, enum mm_order src,
                            enum mm_order dst)
 {
@@ -180,7 +268,7 @@ static pnum_t __enum_order(mm_node_t *op, pnum_t offset, enum mm_order src,
 
 	if (src == dst) {
 		struct mm_leaf *o = (struct mm_leaf *)op;
-		foreach_not_used_page(o, idx, src)
+		foreach_not_used_page(o, idx)
 		{
 			return page << order_offset(src);
 		}
@@ -189,7 +277,7 @@ static pnum_t __enum_order(mm_node_t *op, pnum_t offset, enum mm_order src,
 	}
 
 	struct mm_branch *o = (struct mm_branch *)op;
-	foreach_not_full_page(o, idx, src)
+	foreach_not_full_page(o, idx)
 	{
 		/* if the suggested search index is full, the following level
 		 * would get an incorrect offset if trying to follow the original
@@ -237,10 +325,20 @@ pm_t alloc_page(enum mm_order order, pm_t offset)
 	return paddr;
 }
 
-/* unfortunate that populating the mm info is so complicated */
+/**
+ * Populate order node map.
+ *
+ * @param op Address to where to write order node pointer.
+ * @param cont Physical address where to continue writing data to.
+ * @param src Source order.
+ * @param dst Destination order.
+ * @param num Number of nodes in this order to populate.
+ * @return Physical address to continue from.
+ */
 static pm_t __populate_order(mm_node_t **op, pm_t cont, enum mm_order src,
                              enum mm_order dst, size_t num)
 {
+	/* unfortunate that populating the mm info is so complicated */
 	if (src == dst) {
 		struct mm_leaf *o = (struct mm_leaf *)move_forward(
 			cont, sizeof(struct mm_leaf));
@@ -272,6 +370,15 @@ static pm_t __populate_order(mm_node_t **op, pm_t cont, enum mm_order src,
 	return cont;
 }
 
+/**
+ * Probe order node map.
+ *
+ * @param cont Number of bytes written so far.
+ * @param src Source order.
+ * @param dst Destination order.
+ * @param num Number of nodes in this order to calculate.
+ * @return Number of bytes written so far.
+ */
 static pm_t __probe_order(pm_t cont, enum mm_order src, enum mm_order dst,
                           size_t num)
 {
@@ -292,6 +399,15 @@ static pm_t __probe_order(pm_t cont, enum mm_order src, enum mm_order dst,
 	return cont;
 }
 
+/** Populate order map.
+ *
+ * @param omap Address where to write order map pointer.
+ * @param cont Address where to continue writing map data.
+ * @param base Base of order map.
+ * @param entries Number of order node entries in order map.
+ * @param order Order of this order map.
+ * @return Address to continue writing data to.
+ */
 static pm_t __populate_omap(struct mm_omap **omap, pm_t cont, pm_t base,
                             size_t entries, enum mm_order order)
 {
@@ -314,6 +430,14 @@ static pm_t __populate_omap(struct mm_omap **omap, pm_t cont, pm_t base,
 	return cont;
 }
 
+/**
+ * Probe order map.
+ *
+ * @param cont Number of bytes written so far.
+ * @param entries Number of order node entries in this order map.
+ * @param order Order of this order map.
+ * @return Number of bytes written so far.
+ */
 static pm_t __probe_omap(pm_t cont, size_t entries, enum mm_order order)
 {
 	cont += sizeof(struct mm_omap);
@@ -375,6 +499,12 @@ pm_t probe_pmap(pm_t ram_base, size_t ram_size)
 	return cont;
 }
 
+/**
+ * Helper function for marking area used.
+ *
+ * @param base Base address of area.
+ * @param top Top address of top.
+ */
 static void __mark_area_used(pm_t base, pm_t top)
 {
 	size_t area_left = top - base;
@@ -389,6 +519,11 @@ static void __mark_area_used(pm_t base, pm_t top)
 		mark_used(BASE_PAGE, runner);
 }
 
+/**
+ * Mark reserved memory region used, to avoid it getting accidentally allocated.
+ *
+ * @param fdt Global FDT pointer.
+ */
 static void __mark_reserved_mem(void *fdt)
 {
 	int rmem_offset = fdt_path_offset(fdt, "/reserved-memory/mmode_resv0");
@@ -407,6 +542,12 @@ static void __mark_reserved_mem(void *fdt)
 	__mark_area_used((pm_t)__va(base), (pm_t)__va(top));
 }
 
+/**
+ * Read top of RAM from FDT.
+ *
+ * @param fdt Global FDT pointer.
+ * @return Physical address of top of RAM.
+ */
 static pm_t __get_ramtop(void *fdt)
 {
 	struct cell_info ci = get_reginfo(fdt, "/memory");
@@ -423,12 +564,26 @@ static pm_t __get_ramtop(void *fdt)
 	return (pm_t)fdt_load_int_ptr(ci.size_cells, mem_reg) + base;
 }
 
+/**
+ * Read top of FDT.
+ *
+ * @param fdt Global FDT pointer.
+ * @return Physical address of top of FDT.
+ */
 static pm_t __get_fdttop(void *fdt)
 {
 	const char *b = (const char *)fdt;
 	return (pm_t)(b + fdt_totalsize(fdt));
 }
 
+/**
+ * Return base of FDT.
+ *
+ * Technically pretty useless, but here mainly for cohesion.
+ *
+ * @param fdt Global FDT pointer.
+ * @return \c fdt.
+ */
 static pm_t __get_fdtbase(void *fdt)
 {
 	/* lol */
