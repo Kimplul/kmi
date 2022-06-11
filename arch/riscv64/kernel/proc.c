@@ -33,15 +33,15 @@ stat_t set_ipc(struct tcb *t, id_t pid, id_t tid)
 	return OK;
 }
 
-stat_t set_thread(struct tcb *t, vm_t stack)
+stat_t set_thread(struct tcb *t)
 {
 	/* get location of registers in memory */
 	/** \todo check alignment, should be fine but just to be sure */
 	struct riscv_regs *r = (struct riscv_regs *)(--t);
 
 	/* insert important values into register slots */
-	r->sp = (long)stack;
-	r->tp = (long)t;
+	r->sp = (long)t->thread_stack_top;
+	r->tp = (long)t->thread_storage;
 
 	return OK;
 }

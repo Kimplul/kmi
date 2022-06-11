@@ -48,6 +48,7 @@ SYSCALL_DEFINE0(noop)(){
 struct sys_ret syscall_dispatch(sys_arg_t syscall, sys_arg_t a, sys_arg_t b,
                                 sys_arg_t c, sys_arg_t d)
 {
+	/** \todo Add check that syscall is not larger than table */
 	sys_t call = syscall_table[syscall];
 
 	if (!call)

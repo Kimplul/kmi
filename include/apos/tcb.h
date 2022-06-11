@@ -252,6 +252,8 @@ struct tcb *cur_proc();
 /**
  * Set \c t as current \ref tcb.
  *
+ * Also updates the current cpu id of the tcb.
+ *
  * @param t Thread to mark as current.
  */
 void use_tcb(struct tcb *t);

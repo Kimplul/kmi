@@ -15,6 +15,15 @@
 #include "../../arch/riscv32/include/arch.h"
 #endif
 
+/**
+ * Setup arch specific stuff.
+ *
+ * See arch documentation if there is any.
+ *
+ * @param fdt Global FDT.
+ * @return \ref OK if boot can continue, error otherwise.
+ * \todo Check errors.
+ */
 stat_t setup_arch(void *fdt);
 
 #endif /* APOS_ARCH_H */

@@ -18,7 +18,7 @@ stat_t prepare_proc(struct tcb *t, vm_t bin, vm_t interp)
 		return ERR_INVAL;
 
 	alloc_stacks(t);
-	set_thread(t, t->thread_stack_top);
+	set_thread(t);
 	set_return(entry);
 	return OK;
 }

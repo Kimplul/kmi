@@ -25,8 +25,8 @@ _save_context:
 	sr	sp, offsetof_sp(tp)
 	mv	sp, tp
 
-	/* set scratch to 0 and move thread pointer back */
-	csrrw tp, CSR_SSCRATCH, x0
+	/* move thread pointer back */
+	csrrw tp, CSR_SSCRATCH, tp
 
 	/* save registers */
 	sr      ra, offsetof_ra(sp)
@@ -60,6 +60,10 @@ _save_context:
 	sr      t5, offsetof_t5(sp)
 	sr      t6, offsetof_t6(sp)
 
+	/* get current tcb into tp and set scratch to 0 so we can figure out if
+	 * exception occured in kernel or userspace */
+	csrrw tp, CSR_SSCRATCH, x0
+
 	/* load supervisor cause */
 	csrr s4, CSR_SCAUSE
 	/* interrupts fall through, exceptions jump */
@@ -85,9 +89,6 @@ handle_syscall:
 	/* TODO: is a whole function call necessary? */
 	mv	s0, a0
 	mv	s1, a1
-	/* get current tcb */
-	call cur_tcb
-	mv	tp, a0
 	/* get associated kernel stack */
 	mv	sp, tp
 	addi	sp, sp, -sizeof_registers

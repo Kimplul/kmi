@@ -129,9 +129,9 @@ struct tcb *create_thread(struct tcb *p)
 	return t;
 }
 
-static stat_t __clone_proc(struct tcb *p, struct tcb *n)
+static stat_t __copy_proc(struct tcb *p, struct tcb *n)
 {
-	/** \todo clone memory regions, and mark them MR_COW, as well as copy
+	/** \todo Copy memory regions, and mark them MR_COW, as well as copy
 	 * bm_branch tree but with VM_W off, also at some point write COW
 	 * handler */
 	return OK;
@@ -147,7 +147,7 @@ struct tcb *create_proc(struct tcb *p)
 		return 0;
 
 	if (likely(p))
-		__clone_proc(p, n); /* we have a parent thread */
+		__copy_proc(p, n); /* we have a parent thread */
 
 	return n;
 }
@@ -239,6 +239,7 @@ struct tcb *cur_proc()
 
 void use_tcb(struct tcb *t)
 {
+	t->cpu_id = cpu_id();
 	cpu_tcb[cpu_id()] = t;
 }
 

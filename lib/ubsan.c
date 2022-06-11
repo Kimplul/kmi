@@ -151,8 +151,8 @@ struct invalid_builtin_data {
  * @param message Message to be printed.
  * @param loc Location information.
  */
-static void print_location(const char *message,
-                           struct source_location loc)
+inline static void print_location(const char *message,
+                                  const struct source_location loc)
 {
 	bug("ubsan: %s at file %s, line %ju, column %ju\n", message, loc.file,
 	    (uintmax_t)loc.line, (uintmax_t)loc.column);
