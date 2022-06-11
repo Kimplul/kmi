@@ -28,6 +28,7 @@
 #define PM_KERN_BASE (RAM_BASE + SZ_512K)
 
 /** Maximum size of the kernel proper. Largely arbitrary. */
+/** \todo UBSAN is getting pretty close to this limit, should it be raised? */
 #define PM_KERN_SIZE (SZ_256K)
 
 /** Highest allowed physical address where kernel stuff may lie. */
