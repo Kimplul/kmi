@@ -25,17 +25,27 @@ static stat_t __free_mapped_region(struct tcb *t, struct mem_region *m)
 	return status;
 }
 
-stat_t clear_uvmem(struct tcb *t, bool force)
+stat_t clear_uvmem(struct tcb *t)
 {
 	struct mem_region *m = find_first_region(&t->sp_r);
 	while (m) {
-		/* if force is not set, free only regions that are not marked to
-		 * be kept and are owned.
-		 *
-		 * if force is set, free all owned regions.
-		 */
-		if (is_region_owned(m) && (force || !is_region_kept(m)))
+		if (is_region_owned(m) && !is_region_kept(m))
 			__free_mapped_region(t, m);
+
+		m = m->next;
+	}
+
+	return OK;
+}
+
+stat_t purge_uvmem(struct tcb *t)
+{
+	struct mem_region *m = find_first_region(&t->sp_r);
+	while (m) {
+		if (is_region_owned(m))
+			__free_mapped_region(t, m);
+
+		m = m->next;
 	}
 
 	return OK;
@@ -44,7 +54,7 @@ stat_t clear_uvmem(struct tcb *t, bool force)
 stat_t destroy_uvmem(struct tcb *t)
 {
 	/* force clear all regions */
-	clear_uvmem(t, true);
+	purge_uvmem(t);
 	/* destroy region tree itself */
 	return destroy_region(&t->sp_r);
 }
@@ -123,17 +133,17 @@ vm_t ref_shared_uvmem(struct tcb *t1, struct tcb *t2, vm_t va, vmflags_t flags)
 }
 
 /** \todo assume tcb is root tcb? */
-stat_t free_uvmem(struct tcb *t, vm_t va)
+stat_t free_uvmem(struct tcb *r, vm_t va)
 {
-	struct mem_region *m = find_used_region(&t->sp_r, va);
+	struct mem_region *m = find_used_region(&r->sp_r, va);
 	if (!m)
 		return -1;
 
-	free_region(&t->sp_r, va);
+	free_region(&r->sp_r, va);
 
-	stat_t status = __free_mapped_region(t, m);
-	if (is_rpc(t) && status == INFO_SEFF)
-		return clone_rpc_maps(t);
+	stat_t status = __free_mapped_region(r, m);
+	if (is_rpc(r) && status == INFO_SEFF)
+		return clone_rpc_maps(r);
 
 	return status;
 }

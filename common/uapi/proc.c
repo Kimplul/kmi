@@ -47,7 +47,7 @@ SYSCALL_DEFINE2(exec)(sys_arg_t bin, sys_arg_t interp){
 	}
 
 	/* free everything except regions to be kept */
-	clear_uvmem(r, false);
+	clear_uvmem(r);
 
 	/* restore to normal */
 	clear_bit(b->flags, MR_KEEP);
