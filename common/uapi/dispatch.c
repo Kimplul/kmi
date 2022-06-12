@@ -9,6 +9,7 @@
 #include <apos/debug.h>
 #include <apos/uapi.h>
 
+/** Syscall number to syscall handler conversion. */
 static const sys_t syscall_table[] = {
 	/* noop */
 	[SYS_NOOP] = sys_noop,
@@ -43,6 +44,11 @@ static const sys_t syscall_table[] = {
 	[SYS_POWEROFF] = sys_poweroff,
 };
 
+/**
+ * Noop syscall handler.
+ *
+ * @return \ref OK and \c 0.
+ */
 SYSCALL_DEFINE0(noop)(){
 	info("sys_noop\n");
 	return (struct sys_ret){ OK, 0 };

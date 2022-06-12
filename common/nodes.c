@@ -41,9 +41,20 @@
  * being free)
  */
 
+/**
+ * Get start of node region from pointer.
+ *
+ * @param r Pointer to node inside node region.
+ * @return Corresponding node region.
+ */
 #define node_region(r) \
 	((struct node_region *)((uintptr_t)(r) & ~(BASE_PAGE_SIZE - 1)))
 
+/**
+ * Create new node region.
+ *
+ * @return Pointer to created region.
+ */
 static struct node_region *__create_region()
 {
 	struct node_region *r = (struct node_region *)alloc_page(BASE_PAGE, 0);
@@ -78,6 +89,13 @@ void destroy_nodes(struct node_root *r)
 	}
 }
 
+/**
+ * Find free node in node region.
+ *
+ * @param r Node root to work in.
+ * @param nr Node region to look in.
+ * @return Pointer to free node.
+ */
 static void *__find_free_node(struct node_root *r, struct node_region *nr)
 {
 	uint8_t *bitmap = r->bitmap + (uint8_t *)nr;
@@ -92,6 +110,11 @@ static void *__find_free_node(struct node_root *r, struct node_region *nr)
 	return 0;
 }
 
+/**
+ * Pop free list head.
+ *
+ * @param r Node region root to work in.
+ */
 static void __pop_av_head(struct node_root *r)
 {
 	struct node_region *t = r->av_head;
@@ -124,6 +147,12 @@ void *get_node(struct node_root *r)
 	return p;
 }
 
+/**
+ * Push free list head.
+ *
+ * @param r Node region root to work in.
+ * @param nr Node region to push.
+ */
 static void __push_av_head(struct node_root *r, struct node_region *nr)
 {
 	nr->av_prev = 0;
@@ -134,6 +163,12 @@ static void __push_av_head(struct node_root *r, struct node_region *nr)
 	r->av_head = nr;
 }
 
+/**
+ * Free a node region.
+ *
+ * @param r Node region root to work in.
+ * @param nr Node region to free.
+ */
 static void __free_region(struct node_root *r, struct node_region *nr)
 {
 	struct node_region *av_n = nr->av_next;

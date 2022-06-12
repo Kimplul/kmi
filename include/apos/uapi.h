@@ -301,12 +301,12 @@ SYSCALL_DECLARE0(timebase);
  * Request timer that triggers a number of ticks in the future.
  *
  * @param ticks Number of ticks from now.
- * @param repeat Number of times to trigger.
+ * @param mult Number of times to trigger.
  * @param c Unused.
  * @param d Unused.
  * @return \ref OK and ID of timer.
  */
-SYSCALL_DECLARE2(req_rel_timer, ticks, repeat);
+SYSCALL_DECLARE2(req_rel_timer, ticks, mult);
 
 /**
  * Request absolute timer syscall.
@@ -314,13 +314,13 @@ SYSCALL_DECLARE2(req_rel_timer, ticks, repeat);
  * Request timer that triggers at some absolute timepoint.
  *
  * @param ticks Timepoint.
- * @param repeat Number of times to trigger. (What? Why is this here?).
+ * @param mult Multiplier.
  * @param c Unused.
  * @param d Unused.
  * @return \ref OK and ID of timer.
  * \todo Check repeat value.
  */
-SYSCALL_DECLARE2(req_abs_timer, ticks, repeat);
+SYSCALL_DECLARE2(req_abs_timer, ticks, mult);
 
 /**
  * Free timer syscall.

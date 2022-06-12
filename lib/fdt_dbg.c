@@ -10,6 +10,12 @@
 #include <libfdt.h>
 
 #if defined(DEBUG)
+/**
+ * Print single character \c depth number of times.
+ *
+ * @param c Character to print.
+ * @param depth Number of times to print character.
+ */
 static void __print_char(char c, int depth)
 {
 	/* lol, ugly but good enough for now */
@@ -17,11 +23,27 @@ static void __print_char(char c, int depth)
 		dbg("%c", c);
 }
 
+/**
+ * Check if ASCII character is in printable range.
+ *
+ * In this case, printable is anything that isn't a control character, line
+ * feed, bell, etc.
+ *
+ * @param c Character to check.
+ * @return \ref true if in printable range, \ref false otherwise.
+ */
 static int __printable(char c)
 {
 	return (c >= 32) && (c <= 126);
 }
 
+/**
+ * Check if \c data and \c len bytes from it form a reasonable string.
+ *
+ * @param data Pointer to some binary data to check.
+ * @param len Assumed length of string.
+ * @return \c true if data is likely some string, \c false otherwise.
+ */
 static int __is_string(const void *data, int len)
 {
 	const char *s = data;
@@ -59,6 +81,12 @@ static int __is_string(const void *data, int len)
 	return 1;
 }
 
+/**
+ * Print value of FDT property.
+ *
+ * @param data Pointer to FDT property.
+ * @param len Length of property.
+ */
 static void __print_prop_value(const void *data, int len)
 {
 	if (len == 0)

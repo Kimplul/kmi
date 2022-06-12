@@ -19,13 +19,21 @@
 #include <arch/vmem.h>
 
 /* arguably exessively many globals... */
+/** Thread ID to start looking from when allocating new ID. */
 static id_t start_tid;
+
+/** Total number of possible thread IDs. */
 static size_t num_tids;
 
+/** Pointer to array of \ref tcb structures. Length of the array is \c num_tids.*/
 static struct tcb **tcbs;
 
-/* if we ever support systems with massive amounts of cpus, this should probably
- * be allocated at runtime */
+/**
+ * Array of thread control block associated with each cpu.
+ *
+ * \todo If we ever support systems with massive amounts of cpus, this should probably
+ * be allocated at runtime.
+ */
 static struct tcb *cpu_tcb[MAX_CPUS] = { 0 };
 
 void init_tcbs()
@@ -43,6 +51,12 @@ void destroy_tcbs()
 	free_page(MM_O1, (pm_t)tcbs);
 }
 
+/**
+ * Allocate a new thread ID.
+ *
+ * @param t Thread to allocate new ID to.
+ * @return Allocated ID.
+ */
 static id_t __alloc_tid(struct tcb *t)
 {
 	/** \todo this would need some locking or something... */
@@ -58,7 +72,17 @@ static id_t __alloc_tid(struct tcb *t)
 	return ERR_NF;
 }
 
-/** \todo add error checking */
+/**
+ * Setup RPC stack.
+ *
+ * RPC stack is local to each thread, and should not be visible to other threads
+ * in the same process.
+ *
+ * @param t Thread to setup RPC stack for.
+ * @param bytes Minimum size of RPC stack.
+ * @return Base of allocated RPC stack.
+ *
+ * \todo add error checking */
 static vm_t __setup_rpc_stack(struct tcb *t, size_t bytes)
 {
 	pm_t offset = 0;
@@ -74,6 +98,13 @@ static vm_t __setup_rpc_stack(struct tcb *t, size_t bytes)
 	return RPC_STACK_TOP - BASE_PAGE_SIZE * pages;
 }
 
+/**
+ * Setup thread stack.
+ *
+ * @param t Thread to setup stack for.
+ * @param bytes Minimum size of stack.
+ * @return Base of allocated stack.
+ */
 static vm_t __setup_thread_stack(struct tcb *t, size_t bytes)
 {
 	return alloc_uvmem(t, bytes, VM_V | VM_R | VM_W | VM_U);
@@ -132,6 +163,13 @@ struct tcb *create_thread(struct tcb *p)
 	return t;
 }
 
+/**
+ * Copy process, setting up COW.
+ *
+ * @param p Parent process.
+ * @param n New process.
+ * @return \ref OK.
+ */
 static stat_t __copy_proc(struct tcb *p, struct tcb *n)
 {
 	/** \todo Copy memory regions, and mark them MR_COW, as well as copy
@@ -155,6 +193,12 @@ struct tcb *create_proc(struct tcb *p)
 	return n;
 }
 
+/**
+ * Destroy data associated with thread.
+ *
+ * @param t Thread whose data to destroy.
+ * @return \ref OK.
+ */
 static stat_t __destroy_thread_data(struct tcb *t)
 {
 	/* free rpc vmem */
@@ -195,6 +239,13 @@ stat_t destroy_proc(struct tcb *p)
 	return __destroy_thread_data(p);
 }
 
+/**
+ * Convenience marco for defining function to attach a thread to either process
+ * or RPC context.
+ *
+ * @param name name of function to define.
+ * @param type Field name of type \c tcb_ctx.
+ */
 #define DEFINE_ATTACH(name, type)                  \
 	stat_t name(struct tcb *r, struct tcb *t)  \
 	{                                          \
@@ -212,6 +263,13 @@ stat_t destroy_proc(struct tcb *p)
 DEFINE_ATTACH(attach_rpc, rpc);
 DEFINE_ATTACH(attach_proc, proc);
 
+/**
+ * Convenience marco for defining function to detach a thread from either process
+ * or RPC context.
+ *
+ * @param name name of function to define.
+ * @param type Field name of type \c tcb_ctx.
+ */
 #define DEFINE_DETACH(name, type)                     \
 	stat_t name(struct tcb *r, struct tcb *t)     \
 	{                                             \

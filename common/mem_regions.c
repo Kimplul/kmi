@@ -13,7 +13,18 @@
 #include <apos/bits.h>
 #include <apos/mem.h>
 
+/**
+ * Readability wrapper for marking region used.
+ *
+ * @param r Region flags to set.
+ */
 #define mark_region_used(r) set_bit(r, MR_USED)
+
+/**
+ * Readability wrapper for marking region unused.
+ *
+ * @param r Region flags to clear.
+ */
 #define mark_region_unused(r) clear_bit(r, MR_USED)
 
 /* pretty major slowdown when we get to some really massive numbers, not
@@ -31,6 +42,14 @@
  * Duplicate entries don't work well with any trees, I think. Good to know,
  * maybe not even anything with sp_trees but more a weakness of binary trees in
  * general?
+ */
+
+/**
+ * Insert free memory region.
+ *
+ * @param r Memory region root to insert \c m into.
+ * @param m Free memory region to insert.
+ * @return \c m.
  */
 static struct mem_region *__insert_free_region(struct mem_region_root *r,
                                                struct mem_region *m)
@@ -76,6 +95,13 @@ static struct mem_region *__insert_free_region(struct mem_region_root *r,
 	return m;
 }
 
+/**
+ * Insert used memory region.
+ *
+ * @param r Memory region root to insert \c m into.
+ * @param m Memory region to insert.
+ * @return \c m.
+ */
 static struct mem_region *__insert_used_region(struct mem_region_root *r,
                                                struct mem_region *m)
 {
@@ -124,6 +150,11 @@ stat_t init_region(struct mem_region_root *r, vm_t start, size_t arena_size)
 	return OK;
 }
 
+/**
+ * Destroy memory region and all its children.
+ *
+ * @param n \ref sp_node of memory region to destroy.
+ */
 static void __destroy_region(struct sp_node *n)
 {
 	if (!n)
@@ -169,6 +200,15 @@ struct mem_region *find_used_region(struct mem_region_root *r, vm_t start)
 	return 0;
 }
 
+/**
+ * Create memory region.
+ *
+ * @param start Start of region.
+ * @param end End of region.
+ * @param prev Previous region.
+ * @param next Next region.
+ * @return Created region.
+ */
 static struct mem_region *__create_region(vm_t start, vm_t end,
                                           struct mem_region *prev,
                                           struct mem_region *next)
@@ -181,8 +221,12 @@ static struct mem_region *__create_region(vm_t start, vm_t end,
 	return m;
 }
 
-/** \todo should probably check if this actually works :D seems to do, but that's
- * just from really quick checking */
+/**
+ * Get first order size smaller than \c s in bytes.
+ *
+ * @param s Size to look for.
+ * @return Size of first order smaller than \c s.
+ */
 static size_t po_align(size_t s)
 {
 	for (size_t o = __mm_max_order; o > 0; --o) {
@@ -270,6 +314,17 @@ struct mem_region *find_first_region(struct mem_region_root *r)
 	return m;
 }
 
+/**
+ * Carve out new used memory region from free memory region.
+ *
+ * @param r Memory region root to work in.
+ * @param m Free memory region to carve used memory region out of.
+ * @param pages Number of base order pages to give used region.
+ * @param align Alignment of used region. In this case, start of used region
+ * from start of free region.
+ * @param flags Flags of used region.
+ * @return Start address of used region.
+ */
 static vm_t __partition_region(struct mem_region_root *r, struct mem_region *m,
                                size_t pages, size_t align, vmflags_t flags)
 {
@@ -368,6 +423,12 @@ vm_t alloc_fixed_region(struct mem_region_root *r, vm_t start, size_t size,
 	return __partition_region(r, m, pages, start - m->start, flags);
 }
 
+/**
+ * Try to coalesce two adjacent memory regions, iterating left.
+ *
+ * @param r Memory region root to work in.
+ * @param m Memory region to start trying to coalesce.
+ */
 static void __try_coalesce_prev(struct mem_region_root *r, struct mem_region *m)
 {
 	while (m) {
@@ -391,6 +452,12 @@ static void __try_coalesce_prev(struct mem_region_root *r, struct mem_region *m)
 	}
 }
 
+/**
+ * Try to coalesce two adjacent memory region, iterating right.
+ *
+ * @param r Memory region root to work in.
+ * @param m Memory region to start trying to coalesce.
+ */
 static void __try_coalesce_next(struct mem_region_root *r, struct mem_region *m)
 {
 	while (m) {
@@ -414,6 +481,12 @@ static void __try_coalesce_next(struct mem_region_root *r, struct mem_region *m)
 	}
 }
 
+/**
+ * Try coalescing memory regions.
+ *
+ * @param r Memory region root to work in.
+ * @param m Memory region to start trying to coalesce.
+ */
 static void __try_coalesce_regions(struct mem_region_root *r,
                                    struct mem_region *m)
 {

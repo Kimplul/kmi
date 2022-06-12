@@ -12,6 +12,12 @@
 #include <apos/string.h>
 #include <apos/assert.h>
 
+/**
+ * Convert ELF flags to page flags.
+ *
+ * @param elf_flags ELF flags to convert.
+ * @return Corresponding page flags.
+ */
 static uint8_t __elf_to_uvflags(uint8_t elf_flags)
 {
 	uint8_t uvflags = VM_V | VM_U;
@@ -27,7 +33,16 @@ static uint8_t __elf_to_uvflags(uint8_t elf_flags)
 	return uvflags;
 }
 
-/* useful bit of info: all segments are sorted in ascending order of p_vaddr */
+/**
+ * Map ELF executable.
+ *
+ * @param t Thread space to work in.
+ * @param bin Address of binary to map.
+ * @param ei_c ELF identity class.
+ * @param phstart Program header start.
+ * @param phnum Number of program header entries.
+ * @param phsize Size of page header entry.
+ */
 static void __map_exec(struct tcb *t, vm_t bin, uint8_t ei_c, vm_t phstart,
                        size_t phnum, size_t phsize)
 {
@@ -40,6 +55,7 @@ static void __map_exec(struct tcb *t, vm_t bin, uint8_t ei_c, vm_t phstart,
 	/** \todo check if p_memsz is larger than p_filesz, the segment should be
 	 * filled with zeroes. */
 	/** \todo in general, make this a low more clean. */
+	/* useful bit of info: all segments are sorted in ascending order of p_vaddr */
 	vm_t runner = phstart;
 	vmflags_t default_flags = VM_V | VM_R | VM_W | VM_X | VM_U;
 	for (size_t i = 0; i < phnum; ++i, runner += phsize) {
@@ -74,6 +90,17 @@ static void __map_exec(struct tcb *t, vm_t bin, uint8_t ei_c, vm_t phstart,
 	}
 }
 
+/**
+ * Map ELF dynamic object.
+ *
+ * @param t Thread space to work in.
+ * @param bin Address of binary to map.
+ * @param ei_c ELF identity class.
+ * @param phstart Program header start.
+ * @param phnum Number of program header entries.
+ * @param phsize Size of page header entry.
+ * @return Base of dynamic mapping.
+ */
 static vm_t __map_dyn(struct tcb *t, vm_t bin, uint8_t ei_c, vm_t phstart,
                       size_t phnum, size_t phsize)
 {
@@ -82,6 +109,17 @@ static vm_t __map_dyn(struct tcb *t, vm_t bin, uint8_t ei_c, vm_t phstart,
 	 * hacky, I know.*/
 }
 
+/**
+ * Map binary and optional interpreter.
+ *
+ * \todo Implement interpeter handling.
+ *
+ * @param t Thread space to work in.
+ * @param ei_c ELF identity class. (Of binary, should do one for interp?)
+ * @param elf ELF binary.
+ * @param interp ELF interpeter.
+ * @return Entry address.
+ */
 static vm_t __prepare_proc(struct tcb *t, uint8_t ei_c, vm_t elf, vm_t interp)
 {
 	short e_type = elf_header_prop(ei_c, elf, e_type);

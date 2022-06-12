@@ -329,7 +329,7 @@ enum serial_dev {
  *
  * @param fmt Format string. Integer subset of normal printf formatting.
  */
-void __printf dbg(const char *fmt, ...);
+void dbg(const char *fmt, ...) __printf;
 
 /**
  * Initialize debugging, set up serial driver etc.

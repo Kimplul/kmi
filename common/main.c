@@ -17,6 +17,15 @@
 #include <arch/irq.h>
 #include <libfdt.h>
 
+/**
+ * Boot entry of kernel actual.
+ *
+ * Sets up all kernel subsystems and jumps into \c init program, does not
+ * return.
+ *
+ * @param fdt Global FDT pointer.
+ * @return Should not.
+ */
 void __main main(void *fdt)
 {
 	/* dbg uses direct mapping at this point */

@@ -18,6 +18,14 @@ stat_t init_uvmem(struct tcb *t, vm_t base, vm_t top)
 	return init_region(&t->sp_r, base, top);
 }
 
+/**
+ * Convenience function for freeing mapped regions.
+ *
+ * @param t Thread to work in.
+ * @param m Memory region to free.
+ * @return \ref INFO_SEFF if other thread in process should be synced, \ref OK
+ * otherwise.
+ */
 static stat_t __free_mapped_region(struct tcb *t, struct mem_region *m)
 {
 	stat_t status = OK;
@@ -135,12 +143,12 @@ vm_t ref_shared_uvmem(struct tcb *t1, struct tcb *t2, vm_t va, vmflags_t flags)
 	return v;
 }
 
-/** \todo assume tcb is root tcb? */
 stat_t free_uvmem(struct tcb *r, vm_t va)
 {
+	/** \todo assume tcb is root tcb? */
 	struct mem_region *m = find_used_region(&r->sp_r, va);
 	if (!m)
-		return -1;
+		return ERR_NF;
 
 	free_region(&r->sp_r, va);
 

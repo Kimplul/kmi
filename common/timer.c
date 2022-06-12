@@ -24,19 +24,45 @@
 #include <arch/timer.h>
 #include <arch/cpu.h>
 
+/** Timer resolution. */
 static ticks_t ticks_per_sec = 0;
+
+/** Array of timer maps for each cpu. */
 static struct sp_root cpu_timers[MAX_CPUS] = { 0 };
+
+/** Timer node subsystem instance. */
 static struct node_root node_root;
 
+/** Node in timer map. */
 struct timer_node {
+	/** Sp tree node. */
 	struct sp_node sp_n;
+
+	/** Corresponding timer. */
 	struct timer timer;
 };
 
+/**
+ * Get \ref timer_node from \ref sp_node.
+ *
+ * @param ptr \ref sp_node whose parent \ref timer_node to get.
+ * @return Corresponding \ref timer_node.
+ */
 #define timer_container(ptr) container_of(ptr, struct timer_node, sp_n)
 
+/**
+ * Get \ref timer_node from \ref timer.
+ *
+ * @param ptr \ref timer whose parent \ref timer_node to get.
+ * @return Corresponding \ref timer_node.
+ */
 #define timer_node_container(ptr) container_of(ptr, struct timer_node, timer)
 
+/**
+ * Get timer map of current cpu.
+ *
+ * @return Root of current cpu's timer map.
+ */
 static struct sp_root *__cpu_timers()
 {
 	return &cpu_timers[cpu_id()];
@@ -50,6 +76,15 @@ void init_timer(const void *fdt)
 	init_nodes(&node_root, sizeof(struct timer_node));
 }
 
+/**
+ * Insert timer into current cpu's timer map.
+ *
+ * \note \c ti.cid might change during the insertion if there already is a node
+ * with identical \c cid to avoid collisions. Very unlikely though.
+ *
+ * @param ti Timer node to insert.
+ * @return \c cid of timer node.
+ */
 static id_t __insert_timer(struct timer_node *ti)
 {
 	struct sp_root *root = __cpu_timers();
@@ -88,7 +123,13 @@ static id_t __insert_timer(struct timer_node *ti)
 	return ti->timer.cid;
 }
 
-/* ticks is absolute */
+/**
+ * Create timer at absolute timepoint.
+ *
+ * @param tid Requesting thread ID.
+ * @param ticks Absolute timepoint.
+ * @return \c cid of created timer.
+ */
 static id_t __new_timer(id_t tid, ticks_t ticks)
 {
 	struct timer_node *ti = (struct timer_node *)get_node(&node_root);

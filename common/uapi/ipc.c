@@ -9,6 +9,13 @@
 #include <apos/uapi.h>
 #include <apos/tcb.h>
 
+/**
+ * IPC server notification syscall handler.
+ *
+ * @param callback Address of server callback.
+ * @return \ref ERR_EXT and \c 0 if process already is a server,
+ * \ref OK and \c 0 otherwise.
+ */
 SYSCALL_DEFINE1(ipc_server)(sys_arg_t callback)
 {
 	struct tcb *r = cur_tcb();
@@ -19,6 +26,14 @@ SYSCALL_DEFINE1(ipc_server)(sys_arg_t callback)
 	return (struct sys_ret){ OK, 0 };
 }
 
+/**
+ * IPC request syscall handler.
+ *
+ * @param pid Process to request RPC to.
+ * @param d0 IPC argument 0.
+ * @param d1 IPC argument 1.
+ * @return \c d0 and \c d1.
+ */
 SYSCALL_DEFINE3(ipc_req)(sys_arg_t pid, sys_arg_t d0, sys_arg_t d1)
 {
 	struct tcb *r = get_tcb(pid);
@@ -27,13 +42,28 @@ SYSCALL_DEFINE3(ipc_req)(sys_arg_t pid, sys_arg_t d0, sys_arg_t d1)
 	return (struct sys_ret){ d0, d1 };
 }
 
-SYSCALL_DEFINE3(ipc_fwd)(sys_arg_t tid, sys_arg_t d0, sys_arg_t d1)
+/**
+ * IPC forwarding syscall handler.
+ *
+ * @param pid Process to rquest RPC to.
+ * @param d0 IPC argument 0.
+ * @param d1 IPC argument 1.
+ * @return \c d0 and \c d1.
+ */
+SYSCALL_DEFINE3(ipc_fwd)(sys_arg_t pid, sys_arg_t d0, sys_arg_t d1)
 {
-	struct tcb *t = get_tcb(tid);
+	struct tcb *t = get_tcb(pid);
 	/* ditto */
 	return (struct sys_ret){ d0, d1 };
 }
 
+/**
+ * IPC response syscall handler.
+ *
+ * @param d0 IPC return value 0.
+ * @param d1 IPC return value 1.
+ * @return \c d0 and \c d1.
+ */
 SYSCALL_DEFINE2(ipc_resp)(sys_arg_t d0, sys_arg_t d1)
 {
 	struct tcb *r = cur_tcb();

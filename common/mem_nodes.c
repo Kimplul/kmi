@@ -16,6 +16,7 @@
 #include <apos/string.h>
 #include <apos/mem_nodes.h>
 
+/** Memory node subsystem instance. */
 static struct node_root root;
 
 void init_mem_nodes()

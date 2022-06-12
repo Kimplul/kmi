@@ -11,8 +11,12 @@
 #include <apos/assert.h>
 #include <apos/dmem.h>
 
+/** Region before RAM. */
 static struct mem_region_root pre_ram = { 0 };
+
+/** Region after RAM. */
 static struct mem_region_root post_ram = { 0 };
+
 pm_t __pre_base = 0;
 pm_t __pre_top = 0;
 pm_t __post_base = 0;
@@ -37,6 +41,19 @@ stat_t init_devmem(pm_t ram_base, pm_t ram_top)
 	return OK;
 }
 
+/**
+ * Device virtual memory worker callback for \ref map_fill_region().
+ *
+ * @param b Virtual memory to work in.
+ * @param offset Hint for \ref alloc_page().
+ * @param vaddr Current virtual address.
+ * @param flags Flags of region.
+ * @param order Suggested page order.
+ * @param data Pointer to \ref stat_t.
+ * @return \see alloc_uvmem_wrapper().
+ *
+ * \see alloc_uvmem_wrapper().
+ */
 static stat_t dev_alloc_wrapper(struct vmem *b, pm_t *offset, vm_t vaddr,
                                 vmflags_t flags, enum mm_order order,
                                 void *data)
@@ -48,6 +65,19 @@ static stat_t dev_alloc_wrapper(struct vmem *b, pm_t *offset, vm_t vaddr,
 	return OK;
 }
 
+/**
+ * Device virtual memory freeing worker callback for \ref map_fill_region().
+ *
+ * @param b Virtual memory to work in.
+ * @param offset Hint for \ref alloc_page().
+ * @param vaddr Current virtual address.
+ * @param flags Flags of region.
+ * @param order Suggested page order.
+ * @param data Pointer to \ref stat_t.
+ * @return \see alloc_uvmem_wrapper().
+ *
+ * \see alloc_uvmem_wrapper().
+ */
 static stat_t dev_free_wrapper(struct vmem *b, pm_t *offset, vm_t vaddr,
                                vmflags_t flags, enum mm_order order, void *data)
 {
