@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* Copyright 2021 - 2022, Kim Kuparinen < kimi.h.kuparinen@gmail.com > */
+
 /**
  * @file debug.c
  * Handle printing to serial. Note that the serial drivers are only included

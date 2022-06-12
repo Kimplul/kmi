@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* Copyright 2021 - 2022, Kim Kuparinen < kimi.h.kuparinen@gmail.com > */
+
 /**
  * @file init.c
  * riscv64 'bootstrap', move actual kernel into place and jump to virtual

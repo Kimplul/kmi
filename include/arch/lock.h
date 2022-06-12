@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* Copyright 2021 - 2022, Kim Kuparinen < kimi.h.kuparinen@gmail.com > */
+
 #ifndef APOS_ARCH_LOCK_H
 #define APOS_ARCH_LOCK_H
 
