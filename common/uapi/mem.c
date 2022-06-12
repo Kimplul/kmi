@@ -34,18 +34,18 @@ SYSCALL_DEFINE2(req_mem)(sys_arg_t size, sys_arg_t flags)
 /**
  * Fixed memory request syscall handler.
  *
- * @param start Address which should be included in allocation.
+ * @param fixed Address which should be included in allocation.
  * @param size Minimum size of allocation after \c start.
  * @param flags Flags of allocation.
  * @return \ref OK and start of allocation when succesful,
  * \ref ERR_OOMEM and \c NULL otherwise.
  */
-SYSCALL_DEFINE3(req_fixmem)(sys_arg_t start, sys_arg_t size, sys_arg_t flags)
+SYSCALL_DEFINE3(req_fixmem)(sys_arg_t fixed, sys_arg_t size, sys_arg_t flags)
 {
 	struct tcb *r = cur_proc();
 	vm_t start = 0;
-	if ((start = alloc_fixed_uvmem(r, start, size, flags)))
-		return (sys_ret){ ERR_OOMEM, NULL };
+	if ((start = alloc_fixed_uvmem(r, fixed, size, flags)))
+		return (struct sys_ret){ ERR_OOMEM, NULL };
 
 	return (struct sys_ret){ OK, start };
 }
