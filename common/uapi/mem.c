@@ -92,7 +92,7 @@ SYSCALL_DEFINE3(req_pmem)(sys_arg_t paddr, sys_arg_t size, sys_arg_t flags)
 	struct tcb *r = cur_proc();
 	vm_t start = 0;
 	if ((start = alloc_devmem(r, paddr, size, flags)))
-			return (struct sys_ret){ ERR_OOMEM, NULL };
+		return (struct sys_ret){ ERR_OOMEM, NULL };
 
 	return (struct sys_ret){ OK, start };
 }

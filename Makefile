@@ -97,7 +97,7 @@ apos.bin: init.bin kernel.bin
 
 format:
 	find arch lib common include -iname '*.[ch]' |\
-		uncrustify -c uncrustify.conf --no-backup -F -
+		xargs -n 10 -P 0 uncrustify -c uncrustify.conf --no-backup -F -
 
 .PHONY: docs
 docs:

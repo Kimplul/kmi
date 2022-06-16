@@ -434,7 +434,8 @@ static size_t __print_sign(ssize_t value, size_t flags)
  * @param flags Formatting flags.
  * @return \see __integral_val().
  */
-#define __integral_len(value, base, flags) __integral_val((value), (base), (flags), false)
+#define __integral_len(value, base, flags) __integral_val((value), (base), \
+	                                                  (flags), false)
 
 /**
  * Print integral value as string.
@@ -444,7 +445,8 @@ static size_t __print_sign(ssize_t value, size_t flags)
  * @param flags Formatting flags.
  * @return \see __integral_val().
  */
-#define __integral_print(value, base, flags) __integral_val((value), (base), (flags), true)
+#define __integral_print(value, base, flags) __integral_val((value), (base), \
+	                                                    (flags), true)
 
 /**
  * Print integral value.
