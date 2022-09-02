@@ -27,12 +27,18 @@
 
 /* don't touch >:( */
 
-/** Physical address to where the kernel proper will be relocated. */
-#define PM_KERN_BASE (RAM_BASE + SZ_512K)
+/**
+ * How much space to reserve for possible firmware region.
+ * Assumed to be at start of RAM.
+ */
+#define FW_MAX_SIZE (SZ_2M)
 
 /** Maximum size of the kernel proper. Largely arbitrary. */
 /** \todo UBSAN is getting pretty close to this limit, should it be raised? */
 #define PM_KERN_SIZE (SZ_256K)
+
+/** Physical address to where the kernel proper will be relocated. */
+#define PM_KERN_BASE (RAM_BASE + FW_MAX_SIZE + PM_KERN_SIZE)
 
 /** Highest allowed physical address where kernel stuff may lie. */
 #define PM_KERN_TOP (PM_KERN_BASE + PM_KERN_SIZE)
@@ -53,7 +59,7 @@
 #define VM_DMAP (0xffffffc000000000)         /* testing for now */
 
 /** Virtual address of kernel proper inside direct mapping. */
-#define VM_KERN (VM_DMAP + SZ_256K)
+#define VM_KERN (VM_DMAP + FW_MAX_SIZE)
 
 /** Page reserved for kernel I/O. */
 #define IO_PAGE 511UL

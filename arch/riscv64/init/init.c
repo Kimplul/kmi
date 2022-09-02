@@ -33,9 +33,14 @@ static void init_bootmem()
 {
 	size_t flags = VM_V | VM_X | VM_R | VM_W;
 
-	extern char *__init_start;
-	root_branch = (struct vmem *)align_down(
-		(uintptr_t)&__init_start - SZ_4K, SZ_4K);
+	extern char *__init_end;
+	extern char *__kernel_size;
+	uintptr_t top = (uintptr_t)&__init_end + (uintptr_t)&__kernel_size;
+
+	/* this could be risky, as we might overwrite some bits of initrd or fdt
+	 * if they're allocated too close to the kernel payload.
+	 * @todo Allocate root_branch statically? */
+	root_branch = (struct vmem *)align_up(top, SZ_4K);
 
 	/* direct mapping (temp) */
 	for (size_t i = 0; i < CSTACK_PAGE; ++i)
