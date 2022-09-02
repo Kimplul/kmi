@@ -18,7 +18,7 @@ OBJCOPY		:= $(CROSS_COMPILE)-objcopy
 run:
 	$(ARCH_SOURCE)/conf/mkimage.sh
 
-include $(ARCH_SOURCE)/gen/source.mk
+include $(ARCH_SOURCE)/asm/source.mk
 
 # dependecy generation
 $(ARCH_BUILD)/kernel/entry.o: $(ARCH_SOURCE)/kernel/gen/asm-offsets.h
