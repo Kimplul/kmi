@@ -31,4 +31,9 @@ SECTIONS {
 
 	__init_end = . ;
 	__kernel_size = <KERNEL_SIZE>;
+
+	.garbage : {
+		*(.note*)
+		*(.riscv.attributes)
+	}
 }

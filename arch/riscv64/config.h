@@ -98,7 +98,7 @@
 #define UVMEM_START (SZ_4K)
 #define UVMEM_END (SZ_4G - SZ_8M)
 
-#define PROC_STACK_TOP (SZ_4G)
-#define PROC_STACK_BASE (SZ_4G - SZ_8M)
+#define RPC_STACK_TOP (SZ_4G)
+#define RPC_STACK_BASE (SZ_4G - SZ_8M)
 #endif
 #endif /* APOS_RISCV_CONFIG_H */

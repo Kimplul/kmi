@@ -26,4 +26,9 @@ SECTIONS {
 	}
 
 	__kernel_end = .;
+
+	.garbage : {
+		*(.note*)
+		*(.riscv.attributes)
+	}
 }

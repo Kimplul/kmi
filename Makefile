@@ -5,7 +5,7 @@ DEBUGFLAGS	!= [ $(RELEASE) ] \
 			&& echo "-flto -O2 -g -DNDEBUG" \
 			|| echo "-O0 -g -DDEBUG"
 
-CFLAGS		= -ffreestanding -nostdlib -std=c17 -Wall -Wextra -Wvla -D$(ARCH)
+CFLAGS		= -ffreestanding -nostdlib -static -fno-pie -std=c17 -Wall -Wextra -Wvla -D$(ARCH)
 DEPFLAGS	= -MT $@ -MMD -MP -MF $@.d
 LINTFLAGS	= -fsyntax-only
 PREPROCESS	= -E
@@ -47,7 +47,8 @@ LINK_FLAGS	:= $(LDFLAGS) $(ARCH_LDFLAGS)
 INCLUDE_FLAGS	:= -I include -include config.h -include arch/$(ARCH)/config.h
 
 # This makes sure .bss is loaded into the binary
-OBJCOPY_FLAGS	?= -Obinary --set-section-flags .bss=alloc,load,contents
+OBJCOPY_FLAGS	?= -Obinary -R .garbage \
+		   --set-section-flags .bss=alloc,load,contents
 
 COMPILE		= $(COMPILER) $(DEBUGFLAGS)\
 		  $(COMPILE_FLAGS) $(DEPFLAGS) $(INCLUDE_FLAGS)

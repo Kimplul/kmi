@@ -42,19 +42,30 @@ static void init_bootmem()
 	 * @todo Allocate root_branch statically? */
 	root_branch = (struct vmem *)align_up(top, SZ_4K);
 
+#if defined(riscv64)
+	const size_t top_size = SZ_1G;
+#else
+	const size_t top_size = SZ_4M;
+#endif
+
 	/* direct mapping (temp) */
 	for (size_t i = 0; i < CSTACK_PAGE; ++i)
-		root_branch->leaf[i] = (struct vmem *)to_pte(SZ_1G * i, flags);
+		root_branch->leaf[i] = (struct vmem *)to_pte(top_size * i, flags);
 
 	/* kernel (also sort of direct mapping) */
 	flags |= VM_G;
 	for (size_t i = KSTART_PAGE; i < IO_PAGE; ++i)
 		root_branch->leaf[i] = (struct vmem *)to_pte(
-			RAM_BASE + SZ_1G * (i - 256), flags);
+			RAM_BASE + top_size * (i - KSTART_PAGE), flags);
 
 	/* kernel IO, map to 0 for now, will be updated in the future */
 	root_branch->leaf[IO_PAGE] = (struct vmem *)to_pte(0, flags);
 
+#if defined(riscv64)
+	const uintmax_t mode = SATP_MODE_Sv39;
+#else
+	const uintmax_t mode = SATP_MODE_Sv32;
+#endif
 	csr_write(CSR_SATP, SATP_MODE_Sv39 | ((uintptr_t)root_branch >> 12));
 }
 
