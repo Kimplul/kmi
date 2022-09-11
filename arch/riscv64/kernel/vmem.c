@@ -279,7 +279,7 @@ struct vmem *create_vmem()
 
 stat_t use_vmem(struct vmem *b)
 {
-	__use_vmem(b, Sv39);
+	__use_vmem(b, DEFAULT_Sv_MODE);
 	return OK;
 }
 
@@ -294,21 +294,20 @@ stat_t populate_kvmem(struct vmem *b)
 	size_t flags = VM_V | VM_R | VM_W | VM_X | VM_G;
 	for (size_t i = KSTART_PAGE; i < IO_PAGE; ++i)
 		b->leaf[i] = (struct vmem *)to_pte(
-			RAM_BASE + SZ_1G * (i - KSTART_PAGE), flags);
+			RAM_BASE + TOP_PAGE_SIZE * (i - KSTART_PAGE), flags);
 
-	/* map kernel IO to zero for now, this will be overridden later
-	 * (if at all) */
-	b->leaf[IO_PAGE] = (struct vmem *)to_pte(0, flags);
+	/* map in IO region */
+	map_io_dbg(b);
 	return OK;
 }
 
 #if defined(DEBUG)
 vm_t setup_kernel_io(struct vmem *b, vm_t paddr)
 {
-	/* assume Sv39 for now */
-	pm_t gigapage = paddr / MM_GPAGE_SIZE;
-	b->leaf[IO_PAGE] = (struct vmem *)to_pte(gigapage, VM_V | VM_R | VM_W);
-	return -SZ_1G + paddr - (gigapage * MM_GPAGE_SIZE);
+	pm_t top_page = paddr / TOP_PAGE_SIZE;
+	b->leaf[IO_PAGE] = (struct vmem *)to_pte(top_page * TOP_PAGE_SIZE,
+			VM_V | VM_R | VM_W);
+	return -TOP_PAGE_SIZE + paddr - (top_page * TOP_PAGE_SIZE);
 }
 #endif
 

@@ -16,7 +16,7 @@ DEBUGFLAGS	!= [ $(LLVM) ] && echo $(DEBUGFLAGS:-flto=) || echo $(DEBUGFLAGS)
 OBJCOPY		:= $(CROSS_COMPILE)-objcopy
 
 run:
-	$(ARCH_SOURCE)/conf/mkimage.sh
+	$(ARCH_SOURCE)/conf/mkimage.sh $(ARCH)
 
 include $(ARCH_SOURCE)/asm/source.mk
 

@@ -42,31 +42,27 @@ static void init_bootmem()
 	 * @todo Allocate root_branch statically? */
 	root_branch = (struct vmem *)align_up(top, SZ_4K);
 
-#if defined(riscv64)
-	const size_t top_size = SZ_1G;
-#else
-	const size_t top_size = SZ_4M;
-#endif
-
 	/* direct mapping (temp) */
 	for (size_t i = 0; i < CSTACK_PAGE; ++i)
-		root_branch->leaf[i] = (struct vmem *)to_pte(top_size * i, flags);
+		root_branch->leaf[i] = (struct vmem *)to_pte(TOP_PAGE_SIZE * i, flags);
 
 	/* kernel (also sort of direct mapping) */
 	flags |= VM_G;
 	for (size_t i = KSTART_PAGE; i < IO_PAGE; ++i)
 		root_branch->leaf[i] = (struct vmem *)to_pte(
-			RAM_BASE + top_size * (i - KSTART_PAGE), flags);
+			RAM_BASE + TOP_PAGE_SIZE * (i - KSTART_PAGE), flags);
 
 	/* kernel IO, map to 0 for now, will be updated in the future */
 	root_branch->leaf[IO_PAGE] = (struct vmem *)to_pte(0, flags);
 
-#if defined(riscv64)
-	const uintmax_t mode = SATP_MODE_Sv39;
-#else
-	const uintmax_t mode = SATP_MODE_Sv32;
-#endif
-	csr_write(CSR_SATP, SATP_MODE_Sv39 | ((uintptr_t)root_branch >> 12));
+	uintmax_t mode = Sv39;
+	switch (DEFAULT_Sv_MODE) {
+	case Sv32: mode = SATP_MODE_Sv32; break;
+	case Sv39: mode = SATP_MODE_Sv39; break;
+	case Sv48: mode = SATP_MODE_Sv48; break;
+	default: break;
+	};
+	csr_write(CSR_SATP, mode | ((uintptr_t)root_branch >> 12));
 }
 
 /** Relocate kernel proper. */

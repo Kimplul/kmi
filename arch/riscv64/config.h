@@ -77,28 +77,41 @@
 #define UVMEM_END (SZ_256G - SZ_1G)
 
 /** RPC stack top. */
-#define RPC_STACK_TOP (SZ_256G)
+#define RPC_STACK_TOP (UVMEM_END)
 
 /** RPC stack base. */
-#define RPC_STACK_BASE (SZ_256G - SZ_1G)
+#define RPC_STACK_BASE (RPC_STACK_TOP - SZ_1G)
+
+/**
+ * Size of the default top page.
+ * For now we're only targeting Sv39, so this can easily be a macro.
+ * Eventually it might have to be turned into a function call to support Sv48
+ * etc.
+ */
+#define TOP_PAGE_SIZE SZ_1G
+
+/** Default Sv mode on rv64 in apos. */
+#define DEFAULT_Sv_MODE Sv39
 
 #else
 /* 32bit */
 
 /** \todo figure this stuff out */
-#define VM_DMAP (0x000000000)
-#define VM_KERN (VM_DMAP + SZ_256K)
-#define ROOT_PTE (0UL)
-#define ROOT_REGION (SZ_4K)
+#define VM_DMAP 0x80000000 /* works on qemu at least */
+#define VM_KERN (VM_DMAP + FW_MAX_SIZE)
 
 #define IO_PAGE 1023UL
 #define KSTART_PAGE 512UL
 #define CSTACK_PAGE 511UL
 
 #define UVMEM_START (SZ_4K)
-#define UVMEM_END (SZ_4G - SZ_8M)
+#define UVMEM_END (SZ_2G - SZ_8M)
 
-#define RPC_STACK_TOP (SZ_4G)
-#define RPC_STACK_BASE (SZ_4G - SZ_8M)
+#define RPC_STACK_TOP (UVMEM_END)
+#define RPC_STACK_BASE (RPC_STACK_TOP - SZ_8M)
+
+#define TOP_PAGE_SIZE SZ_4M
+#define DEFAULT_Sv_MODE Sv32
+
 #endif
 #endif /* APOS_RISCV_CONFIG_H */

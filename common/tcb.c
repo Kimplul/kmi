@@ -76,7 +76,10 @@ static id_t __alloc_tid(struct tcb *t)
  * Setup RPC stack.
  *
  * RPC stack is local to each thread, and should not be visible to other threads
- * in the same process.
+ * in the same process. Currently maps the RPC stack in BASE_PAGE increments, to
+ * hopefully allow us to later quickly disallow access to programs lower down in
+ * the RPC call chain by turning off all stack pages lower than the current
+ * stack pointer. We shall see if this actually works or not.
  *
  * @param t Thread to setup RPC stack for.
  * @param bytes Minimum size of RPC stack.

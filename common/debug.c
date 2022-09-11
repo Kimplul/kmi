@@ -46,8 +46,13 @@ void setup_dmap_dbg()
 
 void setup_io_dbg(struct vmem *b)
 {
-	vm_t io_ptr = setup_kernel_io(b, dbg_info.dbg_ptr);
+	vm_t io_ptr = map_io_dbg(b);
 	__setup_dbg(io_ptr, dbg_info.dev);
+}
+
+vm_t map_io_dbg(struct vmem *b)
+{
+	return setup_kernel_io(b, dbg_info.dbg_ptr);
 }
 
 /* if there arises a need for more supported serial drivers, I should probably

@@ -345,10 +345,20 @@ void setup_dmap_dbg();
 
 /**
  * Setup debugging in virtual memory context.
+ * Both maps the debugging region and sets the UART subsystem to use
+ * the mapped region.
  *
  * @param vmem Virtual memory space to use.
  */
 void setup_io_dbg(struct vmem *vmem);
+
+/**
+ * Map debugging into virtual memory context.
+ *
+ * @param vmem Virtual memory space to use.
+ * @return Virtual address of mapped region.
+ */
+vm_t map_io_dbg(struct vmem *vmem);
 
 /** @name Internal. */
 /** @{ */
@@ -407,6 +417,7 @@ void setup_io_dbg(struct vmem *vmem);
 #define init_dbg(...)
 #define setup_dmap_dbg(...)
 #define setup_io_dbg(...)
+#define map_io_dbg(...)
 
 #define bug(...)
 #define warn(...)
