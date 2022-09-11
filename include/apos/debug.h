@@ -357,13 +357,13 @@ void setup_io_dbg(struct vmem *vmem);
  * Format to append to helper debugging classes.
  * See \ref bug(), \ref warn(), \ref info() and \ref error().
  */
-#define COMMON_FORMAT "[%s] %s:%d\n\t"
+#define COMMON_FORMAT "[%s] %s: "
 
 /**
  * Helper for helper classes.
  * See \ref bug(), \ref warn(), \ref info(), \ref error().
  */
-#define COMMON_ARGS(s) s, __FILE__, __LINE__
+#define COMMON_ARGS(s) s, __FILE__ ":" QUOTE( __LINE__)
 
 /** @} */
 
