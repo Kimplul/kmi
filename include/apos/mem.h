@@ -245,34 +245,34 @@ extern size_t __mm_max_order;
 /** Give names to page orders. */
 enum mm_order {
 	/** Base order. */
-	MM_O0,
+	MM_O0 = 0,
 
 	/** Order 1. */
-	MM_O1,
+	MM_O1 = 1,
 
 	/** Order 2. */
-	MM_O2,
+	MM_O2 = 2,
 
 	/** Order 3. */
-	MM_O3,
+	MM_O3 = 3,
 
 	/** Order 4. */
-	MM_O4,
+	MM_O4 = 4,
 
 	/** Order 5. */
-	MM_O5,
+	MM_O5 = 5,
 
 	/** Order 6. */
-	MM_O6,
+	MM_O6 = 6,
 
 	/** Order 7. */
-	MM_O7,
+	MM_O7 = 7,
 
 	/** Order 8. */
-	MM_O8,
+	MM_O8 = 8,
 
 	/** Order 9. */
-	MM_O9,
+	MM_O9 = 9,
 };
 
 /** Page number. */

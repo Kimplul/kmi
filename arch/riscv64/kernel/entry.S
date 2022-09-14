@@ -29,7 +29,8 @@ _save_context:
 	mv	sp, tp
 
 	/* move thread pointer back */
-	csrrw tp, CSR_SSCRATCH, tp
+	addi	tp, tp, sizeof_registers
+	csrrw	tp, CSR_SSCRATCH, tp
 
 	/* save registers */
 	sr      ra, offsetof_ra(sp)
@@ -77,6 +78,7 @@ _save_context:
 handle_exception:
 	li t0, EXC_SYSCALL
 	/* system exceptions fall through, syscalls jump */
+	/* temp, at some point we want to handle system exceptions as well */
 	beq s4, t0, handle_syscall
 	j	restore_all
 

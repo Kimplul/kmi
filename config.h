@@ -1,1 +1,2 @@
-#define MAX_CPUS	16
+#define MAX_CPUS 16
+#define KERNEL_STACK_PAGE_ORDER 0

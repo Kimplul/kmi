@@ -6,6 +6,7 @@
  * Syscall dispatch.
  */
 
+#include <apos/canary.h>
 #include <apos/debug.h>
 #include <apos/uapi.h>
 
@@ -57,11 +58,23 @@ SYSCALL_DEFINE0(noop)(){
 struct sys_ret syscall_dispatch(sys_arg_t syscall, sys_arg_t a, sys_arg_t b,
                                 sys_arg_t c, sys_arg_t d)
 {
-	/** \todo Add check that syscall is not larger than table */
-	sys_t call = syscall_table[syscall];
+	struct tcb *t = cur_tcb();
 
-	if (!call)
+	size_t sc = syscall;
+	if (sc >= ARRAY_SIZE(syscall_table)) {
+		error("Syscall %zu outside allowed range [0 - %zu]\n", sc,
+				ARRAY_SIZE(syscall_table));
 		return (struct sys_ret){ ERR_INVAL, 0 };
+	}
 
-	return call(a, b, c, d);
+	/* the syscall must be a valid number, as they're numbered in a linear
+	 * fashion */
+	struct sys_ret r = syscall_table[syscall](a, b, c, d);
+
+	if (check_canary(t)) {
+		bug("Syscall %zu overwrote stack canary\n", syscall);
+		return (struct sys_ret){ ERR_INT, 0 };
+	}
+
+	return r;
 }

@@ -7,7 +7,6 @@
  */
 
 #include <apos/tcb.h>
-#include <arch/cpu.h>
 #include <apos/mem.h>
 #include <apos/conf.h>
 #include <apos/pmem.h>
@@ -16,6 +15,9 @@
 #include <apos/types.h>
 #include <apos/assert.h>
 #include <apos/string.h>
+#include <apos/canary.h>
+
+#include <arch/cpu.h>
 #include <arch/vmem.h>
 
 /* arguably exessively many globals... */
@@ -137,7 +139,7 @@ struct tcb *create_thread(struct tcb *p)
 {
 	hard_assert(tcbs, 0);
 
-	vm_t bottom = alloc_page(MM_O0, 0);
+	vm_t bottom = alloc_page(KERNEL_STACK_PAGE_ORDER, 0);
 	/* move tcb to top of kernel stack, keeping alignment in check
 	 * (hopefully) */
 	/** \todo check alignment */
@@ -163,6 +165,7 @@ struct tcb *create_thread(struct tcb *p)
 	t->rid = p->rid;
 	t->rpc.vmem = create_vmem();
 
+	set_canary(t);
 	return t;
 }
 
@@ -303,8 +306,9 @@ struct tcb *cur_proc()
 
 void use_tcb(struct tcb *t)
 {
-	t->cpu_id = cpu_id();
-	cpu_tcb[cpu_id()] = t;
+	id_t cpu = cpu_id();
+	t->cpu_id = cpu;
+	cpu_tcb[cpu] = t;
 }
 
 struct tcb *get_tcb(id_t tid)
