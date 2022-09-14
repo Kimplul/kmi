@@ -26,6 +26,7 @@ static const sys_t syscall_table[] = {
 
 	/* timers */
 	[SYS_TIMEBASE] = sys_timebase,
+	[SYS_TICKS] = sys_ticks,
 	[SYS_REQ_REL_TIMER] = sys_req_rel_timer,
 	[SYS_REQ_ABS_TIMER] = sys_req_abs_timer,
 	[SYS_FREE_TIMER] = sys_free_timer,
@@ -93,6 +94,8 @@ struct sys_ret syscall_dispatch(sys_arg_t syscall, sys_arg_t a, sys_arg_t b,
 
 	if (check_canary(t)) {
 		bug("Syscall %zu overwrote stack canary\n", syscall);
+		/** @todo should probably halt, as the system is likely in an
+		 * unstable state. */
 		return (struct sys_ret){ ERR_INT, 0 };
 	}
 

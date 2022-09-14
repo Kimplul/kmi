@@ -53,6 +53,9 @@ enum {
 	/** Get accuracy of clock in Hertz. */
 	SYS_TIMEBASE,
 
+	/** Get current ticks. */
+	SYS_TICKS,
+
 	/** Request relative timer (number of ticks from now). */
 	SYS_REQ_REL_TIMER,
 

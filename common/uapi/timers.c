@@ -9,8 +9,10 @@
 #include <apos/timer.h>
 #include <apos/uapi.h>
 
+#include <arch/timer.h>
+
 /**
- * Convert arch-specific register values \c ticks and \c repeat to \c ticks_t.
+ * Convert arch-specific register values \p ticks and \p mult to \ref ticks_t.
  *
  * If we're on a 32bit system, one register can't contain a tick value,
  * so we use two registers and combine them into one value and let the compiler
@@ -18,7 +20,7 @@
  *
  * @param ticks Register width tick value.
  * @param mult Register width repeat value.
- * @return Corresponding \c ticks_t value.
+ * @return Corresponding \ref ticks_t value.
  */
 static ticks_t scaled_ticks(sys_arg_t ticks, sys_arg_t mult)
 {
@@ -33,17 +35,45 @@ static ticks_t scaled_ticks(sys_arg_t ticks, sys_arg_t mult)
 /**
  * Timebase syscall handler.
  *
- * @return \ref OK and resolution of system timer in Hz.
+ * @return \ref OK and resolution of system timer in Hz if on 64bit system,
+ * otherwise high bits of resolutio in first register and low bits in second.
  */
 SYSCALL_DEFINE0(timebase)()
 {
-	return (struct sys_ret){ OK, secs_to_ticks(1) };
+	ticks_t t = secs_to_ticks(1);
+#if defined(_LP64)
+	return (struct sys_ret){ OK, t };
+#else
+	return (struct sys_ret){ t >> 32, t };
+#endif
+}
+
+/**
+ * Current ticks syscall handler.
+ *
+ * Note that most platforms allow user level read access to hardware timers, and
+ * should be preferred over this syscall on such platforms. Still, for
+ * completeness sake.
+ *
+ * @return \ref OK and the current ticks when on 64bit systems, otherwise high
+ * 32 bits of ticks in first register and low 32 bits in second.
+ * \todo 32bit systems are arguably a bit unsafe with this method, should I
+ * instead provide ticks_low and ticks_high or something?
+ */
+SYSCALL_DEFINE0(ticks)()
+{
+	ticks_t t = current_ticks();
+#if defined(_LP64)
+	return (struct sys_ret){ OK, t };
+#else
+	return (struct sys_ret){ t >> 32, t };
+#endif
 }
 
 /**
  * Relative timer request syscall handler.
  *
- * \note On 64bit systems, \c repeat is ignored as \c ticks register is large
+ * \note On 64bit systems, \p mult is ignored as \p ticks register is large
  * enough to contain essentially any timepoint we want. A couple thousand years
  * when the clock runs at 5GHz, if I'm not completely mistaken.
  *

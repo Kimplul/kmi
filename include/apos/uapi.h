@@ -312,6 +312,17 @@ SYSCALL_DECLARE1(free_mem, start);
 SYSCALL_DECLARE0(timebase);
 
 /**
+ * Get current ticks.
+ *
+ * @param a Unused.
+ * @param b Unused.
+ * @param c Unused.
+ * @param d Unused.
+ * @return Current ticks.
+ */
+SYSCALL_DECLARE0(ticks);
+
+/**
  * Request relative timer syscall.
  *
  * Request timer that triggers a number of ticks in the future.

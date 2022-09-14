@@ -22,7 +22,6 @@
  */
 typedef uint64_t ticks_t;
 
-
 /**
  * tunit_t typedef, whichever time unit we're dealing with.
  */
