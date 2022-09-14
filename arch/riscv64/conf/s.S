@@ -10,3 +10,47 @@ li a2, 2
 li a3, 3
 li a4, 4
 ecall
+
+/* "print" hello world */
+li a0, 1
+li a1, 'H'
+ecall
+li a0, 1
+li a1, 'e'
+ecall
+li a0, 1
+li a1, 'l'
+ecall
+li a0, 1
+li a1, 'l'
+ecall
+li a0, 1
+li a1, 'o'
+ecall
+li a0, 1
+li a1, ','
+ecall
+li a0, 1
+li a1, ' '
+ecall
+li a0, 1
+li a1, 'w'
+ecall
+li a0, 1
+li a1, 'o'
+ecall
+li a0, 1
+li a1, 'r'
+ecall
+li a0, 1
+li a1, 'l'
+ecall
+li a0, 1
+li a1, 'd'
+ecall
+li a0, 1
+li a1, '!'
+ecall
+li a0, 1
+li a1, '\n'
+ecall

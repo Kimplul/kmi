@@ -181,6 +181,9 @@ struct sys_ret {
 	}                                                                      \
 	static inline struct sys_ret __##name
 
+/** @name Misc syscalls. */
+/** @{ */
+
 /**
  * Noop syscall.
  *
@@ -191,6 +194,19 @@ struct sys_ret {
  * @return \ref OK and 0.
  */
 SYSCALL_DECLARE0(noop);
+
+/**
+ * Putch syscall.
+ *
+ * @param ch Character to put.
+ * @param b Unused.
+ * @param c Unused.
+ * @param d Unused.
+ * @return \ref OK and 0.
+ */
+SYSCALL_DECLARE1(putch, ch);
+
+/** @} */
 
 /* @name Memory handling syscalls. */
 /** @{ */

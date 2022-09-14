@@ -14,6 +14,10 @@
 static const sys_t syscall_table[] = {
 	/* noop */
 	[SYS_NOOP] = sys_noop,
+
+	/* debugging */
+	[SYS_PUTCH] = sys_putch,
+
 	/* mem */
 	[SYS_REQ_MEM] = sys_req_mem,
 	[SYS_REQ_PMEM] = sys_req_pmem,
@@ -55,6 +59,18 @@ SYSCALL_DEFINE0(noop)(){
 	return (struct sys_ret){ OK, 0 };
 }
 
+/**
+ * Putch syscall handler.
+ *
+ * @param a Character to put.
+ * @return \ref OK and 0.
+ */
+SYSCALL_DEFINE1(putch)(sys_arg_t a){
+	const char c[2] = {a, 0};
+	dbg((const char *)&c);
+	return (struct sys_ret){ OK, 0 };
+}
+
 struct sys_ret syscall_dispatch(sys_arg_t syscall, sys_arg_t a, sys_arg_t b,
                                 sys_arg_t c, sys_arg_t d)
 {
@@ -67,9 +83,13 @@ struct sys_ret syscall_dispatch(sys_arg_t syscall, sys_arg_t a, sys_arg_t b,
 		return (struct sys_ret){ ERR_INVAL, 0 };
 	}
 
-	/* the syscall must be a valid number, as they're numbered in a linear
-	 * fashion */
-	struct sys_ret r = syscall_table[syscall](a, b, c, d);
+	sys_t call = syscall_table[sc];
+	if (!call) {
+		error("Syscall %zu not legitimate value\n", sc);
+		return (struct sys_ret){ ERR_INVAL, 0 };
+	}
+
+	struct sys_ret r = call(a, b, c, d);
 
 	if (check_canary(t)) {
 		bug("Syscall %zu overwrote stack canary\n", syscall);

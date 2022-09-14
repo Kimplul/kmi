@@ -12,10 +12,25 @@
 /** enum for now, possibly macros in the future once I get an approximate idea of
  * which syscalls are necessary etc. */
 enum {
-	/** @name Misc. */
+	/**
+	 * @name Misc.
+	 * Implementation in \ref dispatch.c instead of a separate file, as I
+	 * consider them 'internal' and not intended for users.
+	 */
 	/** @{ */
 	/** Noop, mainly for testing syscall subsystem and sanity checking. */
 	SYS_NOOP,
+
+	/**
+	 * Put a single character to the serial lines.
+	 * Do not rely on this actually working, as the serial drivers are only
+	 * included on debugging kernels.
+	 *
+	 * \todo Should serial drivers be always included and debugging mode
+	 * turned into whether \ref info is turned on or off or something?
+	 */
+	SYS_PUTCH,
+
 	/** @} */
 
 	/* @name Memory management. */

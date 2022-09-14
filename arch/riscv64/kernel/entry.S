@@ -128,7 +128,7 @@ restore_noreturn:
 	lr	s2, offsetof_s2(sp)
 	lr	s3, offsetof_s3(sp)
 	lr	s4, offsetof_s4(sp)
-	lr	s5, offsetof_s4(sp)
+	lr	s5, offsetof_s5(sp)
 	lr	s6, offsetof_s6(sp)
 	lr	s7, offsetof_s7(sp)
 	lr	s8, offsetof_s8(sp)
