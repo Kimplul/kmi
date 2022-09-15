@@ -86,25 +86,42 @@ handle_syscall:
 	/* add 4 (size of ecall) to EPC to avoid running the same instruction
 	 * twice */
 	csrr    s0, CSR_SEPC
-	addi s0, s0, 4
+	addi	s0, s0, 4
 	csrw	CSR_SEPC, s0
+	/* allocate space for sys_ret structure on stack and shift argument
+	 * registers down one to make room for the pointer to this structure */
+	addi	sp, sp, -sizeof_sys_ret
+	mv	a6, a5
+	mv	a5, a4
+	mv	a4, a3
+	mv	a3, a2
+	mv	a2, a1
+	mv	a1, a0
+	mv	a0, sp
 	jal	syscall_dispatch
+	/* move structure from stack into registers. */
+	lr	a0, offsetof_s(sp)
+	lr	a1, offsetof_ar0(sp)
+	lr	a2, offsetof_ar1(sp)
+	lr	a3, offsetof_ar2(sp)
+	lr	a4, offsetof_ar3(sp)
+	lr	a5, offsetof_ar4(sp)
+	addi	sp, sp, sizeof_sys_ret
 	/* if we had a thread switch, load kernel stack of current thread and
 	 * restore its context */
-	/* TODO: is a whole function call necessary? */
-	mv	s0, a0
-	mv	s1, a1
 	/* get associated kernel stack */
 	mv	sp, tp
 	addi	sp, sp, -sizeof_registers
 	/* restore system call result */
-	mv	a0, s0
-	mv	a1, s1
 	j	restore_noreturn
 
 restore_all:
 	lr	a0, offsetof_a0(sp)
 	lr      a1, offsetof_a1(sp)
+	lr      a2, offsetof_a2(sp)
+	lr      a3, offsetof_a3(sp)
+	lr      a4, offsetof_a4(sp)
+	lr      a5, offsetof_a5(sp)
 
 restore_noreturn:
 	/* restore registers besides possible return value, assume instruction
@@ -117,11 +134,7 @@ restore_noreturn:
 	lr      t0, offsetof_t0(sp)
 	lr      t1, offsetof_t1(sp)
 	lr      t2, offsetof_t2(sp)
-	/* a0 and a1 should not be restored when coming from a syscall */
-	lr      a2, offsetof_a2(sp)
-	lr      a3, offsetof_a3(sp)
-	lr      a4, offsetof_a4(sp)
-	lr      a5, offsetof_a5(sp)
+	/* a0 - a5 should not be restored when coming from a syscall */
 	lr      a6, offsetof_a6(sp)
 	lr	s0, offsetof_s0(sp)
 	lr	s1, offsetof_s1(sp)

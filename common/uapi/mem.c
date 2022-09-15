@@ -26,9 +26,9 @@ SYSCALL_DEFINE2(req_mem)(sys_arg_t size, sys_arg_t flags)
 	struct tcb *r = cur_proc();
 	vm_t start = 0;
 	if ((start = alloc_uvmem(r, size, flags)))
-		return (struct sys_ret){ ERR_OOMEM, NULL };
+		return (struct sys_ret){ ERR_OOMEM, NULL, 0, 0, 0, 0 };
 
-	return (struct sys_ret){ OK, start };
+	return (struct sys_ret){ OK, start, 0, 0, 0, 0 };
 }
 
 /**
@@ -45,9 +45,9 @@ SYSCALL_DEFINE3(req_fixmem)(sys_arg_t fixed, sys_arg_t size, sys_arg_t flags)
 	struct tcb *r = cur_proc();
 	vm_t start = 0;
 	if ((start = alloc_fixed_uvmem(r, fixed, size, flags)))
-		return (struct sys_ret){ ERR_OOMEM, NULL };
+		return (struct sys_ret){ ERR_OOMEM, NULL, 0, 0, 0, 0 };
 
-	return (struct sys_ret){ OK, start };
+	return (struct sys_ret){ OK, start, 0, 0, 0, 0 };
 }
 
 /**
@@ -68,9 +68,9 @@ SYSCALL_DEFINE1(free_mem)(sys_arg_t start)
 		status = free_devmem(r, vm_start);
 
 	if (status)
-		return (struct sys_ret){ ERR_NF, 0 };
+		return (struct sys_ret){ ERR_NF, 0, 0, 0, 0, 0 };
 
-	return (struct sys_ret){ OK, 0 };
+	return (struct sys_ret){ OK, 0, 0, 0, 0, 0 };
 }
 
 /**
@@ -92,9 +92,9 @@ SYSCALL_DEFINE3(req_pmem)(sys_arg_t paddr, sys_arg_t size, sys_arg_t flags)
 	struct tcb *r = cur_proc();
 	vm_t start = 0;
 	if ((start = alloc_devmem(r, paddr, size, flags)))
-		return (struct sys_ret){ ERR_OOMEM, NULL };
+		return (struct sys_ret){ ERR_OOMEM, NULL, 0, 0, 0, 0 };
 
-	return (struct sys_ret){ OK, start };
+	return (struct sys_ret){ OK, start, 0, 0, 0, 0 };
 }
 
 /**
@@ -111,9 +111,9 @@ SYSCALL_DEFINE2(req_sharedmem)(sys_arg_t size, sys_arg_t flags)
 	struct tcb *t = cur_proc();
 	vm_t start = 0;
 	if ((start = alloc_shared_uvmem(t, size, flags)))
-		return (struct sys_ret){ ERR_OOMEM, NULL };
+		return (struct sys_ret){ ERR_OOMEM, NULL, 0, 0, 0, 0 };
 
-	return (struct sys_ret){ OK, start };
+	return (struct sys_ret){ OK, start, 0, 0, 0, 0 };
 }
 
 /**
@@ -131,9 +131,9 @@ SYSCALL_DEFINE3(ref_sharedmem)(sys_arg_t tid, sys_arg_t va, sys_arg_t flags)
 	struct tcb *t2 = get_tcb(tid);
 	vm_t start = 0;
 	if ((start = ref_shared_uvmem(t1, t2, va, flags)))
-		return (struct sys_ret){ ERR_OOMEM, NULL };
+		return (struct sys_ret){ ERR_OOMEM, NULL, 0, 0, 0, 0 };
 
-	return (struct sys_ret){ OK, start };
+	return (struct sys_ret){ OK, start, 0, 0, 0, 0 };
 }
 
 /** \todo add some way to specify who gets to access the shared memory? */

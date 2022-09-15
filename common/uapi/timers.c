@@ -35,16 +35,16 @@ static ticks_t scaled_ticks(sys_arg_t ticks, sys_arg_t mult)
 /**
  * Timebase syscall handler.
  *
- * @return \ref OK and resolution of system timer in Hz if on 64bit system,
- * otherwise high bits of resolutio in first register and low bits in second.
+ * @return \ref OK and timebase in second argument if 64bit, otherwise high 32
+ * bits of timebase in second argument and low 32 bits in third argument.
  */
 SYSCALL_DEFINE0(timebase)()
 {
 	ticks_t t = secs_to_ticks(1);
 #if defined(_LP64)
-	return (struct sys_ret){ OK, t };
+	return (struct sys_ret){ OK, t, 0, 0, 0, 0 };
 #else
-	return (struct sys_ret){ t >> 32, t };
+	return (struct sys_ret){ OK, t >> 32, t};
 #endif
 }
 
@@ -56,17 +56,15 @@ SYSCALL_DEFINE0(timebase)()
  * completeness sake.
  *
  * @return \ref OK and the current ticks when on 64bit systems, otherwise high
- * 32 bits of ticks in first register and low 32 bits in second.
- * \todo 32bit systems are arguably a bit unsafe with this method, should I
- * instead provide ticks_low and ticks_high or something?
+ * 32 bits of ticks in second argument and low 32 bits in third.
  */
 SYSCALL_DEFINE0(ticks)()
 {
 	ticks_t t = current_ticks();
 #if defined(_LP64)
-	return (struct sys_ret){ OK, t };
+	return (struct sys_ret){ OK, t, 0, 0, 0, 0};
 #else
-	return (struct sys_ret){ t >> 32, t };
+	return (struct sys_ret){ OK, t >> 32, t, 0, 0, 0 };
 #endif
 }
 
@@ -86,7 +84,8 @@ SYSCALL_DEFINE2(req_rel_timer)(sys_arg_t ticks, sys_arg_t mult)
 	return (struct sys_ret){
 		       OK,
 		       new_rel_timer(cur_tcb()->tid,
-		                     scaled_ticks(ticks, mult))
+		                     scaled_ticks(ticks, mult)),
+		       0, 0, 0, 0
 	};
 }
 
@@ -103,7 +102,8 @@ SYSCALL_DEFINE2(req_abs_timer)(sys_arg_t ticks, sys_arg_t mult)
 	return (struct sys_ret){
 		       OK,
 		       new_abs_timer(cur_tcb()->tid,
-		                     scaled_ticks(ticks, mult))
+		                     scaled_ticks(ticks, mult)),
+		       0, 0, 0, 0
 	};
 }
 
@@ -118,8 +118,8 @@ SYSCALL_DEFINE1(free_timer)(sys_arg_t cid)
 {
 	struct timer *timer = find_timer(cid);
 	if (!timer)
-		return (struct sys_ret){ ERR_NF, 0 };
+		return (struct sys_ret){ ERR_NF, 0, 0, 0, 0, 0 };
 
 	remove_timer(timer);
-	return (struct sys_ret){ OK, 0 };
+	return (struct sys_ret){ OK, 0, 0, 0, 0, 0 };
 }

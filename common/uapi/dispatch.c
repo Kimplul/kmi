@@ -41,7 +41,6 @@ static const sys_t syscall_table[] = {
 	[SYS_CREATE] = sys_create,
 	[SYS_FORK] = sys_fork,
 	[SYS_EXEC] = sys_exec,
-	[SYS_SIGNAL] = sys_signal,
 	[SYS_SWAP] = sys_swap,
 
 	/* conf */
@@ -57,7 +56,7 @@ static const sys_t syscall_table[] = {
  */
 SYSCALL_DEFINE0(noop)(){
 	info("sys_noop\n");
-	return (struct sys_ret){ OK, 0 };
+	return (struct sys_ret){ OK, 0, 0, 0, 0, 0 };
 }
 
 /**
@@ -68,35 +67,36 @@ SYSCALL_DEFINE0(noop)(){
  */
 SYSCALL_DEFINE1(putch)(sys_arg_t a){
 	const char c[2] = {a, 0};
+	MAYBE_UNUSED(c);
 	dbg((const char *)&c);
-	return (struct sys_ret){ OK, 0 };
+	return (struct sys_ret){ OK, 0, 0, 0, 0, 0 };
 }
 
 struct sys_ret syscall_dispatch(sys_arg_t syscall, sys_arg_t a, sys_arg_t b,
-                                sys_arg_t c, sys_arg_t d)
+                                sys_arg_t c, sys_arg_t d, sys_arg_t e)
 {
 	struct tcb *t = cur_tcb();
 
 	size_t sc = syscall;
 	if (sc >= ARRAY_SIZE(syscall_table)) {
 		error("Syscall %zu outside allowed range [0 - %zu]\n", sc,
-				ARRAY_SIZE(syscall_table));
-		return (struct sys_ret){ ERR_INVAL, 0 };
+		      ARRAY_SIZE(syscall_table));
+		return (struct sys_ret){ ERR_INVAL, 0, 0, 0, 0, 0 };
 	}
 
 	sys_t call = syscall_table[sc];
 	if (!call) {
 		error("Syscall %zu not legitimate value\n", sc);
-		return (struct sys_ret){ ERR_INVAL, 0 };
+		return (struct sys_ret){ ERR_INVAL, 0, 0, 0, 0, 0 };
 	}
 
-	struct sys_ret r = call(a, b, c, d);
+	struct sys_ret r = call(a, b, c, d, e);
 
 	if (check_canary(t)) {
 		bug("Syscall %zu overwrote stack canary\n", syscall);
 		/** @todo should probably halt, as the system is likely in an
 		 * unstable state. */
-		return (struct sys_ret){ ERR_INT, 0 };
+		return (struct sys_ret){ ERR_INT, 0, 0, 0, 0, 0 };
 	}
 
 	return r;

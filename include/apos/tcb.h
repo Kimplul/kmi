@@ -108,6 +108,9 @@ struct tcb {
 	/** Address of callback function in servers. */
 	vm_t callback;
 
+	/** Address of signal callback. */
+	vm_t signal;
+
 	/** Address of this thread's stack base. */
 	vm_t thread_stack;
 

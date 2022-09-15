@@ -306,7 +306,7 @@ vm_t setup_kernel_io(struct vmem *b, vm_t paddr)
 {
 	pm_t top_page = paddr / TOP_PAGE_SIZE;
 	b->leaf[IO_PAGE] = (struct vmem *)to_pte(top_page * TOP_PAGE_SIZE,
-			VM_V | VM_R | VM_W);
+	                                         VM_V | VM_R | VM_W);
 	return -TOP_PAGE_SIZE + paddr - (top_page * TOP_PAGE_SIZE);
 }
 #endif

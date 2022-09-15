@@ -8,6 +8,7 @@
  */
 
 #include <apos/utils.h>
+#include <apos/uapi.h>
 #include "../kernel/regs.h"
 
 /**
@@ -74,4 +75,12 @@ void asm_offsets()
 	OFFSETOF(t5, struct riscv_regs);
 	OFFSETOF(t6, struct riscv_regs);
 	SIZEOF(registers, struct riscv_regs);
+
+	OFFSETOF(s, struct sys_ret);
+	OFFSETOF(ar0, struct sys_ret);
+	OFFSETOF(ar1, struct sys_ret);
+	OFFSETOF(ar2, struct sys_ret);
+	OFFSETOF(ar3, struct sys_ret);
+	OFFSETOF(ar4, struct sys_ret);
+	SIZEOF(sys_ret, struct sys_ret);
 }

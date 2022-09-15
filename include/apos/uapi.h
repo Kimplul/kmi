@@ -14,9 +14,9 @@
 
 /**
  * Syscall function type.
- * Let's start with four arguments and see where that goes
+ * Let's start with five arguments and see where that goes
  */
-typedef struct sys_ret (*sys_t)(long, long, long, long);
+typedef struct sys_ret (*sys_t)(long, long, long, long, long);
 
 /**
  * Syscall argument type.
@@ -28,15 +28,27 @@ typedef long sys_arg_t;
 
 /**
  * Return structure of syscall.
- * \note Field names are generic, and can be used for two values or two error
- * codes, check documentation of whatever you're doing.
+ * \note Field names are generic, and can be used for whatever,
+ * check documentation of whatever you're doing.
  */
 struct sys_ret {
-	/** Error code of syscall. */
-	sys_arg_t err;
+	/** Status. */
+	sys_arg_t s;
 
-	/** Value returned by syscall. */
-	sys_arg_t val;
+	/** First argument. */
+	sys_arg_t ar0;
+
+	/** Second argument. */
+	sys_arg_t ar1;
+
+	/** Third argument. */
+	sys_arg_t ar2;
+
+	/** Fourth argument. */
+	sys_arg_t ar3;
+
+	/** Fifth argument. */
+	sys_arg_t ar4;
 };
 
 /**
@@ -48,10 +60,12 @@ struct sys_ret {
  *
  * @param name Name of syscall.
  */
-#define SYSCALL_DECLARE0(name)                              \
-	struct sys_ret sys_##name(sys_arg_t a, sys_arg_t b, \
-	                          sys_arg_t c,              \
-	                          sys_arg_t d);
+#define SYSCALL_DECLARE0(name)                 \
+	struct sys_ret sys_##name(sys_arg_t a, \
+	                          sys_arg_t b, \
+	                          sys_arg_t c, \
+	                          sys_arg_t d, \
+	                          sys_arg_t e);
 
 /**
  * Helper macro for declaring syscalls with one argument.
@@ -61,7 +75,7 @@ struct sys_ret {
  */
 #define SYSCALL_DECLARE1(name, a)                                        \
 	struct sys_ret sys_##name(sys_arg_t a, sys_arg_t b, sys_arg_t c, \
-	                          sys_arg_t d);
+	                          sys_arg_t d, sys_arg_t e);
 
 /**
  * Helper macro for declaring syscalls with two arguments.
@@ -72,7 +86,7 @@ struct sys_ret {
  */
 #define SYSCALL_DECLARE2(name, a, b)                                     \
 	struct sys_ret sys_##name(sys_arg_t a, sys_arg_t b, sys_arg_t c, \
-	                          sys_arg_t d);
+	                          sys_arg_t d, sys_arg_t e);
 
 /**
  * Helper macro for declaring syscalls with three arguments.
@@ -84,7 +98,7 @@ struct sys_ret {
  */
 #define SYSCALL_DECLARE3(name, a, b, c)                                  \
 	struct sys_ret sys_##name(sys_arg_t a, sys_arg_t b, sys_arg_t c, \
-	                          sys_arg_t d);
+	                          sys_arg_t d, sys_arg_t e);
 
 /**
  * Helper macro for declaring syscalls with four arguments.
@@ -97,7 +111,21 @@ struct sys_ret {
  */
 #define SYSCALL_DECLARE4(name, a, b, c, d)                               \
 	struct sys_ret sys_##name(sys_arg_t a, sys_arg_t b, sys_arg_t c, \
-	                          sys_arg_t d);
+	                          sys_arg_t d, sys_arg_t e);
+
+/**
+ * Helper macro for declaring syscalls with five arguments.
+ *
+ * @param name Name of syscall.
+ * @param a Name of first argument.
+ * @param b Name of second argument.
+ * @param c Name of third argument.
+ * @param d Name of fourth argument.
+ * @param e Name of fifth argument.
+ */
+#define SYSCALL_DECLARE5(name, a, b, c, d, e)                            \
+	struct sys_ret sys_##name(sys_arg_t a, sys_arg_t b, sys_arg_t c, \
+	                          sys_arg_t d, sys_arg_t e);
 
 /**
  * Helper macro for defining syscall with zero arguments.
@@ -107,12 +135,13 @@ struct sys_ret {
 #define SYSCALL_DEFINE0(name)                                            \
 	static inline struct sys_ret __##name();                         \
 	struct sys_ret sys_##name(sys_arg_t a, sys_arg_t b, sys_arg_t c, \
-	                          sys_arg_t d)                           \
+	                          sys_arg_t d, sys_arg_t e)              \
 	{                                                                \
 		UNUSED(a);                                               \
 		UNUSED(b);                                               \
 		UNUSED(c);                                               \
 		UNUSED(d);                                               \
+		UNUSED(e);                                               \
 		return __##name();                                       \
 	}                                                                \
 	static struct sys_ret __##name
@@ -125,11 +154,12 @@ struct sys_ret {
 #define SYSCALL_DEFINE1(name)                                            \
 	static inline struct sys_ret __##name(sys_arg_t);                \
 	struct sys_ret sys_##name(sys_arg_t a, sys_arg_t b, sys_arg_t c, \
-	                          sys_arg_t d)                           \
+	                          sys_arg_t d, sys_arg_t e)              \
 	{                                                                \
 		UNUSED(b);                                               \
 		UNUSED(c);                                               \
 		UNUSED(d);                                               \
+		UNUSED(e);                                               \
 		return __##name(a);                                      \
 	}                                                                \
 	static inline struct sys_ret __##name
@@ -142,10 +172,11 @@ struct sys_ret {
 #define SYSCALL_DEFINE2(name)                                            \
 	static inline struct sys_ret __##name(sys_arg_t, sys_arg_t);     \
 	struct sys_ret sys_##name(sys_arg_t a, sys_arg_t b, sys_arg_t c, \
-	                          sys_arg_t d)                           \
+	                          sys_arg_t d, sys_arg_t e)              \
 	{                                                                \
 		UNUSED(c);                                               \
 		UNUSED(d);                                               \
+		UNUSED(e);                                               \
 		return __##name(a, b);                                   \
 	}                                                                \
 	static inline struct sys_ret __##name
@@ -159,9 +190,10 @@ struct sys_ret {
 	static inline struct sys_ret __##name(sys_arg_t, sys_arg_t,      \
 	                                      sys_arg_t);                \
 	struct sys_ret sys_##name(sys_arg_t a, sys_arg_t b, sys_arg_t c, \
-	                          sys_arg_t d)                           \
+	                          sys_arg_t d, sys_arg_t e)              \
 	{                                                                \
 		UNUSED(d);                                               \
+		UNUSED(e);                                               \
 		return __##name(a, b, c);                                \
 	}                                                                \
 	static inline struct sys_ret __##name
@@ -175,9 +207,25 @@ struct sys_ret {
 	static inline struct sys_ret __##name(sys_arg_t, sys_arg_t, sys_arg_t, \
 	                                      sys_arg_t);                      \
 	struct sys_ret sys_##name(sys_arg_t a, sys_arg_t b, sys_arg_t c,       \
-	                          sys_arg_t d)                                 \
+	                          sys_arg_t d, sys_arg_t e)                    \
 	{                                                                      \
+		UNUSED(e);                                                     \
 		return __##name(a, b, c, d);                                   \
+	}                                                                      \
+	static inline struct sys_ret __##name
+
+/**
+ * Helper macro for defining syscall with five arguments.
+ *
+ * @param name Name of syscall.
+ */
+#define SYSCALL_DEFINE5(name)                                                  \
+	static inline struct sys_ret __##name(sys_arg_t, sys_arg_t, sys_arg_t, \
+	                                      sys_arg_t, sys_arg_t);           \
+	struct sys_ret sys_##name(sys_arg_t a, sys_arg_t b, sys_arg_t c,       \
+	                          sys_arg_t d, sys_arg_t e)                    \
+	{                                                                      \
+		return __##name(a, b, c, d, e);                                \
 	}                                                                      \
 	static inline struct sys_ret __##name
 
@@ -191,6 +239,7 @@ struct sys_ret {
  * @param b Unused.
  * @param c Unused.
  * @param d Unused.
+ * @param e Unused.
  * @return \ref OK and 0.
  */
 SYSCALL_DECLARE0(noop);
@@ -202,6 +251,7 @@ SYSCALL_DECLARE0(noop);
  * @param b Unused.
  * @param c Unused.
  * @param d Unused.
+ * @param e Unused.
  * @return \ref OK and 0.
  */
 SYSCALL_DECLARE1(putch, ch);
@@ -220,6 +270,7 @@ SYSCALL_DECLARE1(putch, ch);
  * @param flags Flags of allocation.
  * @param c Unused.
  * @param d Unused.
+ * @param e Unused.
  * @return \ref OK and start of memory allocation.
  */
 SYSCALL_DECLARE2(req_mem, size, flags);
@@ -235,6 +286,7 @@ SYSCALL_DECLARE2(req_mem, size, flags);
  * @param size Size of physical allocation.
  * @param flags Flags of physical allocation.
  * @param d Unused.
+ * @param e Unused.
  * @return \ref OK and start of memory allocation.
  */
 SYSCALL_DECLARE3(req_pmem, paddr, size, flags);
@@ -249,6 +301,7 @@ SYSCALL_DECLARE3(req_pmem, paddr, size, flags);
  * @param size Size of allocation.
  * @param flags Flags of allocation.
  * @param d Unused.
+ * @param e Unused.
  * @return \ref OK and start of memory allocation.
  */
 SYSCALL_DECLARE3(req_fixmem, start, size, flags);
@@ -265,6 +318,7 @@ SYSCALL_DECLARE3(req_fixmem, start, size, flags);
  * @param flags Flags of allocation.
  * @param c Unused.
  * @param d Unused.
+ * @param e Unused.
  * @return \ref OK and start of memory allocation.
  */
 SYSCALL_DECLARE2(req_sharedmem, size, flags);
@@ -278,6 +332,7 @@ SYSCALL_DECLARE2(req_sharedmem, size, flags);
  * @param va Start address of shared memory.
  * @param flags Flags to use for reference.
  * @param d Unused.
+ * @param e Unused.
  * @return \ref OK and start of shared memory.
  */
 SYSCALL_DECLARE3(ref_sharedmem, tid, va, flags);
@@ -291,6 +346,7 @@ SYSCALL_DECLARE3(ref_sharedmem, tid, va, flags);
  * @param b Unused.
  * @param c Unused.
  * @param d Unused.
+ * @param e Unused.
  * @return \ref OK and 0.
  */
 SYSCALL_DECLARE1(free_mem, start);
@@ -305,6 +361,7 @@ SYSCALL_DECLARE1(free_mem, start);
  * @param b Unused.
  * @param c Unused.
  * @param d Unused.
+ * @param e Unused.
  * @return \ref OK and frequency.
  * \todo Should this be some kind of config request instead of a separate
  * syscall?
@@ -318,6 +375,7 @@ SYSCALL_DECLARE0(timebase);
  * @param b Unused.
  * @param c Unused.
  * @param d Unused.
+ * @param e Unused.
  * @return Current ticks.
  */
 SYSCALL_DECLARE0(ticks);
@@ -331,6 +389,7 @@ SYSCALL_DECLARE0(ticks);
  * @param mult Number of times to trigger.
  * @param c Unused.
  * @param d Unused.
+ * @param e Unused.
  * @return \ref OK and ID of timer.
  */
 SYSCALL_DECLARE2(req_rel_timer, ticks, mult);
@@ -344,6 +403,7 @@ SYSCALL_DECLARE2(req_rel_timer, ticks, mult);
  * @param mult Multiplier.
  * @param c Unused.
  * @param d Unused.
+ * @param e Unused.
  * @return \ref OK and ID of timer.
  * \todo Check repeat value.
  */
@@ -356,6 +416,7 @@ SYSCALL_DECLARE2(req_abs_timer, ticks, mult);
  * @param b Unused.
  * @param c Unused.
  * @param d Unused.
+ * @param e Unused.
  * @return \ref OK and 0.
  */
 SYSCALL_DECLARE1(free_timer, cid);
@@ -370,6 +431,7 @@ SYSCALL_DECLARE1(free_timer, cid);
  * @param b Unused.
  * @param c Unused.
  * @param d Unused.
+ * @param e Unused.
  * @return \ref OK and 0.
  */
 SYSCALL_DECLARE1(ipc_server, callback);
@@ -380,10 +442,11 @@ SYSCALL_DECLARE1(ipc_server, callback);
  * @param pid Request target process.
  * @param d0 First request argument.
  * @param d1 Second request argument.
- * @param d Unused.
+ * @param d2 Third forwarding argument.
+ * @param d3 Fourth forwarding argument.
  * @return \c d0 and \c d1.
  */
-SYSCALL_DECLARE3(ipc_req, pid, d0, d1);
+SYSCALL_DECLARE5(ipc_req, pid, d0, d1, d2, d3);
 
 /**
  * Forwarding syscall.
@@ -394,21 +457,23 @@ SYSCALL_DECLARE3(ipc_req, pid, d0, d1);
  * @param pid Forwarding target process.
  * @param d0 First forwarding argument.
  * @param d1 Second forwarding argument.
- * @param d Unused.
+ * @param d2 Third forwarding argument.
+ * @param d3 Fourth forwarding argument.
  * @return \c d0 and \c d1.
  */
-SYSCALL_DECLARE3(ipc_fwd, pid, d0, d1);
+SYSCALL_DECLARE5(ipc_fwd, pid, d0, d1, d2, d3);
 
 /**
  * Response syscall.
  *
  * @param d0 First response argument.
  * @param d1 Second response argument.
- * @param c Unused.
- * @param d Unused.
+ * @param d2 Third response argument.
+ * @param d3 Fourth response argument.
+ * @param e Unused.
  * @return \c d0 and \c d1.
  */
-SYSCALL_DECLARE2(ipc_resp, d0, d1);
+SYSCALL_DECLARE4(ipc_resp, d0, d1, d2, d3);
 /** @} */
 
 /** @name Process handling syscalls. */
@@ -418,14 +483,15 @@ SYSCALL_DECLARE2(ipc_resp, d0, d1);
  *
  * Creates thread in current effective process context.
  *
- * @param a Unused.
- * @param b Unused.
+ * @param func Function to call on startup.
+ * @param arg Argument to pass to function.
  * @param c Unused.
  * @param d Unused.
+ * @param e Unused.
  * @return \ref OK and 0.
  * \todo Should this take stack size etc?
  */
-SYSCALL_DECLARE0(create);
+SYSCALL_DECLARE2(create, func, arg);
 
 /**
  * Fork process syscall.
@@ -436,6 +502,7 @@ SYSCALL_DECLARE0(create);
  * @param b Unused.
  * @param c Unused.
  * @param d Unused.
+ * @param e Unused.
  * @return \ref OK and 0.
  */
 SYSCALL_DECLARE0(fork);
@@ -449,21 +516,35 @@ SYSCALL_DECLARE0(fork);
  * @param interp Optional address of interpreter.
  * @param c Unused.
  * @param d Unused.
+ * @param e Unused.
  * @return \ref OK and 0.
  * \todo Check other return codes.
  */
 SYSCALL_DECLARE2(exec, bin, interp);
 
 /**
+ * Kill syscall.
+ *
+ * @param a Unused.
+ * @param b Unused.
+ * @param c Unused.
+ * @param d Unused.
+ * @param e Unused.
+ * @return No.
+ */
+SYSCALL_DECLARE0(kill);
+
+/**
  * Signal process syscall.
  *
  * @param tid Thread ID to signal.
  * @param signal Signal to send.
- * @param c Unused.
+ * @param swap Whether to immediately swap.
  * @param d Unused.
+ * @param e Unused.
  * @return \ref OK and 0.
  */
-SYSCALL_DECLARE2(signal, tid, signal);
+SYSCALL_DECLARE3(signal, tid, signal, swap);
 
 /**
  * Swap syscall.
@@ -474,6 +555,7 @@ SYSCALL_DECLARE2(signal, tid, signal);
  * @param b Unused.
  * @param c Unused.
  * @param d Unused.
+ * @param e Unused.
  * @return \ref OK and 0.
  */
 SYSCALL_DECLARE1(swap, tid);
@@ -490,6 +572,7 @@ SYSCALL_DECLARE1(swap, tid);
  * @param val Value to set parameter to.
  * @param c Unused.
  * @param d Unused.
+ * @param e Unused.
  * @return \ref OK and 0.
  */
 SYSCALL_DECLARE2(conf_set, param, val);
@@ -503,6 +586,7 @@ SYSCALL_DECLARE2(conf_set, param, val);
  * @param b Unused.
  * @param c Unused.
  * @param d Unused.
+ * @param e Unused.
  * @return \ref OK and 0.
  */
 SYSCALL_DECLARE1(conf_get, param);
@@ -516,6 +600,7 @@ SYSCALL_DECLARE1(conf_get, param);
  * @param b Unused.
  * @param c Unused.
  * @param d Unused.
+ * @param e Unused.
  * @return Shouldn't return at all.
  */
 SYSCALL_DECLARE1(poweroff, type);
@@ -529,10 +614,11 @@ SYSCALL_DECLARE1(poweroff, type);
  * @param b Syscall argument 1.
  * @param c Syscall argument 2.
  * @param d Syscall argument 3.
+ * @param e Syscall argument 4.
  * @return Whatever the specified syscall returns.
  */
 struct sys_ret syscall_dispatch(sys_arg_t syscall, sys_arg_t a, sys_arg_t b,
-                                sys_arg_t c, sys_arg_t d);
+                                sys_arg_t c, sys_arg_t d, sys_arg_t e);
 
 /** \todo Should I add variable names as well, to make the documentation a bit
  * more readable? */

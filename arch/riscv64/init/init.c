@@ -44,7 +44,8 @@ static void init_bootmem()
 
 	/* direct mapping (temp) */
 	for (size_t i = 0; i < CSTACK_PAGE; ++i)
-		root_branch->leaf[i] = (struct vmem *)to_pte(TOP_PAGE_SIZE * i, flags);
+		root_branch->leaf[i] = (struct vmem *)to_pte(TOP_PAGE_SIZE * i,
+		                                             flags);
 
 	/* kernel (also sort of direct mapping) */
 	flags |= VM_G;

@@ -95,11 +95,9 @@ enum {
 	/** Kill thread. */
 	SYS_KILL,
 
-	/** Send signal to thread. */
-	SYS_SIGNAL,
-
 	/** Switch running process. */
 	SYS_SWAP,
+
 	/** @} */
 
 	/** @name Kernel management. */

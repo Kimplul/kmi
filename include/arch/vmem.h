@@ -16,6 +16,8 @@
 #include "../../arch/riscv32/include/vmem.h"
 #endif
 
+#include <apos/types.h>
+
 /**
  * Map one virtual page to physical page.
  *

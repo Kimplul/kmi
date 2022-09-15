@@ -9,30 +9,33 @@
 #include <stdint.h>
 #include "../../../include/apos/syscalls.h"
 
+#define ecall() do { asm ("ecall" : : : "a0", "a1", "a2", "a3", "a4", "a5"); \
+} while (0)
 static void sys_noop()
 {
 	long register a0 asm ("a0") = SYS_NOOP;
-	asm ("ecall" : : : "a0", "a1");
+	ecall();
 }
 
 static void sys_putch(char c)
 {
 	long register a0 asm ("a0") = SYS_PUTCH;
 	long register a1 asm ("a1") = c;
-	asm ("ecall" : : : "a0", "a1");
+	ecall();
 }
 
 static uint64_t sys_timebase()
 {
 	long register a0 asm ("a0") = SYS_TIMEBASE;
 	long register a1 asm ("a1") = 0;
-	asm ("ecall" : : : "a0", "a1");
+	long register a2 asm ("a2") = 0;
+	ecall();
 #if defined(_LP64)
 	return a1;
 #else
-	uint64_t t = a0;
+	uint64_t t = a1;
 	t <<= 32;
-	return t + a1;
+	return t + a2;
 #endif
 }
 
@@ -40,13 +43,14 @@ static uint64_t sys_ticks()
 {
 	long register a0 asm ("a0") = SYS_TICKS;
 	long register a1 asm ("a1") = 0;
-	asm ("ecall" : : : "a0", "a1");
+	long register a2 asm ("a2") = 0;
+	ecall();
 #if defined(_LP64)
 	return a1;
 #else
-	uint64_t t = a0;
+	uint64_t t = a1;
 	t <<= 32;
-	return t + a1;
+	return t + a2;
 #endif
 }
 

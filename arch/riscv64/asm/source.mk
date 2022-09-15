@@ -9,7 +9,7 @@ $(OFFSET_HEADER): $(OFFSET_SOURCE)
 	echo " * @file asm-offsets.h" >> $(OFFSET_HEADER)
 	echo " * This comment is to shut up warnings." >> $(OFFSET_HEADER)
 	echo " */" >> $(OFFSET_HEADER)
-	$(COMPILER) $(INCLUDE_FLAGS) -S $(OFFSET_SOURCE) -o - |\
+	$(COMPILER) $(CFLAGS) $(INCLUDE_FLAGS) -S $(OFFSET_SOURCE) -o - |\
 		awk '($$1 == "#->") { print "#define " $$2 " " $$3 }' >> $(OFFSET_HEADER)
 	echo "#endif /* APOS_ASM_OFFSETS_H */" >> $(OFFSET_HEADER)
 
