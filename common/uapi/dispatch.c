@@ -46,6 +46,11 @@ static const sys_t syscall_table[] = {
 	/* conf */
 	[SYS_CONF_SET] = sys_conf_set,
 	[SYS_CONF_GET] = sys_conf_get,
+
+	[SYS_SET_CAP] = sys_set_cap,
+	[SYS_GET_CAP] = sys_get_cap,
+	[SYS_CLEAR_CAP] = sys_clear_cap,
+
 	[SYS_POWEROFF] = sys_poweroff,
 };
 

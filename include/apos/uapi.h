@@ -525,14 +525,14 @@ SYSCALL_DECLARE2(exec, bin, interp);
 /**
  * Kill syscall.
  *
- * @param a Unused.
+ * @param tid Thread ID to kill. 0 if self.
  * @param b Unused.
  * @param c Unused.
  * @param d Unused.
  * @param e Unused.
  * @return No.
  */
-SYSCALL_DECLARE0(kill);
+SYSCALL_DECLARE1(kill, tid);
 
 /**
  * Signal process syscall.
@@ -587,9 +587,45 @@ SYSCALL_DECLARE2(conf_set, param, val);
  * @param c Unused.
  * @param d Unused.
  * @param e Unused.
- * @return \ref OK and 0.
+ * @return \ref OK.
  */
 SYSCALL_DECLARE1(conf_get, param);
+
+/**
+ * Set capabilities.
+ *
+ * @param tid Thread ID whose capabilities to set.
+ * @param off Offset of capability, multiple of \c bits(cap).
+ * @param caps Mask of capabilities to set.
+ * @param d Unused.
+ * @param e Unused.
+ * @return \ref OK on success, \ref ERR_INVAL on invalid input.
+ */
+SYSCALL_DECLARE3(set_cap, tid, off, caps);
+
+/**
+ * Get capabilities.
+ *
+ * @param tid Thread ID whose capabilities to get.
+ * @param off Offset of capability, multiple of \c bits(cap).
+ * @param c Unused.
+ * @param d Unused.
+ * @param e Unused.
+ * @return \ref OK, capabilities.
+ */
+SYSCALL_DECLARE2(get_cap, tid, off);
+
+/**
+ * Clear capabilities.
+ *
+ * @param tid Thread ID whose capabilities to clear.
+ * @param off Offset of capability, multiple of \c bits(cap).
+ * @param cap Mask of capabilities to clear.
+ * @param d Unused.
+ * @param e Unused.
+ * @return \ref OK.
+ */
+SYSCALL_DECLARE3(clear_cap, tid, off, cap);
 
 /**
  * Power off syscall.

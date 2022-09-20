@@ -10,6 +10,7 @@
  */
 
 #include <apos/mem_regions.h>
+#include <apos/caps.h>
 #include <apos/types.h>
 #include <arch/tcb.h> /* arch-specific data */
 
@@ -108,8 +109,8 @@ struct tcb {
 	/** Address of callback function in servers. */
 	vm_t callback;
 
-	/** Address of signal callback. */
-	vm_t signal;
+	/** Capabilities of thread. */
+	capflags_t caps;
 
 	/** Address of this thread's stack base. */
 	vm_t thread_stack;

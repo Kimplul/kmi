@@ -108,6 +108,15 @@ enum {
 	/** Get system parameters. */
 	SYS_CONF_GET,
 
+	/** Set capability of thread. */
+	SYS_SET_CAP,
+
+	/** Get capabilities of thread. */
+	SYS_GET_CAP,
+
+	/** Clear capability of thread. */
+	SYS_CLEAR_CAP,
+
 	/** Shutdown, reboot, etc. */
 	SYS_POWEROFF,
 	/** @} */

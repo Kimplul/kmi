@@ -455,6 +455,8 @@ typedef uint_fast16_t vmflags_t;
  */
 /* should this enum be somewhere else? */
 enum status_codes {
+	/** Permission error. */
+	ERR_PERM = -10,
 	/** Internal error, should probably halt */
 	ERR_INT = -9,
 	/** Something went wrong :/ */
