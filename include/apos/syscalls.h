@@ -79,6 +79,9 @@ enum {
 
 	/** IPC response from server. */
 	SYS_IPC_RESP,
+
+	/** IPC notify thread, essentially interrupt or signal. */
+	SYS_IPC_NOTIFY
 	/** @} */
 
 	/** @name Process management. */

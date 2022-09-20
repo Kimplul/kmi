@@ -474,6 +474,18 @@ SYSCALL_DECLARE5(ipc_fwd, pid, d0, d1, d2, d3);
  * @return \c d0 and \c d1.
  */
 SYSCALL_DECLARE4(ipc_resp, d0, d1, d2, d3);
+
+/**
+ * Notify thread syscall.
+ *
+ * @param tid Thread ID to notify.
+ * @param swap Whether to immediately swap.
+ * @param a0 Argument 0.
+ * @param a1 Argument 1.
+ * @param e Unused.
+ * @return \ref OK and 0.
+ */
+SYSCALL_DECLARE4(notify, tid, swap, a0, a1);
 /** @} */
 
 /** @name Process handling syscalls. */
@@ -533,18 +545,6 @@ SYSCALL_DECLARE2(exec, bin, interp);
  * @return No.
  */
 SYSCALL_DECLARE1(kill, tid);
-
-/**
- * Signal process syscall.
- *
- * @param tid Thread ID to signal.
- * @param signal Signal to send.
- * @param swap Whether to immediately swap.
- * @param d Unused.
- * @param e Unused.
- * @return \ref OK and 0.
- */
-SYSCALL_DECLARE3(signal, tid, signal, swap);
 
 /**
  * Swap syscall.

@@ -76,3 +76,21 @@ SYSCALL_DEFINE4(ipc_resp)(sys_arg_t d0, sys_arg_t d1, sys_arg_t d2,
 	/* something like return_from_callback(t, r) */
 	return (struct sys_ret){ OK, t->tid, d0, d1, d2, d3 };
 }
+
+/**
+ * Notify syscall handler.
+ *
+ * \todo Implement.
+ *
+ * @param tid Thread ID to notify.
+ * @param swap Whether to swap immediately if possible.
+ * @param a0 Argument 0.
+ * @param a1 Argument 1.
+ * @return \ref OK and 0.
+ */
+SYSCALL_DEFINE4(ipc_notify)(sys_arg_t tid, sys_arg_t swap,
+                            sys_arg_t a0, sys_arg_t a1){
+	/** \todo masquerade as kernel call, set from to 0 and set us as
+	 * notify type, with arguments a0 and a1 as user-configurable data. */
+	return (struct sys_ret){ OK, 0, 0 /* type */, 0 /* from */, a0, a1 };
+}

@@ -95,20 +95,6 @@ SYSCALL_DEFINE0(kill)()
 }
 
 /**
- * Signal syscall handler.
- *
- * \todo Implement.
- *
- * @param tid Thread ID to signal.
- * @param signal Signal to send to \c tid.
- * @param swap Whether to immediately swap to thread.
- * @return \ref OK and 0.
- */
-SYSCALL_DEFINE3(signal)(sys_arg_t tid, sys_arg_t signal, sys_arg_t swap){
-	return (struct sys_ret){ OK, 0, 0, 0, 0, 0 };
-}
-
-/**
  * Swap syscall handler.
  *
  * \todo Implement.
