@@ -95,5 +95,24 @@ SYSCALL_DEFINE2(ipc_notify)(sys_arg_t tid, sys_arg_t swap){
 	 * Arguably slower than directly telling the client which operation was
 	 * finished, but this would require the kernel to keep track of a notify
 	 * stack. While not impossible, probably too complex. */
-	return (struct sys_ret){ OK, 0, 0 /* type */, 0 /* from */, 0, 0 };
+
+	/* Something like
+	 *
+	 * struct tcb *t = get_tcb(tid);
+	 * if (t->notify_state == NOTIFY_QUEUED)
+	 *	return;
+	 *
+	 * if (t->notify_state == NOTIFY_RUNNING) {
+	 *	t->notify = NOTIFY_QUEUED;
+	 *	return;
+	 * }
+	 *
+	 * t->notify_state = NOTIFY_QUEUED;
+	 * if (swap)
+	 *	do_swap(); // clears t->notify when swapped to
+	 *		   // if already running in base state, interrupt,
+	 *		   otherwise wait for return from rpc. If not running,
+	 *		   just queue the interrupt.
+	 */
+	return (struct sys_ret){ OK, 0, 0 /* type */, 0, 0, 0 };
 }

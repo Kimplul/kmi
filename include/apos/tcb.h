@@ -49,7 +49,7 @@
 /* forward declaration */
 struct tcb;
 
-/** Convenience structure for \see tcb. */
+/** Convenience structure for \ref tcb. */
 struct tcb_ctx {
 	/** Virtual address space of context. */
 	struct vmem *vmem;
@@ -59,6 +59,18 @@ struct tcb_ctx {
 
 	/** Previous thread in context. */
 	struct tcb *prev;
+};
+
+/** Enum for notification states. */
+enum tcb_notify_state {
+	/** Thread has notifcations queued. */
+	NOTIFY_QUEUED,
+
+	/** Thread is running notification handler. */
+	NOTIFY_RUNNING,
+
+	/** Thread is free to be notified. */
+	NOTIFY_WAITING
 };
 
 /** Thread control block. Main way to handle threads. */
@@ -128,6 +140,9 @@ struct tcb {
 
 	/** RPC context of thread. */
 	struct tcb_ctx rpc;
+
+	/** Notifcation state of thread. */
+	enum tcb_notify notify_state;
 };
 
 /**
