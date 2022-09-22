@@ -12,6 +12,8 @@
 #include <apos/sizes.h>
 #include <apos/uapi.h>
 
+/** \todo stack size should really be set on a per-thread basis, and are the
+ * conf*-syscalls even necessary? */
 size_t __thread_stack_size = SZ_2M;
 size_t __call_stack_size = SZ_2M;
 

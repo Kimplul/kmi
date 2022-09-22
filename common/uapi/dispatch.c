@@ -42,6 +42,7 @@ static const sys_t syscall_table[] = {
 	[SYS_FORK] = sys_fork,
 	[SYS_EXEC] = sys_exec,
 	[SYS_SWAP] = sys_swap,
+	[SYS_ASSIGN] = sys_assign,
 
 	/* conf */
 	[SYS_CONF_SET] = sys_conf_set,

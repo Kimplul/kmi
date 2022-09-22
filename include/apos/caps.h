@@ -22,6 +22,9 @@ enum {
 
 	/** Thread is allowed to force interrupt to callback in other thread. */
 	CAP_CALL = (1 << 2),
+
+	/** Thread is allowed to assign threads to processors. */
+	CAP_ASSIGN = (1 << 3),
 };
 
 /**

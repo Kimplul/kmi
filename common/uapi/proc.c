@@ -89,7 +89,7 @@ SYSCALL_DEFINE2(exec)(sys_arg_t bin, sys_arg_t interp){
  *
  * @return No?
  */
-SYSCALL_DEFINE0(kill)()
+SYSCALL_DEFINE1(kill)(sys_arg_t tid)
 {
 	return (struct sys_ret){ OK, 0, 0, 0, 0, 0};
 }
@@ -109,4 +109,17 @@ SYSCALL_DEFINE1(swap)(sys_arg_t tid){
 	/** \todo should switch return the registers of the new thread that would
 	 * be used for message passing? */
 	return (struct sys_ret){ OK, 0, 0, 0, 0, 0 };
+}
+
+/**
+ * Assign syscall handler.
+ *
+ * \todo Implement.
+ * @param tid Thread to assign to \p cpu.
+ * @param cpu Cpu to run \p tid on.
+ * @return \ref OK.
+ */
+SYSCALL_DEFINE2(assign)(sys_arg_t tid, sys_arg_t cpu)
+{
+	return (struct sys_ret){OK, 0, 0, 0, 0, 0};
 }

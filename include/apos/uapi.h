@@ -559,6 +559,20 @@ SYSCALL_DECLARE1(kill, tid);
  * @return \ref OK and 0.
  */
 SYSCALL_DECLARE1(swap, tid);
+
+/**
+ * Assign syscall.
+ *
+ * Assign \p tid to \p cpu, immediately swaps from whetever was running on \p cpu.
+ *
+ * @param tid Thread to assign to \p cpu.
+ * @param cpu Cpu to run \p tid on.
+ * @param c Unused.
+ * @param d Unused.
+ * @param e Unused.
+ * @return \ref OK and 0.
+ */
+SYSCALL_DECLARE2(assign, tid, cpu);
 /** @} */
 
 /** @name Configuration syscalls. */

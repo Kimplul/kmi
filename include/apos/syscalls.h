@@ -81,7 +81,7 @@ enum {
 	SYS_IPC_RESP,
 
 	/** IPC notify thread, essentially interrupt or signal. */
-	SYS_IPC_NOTIFY
+	SYS_IPC_NOTIFY,
 	/** @} */
 
 	/** @name Process management. */
@@ -100,6 +100,9 @@ enum {
 
 	/** Switch running process. */
 	SYS_SWAP,
+
+	/** Assign thread to cpu. */
+	SYS_ASSIGN,
 
 	/** @} */
 
