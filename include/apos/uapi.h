@@ -480,12 +480,12 @@ SYSCALL_DECLARE4(ipc_resp, d0, d1, d2, d3);
  *
  * @param tid Thread ID to notify.
  * @param swap Whether to immediately swap.
- * @param a0 Argument 0.
- * @param a1 Argument 1.
+ * @param c Unused.
+ * @param d Unused.
  * @param e Unused.
  * @return \ref OK and 0.
  */
-SYSCALL_DECLARE4(notify, tid, swap, a0, a1);
+SYSCALL_DECLARE2(ipc_notify, tid, swap);
 /** @} */
 
 /** @name Process handling syscalls. */

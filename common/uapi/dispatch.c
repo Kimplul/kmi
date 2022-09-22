@@ -36,6 +36,7 @@ static const sys_t syscall_table[] = {
 	[SYS_IPC_REQ] = sys_ipc_req,
 	[SYS_IPC_FWD] = sys_ipc_fwd,
 	[SYS_IPC_RESP] = sys_ipc_resp,
+	[SYS_IPC_NOTIFY] = sys_ipc_notify,
 
 	/* proc */
 	[SYS_CREATE] = sys_create,
