@@ -85,6 +85,7 @@ SYSCALL_DEFINE2(exec)(sys_arg_t bin, sys_arg_t interp){
 /**
  * Kill syscall handler.
  *
+ * @param tid Thread to kill.
  * \todo Implement.
  *
  * @return No?

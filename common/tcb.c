@@ -170,7 +170,7 @@ struct tcb *create_thread(struct tcb *p)
 }
 
 /**
- * Copy process, setting up COW.
+ * Copy process.
  *
  * @param p Parent process.
  * @param n New process.
@@ -178,9 +178,7 @@ struct tcb *create_thread(struct tcb *p)
  */
 static stat_t __copy_proc(struct tcb *p, struct tcb *n)
 {
-	/** \todo Copy memory regions, and mark them MR_COW, as well as copy
-	 * bm_branch tree but with VM_W off, also at some point write COW
-	 * handler */
+	/** \todo Copy memory regions as well as copy */
 	return OK;
 }
 

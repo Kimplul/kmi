@@ -217,10 +217,8 @@
 #define MR_SHARED (1 << 9)
 /** Owner of shared region. */
 #define MR_OWNED (1 << 10)
-/** Copy on write. */
-#define MR_COW (1 << 11)
 /** Don't free memory on clear. */
-#define MR_KEEP (1 << 12)
+#define MR_KEEP (1 << 11)
 
 /** @} */
 

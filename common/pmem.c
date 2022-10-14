@@ -36,6 +36,10 @@
 #include <apos/bits.h> /* is_nset etc */
 #include <libfdt.h>
 
+/* \todo add memory page counting?
+ * To make sure memory is not overcommited at clone, for example.
+ */
+
 /**
  * Loop through all page usage bits in current bitmap.
  *

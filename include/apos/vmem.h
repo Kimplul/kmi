@@ -151,9 +151,9 @@ stat_t alloc_shared_wrapper(struct vmem *b, pm_t *offset, vm_t vaddr,
                             vmflags_t flags, enum mm_order order, void *data);
 
 /**
- * User virtual memory COW copying worker callback for \ref map_fill_region().
+ * User virtual memory copying worker callback for \ref map_fill_region().
  *
- * Currently unused, but intention is to set up COW copy of some other virtual
+ * Currently unused, but intention is to set up copy of some other virtual
  * memory region, likely passed through \c data?
  *
  * @param b Virtual memory to work in.
@@ -214,7 +214,7 @@ stat_t free_uvmem_wrapper(struct vmem *b, pm_t *offset, vm_t vaddr,
 	map_fill_region(b, &alloc_shared_wrapper, 0, start, bytes, flags, data)
 
 /**
- * Convenience wrapper for \ref map_fill_region() when COW copying a region.
+ * Convenience wrapper for \ref map_fill_region() when copying a region.
  *
  * @param b Virtual memory to work in.
  * @param start Start of virtual memory region to map.

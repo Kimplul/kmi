@@ -62,7 +62,7 @@ struct tcb_ctx {
 };
 
 /** Enum for notification states. */
-enum tcb_notify_state {
+enum tcb_notify {
 	/** Thread has notifcations queued. */
 	NOTIFY_QUEUED,
 
@@ -178,10 +178,8 @@ struct tcb *create_thread(struct tcb *p);
  * Create a new process.
  *
  * Sets up a new thread in a new process context. If there is a parent thread,
- * its memory regions are copied but made COW.
+ * its memory regions are copied.
  * \see create_thread().
- *
- * \todo COW handling.
  *
  * @param p Parent process.
  * @return Pointer to created \ref tcb.
