@@ -535,6 +535,21 @@ SYSCALL_DECLARE0(fork);
 SYSCALL_DECLARE2(exec, bin, interp);
 
 /**
+ * Spawn binary syscall. Try to prefer over unixy fork/exec.
+ *
+ * Executes a new binary in new process space.
+ *
+ * @param bin Address of binary.
+ * @param interp Optional address of interpreter.
+ * @param c Unused.
+ * @param d Unused.
+ * @param e Unused.
+ * @return \ref OK and 0.
+ * \todo Check other return codes.
+ */
+SYSCALL_DECLARE2(spawn, bin, interp);
+
+/**
  * Kill syscall.
  *
  * @param tid Thread ID to kill. 0 if self.

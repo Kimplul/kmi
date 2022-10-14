@@ -83,6 +83,18 @@ SYSCALL_DEFINE2(exec)(sys_arg_t bin, sys_arg_t interp){
 }
 
 /**
+ * Spawn syscall handler.
+ *
+ * @param bin Binary to execute.
+ * @param interp Optional interpreter binary.
+ * @return \see prepare_proc() and 0.
+ */
+SYSCALL_DEFINE2(spawn)(sys_arg_t bin, sys_arg_t interp)
+{
+	/* @todo implement */
+}
+
+/**
  * Kill syscall handler.
  *
  * @param tid Thread to kill.

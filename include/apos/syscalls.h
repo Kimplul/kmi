@@ -95,6 +95,9 @@ enum {
 	/** Execute new binary in process space. */
 	SYS_EXEC,
 
+	/** Execute new binary in new process space. */
+	SYS_SPAWN,
+
 	/** Kill thread. */
 	SYS_KILL,
 
