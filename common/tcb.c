@@ -342,3 +342,8 @@ stat_t clone_proc_maps(struct tcb *r)
 
 	return OK;
 }
+
+void set_return(struct tcb *t, vm_t v)
+{
+	t->exec = v;
+}

@@ -75,6 +75,9 @@ enum tcb_notify {
 
 /** Thread control block. Main way to handle threads. */
 struct tcb {
+	/** Execution continuation point. Important that it is first. */
+	vm_t exec;
+
 	/** Arch-specific data. */
 	struct arch_tcbd tcbd;
 
@@ -318,5 +321,13 @@ stat_t clone_rpc_maps(struct tcb *r);
  * @return \ref OK on success, \ref ERR_OOMEM if out of memory.
  */
 stat_t alloc_stacks(struct tcb *t);
+
+/**
+ * Set address to jump to when returning to userspace.
+ *
+ * @param t Thread return address to set.
+ * @param r Address to jump to.
+ */
+void set_return(struct tcb *t, vm_t r);
 
 #endif /* APOS_TCB_H */

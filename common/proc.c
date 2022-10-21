@@ -23,7 +23,7 @@ stat_t prepare_proc(struct tcb *t, vm_t bin, vm_t interp)
 
 	alloc_stacks(t);
 	set_thread(t);
-	set_return(entry);
+	set_return(t, entry);
 	return OK;
 }
 

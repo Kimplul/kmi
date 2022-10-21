@@ -16,14 +16,6 @@
 #endif
 
 /**
- * Set address to jump to when returning to userspace.
- *
- * @param r Address to jump to.
- * @return \ref OK.
- */
-stat_t set_return(vm_t r);
-
-/**
  * Attach IPC data to load into argument registers when returning to userspace.
  *
  * @param t Thread that will run after return.

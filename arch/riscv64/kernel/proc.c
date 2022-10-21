@@ -15,17 +15,12 @@ stat_t run_init(struct tcb *t, void *fdt)
 {
 	/** \todo actually map fdt into the target address space */
 	csr_write(CSR_SSCRATCH, t);
+	csr_write(CSR_SEPC, t->exec);
 	__asm__ volatile ("mv sp, %0\n" : : "r" (t->thread_stack_top) : "memory");
 	__asm__ volatile ("mv a0, %0\n" : : "r" (fdt) : );
 	__asm__ volatile ("sret\n" ::: "memory");
 	/* we should never reach this */
 	return ERR_ADDR;
-}
-
-stat_t set_return(vm_t v)
-{
-	csr_write(CSR_SEPC, v);
-	return OK;
 }
 
 stat_t set_ipc(struct tcb *t, id_t pid, id_t tid)

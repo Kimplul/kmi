@@ -91,7 +91,11 @@ SYSCALL_DEFINE2(exec)(sys_arg_t bin, sys_arg_t interp){
  */
 SYSCALL_DEFINE2(spawn)(sys_arg_t bin, sys_arg_t interp)
 {
-	/* @todo implement */
+	struct tcb *t = create_proc(NULL);
+	if (!t)
+		return (struct sys_ret){ERR_OOMEM, 0, 0, 0, 0, 0};
+
+	return (struct sys_ret){prepare_proc(t, bin, interp), t->pid, 0, 0, 0, 0};
 }
 
 /**

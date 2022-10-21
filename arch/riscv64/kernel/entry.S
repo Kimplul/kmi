@@ -87,7 +87,8 @@ handle_syscall:
 	 * twice */
 	csrr    s0, CSR_SEPC
 	addi	s0, s0, 4
-	csrw	CSR_SEPC, s0
+	/* store execution continuation point */
+	sr	s0, 0(tp)
 	/* allocate space for sys_ret structure on stack and shift argument
 	 * registers down one to make room for the pointer to this structure */
 	addi	sp, sp, -sizeof_sys_ret
@@ -112,6 +113,9 @@ handle_syscall:
 	/* get associated kernel stack */
 	mv	sp, tp
 	addi	sp, sp, -sizeof_registers
+	/* set execution continuation */
+	lr	s0, 0(tp)
+	csrw	CSR_SEPC, s0
 	/* restore system call result */
 	j	restore_noreturn
 
