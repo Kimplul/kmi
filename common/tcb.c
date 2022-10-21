@@ -291,7 +291,8 @@ DEFINE_ATTACH(attach_proc, proc);
 DEFINE_DETACH(detach_rpc, rpc);
 DEFINE_DETACH(detach_proc, proc);
 
-struct tcb *cur_tcb()
+/* weak to allow optimisation on risc-v, but provide fallback for future */
+__weak struct tcb *cur_tcb()
 {
 	return cpu_tcb[cpu_id()];
 }
