@@ -64,7 +64,7 @@ static const sys_t syscall_table[] = {
  */
 SYSCALL_DEFINE0(noop)(){
 	info("sys_noop\n");
-	return (struct sys_ret){ OK, 0, 0, 0, 0, 0 };
+	return SYS_RET1(OK);
 }
 
 /**
@@ -77,7 +77,7 @@ SYSCALL_DEFINE1(putch)(sys_arg_t a){
 	const char c[2] = {a, 0};
 	MAYBE_UNUSED(c);
 	dbg((const char *)&c);
-	return (struct sys_ret){ OK, 0, 0, 0, 0, 0 };
+	return SYS_RET1(OK);
 }
 
 struct sys_ret syscall_dispatch(sys_arg_t syscall, sys_arg_t a, sys_arg_t b,
@@ -89,13 +89,13 @@ struct sys_ret syscall_dispatch(sys_arg_t syscall, sys_arg_t a, sys_arg_t b,
 	if (sc >= ARRAY_SIZE(syscall_table)) {
 		error("Syscall %zu outside allowed range [0 - %zu]\n", sc,
 		      ARRAY_SIZE(syscall_table));
-		return (struct sys_ret){ ERR_INVAL, 0, 0, 0, 0, 0 };
+		return SYS_RET1(ERR_INVAL);
 	}
 
 	sys_t call = syscall_table[sc];
 	if (!call) {
 		error("Syscall %zu not legitimate value\n", sc);
-		return (struct sys_ret){ ERR_INVAL, 0, 0, 0, 0, 0 };
+		return SYS_RET1(ERR_INVAL);
 	}
 
 	struct sys_ret r = call(a, b, c, d, e);
@@ -104,7 +104,7 @@ struct sys_ret syscall_dispatch(sys_arg_t syscall, sys_arg_t a, sys_arg_t b,
 		bug("Syscall %zu overwrote stack canary\n", syscall);
 		/** @todo should probably halt, as the system is likely in an
 		 * unstable state. */
-		return (struct sys_ret){ ERR_INT, 0, 0, 0, 0, 0 };
+		return SYS_RET1(ERR_INT);
 	}
 
 	return r;

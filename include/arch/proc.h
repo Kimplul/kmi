@@ -25,7 +25,7 @@
  */
 void set_args(struct tcb *t, struct sys_ret a);
 
-/** 
+/**
  * Get argument data attached to thread.
  * To some extent a hack, used by swap.
  *

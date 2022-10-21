@@ -30,6 +30,7 @@ id_t cpu_id();
 
 /**
  * Assign tcb to current cpu.
+ * Essentially sets t->cpu_id to the cpu id, plus whatever the arch needs.
  *
  * @param t \ref tcb to assign to current cpu.
  */

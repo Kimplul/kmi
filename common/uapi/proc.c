@@ -25,7 +25,7 @@
  * @return \ref OK and 0.
  */
 SYSCALL_DEFINE2(create)(sys_arg_t func, sys_arg_t arg){
-	return (struct sys_ret){ OK, 0, 0, 0, 0, 0 };
+	return SYS_RET1(OK);
 }
 
 /**
@@ -44,7 +44,7 @@ SYSCALL_DEFINE2(create)(sys_arg_t func, sys_arg_t arg){
  * @return \ref OK and 0.
  */
 SYSCALL_DEFINE0(fork)(){
-	return (struct sys_ret){ OK, 0, 0, 0, 0, 0 };
+	return SYS_RET1(OK);
 }
 
 /**
@@ -52,7 +52,7 @@ SYSCALL_DEFINE0(fork)(){
  *
  * @param bin Binary to execute.
  * @param interp Optional interpreter binary.
- * @return \see prepare_proc() and 0.
+ * @return \see prepare_proc().
  */
 SYSCALL_DEFINE2(exec)(sys_arg_t bin, sys_arg_t interp){
 	/** \todo execute new process, probably with more sensible argc passing */
@@ -61,7 +61,8 @@ SYSCALL_DEFINE2(exec)(sys_arg_t bin, sys_arg_t interp){
 	/* mark binary to be kept */
 	struct mem_region *b = find_used_region(&r->sp_r, bin);
 	if (!b)
-		return (struct sys_ret){ERR_INVAL, 0, 0, 0, 0, 0};
+		return SYS_RET1(ERR_INVAL);
+
 	set_bit(b->flags, MR_KEEP);
 
 	struct mem_region *i = 0;
@@ -69,7 +70,8 @@ SYSCALL_DEFINE2(exec)(sys_arg_t bin, sys_arg_t interp){
 		/* mark interpreter to be kept */
 		i = find_used_region(&r->sp_r, interp);
 		if (!i)
-			return (struct sys_ret){ERR_INVAL, 1, 0, 0, 0, 0};
+			return SYS_RET1(ERR_INVAL);
+
 		set_bit(i->flags, MR_KEEP);
 	}
 
@@ -81,7 +83,7 @@ SYSCALL_DEFINE2(exec)(sys_arg_t bin, sys_arg_t interp){
 	if (interp)
 		clear_bit(b->flags, MR_KEEP);
 
-	return (struct sys_ret){ prepare_proc(r, bin, interp), 0, 0, 0, 0, 0 };
+	return SYS_RET1(prepare_proc(r, bin, interp));
 }
 
 /**
@@ -89,15 +91,15 @@ SYSCALL_DEFINE2(exec)(sys_arg_t bin, sys_arg_t interp){
  *
  * @param bin Binary to execute.
  * @param interp Optional interpreter binary.
- * @return \see prepare_proc() and 0.
+ * @return \see prepare_proc() and process id of the new process.
  */
 SYSCALL_DEFINE2(spawn)(sys_arg_t bin, sys_arg_t interp)
 {
 	struct tcb *t = create_proc(NULL);
 	if (!t)
-		return (struct sys_ret){ERR_OOMEM, 0, 0, 0, 0, 0};
+		return SYS_RET1(ERR_OOMEM);
 
-	return (struct sys_ret){prepare_proc(t, bin, interp), t->pid, 0, 0, 0, 0};
+	return SYS_RET2(prepare_proc(t, bin, interp), t->pid);
 }
 
 /**
@@ -106,11 +108,11 @@ SYSCALL_DEFINE2(spawn)(sys_arg_t bin, sys_arg_t interp)
  * @param tid Thread to kill.
  * \todo Implement.
  *
- * @return No?
+ * @return ERR_PERM if not capable to kill, otherwise OK.
  */
 SYSCALL_DEFINE1(kill)(sys_arg_t tid)
 {
-	return (struct sys_ret){ OK, 0, 0, 0, 0, 0};
+	return SYS_RET1(OK);
 }
 
 /**
@@ -121,17 +123,16 @@ SYSCALL_DEFINE1(kill)(sys_arg_t tid)
  * for message passing?
  *
  * @param tid Thread ID to swap to.
- * @return \ref OK and 0.
+ * @return \ref OK.
  */
 SYSCALL_DEFINE1(swap)(sys_arg_t tid){
 	struct tcb *t = get_tcb(tid);
 	if (!t)
-		/** @todo add error sys_ret macro? */
-		return (struct sys_ret){ERR_INVAL, 0, 0, 0, 0, 0};
+		return SYS_RET1(ERR_INVAL);
 
 	/* switch over to new thread */
 	use_tcb(t);
-	
+
 	return get_args(t);
 }
 
@@ -145,5 +146,5 @@ SYSCALL_DEFINE1(swap)(sys_arg_t tid){
  */
 SYSCALL_DEFINE2(assign)(sys_arg_t tid, sys_arg_t cpu)
 {
-	return (struct sys_ret){OK, 0, 0, 0, 0, 0};
+	return SYS_RET1(OK);
 }

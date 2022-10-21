@@ -51,6 +51,14 @@ struct sys_ret {
 	sys_arg_t ar4;
 };
 
+#define SYS_RET0() (struct sys_ret){0, 0, 0, 0, 0, 0}
+#define SYS_RET1(a) (struct sys_ret){a, 0, 0, 0, 0, 0}
+#define SYS_RET2(a, b) (struct sys_ret){a, b, 0, 0, 0, 0}
+#define SYS_RET3(a, b, c) (struct sys_ret){a, b, c, 0, 0, 0}
+#define SYS_RET4(a, b, c, d) (struct sys_ret){a, b, c, d, 0, 0}
+#define SYS_RET5(a, b, c, d, e) (struct sys_ret){a, b, c, d, e, 0}
+#define SYS_RET6(a, b, c, d, e, f) (struct sys_ret){a, b, c, d, e, f}
+
 /**
  * Helper macro for declaring syscalls with zero arguments.
  *

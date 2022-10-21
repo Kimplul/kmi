@@ -307,9 +307,7 @@ void use_tcb(struct tcb *t)
 {
 	cpu_assign(t);
 
-	id_t cpu = cpu_id();
-	t->cpu_id = cpu;
-	cpu_tcb[cpu] = t;
+	cpu_tcb[t->cpu_id] = t;
 
 	use_vmem(t->proc.vmem);
 }

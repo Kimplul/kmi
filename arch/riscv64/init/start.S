@@ -5,7 +5,10 @@
 .global _start
 /* Entry point to the kernel loader. */
 _start:
+/* load static stack */
 li sp, PM_STACK_TOP
+/* make sure there's no garbage in tp, important for id assignment */
+li tp, 0
 call init
 
 .section .text

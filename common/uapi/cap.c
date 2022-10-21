@@ -38,14 +38,14 @@ SYSCALL_DEFINE3(set_cap)(sys_arg_t tid, sys_arg_t off, sys_arg_t caps)
 {
 	struct tcb *t = cur_tcb();
 	if (!is_set(t->caps, CAP_CAPS))
-		return (struct sys_ret){ERR_PERM, 0, 0, 0, 0, 0};
+		return SYS_RET1(ERR_PERM);
 
 	capflags_t *c;
 	if (!(c = __get_tcb_caps(tid, off)))
-		return (struct sys_ret){ERR_INVAL, 0, 0, 0, 0, 0};
+		return SYS_RET1(ERR_INVAL);
 
 	set_caps(*c, off, caps);
-	return (struct sys_ret){OK, 0, 0, 0, 0, 0};
+	return SYS_RET1(OK);
 }
 
 /**
@@ -59,9 +59,9 @@ SYSCALL_DEFINE2(get_cap)(sys_arg_t tid, sys_arg_t off)
 {
 	capflags_t *c;
 	if (!(c = __get_tcb_caps(tid, off)))
-		return (struct sys_ret){ERR_INVAL, 0, 0, 0, 0, 0};
+		return SYS_RET1(ERR_INVAL);
 
-	return (struct sys_ret){OK, get_caps(*c, off), 0, 0, 0, 0};
+	return SYS_RET2(OK, get_caps(*c, off));
 }
 
 /**
@@ -70,18 +70,19 @@ SYSCALL_DEFINE2(get_cap)(sys_arg_t tid, sys_arg_t off)
  * @param tid Thread ID whose capabilities to clear.
  * @param off Offset of capability, multiple of \c bits(cap).
  * @param caps Mask of capabilities to clear.
- * @return \ref OK.
+ * @return ERR_LERM if invalid permissions, ERR_INVAL if \p tid doesn't exist,
+ * otherwise OK.
  */
 SYSCALL_DEFINE3(clear_cap)(sys_arg_t tid, sys_arg_t off, sys_arg_t caps)
 {
 	struct tcb *t = cur_tcb();
 	if (!is_set(t->caps, CAP_CAPS))
-		return (struct sys_ret){ERR_PERM, 0, 0, 0, 0, 0};
+		return SYS_RET1(ERR_PERM);
 
 	capflags_t *c;
 	if (!(c = __get_tcb_caps(tid, off)))
-		return (struct sys_ret){ERR_INVAL, 0, 0, 0, 0, 0};
+		return SYS_RET1(ERR_INVAL);
 
 	clear_caps(*c, off, caps);
-	return (struct sys_ret){OK, 0, 0, 0, 0, 0};
+	return SYS_RET1(OK);
 }

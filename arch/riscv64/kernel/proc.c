@@ -40,7 +40,7 @@ void set_args(struct tcb *t, struct sys_ret a)
 struct sys_ret get_args(struct tcb *t)
 {
 	struct riscv_regs *r = (struct riscv_regs *)(--t);
-	return (struct sys_ret){r->a0, r->a1, r->a2, r->a3, r->a4, r->a5};
+	return SYS_RET6(r->a0, r->a1, r->a2, r->a3, r->a4, r->a5);
 }
 
 void set_thread(struct tcb *t)

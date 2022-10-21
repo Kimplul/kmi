@@ -18,7 +18,7 @@
 SYSCALL_DEFINE1(ipc_server)(sys_arg_t callback)
 {
 	cur_tcb()->callback = callback;
-	return (struct sys_ret){ OK, 0, 0, 0, 0, 0 };
+	return SYS_RET1(OK);
 }
 
 /**
@@ -29,7 +29,7 @@ SYSCALL_DEFINE1(ipc_server)(sys_arg_t callback)
  * @param d1 IPC argument 1.
  * @param d2 IPC argument 2.
  * @param d3 IPC argument 3.
- * @return \c d0 and \c d1.
+ * @return When succesful: OK, thread id of the caller and the arguments as-is.
  */
 SYSCALL_DEFINE5(ipc_req)(sys_arg_t pid,
                          sys_arg_t d0, sys_arg_t d1, sys_arg_t d2, sys_arg_t d3)
@@ -38,7 +38,7 @@ SYSCALL_DEFINE5(ipc_req)(sys_arg_t pid,
 	struct tcb *r = get_tcb(pid);
 	/** \todo something like jump_to_callback(t) */
 	/* remember difference between ipc_req and ipc_fwd! */
-	return (struct sys_ret){ OK, t->tid, d0, d1, d2, d3 };
+	return SYS_RET6(OK, t->tid, d0, d1, d2, d3);
 }
 
 /**
@@ -49,7 +49,7 @@ SYSCALL_DEFINE5(ipc_req)(sys_arg_t pid,
  * @param d1 IPC argument 1.
  * @param d2 IPC argument 2.
  * @param d3 IPC argument 3.
- * @return \p d0 and \p d1.
+ * @return
  */
 SYSCALL_DEFINE5(ipc_fwd)(sys_arg_t pid,
                          sys_arg_t d0, sys_arg_t d1, sys_arg_t d2, sys_arg_t d3)
@@ -57,7 +57,7 @@ SYSCALL_DEFINE5(ipc_fwd)(sys_arg_t pid,
 	struct tcb *t = cur_tcb();
 	struct tcb *r = get_tcb(pid);
 	/* ditto */
-	return (struct sys_ret){ OK, t->tid, d0, d1, d2, d3 };
+	return SYS_RET6(OK, t->tid, d0, d1, d2, d3);
 }
 
 /**
@@ -74,7 +74,7 @@ SYSCALL_DEFINE4(ipc_resp)(sys_arg_t d0, sys_arg_t d1, sys_arg_t d2,
 {
 	struct tcb *t = cur_tcb();
 	/* something like return_from_callback(t, r) */
-	return (struct sys_ret){ OK, t->tid, d0, d1, d2, d3 };
+	return SYS_RET6(OK, t->tid, d0, d1, d2, d3);
 }
 
 /**
@@ -114,5 +114,5 @@ SYSCALL_DEFINE2(ipc_notify)(sys_arg_t tid, sys_arg_t swap){
 	 *		   otherwise wait for return from rpc. If not running,
 	 *		   just queue the interrupt.
 	 */
-	return (struct sys_ret){ OK, 0, 0 /* type */, 0, 0, 0 };
+	return SYS_RET1(OK);
 }
