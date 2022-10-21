@@ -305,9 +305,13 @@ struct tcb *cur_proc()
 
 void use_tcb(struct tcb *t)
 {
+	cpu_assign(t);
+
 	id_t cpu = cpu_id();
 	t->cpu_id = cpu;
 	cpu_tcb[cpu] = t;
+
+	use_vmem(t->proc.vmem);
 }
 
 struct tcb *get_tcb(id_t tid)

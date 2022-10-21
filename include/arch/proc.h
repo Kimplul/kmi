@@ -15,18 +15,28 @@
 #include "../../arch/riscv32/include/proc.h"
 #endif
 
+#include <apos/uapi.h>
+
 /**
- * Attach IPC data to load into argument registers when returning to userspace.
+ * Attach argument data to thread.
  *
  * @param t Thread that will run after return.
- * @param pid Process ID.
- * @param tid Thread ID.
- * @return \ref OK.
+ * @param a Arguments to attach.
  */
-stat_t set_ipc(struct tcb *t, id_t pid, id_t tid);
+void set_args(struct tcb *t, struct sys_ret a);
+
+/** 
+ * Get argument data attached to thread.
+ * To some extent a hack, used by swap.
+ *
+ * @todo is swap necessary? Would assign be enough?
+ *
+ * @param t Thread to read data from.
+ * @return Args associated with thread.
+ */
+struct sys_ret get_args(struct tcb *t);
 
 /** \todo Should these be in arch/tcb.h or something? */
-/** \todo Should these be void? */
 
 /**
  * Attach thread stack and thread local storage when returning to userspace.
@@ -35,17 +45,15 @@ stat_t set_ipc(struct tcb *t, id_t pid, id_t tid);
  * actualizes the information.
  *
  * @param t Thread that will run after return.
- * @return \ref OK.
  */
-stat_t set_thread(struct tcb *t);
+void set_thread(struct tcb *t);
 
 /**
  * Run \c init program.
  *
  * @param t Thread that \c init is attached to.
  * @param fdt Pointer to FDT that is passed to \c init.
- * @return \ref ERR_ADDR, as it shouldn't return-
  */
-stat_t run_init(struct tcb *t, void *fdt);
+__noreturn void run_init(struct tcb *t, void *fdt);
 
 #endif /* APOS_ARCH_PROC_H */

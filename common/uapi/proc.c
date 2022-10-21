@@ -12,6 +12,8 @@
 #include <apos/bits.h>
 #include <apos/mem_regions.h>
 
+#include <arch/proc.h>
+
 /**
  * Create syscall handler.
  *
@@ -122,10 +124,15 @@ SYSCALL_DEFINE1(kill)(sys_arg_t tid)
  * @return \ref OK and 0.
  */
 SYSCALL_DEFINE1(swap)(sys_arg_t tid){
-	/** \todo switch to process */
-	/** \todo should switch return the registers of the new thread that would
-	 * be used for message passing? */
-	return (struct sys_ret){ OK, 0, 0, 0, 0, 0 };
+	struct tcb *t = get_tcb(tid);
+	if (!t)
+		/** @todo add error sys_ret macro? */
+		return (struct sys_ret){ERR_INVAL, 0, 0, 0, 0, 0};
+
+	/* switch over to new thread */
+	use_tcb(t);
+	
+	return get_args(t);
 }
 
 /**

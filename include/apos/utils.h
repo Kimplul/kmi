@@ -187,6 +187,17 @@
 #endif
 
 /**
+ * Signal to the compiler that some region is unreachable.
+ * Mainly used for debugging with instrumentation, though it could provide some
+ * micro-optimisations.
+*/
+#if __has_builtin(__builtin_unreachable)
+#define unreachable() __builtin_unreachable()
+#else
+#define unreachable()
+#endif
+
+/**
  * Get container of some member.
  *
  * @param ptr Pointer to member in some structure.
