@@ -42,4 +42,6 @@ stat_t init_proc(void *fdt)
 	/* allocate stacks after ELF file to make sure nothing of importance
 	 * clashes */
 	return prepare_proc(t, get_init_base(fdt), 0);
+	/** \todo start one thread per core, with special handling for init in
+	 * that each thread starts at the entry point of init? */
 }

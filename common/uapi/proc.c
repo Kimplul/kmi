@@ -24,7 +24,8 @@
  *
  * @return \ref OK and 0.
  */
-SYSCALL_DEFINE2(create)(sys_arg_t func, sys_arg_t arg){
+SYSCALL_DEFINE5(create)(sys_arg_t func,
+		sys_arg_t d0, sys_arg_t d1, sys_arg_t d2, sys_arg_t d3){
 	return SYS_RET1(OK);
 }
 
@@ -44,7 +45,14 @@ SYSCALL_DEFINE2(create)(sys_arg_t func, sys_arg_t arg){
  * @return \ref OK and 0.
  */
 SYSCALL_DEFINE0(fork)(){
-	return SYS_RET1(OK);
+	struct tcb *t = create_proc(cur_proc());
+	if (!t)
+		return SYS_RET1(ERR_OOMEM);
+
+	/* prepare args for when we eventually swap to the new proc */
+	set_args(t, SYS_RET2(OK, t->pid));
+
+	return SYS_RET2(OK, 0);
 }
 
 /**
@@ -134,17 +142,4 @@ SYSCALL_DEFINE1(swap)(sys_arg_t tid){
 	use_tcb(t);
 
 	return get_args(t);
-}
-
-/**
- * Assign syscall handler.
- *
- * \todo Implement.
- * @param tid Thread to assign to \p cpu.
- * @param cpu Cpu to run \p tid on.
- * @return \ref OK.
- */
-SYSCALL_DEFINE2(assign)(sys_arg_t tid, sys_arg_t cpu)
-{
-	return SYS_RET1(OK);
 }

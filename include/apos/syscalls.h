@@ -104,9 +104,6 @@ enum {
 	/** Switch running process. */
 	SYS_SWAP,
 
-	/** Assign thread to cpu. */
-	SYS_ASSIGN,
-
 	/** @} */
 
 	/** @name Kernel management. */

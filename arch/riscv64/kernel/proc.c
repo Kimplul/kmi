@@ -20,7 +20,8 @@ void run_init(struct tcb *t, void *fdt)
 	csr_write(CSR_SSCRATCH, t);
 	csr_write(CSR_SEPC, t->exec);
 	__asm__ volatile ("mv sp, %0\n" : : "r" (t->thread_stack_top) : "memory");
-	__asm__ volatile ("mv a0, %0\n" : : "r" (fdt) : );
+	__asm__ volatile ("mv a0, %0\n" : : "r" (t->tid) : );
+	__asm__ volatile ("mv a1, %0\n" : : "r" (fdt) : );
 	__asm__ volatile ("sret\n" ::: "memory");
 	/* we should never reach this */
 	unreachable();

@@ -44,7 +44,6 @@ static const sys_t syscall_table[] = {
 	[SYS_EXEC] = sys_exec,
 	[SYS_SPAWN] = sys_spawn,
 	[SYS_SWAP] = sys_swap,
-	[SYS_ASSIGN] = sys_assign,
 
 	/* conf */
 	[SYS_CONF_SET] = sys_conf_set,

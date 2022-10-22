@@ -36,7 +36,4 @@ id_t cpu_id();
  */
 void cpu_assign(struct tcb *t);
 
-/** \todo Should init be assigned one thread per core, or how should I handle
- * giving out CPU IDs? */
-
 #endif /* APOS_CPU_H */

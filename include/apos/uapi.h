@@ -511,7 +511,7 @@ SYSCALL_DECLARE2(ipc_notify, tid, swap);
  * @return \ref OK and 0.
  * \todo Should this take stack size etc?
  */
-SYSCALL_DECLARE2(create, func, arg);
+SYSCALL_DECLARE5(create, func, d0, d1, d2, d3);
 
 /**
  * Fork process syscall.
@@ -583,19 +583,6 @@ SYSCALL_DECLARE1(kill, tid);
  */
 SYSCALL_DECLARE1(swap, tid);
 
-/**
- * Assign syscall.
- *
- * Assign \p tid to \p cpu, immediately swaps from whetever was running on \p cpu.
- *
- * @param tid Thread to assign to \p cpu.
- * @param cpu Cpu to run \p tid on.
- * @param c Unused.
- * @param d Unused.
- * @param e Unused.
- * @return \ref OK and 0.
- */
-SYSCALL_DECLARE2(assign, tid, cpu);
 /** @} */
 
 /** @name Configuration syscalls. */
