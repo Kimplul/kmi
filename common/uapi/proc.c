@@ -17,16 +17,25 @@
 /**
  * Create syscall handler.
  *
- * \todo Implement.
- *
  * @param func Function to jump to at thread creation.
- * @param arg Argument to pass to the function.
+ * @param d0 Argument 0.
+ * @param d1 Argument 1.
+ * @param d2 Argument 2.
+ * @param d3 Argument 3.
  *
- * @return \ref OK and 0.
+ * @return ERR_OOMEM if thread creation was unsuccessful, otherwise OK and the
+ * thread id.
  */
 SYSCALL_DEFINE5(create)(sys_arg_t func,
-		sys_arg_t d0, sys_arg_t d1, sys_arg_t d2, sys_arg_t d3){
-	return SYS_RET1(OK);
+                        sys_arg_t d0, sys_arg_t d1, sys_arg_t d2, sys_arg_t d3){
+	struct tcb *t = create_thread(cur_tcb());
+	if (!t)
+		return SYS_RET1(ERR_OOMEM);
+
+	set_args(t, SYS_RET5(t->tid, d0, d1, d2, d3));
+	set_return(t, func);
+
+	return SYS_RET2(OK, t->tid);
 }
 
 /**
@@ -45,7 +54,11 @@ SYSCALL_DEFINE5(create)(sys_arg_t func,
  * @return \ref OK and 0.
  */
 SYSCALL_DEFINE0(fork)(){
-	struct tcb *t = create_proc(cur_proc());
+	struct tcb *c = cur_proc();
+	if (!(get_caps(c->caps, 0) & CAP_PROC))
+		return SYS_RET1(ERR_PERM);
+
+	struct tcb *t = create_proc(eff_proc());
 	if (!t)
 		return SYS_RET1(ERR_OOMEM);
 
@@ -103,6 +116,10 @@ SYSCALL_DEFINE2(exec)(sys_arg_t bin, sys_arg_t interp){
  */
 SYSCALL_DEFINE2(spawn)(sys_arg_t bin, sys_arg_t interp)
 {
+	struct tcb *c = cur_proc();
+	if (!(get_caps(c->caps, 0) & CAP_PROC))
+		return SYS_RET1(ERR_PERM);
+
 	struct tcb *t = create_proc(NULL);
 	if (!t)
 		return SYS_RET1(ERR_OOMEM);
@@ -120,6 +137,10 @@ SYSCALL_DEFINE2(spawn)(sys_arg_t bin, sys_arg_t interp)
  */
 SYSCALL_DEFINE1(kill)(sys_arg_t tid)
 {
+	struct tcb *c = cur_proc();
+	if (!(get_caps(c->caps, 0) & CAP_PROC))
+		return SYS_RET1(ERR_PERM);
+
 	return SYS_RET1(OK);
 }
 
@@ -134,6 +155,10 @@ SYSCALL_DEFINE1(kill)(sys_arg_t tid)
  * @return \ref OK.
  */
 SYSCALL_DEFINE1(swap)(sys_arg_t tid){
+	struct tcb *c = cur_proc();
+	if (!(get_caps(c->caps, 0) & CAP_PROC))
+		return SYS_RET1(ERR_PERM);
+
 	struct tcb *t = get_tcb(tid);
 	if (!t)
 		return SYS_RET1(ERR_INVAL);

@@ -51,12 +51,25 @@ struct sys_ret {
 	sys_arg_t ar4;
 };
 
+/** Helper for returning sys_ret with 0 arguments. */
 #define SYS_RET0() (struct sys_ret){0, 0, 0, 0, 0, 0}
+
+/** Helper for returning sys_ret with 1 arguments. */
 #define SYS_RET1(a) (struct sys_ret){a, 0, 0, 0, 0, 0}
+
+/** Helper for returning sys_ret with 2 arguments. */
 #define SYS_RET2(a, b) (struct sys_ret){a, b, 0, 0, 0, 0}
+
+/** Helper for returning sys_ret with 3 arguments. */
 #define SYS_RET3(a, b, c) (struct sys_ret){a, b, c, 0, 0, 0}
+
+/** Helper for returning sys_ret with 4 arguments. */
 #define SYS_RET4(a, b, c, d) (struct sys_ret){a, b, c, d, 0, 0}
+
+/** Helper for returning sys_ret with 5 arguments. */
 #define SYS_RET5(a, b, c, d, e) (struct sys_ret){a, b, c, d, e, 0}
+
+/** Helper for returning sys_ret with 6 arguments. */
 #define SYS_RET6(a, b, c, d, e, f) (struct sys_ret){a, b, c, d, e, f}
 
 /**
@@ -504,10 +517,11 @@ SYSCALL_DECLARE2(ipc_notify, tid, swap);
  * Creates thread in current effective process context.
  *
  * @param func Function to call on startup.
- * @param arg Argument to pass to function.
- * @param c Unused.
- * @param d Unused.
- * @param e Unused.
+ * @param d0 Argument 0.
+ * @param d1 Argument 1.
+ * @param d2 Argument 2.
+ * @param d3 Argument 3.
+ *
  * @return \ref OK and 0.
  * \todo Should this take stack size etc?
  */

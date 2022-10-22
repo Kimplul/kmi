@@ -268,9 +268,16 @@ struct tcb *cur_tcb();
 /**
  * Get currently executing process.
  *
- * @return Current process \ref tcb.
+ * @return Effective process \ref tcb.
  */
 struct tcb *cur_proc();
+
+/**
+ * Get currently executing process.
+ *
+ * @return Effective process \ref tcb.
+ */
+struct tcb *eff_proc();
 
 /**
  * Set \c t as current \ref tcb.

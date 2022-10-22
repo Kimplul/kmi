@@ -39,6 +39,9 @@ stat_t init_proc(void *fdt)
 	/* set current tcb */
 	use_tcb(t);
 
+	/* init process has all capabilities */
+	set_caps(t->caps, 0, CAP_CAPS | CAP_PROC | CAP_CALL);
+
 	/* allocate stacks after ELF file to make sure nothing of importance
 	 * clashes */
 	return prepare_proc(t, get_init_base(fdt), 0);

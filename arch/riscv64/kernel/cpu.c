@@ -11,6 +11,7 @@
 
 #include <arch/cpu.h>
 
+/** Keeps track of initialized cpus. */
 static atomic_long cpus = 0;
 
 void cpu_assign(struct tcb *t)

@@ -300,6 +300,12 @@ __weak struct tcb *cur_tcb()
 struct tcb *cur_proc()
 {
 	struct tcb *t = cur_tcb();
+	return get_tcb(t->pid);
+}
+
+struct tcb *eff_proc()
+{
+	struct tcb *t = cur_tcb();
 	return get_tcb(t->eid);
 }
 
