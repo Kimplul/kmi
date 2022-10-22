@@ -257,6 +257,7 @@ static void __use_vmem(struct vmem *branch, enum mm_mode m)
 
 	flush_tlb_all();
 	/* Sv57 && Sv64 in the future? */
+	/** @todo ASID table for maybe faster context switches? */
 }
 
 struct vmem *init_vmem(void *fdt)

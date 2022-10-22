@@ -22,6 +22,44 @@ SYSCALL_DEFINE1(ipc_server)(sys_arg_t callback)
 }
 
 /**
+ * Actual IPC syscall handler.
+ *
+ * @param pid Process to request RPC to.
+ * @param d0 IPC argument 0.
+ * @param d1 IPC argument 1.
+ * @param d2 IPC argument 2.
+ * @param d3 IPC argument 3.
+ * @param fwd Whether to forward.
+ * @return
+ */
+static struct sys_ret do_ipc(sys_arg_t pid,
+                             sys_arg_t d0,
+                             sys_arg_t d1,
+                             sys_arg_t d2,
+                             sys_arg_t d3,
+                             bool fwd)
+{
+	struct tcb *t = cur_tcb();
+	struct tcb *r = get_tcb(pid);
+	if (!r)
+		return SYS_RET1(ERR_INVAL);
+
+	r = get_rproc(r);
+
+	if (!r->callback)
+		return SYS_RET1(ERR_INIT);
+
+	/** \todo place data on rpc stack and clone into virtual memory */
+	set_return(t, r->callback);
+
+	if (!fwd)
+		t->eid = t->pid;
+
+	t->pid = r->rid;
+
+	return SYS_RET6(OK, t->eid, d0, d1, d2, d3);
+}
+/**
  * IPC request syscall handler.
  *
  * @param pid Process to request RPC to.
@@ -34,11 +72,7 @@ SYSCALL_DEFINE1(ipc_server)(sys_arg_t callback)
 SYSCALL_DEFINE5(ipc_req)(sys_arg_t pid,
                          sys_arg_t d0, sys_arg_t d1, sys_arg_t d2, sys_arg_t d3)
 {
-	struct tcb *t = cur_tcb();
-	struct tcb *r = get_tcb(pid);
-	/** \todo something like jump_to_callback(t) */
-	/* remember difference between ipc_req and ipc_fwd! */
-	return SYS_RET6(OK, t->tid, d0, d1, d2, d3);
+	return do_ipc(pid, d0, d1, d2, d3, false);
 }
 
 /**
@@ -54,10 +88,7 @@ SYSCALL_DEFINE5(ipc_req)(sys_arg_t pid,
 SYSCALL_DEFINE5(ipc_fwd)(sys_arg_t pid,
                          sys_arg_t d0, sys_arg_t d1, sys_arg_t d2, sys_arg_t d3)
 {
-	struct tcb *t = cur_tcb();
-	struct tcb *r = get_tcb(pid);
-	/* ditto */
-	return SYS_RET6(OK, t->tid, d0, d1, d2, d3);
+	return do_ipc(pid, d0, d1, d2, d3, true);
 }
 
 /**
