@@ -12,99 +12,15 @@
 #include <apos/utils.h>
 #include <apos/types.h>
 
-/** Helper macro for getting bit width of \ref mm_info_t. */
-#define MM_OINFO_WIDTH (sizeof(mm_info_t) * 8)
-
-/**
- * Extract index of page order \c order from base page index \c pnum.
- *
- * @param pnum Base page order index.
- * @param order Order page index to convert to.
- * @return Index of page order \c order.
- */
-#define pnum_to_index(pnum, order) \
-	(((pnum) >> order_offset(order)) & (order_width(order) - 1))
-
 /**
  * Convert physical memory address \c paddr to index of page order \c order.
  *
- * @param paddr Physical memory address.
+ * @param p Physical memory address.
  * @param order Order page index to convert to.
  * @return Index of page order \c order.
  */
-#define pm_to_index(paddr, order) \
-	(pnum_to_index(pm_to_pnum(paddr), (order)))
-
-/**
- * Convert physical memory address \c paddr to corresponding page number.
- *
- * @param paddr Physical memory address.
- * @return Corresponding page number.
- */
-#define pm_to_pnum(paddr) ((paddr) >> __mm_page_shift)
-
-/**
- * Convert page number to physical address.
- * Note that since a page number is the base page an address lies in,
- * @code pnum_to_pm(pm_to_pnum(p)) != p @endcode
- *
- * @param pnum Page number.
- * @return Corresponding physical address.
- */
-#define pnum_to_pm(pnum) ((pnum) << __mm_page_shift)
-
-/**
- * Add \c num to \c var and return value before addition.
- *
- * @param var Variable to add \c num to.
- * @param num Number to add to \c var.
- * @return Value of \c var before addition.
- */
-#define move_forward(var, num) (((var) += (num)) - (num))
-
-/**
- * Helper for calculating highest index of elements in order info map.
- * Since the number of entries is stored with the granularity of \c MM_OINFO_WIDTH,
- * the highest index element is \c num rounded up to the nearest index multiple
- * of \c MM_OINFO_WIDTH. This is due to some data access optimizations over in
- * common/pmem.c.
- *
- * @param num Number of entries in map.
- * @return Highest index of element in map.
- */
-#define num_elems(num) \
-	(((num) + MM_OINFO_WIDTH - 1) / MM_OINFO_WIDTH)
-/**
- * Helper for calculating starting index of element.
- *
- * @param num Number of starting entry.
- * @return Index of starting element in which entry resides.
- */
-#define num_indexes(num) ((num) / MM_OINFO_WIDTH)
-
-/**
- * Helper for calculating index of element from entry number.
- *
- * @param num Entry number.
- * @return Index of element in which entry resides.
- */
-#define index_elems(num) ((num) / MM_OINFO_WIDTH)
-
-/**
- * Helper for calculating size of state for storing elements in.
- *
- * @param num Number of entries.
- * @return Size of element state buffer.
- */
-#define state_elems(num) (sizeof(mm_info_t) * (num_elems(num)))
-
-/**
- * Helper for calculating size of pointer buffer.
- *
- * @param num Number of entries.
- * @return Size of pointer buffer.
- */
-#define next_elems(num) (sizeof(void *) * (num))
+#define pm_to_index(p, order) \
+	((p >> order_shift(order)) & (order_width(order) - 1))
 
 /**
  * Get highest possible index in an order.
@@ -120,7 +36,7 @@
  * @param order Order to query.
  * @return Starting offset of order bits.
  */
-#define order_offset(order) (__mm_shifts[order])
+#define order_shift(order) (__mm_shifts[order])
 
 /**
  * Get number of order bits in an address.
@@ -139,6 +55,20 @@
 #define order_size(order) (__mm_sizes[order])
 
 /**
+ * Get highest order supported by the current configuration.
+ *
+ * @return Max supported order.
+ */
+#define max_order() (__mm_max_order)
+
+/**
+ * Get base page shift.
+ *
+ * @return Page shift.
+ */
+#define page_shift() (__mm_page_shift)
+
+/**
  * Get number of elements needed to represent this order.
  *
  * @param order Order to query.
@@ -153,14 +83,6 @@
  * @return Index of element.
  */
 #define order_container(idx) ((idx) / MM_OINFO_WIDTH)
-
-/**
- * Entry index within the element that contains it.
- *
- * @param idx Index of entry.
- * @return Index of entry within its containing element.
- */
-#define order_bit(idx) ((idx) & (MM_OINFO_WIDTH - 1))
 
 /** \todo Get rid of slightly ugly __* syntax, as these aren't static. */
 
@@ -182,8 +104,6 @@
 
 /**
  * Get page number of physical address.
- *
- * \todo Isn't this the same as \ref pm_to_pnum()?
  *
  * @param x Physical address.
  * @return Corresponding page number.
@@ -225,23 +145,11 @@
 /** Maximum number of page orders allowed. Likely massively overkill. */
 #define NUM_ORDERS 10
 
-/** Gives access to global page order shift information. \global */
-extern size_t __mm_shifts[NUM_ORDERS];
-
-/** Gives access to global page order width information. \global */
-extern size_t __mm_widths[NUM_ORDERS];
-
-/** Gives access to global page order size information. \global */
-extern size_t __mm_sizes[NUM_ORDERS];
-
-/** Gives access to global base page shift. \global */
-extern size_t __mm_page_shift;
-
-/** Gives access to global maximum order size. \global */
-extern size_t __mm_max_order;
-
 /** Give names to page orders. */
 enum mm_order {
+	/** NULL marker. */
+	MM_MIN = -1,
+
 	/** Base order. */
 	MM_O0 = 0,
 
@@ -271,10 +179,25 @@ enum mm_order {
 
 	/** Order 9. */
 	MM_O9 = 9,
+
+	/** Number of orders */
+	MM_NUM,
 };
 
-/** Page number. */
-typedef ssize_t pnum_t;
+/** Gives access to global page order shift information. \global */
+extern size_t __mm_shifts[NUM_ORDERS];
+
+/** Gives access to global page order width information. \global */
+extern size_t __mm_widths[NUM_ORDERS];
+
+/** Gives access to global page order size information. \global */
+extern size_t __mm_sizes[NUM_ORDERS];
+
+/** Gives access to global base page shift. \global */
+extern size_t __mm_page_shift;
+
+/** Gives access to global maximum order size. \global */
+extern enum mm_order __mm_max_order;
 
 /**
  * Initialize memory subsystem data. Populates __mm_* with data given.

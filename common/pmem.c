@@ -41,106 +41,79 @@
  */
 
 /**
- * Loop through all page usage bits in current bitmap.
+ * Beauty macro for looping over all page indexes.
+ * The current page index is stored in \c page.
  *
- * @param var Memory leaf or branch containing bitmap.
- * @param start Start looking from this index.
- * @param end Stop looking before this index.
- * @param attr Attribute name of bitmap.
- * @param neg Negate whether we're looking for full or empty pages.
- *
- * \note These are all for pnum_t, i.e. O0_SHIFT is from 0
+ * @param num Number of pages in branch.
  */
-#define __foreach_page(var, start, end, attr, neg)          \
-	for (pnum_t page = start; page < end; ++page)       \
-	if (neg (bitmap_is_set(var->attr, page))) continue; \
-	else                                                \
-
-/** Easier to read negation. */
-#define NEG !
+#define foreach_page(num) \
+	for (pm_t page = 0; page < num; ++page)
 
 /**
- * Loop through all full pages.
+ * Loop over orders, giving the iterator the name \p iter.
  *
- * @param var Memory leaf or branch containing bitmap.
- * @param start Start looking from this index.
+ * @param iter Name of iterator.
  */
-#define foreach_full_page(var, start) \
-	__foreach_page(var, start, var->entries, full, NEG)
+#define foreach_order(iter) \
+	for (enum mm_order iter = MM_O0; iter <= max_order(); ++iter)
 
 /**
- * Loop through all not full pages.
+ * Loop over orders, with already initialized start iterator \p iter.
  *
- * @param var Memory leaf or branch containing bitmap.
- * @param start Start looking from this index.
+ * @param iter Name of iterator.
  */
-#define foreach_not_full_page(var, start) \
-	__foreach_page(var, start, var->entries, full, )
+#define foreach_order_init(iter) \
+	for (; iter <= max_order(); ++iter)
 
 /**
- * Loop through all used pages.
+ * Loop over orders in reverse, starting with highest, giving the iterator the
+ * name \p iter.
  *
- * @param var Memory leaf or branch containing bitmap.
- * @param start Start looking from this index.
+ * @param iter Name of iterator.
  */
-#define foreach_used_page(var, start) \
-	__foreach_page(var, start, var->entries, used, NEG)
+#define reverse_foreach_order(iter) \
+	for (enum mm_order iter = max_order(); iter != MM_MIN; --iter)
 
 /**
- * Loop through all not used pages.
+ * Loop over orders in reverse, starting with highest, with already initialized
+ * start iterator \p iter.
  *
- * @param var Memory leaf or branch containing bitmap.
- * @param start Start looking from this index.
+ * @param iter Name of iterator.
  */
-#define foreach_not_used_page(var, start) \
-	__foreach_page(var, start, var->entries, used, )
+#define reverse_foreach_order_init(iter) \
+	for (; iter != MM_MIN; --iter)
 
-/* curiously, all my optimisation efforts were in vain, and eight bits is the
- * best alternative. */
-
-/** Memory bitmap base size. */
-typedef uint8_t mm_info_t;
-
-/** Beauty typedef for void *, used for bitmaps in this file. */
-typedef void mm_node_t;
-
-/** Memory page leaf. */
-struct mm_leaf {
-	/** Number of entries in leaf. */
-	pnum_t entries;
-
-	/** Bitmap of used pages. */
-	mm_info_t *used;
-};
+/** Beauty typedef for uint8_t *, used for bitmaps in this file. */
+typedef uint8_t mm_bitmap_t[];
 
 /** Memory page branch. */
 struct mm_branch {
-	/** Number of entries in branch. */
-	pnum_t entries;
+	/** Number of entries in leaf. */
+	size_t num;
 
-	/** Bitmap of full nodes. */
-	mm_info_t *full;
+	/** Size of one whole span of one sub branch. */
+	size_t size;
 
-	/** Pointer to array of next order indexes. */
-	mm_node_t **next;
+	/** Bitmap of used pages. */
+	mm_bitmap_t used;
 };
 
 /** Order map. */
-struct mm_omap {
+struct mm_bucket {
 	/** Base address of map. */
 	pm_t base;
 
-	/** Pointer to array of nodes. */
-	mm_node_t **orders;
-
 	/** Order of map. */
 	enum mm_order order;
+
+	/** Pointer to array of nodes. */
+	struct mm_branch *tree[MM_NUM];
 };
 
 /** Physical map. */
 struct mm_pmap {
-	/** Order map, one per order up to maximum order. */
-	struct mm_omap *omap[NUM_ORDERS];
+	/** Buckets, one per order up to maximum order. */
+	struct mm_bucket *bucket[NUM_ORDERS];
 };
 
 /** Static physical map address. \note If I support NUMA, this should not be
@@ -148,359 +121,390 @@ struct mm_pmap {
 static struct mm_pmap *pmap = 0;
 
 /**
- * Helper function for marking a page used.
+ * Calculate size of branch structure plus bitmap for branch.
  *
- * @param op Order node pointer.
- * @param pnum Physical page number to mark free.
- * @param tgt Target order.
- * @param src Source order.
- * @param dst Destination order.
+ * @param num Number of elements in branch.
+ * @return Size in bytes of a branch.
  */
-static void __mark_free(mm_node_t *op, pnum_t pnum, enum mm_order tgt,
-                        enum mm_order src, enum mm_order dst)
+static size_t sizeof_branch(size_t num)
 {
-	size_t idx = pnum_to_index(pnum, src);
+	return align_up(sizeof(struct mm_branch) + (num + 8) / 8,
+	                sizeof(struct mm_branch));
+}
 
-	if (src == dst) {
-		struct mm_leaf *o = (struct mm_leaf *)op;
-		bitmap_clear(o->used, idx);
+/**
+ * Get top of current branch, that is, the start of a following branch.
+ *
+ * @param branch Branch whose top to calculate.
+ * @return Top of \p branch.
+ */
+static struct mm_branch *branch_top(struct mm_branch *branch)
+{
+	return (struct mm_branch *)(sizeof_branch(branch->num) + (pm_t)branch);
+}
+
+/**
+ * Get the branch under \p branch at \p index.
+ *
+ * @param branch Branch whose sub branches to access.
+ * @param index Index of sub branch to access.
+ * @return Pointer to sub branch.
+ */
+static struct mm_branch *sub_branch(struct mm_branch *branch, size_t index)
+{
+	struct mm_branch *sub_start = branch_top(branch);
+	return (struct mm_branch *)(index * branch->size + (pm_t)sub_start);
+}
+
+/**
+ * Mark a page free in tree.
+ *
+ * @param branch Branch wherein some part of \p page lies.
+ * @param page Page address relative to start of RAM.
+ * @param req_order Order of page to be marked free.
+ * @param cur_order Current page order.
+ * @param tree_order Order context we're in.
+ */
+static void __mark_free(struct mm_branch *branch, pm_t page,
+                        enum mm_order req_order,
+                        enum mm_order cur_order,
+                        enum mm_order tree_order)
+{
+	size_t idx = pm_to_index(page, cur_order);
+
+	if (cur_order == req_order) {
+		bitmap_clear(branch->used, idx);
 		return;
 	}
 
-	struct mm_branch *o = (struct mm_branch *)op;
-	if (src != tgt)
-		__mark_free(o->next[idx], pnum, tgt, src - 1, dst);
+	if(cur_order != tree_order)
+		__mark_free(sub_branch(branch, idx), page,
+		            req_order, cur_order - 1, tree_order);
 
-	/* freeing a page results in always clearing a full bit? */
-	bitmap_clear(o->full, idx);
+	/* freeing a page results in always clearing a full bit */
+	bitmap_clear(branch->used, idx);
 }
 
-void free_page(enum mm_order order, pm_t paddr)
+/**
+ * Mark page in bucket free in all trees.
+ *
+ * @param bucket Bucket page lies in.
+ * @param order Order of page to free.
+ * @param addr Physical address of page.
+ */
+static void __mark_bucket_page_free(struct mm_bucket *bucket,
+                                    enum mm_order order, pm_t addr)
 {
-	/** \todo This could probably use an int for status, but eh */
-	for (size_t i = MM_O0; i <= __mm_max_order; ++i) {
-		if (!pmap->omap[i])
+	pm_t fixup_addr = addr - bucket->base;
+	enum mm_order iter = bucket->order;
+
+	reverse_foreach_order_init(iter) {
+		__mark_free(bucket->tree[iter], fixup_addr,
+		            order, bucket->order, iter);
+	}
+}
+
+void free_page(enum mm_order order, pm_t addr)
+{
+	foreach_order(iter) {
+		struct mm_bucket *bucket = pmap->bucket[iter];
+		if (!bucket)
 			continue;
 
-		struct mm_omap *omap = pmap->omap[i];
-		if (paddr < omap->base)
+		if (addr < bucket->base)
 			continue;
 
-		for (size_t j = 0; j < omap->order; ++j)
-			__mark_free(omap->orders[j],
-			            pm_to_pnum(paddr - omap->base), order,
-			            omap->order, j);
-
+		__mark_bucket_page_free(bucket, order, addr);
 		return;
 	}
 }
 
 /**
- * Helper function for marking a page used.
+ * Mark page used in tree.
  *
- * @param op Order node pointer.
- * @param pnum Page number to mark used.
- * @param tgt Target order.
- * @param src Source order.
- * @param dst Destination order.
- * @return \ref true if order is filled, \ref false otherwise.
+ * @param branch Current branch.
+ * @param page Page address relative to start of RAM.
+ * @param req_order Page order.
+ * @param cur_order Current order.
+ * @param tree_order Order of context we're in.
+ * @return Whether the branch below got filled up.
  */
-static bool __mark_used(mm_node_t *op, pnum_t pnum, enum mm_order tgt,
-                        enum mm_order src, enum mm_order dst)
+static bool __mark_used(struct mm_branch *branch, pm_t page,
+                        enum mm_order req_order,
+                        enum mm_order cur_order,
+                        enum mm_order tree_order)
 {
-	size_t idx = pnum_to_index(pnum, src);
+	size_t idx = pm_to_index(page, cur_order);
 
-	if (src == dst) {
-		struct mm_leaf *o = (struct mm_leaf *)op;
-		bitmap_set(o->used, idx);
+	if (cur_order == req_order || cur_order == tree_order) {
+		bitmap_set(branch->used, idx);
 
-		if (idx == max_index(src))
+		if (idx == max_index(cur_order))
 			return true;
 
 		return false;
 	}
 
-	struct mm_branch *o = (struct mm_branch *)op;
-	if (src == tgt) {
-		bitmap_set(o->full, idx);
+	bool r = __mark_used(sub_branch(branch, idx), page,
+	                     req_order,
+	                     cur_order - 1,
+	                     tree_order);
 
-		if (idx == max_index(src))
-			return true;
+	if (r) {
+		bitmap_set(branch->used, idx);
 
-		return false;
-	}
-
-	if (__mark_used(o->next[idx], pnum, tgt, src - 1, dst)) {
-		bitmap_set(o->full, idx);
-
-		if (idx == max_index(src))
+		if (idx == max_index(cur_order))
 			return true;
 	}
 
 	return false;
 }
 
-void mark_used(enum mm_order order, pm_t paddr)
+/**
+ * Mark page in bucket used.
+ *
+ * @param bucket Bucket in which \p page lies.
+ * @param order Order of \p page.
+ * @param addr Physical address of \p page.
+ */
+static void __mark_bucket_page_used(struct mm_bucket *bucket,
+                                    enum mm_order order, pm_t addr)
 {
-	for (size_t i = MM_O0; i <= __mm_max_order; ++i) {
-		if (!pmap->omap[i])
+	pm_t fixed_addr = addr - bucket->base;
+	reverse_foreach_order(iter) {
+		__mark_used(bucket->tree[iter], fixed_addr,
+		            order, bucket->order, iter);
+	}
+}
+
+void mark_used(enum mm_order order, pm_t addr)
+{
+	enum mm_order iter = order;
+	foreach_order_init(iter) {
+		struct mm_bucket *bucket = pmap->bucket[iter];
+		if (!bucket)
 			continue;
 
-		struct mm_omap *omap = pmap->omap[i];
-		if (paddr < omap->base)
+		if (addr < bucket->base)
 			continue;
 
-		for (size_t j = 0; j <= omap->order; ++j)
-			__mark_used(omap->orders[j],
-			            pm_to_pnum(paddr - omap->base), order,
-			            omap->order, j);
-
+		__mark_bucket_page_used(bucket, iter, addr);
 		return;
 	}
 }
 
 /**
- * Look for next free page.
+ * Find first unused page on branch.
+ * Helper for converting between bitmap and pmem error conditions.
  *
- * @param op Operand node pointer.
- * @param offset Offset to where to start looking for available pages from.
- * @param src Source order.
- * @param dst Destination order.
- * @return Page number of found index.
+ * @param branch Branch to look for unused pages on.
+ * @return \c -1 if there are no free pages, otherwise the index of first unused
+ * page.
  */
-static pnum_t __enum_order(mm_node_t *op, pnum_t offset, enum mm_order src,
-                           enum mm_order dst)
+static pm_t __branch_find_first_unset(struct mm_branch *branch)
 {
-	size_t idx = pnum_to_index(offset, src);
-
-	if (src == dst) {
-		struct mm_leaf *o = (struct mm_leaf *)op;
-		foreach_not_used_page(o, idx)
-		{
-			return page << order_offset(src);
-		}
-
+	size_t r = bitmap_find_first_unset(branch->used, branch->num);
+	if (r > branch->num)
 		return -1;
-	}
 
-	struct mm_branch *o = (struct mm_branch *)op;
-	foreach_not_full_page(o, idx)
-	{
-		/* if the suggested search index is full, the following level
-		 * would get an incorrect offset if trying to follow the original
-		 * suggestion. */
-		if (page != (pnum_t)idx)
-			offset = 0;
-
-		pnum_t ret = __enum_order(o->next[page], offset, src - 1, dst);
-
-		if (!(ret < 0))
-			return (page << order_offset(src)) + ret;
-	}
-
-	return -1;
+	return r;
 }
 
-pm_t alloc_page(enum mm_order order, pm_t offset)
+/**
+ * Search for unused pages in tree.
+ *
+ * @param branch Current branch.
+ * @param cur_order Current order of branch.
+ * @param req_order Requested page order.
+ * @return \c -1 if there are no free pages, otherwise the address of the lower
+ * order page found.
+ */
+static pm_t __search_tree(struct mm_branch *branch,
+                          enum mm_order cur_order,
+                          enum mm_order req_order)
 {
-	if (order > __mm_max_order)
+	pm_t page = __branch_find_first_unset(branch);
+	if (page == (pm_t)(-1))
+		return -1;
+
+	if (cur_order == req_order)
+		return page << order_shift(cur_order);
+
+	pm_t r = __search_tree(sub_branch(branch, page),
+	                       cur_order - 1, req_order);
+
+	if (r == (pm_t)(-1))
+		return -1;
+
+	return (page << order_shift(cur_order)) + r;
+}
+
+pm_t alloc_page(enum mm_order order)
+{
+	if (order > max_order())
 		return 0;
 
-	pnum_t pnum = -1;
-	pm_t base = 0;
-	struct mm_omap *omap;
-	for (size_t i = order; i <= __mm_max_order; ++i) {
-		if (!pmap->omap[i])
+	pm_t p = -1;
+	struct mm_bucket *bucket;
+	enum mm_order iter = order;
+	foreach_order_init(iter) {
+		bucket = pmap->bucket[iter];
+		if (!bucket)
 			continue;
 
-		omap = pmap->omap[i];
-		if (offset != 0)
-			base = offset - omap->base;
+		p = __search_tree(bucket->tree[order], bucket->order, order);
 
-		pnum = __enum_order(omap->orders[order], pm_to_pnum(base),
-		                    omap->order, order);
-
-		if (!(pnum < 0))
+		if (p != (pm_t)(-1))
 			break;
 	}
 
-	if (pnum < 0)
+	if (p == (pm_t)(-1))
 		return 0;
 
-	pm_t paddr = pnum_to_pm(pnum) + omap->base;
-	mark_used(order, paddr);
-	return paddr;
+	p = p + bucket->base;
+	__mark_bucket_page_used(bucket, order, p);
+	return p;
 }
 
 /**
- * Populate order node map.
+ * Populate tree.
  *
- * @param op Address to where to write order node pointer.
- * @param cont Physical address where to continue writing data to.
- * @param src Source order.
- * @param dst Destination order.
- * @param num Number of nodes in this order to populate.
- * @return Physical address to continue from.
+ * @param cont Address at which to continue placing data.
+ * @param num Number of elements in branch.
+ * @param cur_order Current branch order.
+ * @param req_order Requested tree order.
+ * @return Top of tree.
  */
-static pm_t __populate_order(mm_node_t **op, pm_t cont, enum mm_order src,
-                             enum mm_order dst, size_t num)
+static pm_t __populate_tree(pm_t cont, size_t num,
+                            enum mm_order cur_order, enum mm_order req_order)
 {
-	/* unfortunate that populating the mm info is so complicated */
-	if (src == dst) {
-		struct mm_leaf *o = (struct mm_leaf *)move_forward(
-			cont, sizeof(struct mm_leaf));
+	size_t s = sizeof_branch(num);
+	struct mm_branch *branch = (struct mm_branch *)cont;
+	memset(branch, 0, s);
+	cont += s;
 
-		o->entries = num;
-		o->used = (mm_info_t *)move_forward(cont, state_elems(num));
-		memset(o->used, 0, state_elems(num));
-
-		*op = (mm_node_t *)o;
+	branch->num = num;
+	if (cur_order == req_order)
 		return cont;
+
+	pm_t prev = cont;
+	foreach_page(num) {
+		prev = cont;
+		cont = __populate_tree(cont, order_width(cur_order - 1),
+		                       cur_order - 1, req_order);
 	}
 
-	struct mm_branch *o = (struct mm_branch *)move_forward(
-		cont, sizeof(struct mm_branch));
-
-	o->entries = num;
-	o->full = (mm_info_t *)move_forward(cont, state_elems(num));
-	cont = align_up(cont, sizeof(void *));
-	o->next = (mm_node_t **)move_forward(cont, next_elems(num));
-	memset(o->full, 0, state_elems(num));
-	memset(o->next, 0, next_elems(num));
-
-	for (size_t i = 0; i < num; ++i) {
-		cont = __populate_order(&o->next[i], cont, src - 1, dst,
-		                        order_width(src - 1));
-	}
-
-	*op = (mm_node_t *)o;
+	branch->size = cont - prev;
 	return cont;
 }
 
 /**
- * Probe order node map.
+ * Populate bucket.
  *
- * @param cont Number of bytes written so far.
- * @param src Source order.
- * @param dst Destination order.
- * @param num Number of nodes in this order to calculate.
- * @return Number of bytes written so far.
+ * @param cont Address at which to continue placing data.
+ * @param base Base of bucket.
+ * @param num Number of elements in top level trees.
+ * @param order Bucket order.
+ * @return Top of bucket.
  */
-static pm_t __probe_order(pm_t cont, enum mm_order src, enum mm_order dst,
-                          size_t num)
+static pm_t __populate_bucket(pm_t cont, pm_t base, size_t num,
+                              enum mm_order order)
 {
-	if (src == dst) {
-		cont += sizeof(struct mm_leaf);
-		cont += state_elems(num);
-		return cont;
+	struct mm_bucket *bucket = (struct mm_bucket *)cont;
+	memset(bucket, 0, sizeof(*bucket));
+	cont += sizeof(*bucket);
+
+	bucket->order = order;
+	bucket->base = base;
+
+	enum mm_order iter = order;
+	reverse_foreach_order_init(iter) {
+		bucket->tree[iter] = (struct mm_branch *)cont;
+		cont = __populate_tree(cont, num, order, iter);
 	}
 
-	cont += sizeof(struct mm_branch);
-	cont += state_elems(num);
-	cont = align_up(cont, sizeof(void *));
-	cont += next_elems(num);
-
-	for (size_t i = 0; i < num; ++i)
-		cont = __probe_order(cont, src - 1, dst, order_width(src - 1));
-
 	return cont;
 }
 
-/** Populate order map.
- *
- * @param omap Address where to write order map pointer.
- * @param cont Address where to continue writing map data.
- * @param base Base of order map.
- * @param entries Number of order node entries in order map.
- * @param order Order of this order map.
- * @return Address to continue writing data to.
- */
-static pm_t __populate_omap(struct mm_omap **omap, pm_t cont, pm_t base,
-                            size_t entries, enum mm_order order)
-{
-	struct mm_omap *lomap = (struct mm_omap *)move_forward(
-		cont, sizeof(struct mm_omap));
-	memset(lomap, 0, sizeof(struct mm_omap));
-
-	lomap->orders = (mm_node_t **)move_forward(
-		cont, (order + 1) * sizeof(mm_node_t **));
-	memset(lomap->orders, 0, (order + 1) * sizeof(mm_node_t **));
-
-	lomap->order = order;
-	lomap->base = base;
-
-	for (size_t i = 0; i <= order; ++i)
-		cont = __populate_order(&lomap->orders[i], cont, order, i,
-		                        entries);
-
-	*omap = lomap;
-	return cont;
-}
-
-/**
- * Probe order map.
- *
- * @param cont Number of bytes written so far.
- * @param entries Number of order node entries in this order map.
- * @param order Order of this order map.
- * @return Number of bytes written so far.
- */
-static pm_t __probe_omap(pm_t cont, size_t entries, enum mm_order order)
-{
-	cont += sizeof(struct mm_omap);
-	cont += (order + 1) * sizeof(mm_node_t **);
-
-	for (size_t i = 0; i <= order; ++i)
-		cont = __probe_order(cont, order, i, entries);
-
-	return cont;
-}
-
-/* only call from init */
 pm_t populate_pmap(pm_t ram_base, size_t ram_size, pm_t cont)
 {
 	pm_t start = cont;
-	pmap = (struct mm_pmap *)move_forward(cont, sizeof(struct mm_pmap));
-	memset(pmap, 0, sizeof(struct mm_pmap));
 
-	pm_t ram_region = ram_base;
-	size_t ram_left = ram_size;
-	for (ssize_t i = __mm_max_order; i >= MM_O0; --i) {
-		size_t entries = ram_left / __mm_sizes[i];
-		if (entries == 0)
+	pmap = (struct mm_pmap *)cont;
+	memset(pmap, 0, sizeof(*pmap));
+	cont += sizeof(*pmap);
+
+	reverse_foreach_order(iter) {
+		size_t num = ram_size / order_size(iter);
+		if (num == 0)
 			continue;
 
-		cont = __populate_omap(&pmap->omap[i], cont, ram_region,
-		                       entries, i);
+		pmap->bucket[iter] = (struct mm_bucket *)cont;
+		cont = __populate_bucket(cont, ram_base, num, iter);
 
-		ram_left -= __mm_sizes[i] * entries;
-		ram_region += (__mm_sizes[i] * entries);
+		ram_size -= order_size(iter) * num;
+		ram_base += order_size(iter) * num;
 	}
 
 	return cont - start;
 }
 
-/* not a huge fan of having a separate probe_pmap function as that seems like an
- * easy way to cause weird bugs. Should always at least check that probe_pmap
- * returns the same value as populate_pmap, or possibly even add in some method
- * to combine the two? */
-pm_t probe_pmap(pm_t ram_base, size_t ram_size)
+/**
+ * Probe tree size.
+ *
+ * @param cont Size to continue adding to.
+ * @param num Number of elements in tree.
+ * @param cur_order Current branch order.
+ * @param req_order Requested tree order.
+ * @return Size of tree added to \p cont.
+ */
+static pm_t __probe_tree(pm_t cont, size_t num, enum mm_order cur_order,
+                         enum mm_order req_order)
 {
-	pm_t cont = 0;
+	cont += sizeof_branch(num);
 
-	cont += sizeof(struct mm_pmap);
+	if (cur_order == req_order)
+		return cont;
 
-	pm_t ram_region = ram_base;
-	size_t ram_left = ram_size;
-	for (ssize_t i = __mm_max_order; i >= MM_O0; --i) {
-		size_t entries = ram_left / __mm_sizes[i];
-		if (entries == 0)
+	foreach_page(num) {
+		cont = __probe_tree(cont, order_width(cur_order - 1),
+		                    cur_order - 1, req_order);
+	}
+
+	return cont;
+}
+
+/**
+ * Probe bucket size.
+ *
+ * @param cont Size to continue adding to.
+ * @param num Number of elements in bucket.
+ * @param order Bucket order.
+ * @return Size of bucket added to \p cont.
+ */
+static pm_t __probe_bucket(pm_t cont, size_t num, enum mm_order order)
+{
+	cont += sizeof(struct mm_bucket);
+
+	reverse_foreach_order(iter) {
+		cont = __probe_tree(cont, num, order, iter);
+	}
+
+	return cont;
+}
+
+pm_t probe_pmap(size_t ram_size)
+{
+	pm_t cont = sizeof(struct mm_pmap);
+
+	reverse_foreach_order(iter) {
+		size_t num = ram_size / order_size(iter);
+		if (num == 0)
 			continue;
 
-		cont = __probe_omap(cont, entries, i);
+		cont = __probe_bucket(cont, num, iter);
 
-		ram_left -= __mm_sizes[i] * entries;
-		ram_region += (__mm_sizes[i] * entries);
+		ram_size -= order_size(iter) * num;
 	}
 
 	return cont;
@@ -615,7 +619,7 @@ void init_pmem(void *fdt)
 	 * ram map */
 	pm_t pmap_base = align_up(MAX(initrd_top, fdt_top), sizeof(int));
 
-	size_t probe_size = probe_pmap(ram_base, ram_size);
+	size_t probe_size = probe_pmap(ram_size);
 	size_t actual_size = populate_pmap(ram_base, ram_size, pmap_base);
 
 	if (probe_size != actual_size)

@@ -57,7 +57,7 @@
  */
 static struct node_region *__create_region()
 {
-	struct node_region *r = (struct node_region *)alloc_page(BASE_PAGE, 0);
+	struct node_region *r = (struct node_region *)alloc_page(BASE_PAGE);
 	memset(r, FREE, BASE_PAGE_SIZE);
 	return r;
 }

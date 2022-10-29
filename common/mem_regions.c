@@ -55,7 +55,7 @@ static struct mem_region *__insert_free_region(struct mem_region_root *r,
                                                struct mem_region *m)
 {
 	struct sp_node *n = sp_root(&r->free_regions), *p = NULL;
-	size_t start = m->start;
+	vm_t start = m->start;
 	size_t size = m->end - m->start;
 	enum sp_dir d = LEFT;
 

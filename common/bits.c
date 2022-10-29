@@ -36,3 +36,23 @@ __weak uint64_t __bswap64(const uint64_t u)
 	        (u & 0x000000000000ff00ULL) << 40 |
 	        (u & 0x00000000000000ffULL) << 56;
 }
+
+#undef ffs
+__weak int ffs(int v)
+{
+	/* http://graphics.stanford.edu/~seander/bithacks.html#ZerosOnRightParallel */
+	if (v == 0)
+		return 0;
+
+	int c = 32;
+	v &= -v;
+
+	if (v) c--;
+	if (v & 0x0000FFFF) c -= 16;
+	if (v & 0x00FF00FF) c -= 8;
+	if (v & 0x0F0F0F0F) c -= 4;
+	if (v & 0x33333333) c -= 2;
+	if (v & 0x55555555) c -= 1;
+
+	return c + 1;
+}

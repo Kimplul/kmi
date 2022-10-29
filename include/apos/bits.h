@@ -14,6 +14,17 @@
 
 /** @name Arithmetic integer bit manipulation. */
 /** @{ */
+/**
+ * Find first set bit in \c int.
+ *
+ * @param v Integer to find first set bit in.
+ * @return Index of least significant bit + 1 or 0 if \p v is 0.
+ */
+#if __has_builtin(__builtin_ffs)
+#define ffs(v) __builtin_ffs(v)
+#else
+int ffs(int v);
+#endif
 
 /**
  * Check if bits are set.
@@ -132,6 +143,67 @@ static inline void bitmap_clear(void *bmap, size_t n)
 	size_t i = n / 8;
 	size_t r = n - (i * 8);
 	clear_nbit(bitmap[i], r);
+}
+
+/**
+ * Find first bit, either set or unset, in bitmap.
+ *
+ * @param bmap Bitmap.
+ * @param n Size of bitmap in bits.
+ * @param set Wether to seek for set or unset bits.
+ * @return Index of found bit + 1 or \p n + 1 if no bit was found.
+ */
+static inline size_t bitmap_find_first(void *bmap, size_t n, bool set)
+{
+	size_t i = n / (sizeof(int) * 8);
+
+	size_t c = 0;
+	int *imap = (int *)bmap;
+
+	int target = set ? 0 : -1;
+	for (; c < i; ++c)
+		if (imap[c] != target)
+			break;
+
+	size_t b = c * sizeof(int) * 8;
+	int check = set ? imap[c] : ~imap[c];
+	if (c != i)
+		return b + ffs(check) - 1;
+
+	size_t r = n - (i * sizeof(int) * 8);
+	if (!r)
+		return n + 1;
+
+	bool comp = set ? true : false;
+	for (size_t a = 0; a < r; ++a)
+		if (bitmap_is_set(bmap, b + a) == comp)
+			return b + a;
+
+	return n + 1;
+}
+
+/**
+ * Convenience wrapper around bitmap_find_first().
+ *
+ * @param bmap \see bitmap_find_first().
+ * @param n \see bitmap_find_first().
+ * @return \see bitmap_find_first().
+ */
+static inline size_t bitmap_find_first_unset(void *bmap, size_t n)
+{
+	return bitmap_find_first(bmap, n, false);
+}
+
+/**
+ * Convenience wrapper around bitmap_find_first().
+ *
+ * @param bmap \see bitmap_find_first().
+ * @param n \see bitmap_find_first().
+ * @return \see bitmap_find_first().
+ */
+static inline size_t bitmap_find_first_set(void *bmap, size_t n)
+{
+	return bitmap_find_first(bmap, n, true);
 }
 
 /** @} */

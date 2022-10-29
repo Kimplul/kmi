@@ -47,7 +47,7 @@ static struct sys_ret do_ipc(sys_arg_t pid,
 	r = get_rproc(r);
 
 	if (!r->callback)
-		return SYS_RET1(ERR_INIT);
+		return SYS_RET1(ERR_NOINIT);
 
 	/** \todo place data on rpc stack and clone into virtual memory */
 	set_return(t, r->callback);

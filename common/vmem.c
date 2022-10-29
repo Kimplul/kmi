@@ -162,7 +162,7 @@ stat_t free_uvmem(struct tcb *r, vm_t va)
 stat_t alloc_uvmem_wrapper(struct vmem *b, pm_t *offset, vm_t vaddr,
                            vmflags_t flags, enum mm_order order, void *data)
 {
-	*offset = alloc_page(order, *offset);
+	*offset = alloc_page(order);
 	if (!*offset)
 		return INFO_TRGN; /* try again */
 
@@ -180,7 +180,7 @@ stat_t alloc_shared_wrapper(struct vmem *b, pm_t *offset, vm_t vaddr,
 	if (order != MM_O0)
 		return INFO_TRGN;
 
-	*offset = alloc_page(MM_O0, *offset);
+	*offset = alloc_page(MM_O0);
 
 	stat_t *status = (stat_t *)data, ret;
 	ret = map_vpage(b, *offset, vaddr, flags, order);

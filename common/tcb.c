@@ -43,7 +43,7 @@ void init_tcbs()
 	/* MM_O1 is 2MiB on riscv64, so 262144 different possible thread ids.
 	 * Should be enough, if we're really strapped for memory I might try
 	 * something smaller but this is fine for now. */
-	tcbs = (struct tcb **)alloc_page(MM_O1, 0);
+	tcbs = (struct tcb **)alloc_page(MM_O1);
 	num_tids = order_size(MM_O1) / sizeof(struct tcb *);
 	memset(tcbs, 0, order_size(MM_O1));
 }
@@ -94,7 +94,7 @@ static vm_t __setup_rpc_stack(struct tcb *t, size_t bytes)
 	size_t pages = __pages(bytes);
 	vmflags_t flags = VM_V | VM_R | VM_W | VM_U;
 	for (size_t i = 1; i <= pages; ++i) {
-		offset = alloc_page(BASE_PAGE, offset);
+		offset = alloc_page(BASE_PAGE);
 		map_vpage(t->proc.vmem, offset,
 		          RPC_STACK_TOP - BASE_PAGE_SIZE * i,
 		          flags, BASE_PAGE);
@@ -139,7 +139,7 @@ struct tcb *create_thread(struct tcb *p)
 {
 	hard_assert(tcbs, 0);
 
-	vm_t bottom = alloc_page(KERNEL_STACK_PAGE_ORDER, 0);
+	vm_t bottom = alloc_page(KERNEL_STACK_PAGE_ORDER);
 	/* move tcb to top of kernel stack, keeping alignment in check
 	 * (hopefully) */
 	/** \todo check alignment */

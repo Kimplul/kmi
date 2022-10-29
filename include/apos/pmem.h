@@ -17,17 +17,17 @@
  * Free physical page.
  *
  * @param order Order of page to free.
- * @param paddr Physical address of page.
+ * @param addr Physical address of page.
  */
-void free_page(enum mm_order order, pm_t paddr);
+void free_page(enum mm_order order, pm_t addr);
 
 /**
  * Mark page used.
  *
  * @param order Order of page to mark.
- * @param paddr Physical address of page.
+ * @param addr Physical address of page.
  */
-void mark_used(enum mm_order order, pm_t paddr);
+void mark_used(enum mm_order order, pm_t addr);
 
 /**
  * Allocate physical page.
@@ -36,10 +36,9 @@ void mark_used(enum mm_order order, pm_t paddr);
  * allows us to skip already checked pages when allocating a second page.
  *
  * @param order Order of page to allocate.
- * @param offset Hint as to which address to start looking from.
  * @return pm_t Physical address of page when succesful, else \c NULL.
  */
-pm_t alloc_page(enum mm_order order, pm_t offset);
+pm_t alloc_page(enum mm_order order);
 
 /**
  * Populate physical RAM usage map.
@@ -56,12 +55,11 @@ pm_t populate_pmap(pm_t ram_base, size_t ram_size, pm_t cont);
 /**
  * Probe size of RAM usage map.
  *
- * @param ram_base Base physical address of RAM.
  * @param ram_size Size of physical RAM.
  * @return Size of physical map. Check that it matches with \ref
  * populate_pmap().
  */
-pm_t probe_pmap(pm_t ram_base, size_t ram_size);
+pm_t probe_pmap(size_t ram_size);
 
 /**
  * Initialize physical memory subsystem.

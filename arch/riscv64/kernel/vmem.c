@@ -38,15 +38,7 @@
  * @param f Flags to use.
  * @return Corresponding page table entry.
  */
-#define to_pte(p, f) ((pm_to_pnum(p) << 10) | (f))
-
-/**
- * Get virtual address in page table entry.
- *
- * @param pte Page table entry.
- * @return Corresponding virtual address.
- */
-#define pte_addr(pte) __va(pnum_to_pm(pte_ppn(pte)))
+#define to_pte(p, f) ((((p) >> page_shift()) << 10) | (f))
 
 /**
  * Get physical address in page table entry.
@@ -54,7 +46,15 @@
  * @param pte Page table entry.
  * @return Corresponding physical address.
  */
-#define pte_paddr(pte) (pnum_to_pm(pte_ppn(pte)))
+#define pte_paddr(pte) (pte_ppn(pte) << page_shift())
+
+/**
+ * Get virtual address in page table entry.
+ *
+ * @param pte Page table entry.
+ * @return Corresponding virtual address.
+ */
+#define pte_addr(pte) __va(pte_paddr(pte))
 
 /**
  * Virtual memory address to page order index.
@@ -166,7 +166,7 @@ stat_t stat_vpage(struct vmem *branch, vm_t vaddr, pm_t *paddr,
  */
 static struct vmem *__create_leaf()
 {
-	pm_t new_leaf = alloc_page(MM_KPAGE, 0);
+	pm_t new_leaf = alloc_page(MM_KPAGE);
 	memset((void *)new_leaf, 0, sizeof(struct vmem));
 	return (struct vmem *)to_pte((pm_t)__pa(new_leaf), VM_V);
 }
@@ -244,17 +244,18 @@ void flush_tlb_all()
 static void __use_vmem(struct vmem *branch, enum mm_mode m)
 {
 	branch = (struct vmem *)__pa(branch);
+	pm_t pn = (pm_t)(branch) >> page_shift();
+
+	pm_t mode = DEFAULT_Sv_MODE;
 
 	if (m == Sv32)
-		csr_write(CSR_SATP,
-		          SATP_MODE_Sv32 | pm_to_pnum((pm_t)(branch)));
+		mode = SATP_MODE_Sv32;
 	else if (m == Sv39)
-		csr_write(CSR_SATP,
-		          SATP_MODE_Sv39 | pm_to_pnum((pm_t)(branch)));
-	else
-		csr_write(CSR_SATP,
-		          SATP_MODE_Sv48 | pm_to_pnum((pm_t)(branch)));
+		mode = SATP_MODE_Sv39;
+	else if (m == Sv48)
+		mode = SATP_MODE_Sv48;
 
+	csr_write(CSR_SATP, mode | pn);
 	flush_tlb_all();
 	/* Sv57 && Sv64 in the future? */
 	/** @todo ASID table for maybe faster context switches? */
@@ -271,7 +272,7 @@ struct vmem *init_vmem(void *fdt)
 
 struct vmem *create_vmem()
 {
-	struct vmem *b = (struct vmem *)alloc_page(MM_KPAGE, 0);
+	struct vmem *b = (struct vmem *)alloc_page(MM_KPAGE);
 	memset(b, 0, MM_KPAGE_SIZE);
 
 	populate_kvmem(b);
