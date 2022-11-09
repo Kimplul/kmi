@@ -10,6 +10,8 @@
 #include <apos/debug.h>
 #include <apos/uapi.h>
 
+#include <arch/proc.h>
+
 /** Syscall number to syscall handler conversion. */
 static const sys_t syscall_table[] = {
 	/* noop */
@@ -79,10 +81,11 @@ SYSCALL_DEFINE1(putch)(sys_arg_t a){
 	return SYS_RET1(OK);
 }
 
-struct sys_ret syscall_dispatch(sys_arg_t syscall, sys_arg_t a, sys_arg_t b,
-                                sys_arg_t c, sys_arg_t d, sys_arg_t e)
+struct sys_ret handle_syscall(struct tcb *t,
+                              sys_arg_t syscall, sys_arg_t a, sys_arg_t b,
+                              sys_arg_t c, sys_arg_t d, sys_arg_t e)
 {
-	struct tcb *t = cur_tcb();
+	adjust_syscall(t);
 
 	size_t sc = syscall;
 	if (sc >= ARRAY_SIZE(syscall_table)) {

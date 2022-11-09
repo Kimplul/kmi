@@ -8,6 +8,7 @@
 
 #include <apos/uapi.h>
 #include <apos/tcb.h>
+#include <apos/ipi.h>
 
 /**
  * IPC server notification syscall handler.
@@ -114,36 +115,21 @@ SYSCALL_DEFINE4(ipc_resp)(sys_arg_t d0, sys_arg_t d1, sys_arg_t d2,
  * \todo Implement.
  *
  * @param tid Thread ID to notify.
- * @param swap Whether to swap immediately if possible.
  * @return \ref OK and 0.
  */
-SYSCALL_DEFINE2(ipc_notify)(sys_arg_t tid, sys_arg_t swap){
-	/** \todo masquerade as kernel call, set from to 0 and set us as
-	 * notify type, no arguments as that would require too much state
-	 * handling for my liking. Instead, a server and a client have to agree
-	 * on some rpc API, and ipc_notify is just used to asynchronously inform
-	 * the client that it should check the status of its async operations.
-	 * Arguably slower than directly telling the client which operation was
-	 * finished, but this would require the kernel to keep track of a notify
-	 * stack. While not impossible, probably too complex. */
+SYSCALL_DEFINE1(ipc_notify)(sys_arg_t tid){
+	struct tcb *t = get_tcb(tid);
+	if (t->notify_state == NOTIFY_QUEUED)
+		return SYS_RET1(OK);
 
-	/* Something like
-	 *
-	 * struct tcb *t = get_tcb(tid);
-	 * if (t->notify_state == NOTIFY_QUEUED)
-	 *	return;
-	 *
-	 * if (t->notify_state == NOTIFY_RUNNING) {
-	 *	t->notify = NOTIFY_QUEUED;
-	 *	return;
-	 * }
-	 *
-	 * t->notify_state = NOTIFY_QUEUED;
-	 * if (swap)
-	 *	do_swap(); // clears t->notify when swapped to
-	 *		   // if already running in base state, interrupt,
-	 *		   otherwise wait for return from rpc. If not running,
-	 *		   just queue the interrupt.
-	 */
+	if (t->notify_state == NOTIFY_RUNNING) {
+		t->notify_state = NOTIFY_QUEUED;
+		return SYS_RET1(OK);
+	}
+
+	t->notify_state = NOTIFY_QUEUED;
+	if (running(t))
+		send_ipi(t);
+
 	return SYS_RET1(OK);
 }

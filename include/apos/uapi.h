@@ -500,13 +500,13 @@ SYSCALL_DECLARE4(ipc_resp, d0, d1, d2, d3);
  * Notify thread syscall.
  *
  * @param tid Thread ID to notify.
- * @param swap Whether to immediately swap.
+ * @param b Unused.
  * @param c Unused.
  * @param d Unused.
  * @param e Unused.
  * @return \ref OK and 0.
  */
-SYSCALL_DECLARE2(ipc_notify, tid, swap);
+SYSCALL_DECLARE1(ipc_notify, tid);
 /** @} */
 
 /** @name Process handling syscalls. */
@@ -683,6 +683,7 @@ SYSCALL_DECLARE1(poweroff, type);
 /**
  * Dispatch to correct syscall handler.
  *
+ * @param t Thread to do syscall on.
  * @param syscall Syscall number.
  * @param a Syscall argument 0.
  * @param b Syscall argument 1.
@@ -691,8 +692,9 @@ SYSCALL_DECLARE1(poweroff, type);
  * @param e Syscall argument 4.
  * @return Whatever the specified syscall returns.
  */
-struct sys_ret syscall_dispatch(sys_arg_t syscall, sys_arg_t a, sys_arg_t b,
-                                sys_arg_t c, sys_arg_t d, sys_arg_t e);
+struct sys_ret handle_syscall(struct tcb *t,
+                              sys_arg_t syscall, sys_arg_t a, sys_arg_t b,
+                              sys_arg_t c, sys_arg_t d, sys_arg_t e);
 
 /** \todo Should I add variable names as well, to make the documentation a bit
  * more readable? */

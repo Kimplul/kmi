@@ -36,4 +36,11 @@ id_t cpu_id();
  */
 void cpu_assign(struct tcb *t);
 
+/**
+ * Send inter-processor interrupt to cpu \p cpu_id.
+ *
+ * @param cpu_id CPU to send ipi to.
+ */
+void cpu_send_ipi(id_t cpu_id);
+
 #endif /* APOS_CPU_H */

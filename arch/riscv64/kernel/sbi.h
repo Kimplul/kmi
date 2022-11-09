@@ -106,4 +106,24 @@ static inline struct sbiret sbi_system_reset(uint32_t reset_type,
 	                 0);
 }
 
+/** Supervisor IPI extension ID. */
+#define EID_sPI 0x735049
+
+/** Supervisor IPI function ID. */
+#define FID_IPI 0
+
+/**
+ * Send IPI.
+ *
+ * @param hart_mask Bitmap of harts to send IPI to.
+ * @param hart_mask_base Base of \p hart_mask.
+ * @return SBI call return. \see sbiret.
+ */
+static inline struct sbiret sbi_send_ipi(unsigned long hart_mask,
+                                         unsigned long hart_mask_base)
+{
+	return sbi_ecall(EID_sPI, FID_IPI, hart_mask, hart_mask_base, 0, 0, 0,
+	                 0);
+}
+
 #endif /* APOS_RISCV_SBI_H */

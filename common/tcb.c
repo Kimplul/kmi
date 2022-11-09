@@ -36,7 +36,7 @@ static struct tcb **tcbs;
  * \todo If we ever support systems with massive amounts of cpus, this should probably
  * be allocated at runtime.
  */
-static struct tcb *cpu_tcb[MAX_CPUS] = { 0 };
+static struct tcb *__cpu_tcb[MAX_CPUS] = { 0 };
 
 void init_tcbs()
 {
@@ -294,7 +294,12 @@ DEFINE_DETACH(detach_proc, proc);
 /* weak to allow optimisation on risc-v, but provide fallback for future */
 __weak struct tcb *cur_tcb()
 {
-	return cpu_tcb[cpu_id()];
+	return cpu_tcb(cpu_id());
+}
+
+struct tcb *cpu_tcb(id_t cpu_id)
+{
+	return __cpu_tcb[cpu_id];
 }
 
 struct tcb *cur_proc()
@@ -313,7 +318,7 @@ void use_tcb(struct tcb *t)
 {
 	cpu_assign(t);
 
-	cpu_tcb[t->cpu_id] = t;
+	__cpu_tcb[t->cpu_id] = t;
 
 	use_vmem(t->proc.vmem);
 }
@@ -354,4 +359,9 @@ stat_t clone_proc_maps(struct tcb *r)
 void set_return(struct tcb *t, vm_t v)
 {
 	t->exec = v;
+}
+
+bool running(struct tcb *t)
+{
+	return cpu_tcb(t->cpu_id) == t;
 }

@@ -146,6 +146,9 @@ struct tcb {
 
 	/** Notifcation state of thread. */
 	enum tcb_notify notify_state;
+
+	/** Whether thread has gotten an IPI */
+	bool ipi;
 };
 
 /**
@@ -266,6 +269,14 @@ stat_t detach_proc(struct tcb *r, struct tcb *t);
 struct tcb *cur_tcb();
 
 /**
+ * Get thread currently running on cpu \p cpu_id.
+ *
+ * @param cpu_id CPU whose currently running thread to get.
+ * @return \ref tcb running on cpu.
+ */
+struct tcb *cpu_tcb(id_t cpu_id);
+
+/**
  * Get currently executing process.
  *
  * @return Effective process \ref tcb.
@@ -336,5 +347,13 @@ stat_t alloc_stacks(struct tcb *t);
  * @param r Address to jump to.
  */
 void set_return(struct tcb *t, vm_t r);
+
+/**
+ * Check whether \p t is currently running on some cpu.
+ *
+ * @param t \ref tcb to check.
+ * @return \c true if it is running, \c false otherwise.
+ */
+bool running(struct tcb *t);
 
 #endif /* APOS_TCB_H */

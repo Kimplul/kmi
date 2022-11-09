@@ -49,6 +49,27 @@ struct sys_ret get_args(struct tcb *t);
 void set_thread(struct tcb *t);
 
 /**
+ * Copy registers from tcb save area to address \p p.
+ * Intended to be used for copying thread state to rpc stack.
+ *
+ * @param t Thread whose registers to save.
+ * @param p Address to save to.
+ */
+void save_regs(struct tcb *t, void *p);
+
+/**
+ * Copy registers from address \p p to tcb save registers.
+ * Intended to be used for copying thread state from rpc stack.
+ *
+ * @param p Address to load from.
+ * @param t Thread whose registers to load.
+ */
+void load_regs(void *p, struct tcb *t);
+
+void adjust_ipi(struct tcb *t);
+void adjust_syscall(struct tcb *t);
+
+/**
  * Run \c init program.
  *
  * @param t Thread that \c init is attached to.

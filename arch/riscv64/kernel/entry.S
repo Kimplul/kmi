@@ -77,17 +77,14 @@ _save_context:
 
 handle_exception:
 	li t0, EXC_SYSCALL
-	/* system exceptions fall through, syscalls jump */
+	/* system exceptions fall through, syscalls and ipis jump */
 	/* temp, at some point we want to handle system exceptions as well */
-	beq s4, t0, handle_syscall
+	beq s4, t0, handle_dispatch
 	j	restore_all
 
-handle_syscall:
-	/* add 4 (size of ecall) to EPC to avoid running the same instruction
-	 * twice */
-	csrr    s0, CSR_SEPC
-	addi	s0, s0, 4
+handle_dispatch:
 	/* store execution continuation point */
+	csrr    s0, CSR_SEPC
 	sr	s0, 0(tp)
 	/* allocate space for sys_ret structure on stack and shift argument
 	 * registers down one to make room for the pointer to this structure */
@@ -99,7 +96,8 @@ handle_syscall:
 	mv	a2, a1
 	mv	a1, a0
 	mv	a0, sp
-	jal	syscall_dispatch
+	/* jump to C */
+	jal	dispatch
 	/* move structure from stack into registers. */
 	lr	a0, offsetof_s(sp)
 	lr	a1, offsetof_ar0(sp)

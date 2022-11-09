@@ -8,6 +8,7 @@
 
 #include <apos/tcb.h>
 #include <apos/elf.h>
+#include <apos/string.h>
 
 #include <arch/proc.h>
 
@@ -53,4 +54,26 @@ void set_thread(struct tcb *t)
 	/* insert important values into register slots */
 	r->sp = (long)t->thread_stack_top;
 	r->tp = (long)t->thread_storage;
+}
+
+void save_regs(struct tcb *t, void *p)
+{
+	struct riscv_regs *r = (struct riscv_regs *)(t++);
+	memcpy(p, r, sizeof(*r));
+}
+
+void load_regs(void *p, struct tcb *t)
+{
+	struct riscv_regs *r = (struct riscv_regs *)(t++);
+	memcpy(r, p, sizeof(*r));
+}
+
+void adjust_ipi(struct tcb *t)
+{
+	UNUSED(t);
+}
+
+void adjust_syscall(struct tcb *t)
+{
+	t->exec += 4;
 }
