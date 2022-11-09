@@ -66,7 +66,18 @@ void save_regs(struct tcb *t, void *p);
  */
 void load_regs(void *p, struct tcb *t);
 
+/**
+ * Do modifications to \ref tcb state if necessary for ipis to work.
+ *
+ * @param t Thread to do modifications to.
+ */
 void adjust_ipi(struct tcb *t);
+
+/**
+ * Do modifications to \ref tcb state if necessary for syscalls to work.
+ *
+ * @param t Thread to do modifications to.
+ */
 void adjust_syscall(struct tcb *t);
 
 /**
