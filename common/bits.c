@@ -44,6 +44,10 @@ __weak int ffs(int v)
 	if (v == 0)
 		return 0;
 
+	/* silence ubsan warning */
+	if (v == INT_MIN)
+		return 32;
+
 	int c = 32;
 	v &= -v;
 
