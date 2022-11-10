@@ -172,14 +172,14 @@ struct tcb *create_thread(struct tcb *p)
 /**
  * Copy process.
  *
- * @param p Parent process.
  * @param n New process.
+ * @param p Parent process.
  * @return \ref OK.
  */
-static stat_t __copy_proc(struct tcb *p, struct tcb *n)
+static stat_t __copy_proc(struct tcb *n, struct tcb *p)
 {
-	/** \todo Copy memory regions as well as copy */
-	return OK;
+	/* execution continuation? */
+	return clone_mem_regions(n, p);
 }
 
 struct tcb *create_proc(struct tcb *p)

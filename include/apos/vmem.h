@@ -114,6 +114,8 @@ stat_t init_uvmem(struct tcb *r, vm_t base, vm_t top);
  */
 stat_t destroy_uvmem(struct tcb *r);
 
+stat_t clone_mem_regions(struct tcb *d, struct tcb *s);
+
 /**
  * User virtual memory worker callback for \ref map_fill_region().
  *

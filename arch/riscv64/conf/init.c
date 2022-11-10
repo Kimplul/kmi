@@ -88,6 +88,26 @@ static void print_value(const char *s, uint64_t v)
 	sys_putch('\n');
 }
 
+static uint64_t sys_fork()
+{
+	long register a0 asm ("a0") = SYS_FORK;
+	long register a1 asm ("a1") = 0;
+	ecall();
+	if (a0 != 0)
+		print_value("fork() failed with error ", a0);
+	return a1;
+}
+
+static uint64_t sys_swap(long tid)
+{
+	long register a0 asm ("a0") = SYS_SWAP;
+	long register a1 asm ("a1") = tid;
+	ecall();
+	if (a0 != 0)
+		print_value("swap() failed with error ", a0);
+	return a0;
+}
+
 void _start()
 {
 	sys_noop();
@@ -107,4 +127,16 @@ void _start()
 
 	print_value("End ticks", i);
 	print_value("Syscalls per second", n);
+
+	puts("Starting fork():\n");
+	long pid = sys_fork();
+	if (pid != 0) {
+		print_value("Child pid: ", pid);
+		puts("Swapping to child...\n");
+		sys_swap(pid);
+		puts("We shouldn't be here?\n");
+		while(1);
+	}
+
+	puts("Hello from child!\n");
 }

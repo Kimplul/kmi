@@ -63,9 +63,9 @@ SYSCALL_DEFINE0(fork)(){
 		return SYS_RET1(ERR_OOMEM);
 
 	/* prepare args for when we eventually swap to the new proc */
-	set_args(t, SYS_RET2(OK, t->pid));
+	set_args(t, SYS_RET2(OK, 0));
 
-	return SYS_RET2(OK, 0);
+	return SYS_RET2(OK, t->pid);
 }
 
 /**
