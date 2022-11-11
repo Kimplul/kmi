@@ -30,7 +30,7 @@ void run_init(struct tcb *t, void *fdt)
 
 void set_args(struct tcb *t, struct sys_ret a)
 {
-	struct riscv_regs *r = (struct riscv_regs *)(--t);
+	struct riscv_regs *r = (struct riscv_regs *)(t) - 1;
 	r->a0 = a.s;
 	r->a1 = a.ar0;
 	r->a2 = a.ar1;
@@ -41,7 +41,7 @@ void set_args(struct tcb *t, struct sys_ret a)
 
 struct sys_ret get_args(struct tcb *t)
 {
-	struct riscv_regs *r = (struct riscv_regs *)(--t);
+	struct riscv_regs *r = (struct riscv_regs *)(t) - 1;
 	return SYS_RET6(r->a0, r->a1, r->a2, r->a3, r->a4, r->a5);
 }
 
@@ -49,7 +49,7 @@ void set_thread(struct tcb *t)
 {
 	/* get location of registers in memory */
 	/** \todo check alignment, should be fine but just to be sure */
-	struct riscv_regs *r = (struct riscv_regs *)(--t);
+	struct riscv_regs *r = (struct riscv_regs *)(t) - 1;
 
 	/* insert important values into register slots */
 	r->sp = (long)t->thread_stack_top;
@@ -58,14 +58,21 @@ void set_thread(struct tcb *t)
 
 void save_regs(struct tcb *t, void *p)
 {
-	struct riscv_regs *r = (struct riscv_regs *)(t++);
+	struct riscv_regs *r = (struct riscv_regs *)(t) - 1;
 	memcpy(p, r, sizeof(*r));
 }
 
 void load_regs(void *p, struct tcb *t)
 {
-	struct riscv_regs *r = (struct riscv_regs *)(t++);
+	struct riscv_regs *r = (struct riscv_regs *)(t) - 1;
 	memcpy(r, p, sizeof(*r));
+}
+
+void clone_regs(struct tcb *d, struct tcb *s)
+{
+	struct riscv_regs *rd = (struct riscv_regs *)(d) - 1;
+	struct riscv_regs *rs = (struct riscv_regs *)(s) - 1;
+	memcpy(rd, rs, sizeof(*rs));
 }
 
 void adjust_ipi(struct tcb *t)

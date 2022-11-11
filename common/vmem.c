@@ -19,15 +19,29 @@ stat_t init_uvmem(struct tcb *t, vm_t base, vm_t top)
 	return init_region(&t->sp_r, base, top);
 }
 
-static stat_t __clone_mapped_region(struct tcb *d, struct tcb *s, struct mem_region *m)
+/**
+ * Clone process memory region.
+ *
+ * @param d Destination tcb.
+ * @param s Source tcb.
+ * @param m Memory region to clone.
+ * @return \ref ERR_MISC if clone failed, otherwise \ref OK.
+ *
+ * @todo check shared memory regions.
+ */
+static stat_t __clone_mapped_region(struct tcb *d, struct tcb *s,
+                                    struct mem_region *m)
 {
-	size_t size = 0;
-	vm_t va = alloc_fixed_region(&d->sp_r, m->start, m->end - m->start,
-			&size, m->flags);
+	vm_t start = m->start * order_size(BASE_PAGE);
+	vm_t end = m->end * order_size(BASE_PAGE);
 
-	catastrophic_assert(va == m->start);
+	size_t size = end - start, actual_size = 0;
+	vm_t va = alloc_fixed_region(&d->sp_r, start, size,
+	                             &actual_size, m->flags);
 
-	if (copy_allocd_region(d->proc.vmem, va, size, m->flags, s))
+	catastrophic_assert(va == start);
+
+	if (!copy_allocd_region(d->proc.vmem, va, size, m->flags, s->proc.vmem))
 		return ERR_MISC;
 
 	return OK;
@@ -220,7 +234,7 @@ stat_t alloc_shared_wrapper(struct vmem *b, pm_t *offset, vm_t vaddr,
 }
 
 stat_t copy_allocd_wrapper(struct vmem *b, pm_t *offset, vm_t vaddr,
-		vmflags_t flags, enum mm_order order, void *data)
+                           vmflags_t flags, enum mm_order order, void *data)
 {
 	struct vmem *s = (struct vmem *)data;
 

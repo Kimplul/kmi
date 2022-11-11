@@ -133,10 +133,15 @@ void _start()
 	if (pid != 0) {
 		print_value("Child pid: ", pid);
 		puts("Swapping to child...\n");
-		sys_swap(pid);
-		puts("We shouldn't be here?\n");
-		while(1);
+		while(1) sys_swap(pid);
 	}
 
 	puts("Hello from child!\n");
+
+	puts("Doing 1M swaps...\n");
+	start = sys_ticks();
+	for (long i = 0; i < 1000000; ++i)
+		sys_swap(1);
+	uint64_t ticks = sys_ticks() - start;
+	print_value("1M swaps took ", ticks / second);
 }

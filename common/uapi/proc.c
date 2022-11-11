@@ -62,8 +62,9 @@ SYSCALL_DEFINE0(fork)(){
 	if (!t)
 		return SYS_RET1(ERR_OOMEM);
 
-	/* prepare args for when we eventually swap to the new proc */
-	set_args(t, SYS_RET2(OK, 0));
+	/* prepare args for when we eventually swap to the new proc, giving
+	 * parent ID as third return value */
+	set_args(t, SYS_RET3(OK, 0, c->pid));
 
 	return SYS_RET2(OK, t->pid);
 }
@@ -166,5 +167,9 @@ SYSCALL_DEFINE1(swap)(sys_arg_t tid){
 	/* switch over to new thread */
 	use_tcb(t);
 
+	/* set return value for current thread */
+	set_args(c, SYS_RET1(OK));
+
+	/* get register state for new thread */
 	return get_args(t);
 }

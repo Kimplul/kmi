@@ -67,6 +67,14 @@ void save_regs(struct tcb *t, void *p);
 void load_regs(void *p, struct tcb *t);
 
 /**
+ * Copy registers from one thread to another. Used by \ref fork(), for example.
+ *
+ * @param d Destination.
+ * @param s Source.
+ */
+void clone_regs(struct tcb *d, struct tcb *s);
+
+/**
  * Do modifications to \ref tcb state if necessary for ipis to work.
  *
  * @param t Thread to do modifications to.

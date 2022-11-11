@@ -114,6 +114,16 @@ stat_t init_uvmem(struct tcb *r, vm_t base, vm_t top);
  */
 stat_t destroy_uvmem(struct tcb *r);
 
+/**
+ * Clone process memory.
+ *
+ * @param d Destination tcb.
+ * @param s Source tcb.
+ * @return OK.
+ *
+ * @todo Come up with better name. clone_uvmem() is taken, but should it be
+ * renamed to clone_mapping() or something?
+ */
 stat_t clone_mem_regions(struct tcb *d, struct tcb *s);
 
 /**

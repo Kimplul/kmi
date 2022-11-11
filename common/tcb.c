@@ -19,6 +19,7 @@
 
 #include <arch/cpu.h>
 #include <arch/vmem.h>
+#include <arch/proc.h>
 
 /* arguably exessively many globals... */
 /** Thread ID to start looking from when allocating new ID. */
@@ -63,7 +64,7 @@ static id_t __alloc_tid(struct tcb *t)
 {
 	/** \todo this would need some locking or something... */
 	for (size_t i = start_tid; i < num_tids; ++i) {
-		if (tcbs[i])
+		if (tcbs[i] || i == 0)
 			continue;
 
 		tcbs[i] = t;
@@ -158,6 +159,7 @@ struct tcb *create_thread(struct tcb *p)
 		init_uvmem(t, UVMEM_START, UVMEM_END);
 		t->proc.vmem = create_vmem();
 		t->pid = t->tid;
+		t->rid = t->tid;
 		p = t;
 	}
 
@@ -172,13 +174,20 @@ struct tcb *create_thread(struct tcb *p)
 /**
  * Copy process.
  *
- * @param n New process.
  * @param p Parent process.
+ * @param n New process.
  * @return \ref OK.
  */
-static stat_t __copy_proc(struct tcb *n, struct tcb *p)
+static stat_t __copy_proc(struct tcb *p, struct tcb *n)
 {
-	/* execution continuation? */
+	/** @todo setup rpc stack stuff */
+	/** @todo I think keeping track of userspace stack stuff is unnecessary,
+	 * unless we want unlimited stack size but that sounds dumb. Anycase, we
+	 * need to duplicate stack info, whatever we do. */
+	/** @todo should there be in-kernel child tracking? */
+	n->exec = p->exec;
+	clone_regs(n, p);
+	copy_caps(n->caps, p->caps);
 	return clone_mem_regions(n, p);
 }
 
@@ -191,7 +200,7 @@ struct tcb *create_proc(struct tcb *p)
 	if (!n)
 		return 0;
 
-	if (likely(p))
+	if (p)
 		__copy_proc(p, n); /* we have a parent thread */
 
 	return n;
