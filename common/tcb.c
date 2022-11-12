@@ -387,12 +387,8 @@ static void mark_rpc_inaccessible(struct tcb *t, vm_t start, vm_t end)
 	size_t page_size = BASE_PAGE_SIZE;
 	size_t size = end - start;
 	size_t pages = size / page_size;
-	while (pages--) {
-		/** @todo something like mod_vpage_flags could be faster */
-		vmflags_t flags; pm_t paddr;
-		stat_vpage(t->rpc.vmem, start, &paddr, NULL, &flags);
-		mod_vpage(t->rpc.vmem, start, paddr, clear_bits(flags, VM_U));
-	}
+	while (pages--)
+		clear_vpage_flags(t->rpc.vmem, start + pages * page_size, VM_U);
 }
 
 /**
@@ -407,12 +403,8 @@ static void mark_rpc_accessible(struct tcb *t, vm_t start, vm_t end)
 	size_t page_size = BASE_PAGE_SIZE;
 	size_t size = end - start;
 	size_t pages = size / page_size;
-	while (pages--) {
-		/** @todo something like mod_vpage_flags could be faster */
-		vmflags_t flags; pm_t paddr;
-		stat_vpage(t->rpc.vmem, start, &paddr, NULL, &flags);
-		mod_vpage(t->rpc.vmem, start, paddr, set_bits(flags, VM_U));
-	}
+	while (pages--)
+		set_vpage_flags(t->rpc.vmem, start + pages * page_size, VM_U);
 }
 
 void save_context(struct tcb *t)

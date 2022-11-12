@@ -48,6 +48,24 @@ stat_t map_vpage(struct vmem *branch, pm_t paddr, vm_t vaddr, vmflags_t flags,
 stat_t unmap_vpage(struct vmem *branch, vm_t vaddr);
 
 /**
+ * Set flags in page at virtual address \p vaddr.
+ *
+ * @param branch Branch in which to work.
+ * @param vaddr Virtual address of page.
+ * @param flags Flags to set.
+ */
+stat_t set_vpage_flags(struct vmem *branch, vm_t vaddr, vmflags_t flags);
+
+/**
+ * Clear flags in page at virtual address \p vaddr.
+ *
+ * @param branch Branch in which to work.
+ * @param vaddr Virtual address of page.
+ * @param flags Flags to clear.
+ */
+stat_t clear_vpage_flags(struct vmem *branch, vm_t vaddr, vmflags_t flags);
+
+/**
  * Modify page mapping physical address and flags.
  *
  * Note that changing the order of a page is not supported, to do that unmap and

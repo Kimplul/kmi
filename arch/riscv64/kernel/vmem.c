@@ -122,6 +122,38 @@ static pm_t *__find_vmem(struct vmem *b, vm_t v, enum mm_order *o)
 	return 0;
 }
 
+stat_t set_vpage_flags(struct vmem *branch, vm_t vaddr, vmflags_t flags)
+{
+	enum mm_order order;
+	pm_t *pte = __find_vmem(branch, vaddr, &order);
+	if (pte) {
+		set_bits(*pte, vp_flags(flags));
+
+		if (order == __mm_max_order)
+			return INFO_SEFF;
+		else
+			return OK;
+	}
+
+	return ERR_NF;
+}
+
+stat_t clear_vpage_flags(struct vmem *branch, vm_t vaddr, vmflags_t flags)
+{
+	enum mm_order order;
+	pm_t *pte = __find_vmem(branch, vaddr, &order);
+	if (pte) {
+		clear_bits(*pte, vp_flags(flags));
+
+		if (order == __mm_max_order)
+			return INFO_SEFF;
+		else
+			return OK;
+	}
+
+	return ERR_NF;
+}
+
 stat_t mod_vpage(struct vmem *branch, vm_t vaddr, pm_t paddr, vmflags_t flags)
 {
 	enum mm_order order;
@@ -227,7 +259,7 @@ stat_t unmap_vpage(struct vmem *branch, vm_t vaddr)
 
 void flush_tlb()
 {
-	__asm__ volatile ("sfence.vma %0\n" : : "r" (cpu_id()) : "memory");
+	__asm__ volatile ("sfence.vma %0\n" : : "r" (0) : "memory");
 }
 
 void flush_tlb_all()
@@ -256,7 +288,7 @@ static void __use_vmem(struct vmem *branch, enum mm_mode m)
 		mode = SATP_MODE_Sv48;
 
 	csr_write(CSR_SATP, mode | pn);
-	flush_tlb_all();
+	flush_tlb();
 	/* Sv57 && Sv64 in the future? */
 	/** @todo ASID table for maybe faster context switches? */
 }
