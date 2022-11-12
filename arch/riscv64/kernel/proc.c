@@ -65,20 +65,22 @@ vm_t get_stack(struct tcb *t)
 void save_regs(struct tcb *t, void *p)
 {
 	struct riscv_regs *r = (struct riscv_regs *)(t) - 1;
-	memcpy(p, r, sizeof(*r));
+	struct riscv_regs *rp = (struct riscv_regs *)(p);
+	*rp = *r;
 }
 
 void load_regs(void *p, struct tcb *t)
 {
 	struct riscv_regs *r = (struct riscv_regs *)(t) - 1;
-	memcpy(r, p, sizeof(*r));
+	struct riscv_regs *rp = (struct riscv_regs *)(p);
+	*r = *rp;
 }
 
 void clone_regs(struct tcb *d, struct tcb *s)
 {
 	struct riscv_regs *rd = (struct riscv_regs *)(d) - 1;
 	struct riscv_regs *rs = (struct riscv_regs *)(s) - 1;
-	memcpy(rd, rs, sizeof(*rs));
+	*rd = *rs;
 }
 
 void adjust_ipi(struct tcb *t)

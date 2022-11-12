@@ -407,6 +407,12 @@ static void mark_rpc_accessible(struct tcb *t, vm_t start, vm_t end)
 		set_vpage_flags(t->rpc.vmem, start + pages * page_size, VM_U);
 }
 
+struct call_ctx {
+	vm_t exec;
+	vm_t rpc_stack;
+	id_t eid, pid;
+};
+
 void save_context(struct tcb *t)
 {
 	vm_t rpc_stack = t->rpc_stack;
@@ -414,11 +420,15 @@ void save_context(struct tcb *t)
 		/** @todo what if user uses their own stack? */
 		rpc_stack = align_down(get_stack(t), BASE_PAGE_SIZE);
 
-	struct tcb *copy = (struct tcb *)(rpc_stack - sizeof(struct tcb));
-	memcpy(copy, t, sizeof(struct tcb));
-	clone_regs(copy, t);
-
 	rpc_stack -= BASE_PAGE_SIZE;
+
+	struct call_ctx *ctx = (struct call_ctx *)rpc_stack;
+	ctx->exec = t->exec;
+	ctx->pid = t->pid;
+	ctx->eid = t->eid;
+	ctx->rpc_stack = rpc_stack + BASE_PAGE_SIZE;
+	save_regs(t, ctx + 1);
+
 	mark_rpc_inaccessible(t, rpc_stack, t->rpc_stack);
 	t->rpc_stack = rpc_stack;
 }
@@ -426,10 +436,11 @@ void save_context(struct tcb *t)
 void load_context(struct tcb *t)
 {
 	vm_t rpc_stack = t->rpc_stack;
-	struct tcb *copy =
-		(struct tcb *)(rpc_stack + BASE_PAGE_SIZE - sizeof(struct tcb));
-	memcpy(t, copy, sizeof(struct tcb));
-	clone_regs(t, copy);
-
-	mark_rpc_accessible(t, rpc_stack, t->rpc_stack);
+	struct call_ctx *ctx = (struct call_ctx *)rpc_stack;
+	set_return(t, ctx->exec);
+	mark_rpc_accessible(t, t->rpc_stack, ctx->rpc_stack);
+	load_regs(ctx + 1, t);
+	t->rpc_stack = ctx->rpc_stack;
+	t->pid = ctx->pid;
+	t->eid = ctx->eid;
 }

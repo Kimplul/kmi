@@ -345,11 +345,16 @@ vm_t setup_kernel_io(struct vmem *b, vm_t paddr)
 }
 #endif
 
+struct uvmem_map {
+	struct vmem *leaf[CSTACK_PAGE - 1];
+};
+
 stat_t clone_uvmem(struct vmem *r, struct vmem *b)
 {
 	/** \todo error checking? */
-	for (size_t i = 0; i < CSTACK_PAGE; ++i)
-		b->leaf[i] = r->leaf[i];
+	struct uvmem_map *rm = (struct uvmem_map *)(r);
+	struct uvmem_map *bm = (struct uvmem_map *)(b);
+	*bm = *rm;
 
 	return OK;
 }
