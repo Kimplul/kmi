@@ -30,6 +30,7 @@ typedef long sys_arg_t;
  * Return structure of syscall.
  * \note Field names are generic, and can be used for whatever,
  * check documentation of whatever you're doing.
+ * @todo should this be placed into syscalls.h?
  */
 struct sys_ret {
 	/** Status. */

@@ -50,9 +50,12 @@ static struct sys_ret do_ipc(sys_arg_t pid,
 	if (!r->callback)
 		return SYS_RET1(ERR_NOINIT);
 
+	uint64_t before, after;
+
 	clone_uvmem(r->proc.vmem, t->rpc.vmem);
 	use_vmem(t->rpc.vmem);
 	save_context(t);
+
 	set_return(t, r->callback);
 	/** @todo associate thread with new proc, should be done in tcb.c I
 	 * think */

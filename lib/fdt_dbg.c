@@ -138,8 +138,8 @@ void __dbg_fdt(const void *fdt, int node_offset, int depth)
 		int property = 0;
 		fdt_for_each_property_offset(property, fdt, node)
 		{
-			int len;
-			const char *name;
+			int len = 0;
+			const char *name = 0;
 			const void *data = fdt_getprop_by_offset(fdt, property,
 			                                         &name, &len);
 

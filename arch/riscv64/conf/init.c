@@ -9,53 +9,63 @@
 #include <stdint.h>
 #include "../../../include/apos/syscalls.h"
 
-#define ecall() do { asm volatile ("ecall"                               \
-		                   :                                     \
-		                   :                                     \
-		                   : "a0", "a1", "a2", "a3", "a4", "a5", \
-		                   "memory");                            \
-} while (0)
+#define CLOBBER_LIST "a0", "a1", "a2", "a3", "a4", "a5"
+
+struct sys_ret {
+	long a0, a1, a2, a3, a4, a5;
+};
+
+struct sys_ret ecall(struct sys_ret s)
+{
+	register long a0 asm ("a0") = s.a0;
+	register long a1 asm ("a1") = s.a1;
+	register long a2 asm ("a2") = s.a2;
+	register long a3 asm ("a3") = s.a3;
+	register long a4 asm ("a4") = s.a4;
+	register long a5 asm ("a5") = s.a5;
+
+	asm volatile ("ecall"
+			: "=r"(a0), "=r"(a1), "=r"(a2), "=r"(a3), "=r"(a4), "=r"(a5)
+			: "r"(a0), "r"(a1), "r"(a2), "r"(a3), "r"(a4), "r"(a5));
+
+	return (struct sys_ret){a0, a1, a2, a3, a4, a5};
+}
 
 static void sys_noop()
 {
-	long register a0 asm ("a0") = SYS_NOOP;
-	ecall();
+	struct sys_ret r = {.a0 = SYS_NOOP};
+	ecall(r);
 }
 
 static void sys_putch(char c)
 {
-	long register a0 asm ("a0") = SYS_PUTCH;
-	long register a1 asm ("a1") = c;
-	ecall();
+	struct sys_ret r = {.a0 = SYS_PUTCH, .a1 = c};
+	ecall(r);
 }
 
 static uint64_t sys_timebase()
 {
-	long register a0 asm ("a0") = SYS_TIMEBASE;
-	long register a1 asm ("a1") = 0;
-	long register a2 asm ("a2") = 0;
-	ecall();
+	struct sys_ret r = {.a0 = SYS_TIMEBASE};
+	r = ecall(r);
 #if defined(_LP64)
-	return a1;
+	return r.a1;
 #else
-	uint64_t t = a1;
+	uint64_t t = r.a1;
 	t <<= 32;
-	return t + a2;
+	return t + r.a2;
 #endif
 }
 
 static uint64_t sys_ticks()
 {
-	long register a0 asm ("a0") = SYS_TICKS;
-	long register a1 asm ("a1") = 0;
-	long register a2 asm ("a2") = 0;
-	ecall();
+	struct sys_ret r = {.a0 = SYS_TICKS};
+	r = ecall(r);
 #if defined(_LP64)
-	return a1;
+	return r.a1;
 #else
-	uint64_t t = a1;
+	uint64_t t = r.a1;
 	t <<= 32;
-	return t + a2;
+	return t + r.a2;
 #endif
 }
 
@@ -95,71 +105,77 @@ static void print_value(const char *s, uint64_t v)
 
 static uint64_t sys_fork()
 {
-	long register a0 asm ("a0") = SYS_FORK;
-	long register a1 asm ("a1") = 0;
-	ecall();
-	if (a0 != 0)
-		print_value("fork() failed with error ", a0);
-	return a1;
+	struct sys_ret r = {.a0 = SYS_FORK};
+	r = ecall(r);
+
+	if (r.a0 != 0)
+		print_value("fork() failed with error ", r.a0);
+
+	return r.a1;
 }
 
 static uint64_t sys_swap(long tid)
 {
-	long register a0 asm ("a0") = SYS_SWAP;
-	long register a1 asm ("a1") = tid;
-	ecall();
-	if (a0 != 0)
-		print_value("swap() failed with error ", a0);
-	return a0;
+	struct sys_ret r = {.a0 = SYS_SWAP, .a1 = tid};
+	r = ecall(r);
+
+	if (r.a0 != 0)
+		print_value("swap() failed with error ", r.a0);
+
+	return r.a0;
 }
 
 static void sys_ipc_server(void *f)
 {
-	long register a0 asm ("a0") = SYS_IPC_SERVER;
-	long register a1 asm ("a1") = (long)f;
-	ecall();
-	if (a0 != 0)
-		print_value("ipc_server() failed with error ", a0);
+	struct sys_ret r = {.a0 = SYS_IPC_SERVER, .a1 = (long)f};
+	r = ecall(r);
+
+	if (r.a0 != 0)
+		print_value("ipc_server() failed with error ", r.a0);
 }
 
-static uint64_t sys_ipc_req(long tid, long *d0, long *d1, long *d2, long *d3)
-{
-	long register a0 asm ("a0") = SYS_IPC_REQ;
-	long register a1 asm ("a1") = tid;
-	long register a2 asm ("a2") = *d0;
-	long register a3 asm ("a3") = *d1;
-	long register a4 asm ("a4") = *d2;
-	long register a5 asm ("a5") = *d3;
-	ecall();
-	if (a0)
-		print_value("ipc_req() failed with error ", a0);
+struct ipc_args {
+	long a0, a1, a2, a3;
+};
 
-	*d0 = a2;
-	*d1 = a3;
-	*d2 = a4;
-	*d3 = a5;
-	return a0;
+static struct ipc_args sys_ipc_req(long tid, long d0, long d1, long d2, long d3)
+{
+	struct sys_ret r = {.a0 = SYS_IPC_REQ,
+		.a1 = tid,
+		.a2 = d0,
+		.a3 = d1,
+		.a4 = d2,
+		.a5 = d3};
+
+	r = ecall(r);
+
+	if (r.a0)
+		print_value("ipc_req() failed with error ", r.a0);
+
+	return (struct ipc_args){r.a2, r.a3, r.a4, r.a5};
 }
 
 static void sys_ipc_resp(long d0, long d1, long d2, long d3)
 {
-	long register a0 asm ("a0") = SYS_IPC_RESP;
-	long register a1 asm ("a1") = d0;
-	long register a2 asm ("a2") = d1;
-	long register a3 asm ("a3") = d2;
-	long register a4 asm ("a4") = d3;
-	ecall();
+	struct sys_ret r = {.a0 = SYS_IPC_RESP,
+		.a1 = d0,
+		.a2 = d1,
+		.a3 = d2,
+		.a4 = d3};
+
+	ecall(r);
 }
 
 static void sys_poweroff(long type)
 {
-	long register a0 asm ("a0") = SYS_POWEROFF;
-	long register a1 asm ("a1") = type;
-	ecall();
+	struct sys_ret r = {.a0 = SYS_POWEROFF, .a1 = type};
+	ecall(r);
 }
 
 void callback(long status, long tid, long d0, long d1, long d2, long d3)
 {
+	(void)status;
+	(void)tid;
 	sys_ipc_resp(d0, d1, d2, d3);
 }
 
@@ -212,11 +228,11 @@ void _start()
 	print_value("Swaps (both ways) per second", n);
 
 	puts("Doing ipc requests...\n");
-	long d0, d1, d2, d3;
+	long d0 = 0, d1 = 0, d2 = 0, d3 = 0;
 	csr_read(CSR_TIME, i);
 	start = i; n = 0;
 	while (i < start + second) {
-		sys_ipc_req(1, &d0, &d1, &d2, &d3);
+		sys_ipc_req(1, d0, d1, d2, d3);
 		csr_read(CSR_TIME, i);
 		n++;
 	}

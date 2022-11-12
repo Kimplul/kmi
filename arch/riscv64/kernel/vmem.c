@@ -345,6 +345,8 @@ vm_t setup_kernel_io(struct vmem *b, vm_t paddr)
 }
 #endif
 
+/* something of an optimisation, letting the compiler know which parts to copy
+ * however it sees best */
 struct uvmem_map {
 	struct vmem *leaf[CSTACK_PAGE - 1];
 };
