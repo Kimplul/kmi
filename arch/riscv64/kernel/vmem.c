@@ -347,15 +347,15 @@ vm_t setup_kernel_io(struct vmem *b, vm_t paddr)
 
 /* something of an optimisation, letting the compiler know which parts to copy
  * however it sees best */
-struct uvmem_map {
+struct uvmem_sv39_map {
 	struct vmem *leaf[CSTACK_PAGE - 1];
 };
 
 stat_t clone_uvmem(struct vmem *r, struct vmem *b)
 {
 	/** \todo error checking? */
-	struct uvmem_map *rm = (struct uvmem_map *)(r);
-	struct uvmem_map *bm = (struct uvmem_map *)(b);
+	struct uvmem_sv39_map *rm = (struct uvmem_sv39_map *)(r);
+	struct uvmem_sv39_map *bm = (struct uvmem_sv39_map *)(b);
 	*bm = *rm;
 
 	return OK;
