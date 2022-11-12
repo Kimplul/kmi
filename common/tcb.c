@@ -96,11 +96,11 @@ static vm_t __setup_rpc_stack(struct tcb *t, size_t bytes)
 	vmflags_t flags = VM_V | VM_R | VM_W | VM_U;
 	for (size_t i = 1; i <= pages; ++i) {
 		offset = alloc_page(BASE_PAGE);
-		map_vpage(t->proc.vmem, offset,
+		map_vpage(t->rpc.vmem, offset,
 		          RPC_STACK_TOP - BASE_PAGE_SIZE * i,
 		          flags, BASE_PAGE);
 	}
-
+	t->rpc_stack = RPC_STACK_TOP;
 	return RPC_STACK_TOP - BASE_PAGE_SIZE * pages;
 }
 
@@ -116,18 +116,13 @@ static vm_t __setup_thread_stack(struct tcb *t, size_t bytes)
 	return alloc_uvmem(t, bytes, VM_V | VM_R | VM_W | VM_U);
 }
 
-stat_t alloc_stacks(struct tcb *t)
+stat_t alloc_stack(struct tcb *t)
 {
 	/* get parent process */
 	struct tcb *p = get_tcb(t->eid);
 
 	t->thread_stack = __setup_thread_stack(p, __thread_stack_size);
 	if (!t->thread_stack)
-		return ERR_OOMEM;
-
-	/* rpc stack always starts at the same place in vmem.
-	 * \todo: is this a security issue? */
-	if (!__setup_rpc_stack(p, __call_stack_size))
 		return ERR_OOMEM;
 
 	/** \todo this only allows for a global stack size, what if a user wants
@@ -166,6 +161,7 @@ struct tcb *create_thread(struct tcb *p)
 	t->eid = t->pid;
 	t->rid = p->rid;
 	t->rpc.vmem = create_vmem();
+	__setup_rpc_stack(t, __call_stack_size);
 
 	set_canary(t);
 	return t;
@@ -186,6 +182,10 @@ static stat_t __copy_proc(struct tcb *p, struct tcb *n)
 	 * need to duplicate stack info, whatever we do. */
 	/** @todo should there be in-kernel child tracking? */
 	n->exec = p->exec;
+	n->callback = p->callback;
+	n->thread_stack = p->thread_stack;
+	n->thread_stack_top = p->thread_stack_top;
+
 	clone_regs(n, p);
 	copy_caps(n->caps, p->caps);
 	return clone_mem_regions(n, p);
@@ -373,4 +373,71 @@ void set_return(struct tcb *t, vm_t v)
 bool running(struct tcb *t)
 {
 	return cpu_tcb(t->cpu_id) == t;
+}
+
+/**
+ * Mark rpc stack between \p start and \p end inaccessible.
+ *
+ * @param t Thread whose rpc stack to modify.
+ * @param start Start address of rpc stack to mark inaccessible.
+ * @param end End address of rpc stack to mark inaccessible.
+ */
+static void mark_rpc_inaccessible(struct tcb *t, vm_t start, vm_t end)
+{
+	size_t page_size = BASE_PAGE_SIZE;
+	size_t size = end - start;
+	size_t pages = size / page_size;
+	while (pages--) {
+		/** @todo something like mod_vpage_flags could be faster */
+		vmflags_t flags; pm_t paddr;
+		stat_vpage(t->rpc.vmem, start, &paddr, NULL, &flags);
+		mod_vpage(t->rpc.vmem, start, paddr, clear_bits(flags, VM_U));
+	}
+}
+
+/**
+ * Mark rpc stack between \p start and \p end accessible.
+ *
+ * @param t Thread whose rpc stack to modify.
+ * @param start Start address of rpc stack to mark accessible.
+ * @param end End address of rpc stack to mark accessible.
+ */
+static void mark_rpc_accessible(struct tcb *t, vm_t start, vm_t end)
+{
+	size_t page_size = BASE_PAGE_SIZE;
+	size_t size = end - start;
+	size_t pages = size / page_size;
+	while (pages--) {
+		/** @todo something like mod_vpage_flags could be faster */
+		vmflags_t flags; pm_t paddr;
+		stat_vpage(t->rpc.vmem, start, &paddr, NULL, &flags);
+		mod_vpage(t->rpc.vmem, start, paddr, set_bits(flags, VM_U));
+	}
+}
+
+void save_context(struct tcb *t)
+{
+	vm_t rpc_stack = t->rpc_stack;
+	if (is_rpc(t))
+		/** @todo what if user uses their own stack? */
+		rpc_stack = align_down(get_stack(t), BASE_PAGE_SIZE);
+
+	struct tcb *copy = (struct tcb *)(rpc_stack - sizeof(struct tcb));
+	memcpy(copy, t, sizeof(struct tcb));
+	clone_regs(copy, t);
+
+	rpc_stack -= BASE_PAGE_SIZE;
+	mark_rpc_inaccessible(t, rpc_stack, t->rpc_stack);
+	t->rpc_stack = rpc_stack;
+}
+
+void load_context(struct tcb *t)
+{
+	vm_t rpc_stack = t->rpc_stack;
+	struct tcb *copy =
+		(struct tcb *)(rpc_stack + BASE_PAGE_SIZE - sizeof(struct tcb));
+	memcpy(t, copy, sizeof(struct tcb));
+	clone_regs(t, copy);
+
+	mark_rpc_accessible(t, rpc_stack, t->rpc_stack);
 }

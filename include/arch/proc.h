@@ -49,6 +49,14 @@ struct sys_ret get_args(struct tcb *t);
 void set_thread(struct tcb *t);
 
 /**
+ * Get current userspace stack.
+ *
+ * @param t Thread whose stack to query.
+ * @return Current stack address.
+ */
+vm_t get_stack(struct tcb *t);
+
+/**
  * Copy registers from tcb save area to address \p p.
  * Intended to be used for copying thread state to rpc stack.
  *

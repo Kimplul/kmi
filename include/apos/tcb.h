@@ -28,7 +28,7 @@
  * @param t Thread to check.
  * @return \c true if thread is in RPC, \c false otherwise.
  */
-#define is_rpc(t) (t->rid == t->pid)
+#define is_rpc(t) (t->rid != t->pid)
 
 /**
  * Get the process thread of current thread.
@@ -63,14 +63,14 @@ struct tcb_ctx {
 
 /** Enum for notification states. */
 enum tcb_notify {
+	/** Thread is free to be notified. */
+	NOTIFY_WAITING = 0,
+
 	/** Thread has notifcations queued. */
 	NOTIFY_QUEUED,
 
 	/** Thread is running notification handler. */
 	NOTIFY_RUNNING,
-
-	/** Thread is free to be notified. */
-	NOTIFY_WAITING
 };
 
 /** Thread control block. Main way to handle threads. */
@@ -133,6 +133,9 @@ struct tcb {
 	/** Address of this thread's stack top. */
 	vm_t thread_stack_top;
 
+	/** Current address of usable rpc stack. */
+	vm_t rpc_stack;
+
 	/** \todo Check if each thread should be allowed more than just one
 	 * region of thread local storage. */
 	/** Possible thread local storage. */
@@ -171,7 +174,7 @@ void destroy_tcbs();
  * and the \ref tcb structure itself with a unique thread ID. If in a new
  * process context, a new process address space is created as well.
  *
- * Userspace stack is allocated with \ref alloc_stacks().
+ * Userspace stack is allocated with \ref alloc_stack().
  *
  * \todo Thread local storage?
  *
@@ -338,7 +341,7 @@ stat_t clone_rpc_maps(struct tcb *r);
  * @param t Thread whose stacks to allocate.
  * @return \ref OK on success, \ref ERR_OOMEM if out of memory.
  */
-stat_t alloc_stacks(struct tcb *t);
+stat_t alloc_stack(struct tcb *t);
 
 /**
  * Set address to jump to when returning to userspace.
@@ -355,5 +358,19 @@ void set_return(struct tcb *t, vm_t r);
  * @return \c true if it is running, \c false otherwise.
  */
 bool running(struct tcb *t);
+
+/**
+ * Save thread context for rpc call.
+ *
+ * @param t Thread whose context to save.
+ */
+void save_context(struct tcb *t);
+
+/**
+ * Load thread context from rpc call.
+ *
+ * @param t Thread whose context to restore.
+ */
+void load_context(struct tcb *t);
 
 #endif /* APOS_TCB_H */

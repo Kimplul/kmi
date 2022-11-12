@@ -56,6 +56,12 @@ void set_thread(struct tcb *t)
 	r->tp = (long)t->thread_storage;
 }
 
+vm_t get_stack(struct tcb *t)
+{
+	struct riscv_regs *r = (struct riscv_regs *)(t) - 1;
+	return r->sp;
+}
+
 void save_regs(struct tcb *t, void *p)
 {
 	struct riscv_regs *r = (struct riscv_regs *)(t) - 1;

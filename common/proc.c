@@ -21,7 +21,7 @@ stat_t prepare_proc(struct tcb *t, vm_t bin, vm_t interp)
 	if (!entry)
 		return ERR_INVAL;
 
-	alloc_stacks(t);
+	alloc_stack(t);
 	set_thread(t);
 	set_return(t, entry);
 	return OK;
@@ -40,7 +40,7 @@ stat_t init_proc(void *fdt)
 	use_tcb(t);
 
 	/* init process has all capabilities */
-	set_caps(t->caps, 0, CAP_CAPS | CAP_PROC | CAP_CALL);
+	set_caps(t->caps, 0, CAP_CAPS | CAP_PROC | CAP_CALL | CAP_POWER);
 
 	/* allocate stacks after ELF file to make sure nothing of importance
 	 * clashes */

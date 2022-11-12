@@ -6,6 +6,9 @@
  * Capabilities of threads.
  * \todo The list of capabilities should maybe be placed in some other file so
  * as to easier extract it into userspace programs.
+ *
+ * @todo is it realistic to assume we will never need more than 32 capabilities?
+ * If so, we can remove the offset nonsense.
  */
 
 #include <apos/bits.h>
@@ -22,6 +25,9 @@ enum {
 
 	/** Thread is allowed to force interrupt to callback in other thread. */
 	CAP_CALL = (1 << 2),
+
+	/** Thread is allowed to shut down system. */
+	CAP_POWER = (1 << 3),
 };
 
 /**
@@ -66,5 +72,14 @@ enum {
  * @return Capabilities at offset \p o.
  */
 #define get_caps(x, o) (x)
+
+/**
+ * Check if something has capability.
+ *
+ * @param x Capabilities to check in.
+ * @param c Capability to check for.
+ * @return \ref true if \p x has \p c, \ref false otherwise.
+ */
+#define has_cap(x, c) (x & c)
 
 #endif /* APOS_CAPS_H */

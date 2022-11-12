@@ -57,6 +57,10 @@ SYSCALL_DEFINE2(conf_set)(sys_arg_t param, sys_arg_t val)
  */
 SYSCALL_DEFINE1(poweroff)(sys_arg_t type)
 {
+	struct tcb *t = cur_tcb();
+	if (!(has_cap(t->caps, CAP_POWER)))
+		return SYS_RET1(ERR_PERM);
+
 	switch (type) {
 	case SHUTDOWN:
 	case COLD_REBOOT:

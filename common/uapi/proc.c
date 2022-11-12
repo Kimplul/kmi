@@ -32,6 +32,8 @@ SYSCALL_DEFINE5(create)(sys_arg_t func,
 	if (!t)
 		return SYS_RET1(ERR_OOMEM);
 
+	alloc_stack(t);
+
 	set_args(t, SYS_RET5(t->tid, d0, d1, d2, d3));
 	set_return(t, func);
 
@@ -55,7 +57,7 @@ SYSCALL_DEFINE5(create)(sys_arg_t func,
  */
 SYSCALL_DEFINE0(fork)(){
 	struct tcb *c = cur_proc();
-	if (!(get_caps(c->caps, 0) & CAP_PROC))
+	if (!(has_cap(c->caps, CAP_PROC)))
 		return SYS_RET1(ERR_PERM);
 
 	struct tcb *t = create_proc(eff_proc());
@@ -118,7 +120,7 @@ SYSCALL_DEFINE2(exec)(sys_arg_t bin, sys_arg_t interp){
 SYSCALL_DEFINE2(spawn)(sys_arg_t bin, sys_arg_t interp)
 {
 	struct tcb *c = cur_proc();
-	if (!(get_caps(c->caps, 0) & CAP_PROC))
+	if (!(has_cap(c->caps, CAP_PROC)))
 		return SYS_RET1(ERR_PERM);
 
 	struct tcb *t = create_proc(NULL);
@@ -139,7 +141,7 @@ SYSCALL_DEFINE2(spawn)(sys_arg_t bin, sys_arg_t interp)
 SYSCALL_DEFINE1(kill)(sys_arg_t tid)
 {
 	struct tcb *c = cur_proc();
-	if (!(get_caps(c->caps, 0) & CAP_PROC))
+	if (!(has_cap(c->caps, CAP_PROC)))
 		return SYS_RET1(ERR_PERM);
 
 	return SYS_RET1(OK);
@@ -157,7 +159,7 @@ SYSCALL_DEFINE1(kill)(sys_arg_t tid)
  */
 SYSCALL_DEFINE1(swap)(sys_arg_t tid){
 	struct tcb *c = cur_proc();
-	if (!(get_caps(c->caps, 0) & CAP_PROC))
+	if (!(has_cap(c->caps, CAP_PROC)))
 		return SYS_RET1(ERR_PERM);
 
 	struct tcb *t = get_tcb(tid);

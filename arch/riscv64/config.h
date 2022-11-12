@@ -77,10 +77,10 @@
 #define UVMEM_END (SZ_256G - SZ_1G)
 
 /** RPC stack top. */
-#define RPC_STACK_TOP (UVMEM_END)
+#define RPC_STACK_TOP (UVMEM_END + SZ_1G)
 
 /** RPC stack base. */
-#define RPC_STACK_BASE (RPC_STACK_TOP - SZ_1G)
+#define RPC_STACK_BASE (UVMEM_END)
 
 /**
  * Size of the default top page.

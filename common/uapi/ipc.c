@@ -18,7 +18,7 @@
  */
 SYSCALL_DEFINE1(ipc_server)(sys_arg_t callback)
 {
-	cur_tcb()->callback = callback;
+	cur_proc()->callback = callback;
 	return SYS_RET1(OK);
 }
 
@@ -50,8 +50,12 @@ static struct sys_ret do_ipc(sys_arg_t pid,
 	if (!r->callback)
 		return SYS_RET1(ERR_NOINIT);
 
-	/** \todo place data on rpc stack and clone into virtual memory */
+	clone_uvmem(r->proc.vmem, t->rpc.vmem);
+	use_vmem(t->rpc.vmem);
+	save_context(t);
 	set_return(t, r->callback);
+	/** @todo associate thread with new proc, should be done in tcb.c I
+	 * think */
 
 	if (!fwd)
 		t->eid = t->pid;
@@ -105,7 +109,13 @@ SYSCALL_DEFINE4(ipc_resp)(sys_arg_t d0, sys_arg_t d1, sys_arg_t d2,
                           sys_arg_t d3)
 {
 	struct tcb *t = cur_tcb();
-	/* something like return_from_callback(t, r) */
+	load_context(t);
+
+	if (is_rpc(t))
+		use_vmem(t->rpc.vmem);
+	else
+		use_vmem(t->proc.vmem);
+
 	return SYS_RET6(OK, t->tid, d0, d1, d2, d3);
 }
 
