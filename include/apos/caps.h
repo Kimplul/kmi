@@ -20,7 +20,7 @@ enum {
 	/** Thread is allowed to set capabilities of other threads. */
 	CAP_CAPS = (1 << 0),
 
-	/** Thread is allowed to modify process statuses, exec/fork/etc. */
+	/** Thread is allowed to modify process statuses, create/exec/fork/etc. */
 	CAP_PROC = (1 << 1),
 
 	/** Thread is allowed to force interrupt to callback in other thread. */
@@ -28,6 +28,9 @@ enum {
 
 	/** Thread is allowed to shut down system. */
 	CAP_POWER = (1 << 3),
+
+	/** Thread is allowed to access configuration parameters. */
+	CAP_CONF = (1 << 4),
 };
 
 /**

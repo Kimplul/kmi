@@ -41,6 +41,9 @@ static struct sys_ret do_ipc(sys_arg_t pid,
                              bool fwd)
 {
 	struct tcb *t = cur_tcb();
+	if (!enough_rpc_stack(t))
+		return SYS_RET1(ERR_OOMEM);
+
 	struct tcb *r = get_tcb(pid);
 	if (!r)
 		return SYS_RET1(ERR_INVAL);

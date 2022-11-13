@@ -432,7 +432,8 @@ void save_context(struct tcb *t)
 		/** @todo what if user uses their own stack? Or is a dick and
 		 * sets the stack pointer to RPC_STACK_TOP or something? It'll
 		 * likely only cause a fuckup in the process who did the dumb
-		 * thing, so maybe just consider it user error? */
+		 * thing, so maybe just consider it user error? Except by
+		 * causing the stack of the next rpc to run out of memory... */
 		rpc_stack = align_down(get_stack(t), BASE_PAGE_SIZE);
 
 
@@ -443,8 +444,20 @@ void save_context(struct tcb *t)
 	ctx->regs = t->regs;
 	ctx->rpc_stack = rpc_stack;
 
+	/** @todo if we run out of rpc_stack space we should just stop, likely
+	 * return a status? */
 	rpc_stack -= BASE_PAGE_SIZE;
 
+	/** @todo what if each stack is only some number of pages, and if a proc
+	 * goes over the limit is is seen as programming error? Possibly user
+	 * configurable number as well, might actually use the config subsystem
+	 * :D
+	 * In such a case it would probably be smarter to mark all pages
+	 * inaccessible at first, and then mark the first page accessible. If
+	 * the process needs more stack space it'll cause a paging exception,
+	 * we'll handle it separately and if the process isn't going over the
+	 * limit just give it more.
+	 * */
 	mark_rpc_inaccessible(t, rpc_stack, t->rpc_stack);
 	t->rpc_stack = rpc_stack;
 	t->regs = (vm_t)ctx;
@@ -460,4 +473,12 @@ void load_context(struct tcb *t)
 	t->pid = ctx->pid;
 	t->eid = ctx->eid;
 	t->regs = ctx->regs;
+}
+
+bool enough_rpc_stack(struct tcb *t)
+{
+	vm_t top = RPC_STACK_BASE + __call_stack_size;
+	vm_t rpc_stack = t->rpc_stack + BASE_PAGE_SIZE;
+
+	return top - rpc_stack >= __call_stack_size / 4;
 }

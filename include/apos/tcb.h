@@ -389,4 +389,12 @@ void save_context(struct tcb *t);
  */
 void load_context(struct tcb *t);
 
+/**
+ * Check that we have enough rpc stack.
+ *
+ * @param t Thread whose rpc stack to check.
+ * @return \ref true if we have enough, \ref false otherwise.
+ */
+bool enough_rpc_stack(struct tcb *t);
+
 #endif /* APOS_TCB_H */

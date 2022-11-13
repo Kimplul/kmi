@@ -16,6 +16,15 @@
  * conf*-syscalls even necessary? */
 size_t __thread_stack_size = SZ_2M;
 size_t __call_stack_size = SZ_2M;
+size_t __rpc_stack_size = SZ_512K;
+
+/** IDs for configuration parameters. */
+/** @todo should probably be moved somewhere so it can be shared with userspace */
+enum conf_param {
+	CONF_THREAD_STACK = 0,
+	CONF_CALL_STACK,
+	CONF_RPC_STACK,
+};
 
 /**
  * Configuration parameter read syscall handler.
@@ -27,7 +36,29 @@ size_t __call_stack_size = SZ_2M;
  */
 SYSCALL_DEFINE1(conf_get)(sys_arg_t param)
 {
-	return SYS_RET1(OK);
+	struct tcb *t = cur_tcb();
+	if (!has_cap(t->caps, CAP_CONF))
+		return SYS_RET1(ERR_PERM);
+
+	long val = 0;
+	switch (param) {
+	case CONF_THREAD_STACK:
+		val = __thread_stack_size;
+		break;
+
+	case CONF_CALL_STACK:
+		val = __call_stack_size;
+		break;
+
+	case CONF_RPC_STACK:
+		val = __rpc_stack_size;
+		break;
+
+	default:
+		return SYS_RET1(ERR_NF);
+	}
+
+	return SYS_RET2(OK, val);
 }
 
 /**
@@ -41,9 +72,32 @@ SYSCALL_DEFINE1(conf_get)(sys_arg_t param)
  */
 SYSCALL_DEFINE2(conf_set)(sys_arg_t param, sys_arg_t val)
 {
-	UNUSED(param);
-	UNUSED(val);
-	/* no parameters supported atm */
+	struct tcb *t = cur_tcb();
+	if (!has_cap(t->caps, CAP_CONF))
+		return SYS_RET1(ERR_PERM);
+
+	size_t size = 0;
+	switch (param) {
+	case CONF_THREAD_STACK:
+		__thread_stack_size = align_up(val, BASE_PAGE_SIZE);
+		break;
+
+	case CONF_CALL_STACK:
+		size = align_up(val, 4 * BASE_PAGE_SIZE);
+		if (size < __rpc_stack_size * 4)
+			return SYS_RET1(ERR_MISC);
+
+		__call_stack_size = size;
+		break;
+
+	case CONF_RPC_STACK:
+		size = align_up(val, BASE_PAGE_SIZE);
+		if (size > __call_stack_size / 4)
+			return SYS_RET1(ERR_MISC);
+
+		__rpc_stack_size = size;
+		break;
+	}
 
 	return SYS_RET1(OK);
 }
