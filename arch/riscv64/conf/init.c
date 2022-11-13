@@ -1,15 +1,24 @@
-/* This file is allowed to be undocumented as it is only temporarily in this
- * tree. At some point in the (hopefully) near future, I intend to move the
+/**
+ * Header for silencing scripts/warn-undocumented
+ *
+ * @file init.c
+ *
+ * Test init program.
+ *
+ * This file is only temporarily in this tree.
+ * At some point in the (hopefully) near future, I intend to move the
  * kernel code and initrd generation stuff into separate repositories, to make
  * things easier for myself. For now though, this is good enough.
+ *
+ * Compile with
+ *	riscv64-unknown-elf-gcc -ffreestanding -nostdlib
+ *
+ * Create initrd with
+ *	echo init | cpio -H newc -o > initrd
  */
 
-/* compile with riscv64-unknown-elf-gcc -ffreestanding -nostdlib */
-/* create initrd with echo init | cpio -H newc -o > initrd */
 #include <stdint.h>
 #include "../../../include/apos/syscalls.h"
-
-#define CLOBBER_LIST "a0", "a1", "a2", "a3", "a4", "a5"
 
 struct sys_ret {
 	long a0, a1, a2, a3, a4, a5;
@@ -25,8 +34,10 @@ struct sys_ret ecall(struct sys_ret s)
 	register long a5 asm ("a5") = s.a5;
 
 	asm volatile ("ecall"
-			: "=r"(a0), "=r"(a1), "=r"(a2), "=r"(a3), "=r"(a4), "=r"(a5)
-			: "r"(a0), "r"(a1), "r"(a2), "r"(a3), "r"(a4), "r"(a5));
+	              : "=r" (a0), "=r" (a1), "=r" (a2), "=r" (a3), "=r" (a4),
+	              "=r" (a5)
+	              : "r" (a0), "r" (a1), "r" (a2), "r" (a3), "r" (a4),
+	              "r" (a5));
 
 	return (struct sys_ret){a0, a1, a2, a3, a4, a5};
 }
@@ -134,6 +145,7 @@ static void sys_ipc_server(void *f)
 		print_value("ipc_server() failed with error ", r.a0);
 }
 
+/** Helper for ipc arguments/return values. */
 struct ipc_args {
 	long a0, a1, a2, a3;
 };
@@ -141,11 +153,11 @@ struct ipc_args {
 static struct ipc_args sys_ipc_req(long tid, long d0, long d1, long d2, long d3)
 {
 	struct sys_ret r = {.a0 = SYS_IPC_REQ,
-		.a1 = tid,
-		.a2 = d0,
-		.a3 = d1,
-		.a4 = d2,
-		.a5 = d3};
+		            .a1 = tid,
+		            .a2 = d0,
+		            .a3 = d1,
+		            .a4 = d2,
+		            .a5 = d3};
 
 	r = ecall(r);
 
@@ -158,10 +170,10 @@ static struct ipc_args sys_ipc_req(long tid, long d0, long d1, long d2, long d3)
 static void sys_ipc_resp(long d0, long d1, long d2, long d3)
 {
 	struct sys_ret r = {.a0 = SYS_IPC_RESP,
-		.a1 = d0,
-		.a2 = d1,
-		.a3 = d2,
-		.a4 = d3};
+		            .a1 = d0,
+		            .a2 = d1,
+		            .a3 = d2,
+		            .a4 = d3};
 
 	ecall(r);
 }

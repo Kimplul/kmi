@@ -55,8 +55,7 @@ static struct sys_ret do_ipc(sys_arg_t pid,
 	save_context(t);
 
 	set_return(t, r->callback);
-	/** @todo associate thread with new proc, should be done in tcb.c I
-	 * think */
+	attach_rpc(r, t);
 
 	if (!fwd)
 		t->eid = t->pid;
@@ -110,7 +109,9 @@ SYSCALL_DEFINE4(ipc_resp)(sys_arg_t d0, sys_arg_t d1, sys_arg_t d2,
                           sys_arg_t d3)
 {
 	struct tcb *t = cur_tcb();
+	struct tcb *r = cur_proc();
 	load_context(t);
+	detach_rpc(r, t);
 
 	if (is_rpc(t))
 		use_vmem(t->rpc.vmem);

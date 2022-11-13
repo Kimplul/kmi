@@ -86,6 +86,9 @@ void asm_offsets()
 
 	OFFSETOF(exec, struct tcb);
 	OFFSETOF(regs, struct tcb);
+	/* At the moment tcbd is just a single register slot, so this works, but
+	 * if it's expanded in the future I'll need to figure out a way to
+	 * target specific substructure members. */
 	OFFSETOF(tcbd, struct tcb);
 	SIZEOF(tcb, struct tcb);
 }

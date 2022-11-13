@@ -149,6 +149,9 @@ struct tcb *create_thread(struct tcb *p)
 
 	if (likely(p)) {
 		t->pid = p->pid;
+		/** @todo I'm assuming two threads can share the same vmem
+		 * structure, this works on riscv but in the event that other
+		 * systems don't we can easily turn this into a clone_uvmem. */
 		t->proc.vmem = p->proc.vmem;
 	} else {
 		init_uvmem(t, UVMEM_START, UVMEM_END);
@@ -259,23 +262,24 @@ stat_t destroy_proc(struct tcb *p)
  *
  * @param name name of function to define.
  * @param type Field name of type \c tcb_ctx.
+ * @param root Root \ref tcb_ctx to attach to.
  */
-#define DEFINE_ATTACH(name, type)                  \
+#define DEFINE_ATTACH(name, type, root)            \
 	stat_t name(struct tcb *r, struct tcb *t)  \
 	{                                          \
 		hard_assert(r != t, ERR_INVAL);    \
-		struct tcb *next = r->type.next;   \
+		struct tcb *next = r->root.next;   \
 		t->type.next = next;               \
                                                    \
 		if (next) { next->type.prev = t; } \
                                                    \
 		t->type.prev = r;                  \
-		r->type.next = t;                  \
+		r->root.next = t;                  \
 		return OK;                         \
 	}
 
-DEFINE_ATTACH(attach_rpc, rpc);
-DEFINE_ATTACH(attach_proc, proc);
+DEFINE_ATTACH(attach_rpc, rpc, server);
+DEFINE_ATTACH(attach_proc, proc, proc);
 
 /**
  * Convenience marco for defining function to detach a thread from either process
@@ -283,8 +287,9 @@ DEFINE_ATTACH(attach_proc, proc);
  *
  * @param name name of function to define.
  * @param type Field name of type \c tcb_ctx.
+ * @param root Root \ref tcb_ctx to detach from.
  */
-#define DEFINE_DETACH(name, type)                     \
+#define DEFINE_DETACH(name, type, root)               \
 	stat_t name(struct tcb *r, struct tcb *t)     \
 	{                                             \
 		MAYBE_UNUSED(r);                      \
@@ -298,8 +303,8 @@ DEFINE_ATTACH(attach_proc, proc);
 		return OK;                            \
 	}
 
-DEFINE_DETACH(detach_rpc, rpc);
-DEFINE_DETACH(detach_proc, proc);
+DEFINE_DETACH(detach_rpc, rpc, server);
+DEFINE_DETACH(detach_proc, proc, proc);
 
 /* weak to allow optimisation on risc-v, but provide fallback for future */
 __weak struct tcb *cur_tcb()
@@ -402,18 +407,32 @@ static void mark_rpc_accessible(struct tcb *t, vm_t start, vm_t end)
 		set_vpage_flags(t->rpc.vmem, start + pages * page_size, VM_U);
 }
 
+/** Structure for maintaingin the required context data for an rpc call. */
 struct call_ctx {
+	/** Execution continuation point. */
 	vm_t exec;
+
+	/** Register save area. */
 	vm_t regs;
+
+	/** Position in rpc stack. */
 	vm_t rpc_stack;
-	id_t eid, pid;
+
+	/** Effective process ID. */
+	id_t eid;
+
+	/** Current process ID. */
+	id_t pid;
 };
 
 void save_context(struct tcb *t)
 {
 	vm_t rpc_stack = t->rpc_stack;
 	if (is_rpc(t))
-		/** @todo what if user uses their own stack? */
+		/** @todo what if user uses their own stack? Or is a dick and
+		 * sets the stack pointer to RPC_STACK_TOP or something? It'll
+		 * likely only cause a fuckup in the process who did the dumb
+		 * thing, so maybe just consider it user error? */
 		rpc_stack = align_down(get_stack(t), BASE_PAGE_SIZE);
 
 

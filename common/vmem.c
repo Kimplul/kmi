@@ -140,6 +140,8 @@ vm_t alloc_fixed_uvmem(struct tcb *t, vm_t start, size_t size, vmflags_t flags)
 	const vm_t v = alloc_fixed_region(&t->sp_r, start, size, &size, flags);
 	const vm_t w = map_allocd_region(t->proc.vmem, v, size, flags, &status);
 
+	/** @todo should probably update rpc maps even if the thread that does
+	 * the allocation isn't in an ipc? */
 	if (is_rpc(t) && status == INFO_SEFF)
 		clone_rpc_maps(t);
 
@@ -272,6 +274,9 @@ stat_t free_uvmem_wrapper(struct vmem *b, pm_t *offset, vm_t vaddr,
 	stat_vpage(b, vaddr, &paddr, &v_order, 0);
 	if (order != v_order)
 		return INFO_TRGN;
+
+	/** @todo we might need to cause an ipi to flush the tlb for other
+	 * cores */
 
 	stat_t *status = (stat_t *)data, ret;
 	ret = unmap_vpage(b, vaddr);

@@ -89,8 +89,48 @@
  */
 #define is_branch(pte) (is_active(pte) && !(pte_flags(pte) & ~VM_V))
 
-#define GRAVESTONE 2
+/**
+ * Gravestone marker.
+ *
+ * Riscv allows us to have arbitrary data in page entries, as long as they're
+ * not marked active (VM_V) the content is ignored. Here we use this to our
+ * advantage by differentiating between empty entries (NULL) and filler entries
+ * (GRAVESTONE).
+ *
+ * A gravestone tells us that somewhere above it (= higher index) there is an
+ * active entry. This is useful mainly in \ref clone_uvmem(), where we can stop
+ * copying data as soon as we hit an empty entry. I expect typical programs to
+ * generally have most active entries in relatively low addresses, and allowing
+ * us to skip copying 'obvious' entries is way quicker than copying the whole
+ * 2048 byte user virtual memory.
+ *
+ * Current optimisations also include setting the uvmem to stop on an 8-page
+ * boundary, allowing \ref clone_uvmem() to work in eight page increments for a
+ * bit of extra speed. Gravestones are only applied to userspace virtual memory,
+ * that is kernel and rpc memory regions are ignored.
+ *
+ * Example of how stuff should look like:
+ *
+ * Startin with page entries:
+ * 1 2 3 4 0 0 0 ...
+ *
+ * Mapping a page:
+ * 1 2 3 4 0 5 0 ...
+ *
+ * Adding gravestones:
+ * 1 2 3 4 G 5 0 ...
+ *
+ * More testing is probably necessary, as the init tests program doesn't really
+ * excercise the mapping utilities.
+ */
+#define GRAVESTONE VM_G
 
+/**
+ * Check if pte is unused, i.e. either a gravestone or empty.
+ *
+ * @param b pte to check.
+ * @return \ref true if \p b is unused.
+ */
 static bool __unused(pm_t b)
 {
 	return b == GRAVESTONE || b == NULL;
@@ -228,12 +268,21 @@ static void __destroy_branch(struct vmem *b)
 	free_page(MM_KPAGE, (pm_t)__pa(b));
 }
 
-static void add_graves(struct vmem *branch, size_t idx)
+/**
+ * Add graves if necessary.
+ *
+ * Checks that the index is within user virtual memory. If it is, change all
+ * NULL-entries to gravestones at lower addresses than \p idx.
+ *
+ * @param branch Top level branch to add graves to.
+ * @param idx Index of new entry just added.
+ */
+static void __add_graves(struct vmem *branch, size_t idx)
 {
 	if (idx >= CSTACK_PAGE)
 		return;
 
-	for (size_t i = idx; i < CSTACK_PAGE; ++i) {
+	for (ssize_t i = idx - 1; i >= 0; --i) {
 		if (!__unused((pm_t)branch->leaf[i]))
 			return;
 
@@ -265,20 +314,30 @@ stat_t map_vpage(struct vmem *branch, pm_t paddr, vm_t vaddr, vmflags_t flags,
 	branch->leaf[idx] =
 		(struct vmem *)to_pte((pm_t)__pa(paddr), vp_flags(flags));
 
-	add_graves(root, vm_to_index(vaddr, __mm_max_order));
+	__add_graves(root, vm_to_index(vaddr, __mm_max_order));
 	return top == __mm_max_order ? INFO_SEFF : OK;
 }
 
-static void remove_graves(struct vmem *branch, size_t idx)
+/**
+ * Remove graves if possible.
+ *
+ * Checks if \p idx is in user virtual memory. If it is, check if the entry at
+ * \p idx was the top page and was turned into a gravestone. If it was, start
+ * removing gravestoned until we hit the next top.
+ *
+ * @param branch Top level branch to remove gravestones in.
+ * @param idx Index of just unmapped page at the top level.
+ */
+static void __remove_graves(struct vmem *branch, size_t idx)
 {
-	if (idx > CSTACK_PAGE)
+	if (idx >= CSTACK_PAGE)
 		return;
 
-	if (__unused((pm_t)branch->leaf[idx + 1]))
+	if ((pm_t)branch->leaf[idx + 1] != NULL)
 		return;
 
-	for (size_t i = idx; i < CSTACK_PAGE; ++i) {
-		if (!__unused((pm_t)branch->leaf[i]))
+	for (ssize_t i = idx; i >= 0; --i) {
+		if ((pm_t)branch->leaf[i] != GRAVESTONE)
 			return;
 
 		branch->leaf[i] = NULL;
@@ -290,7 +349,7 @@ stat_t unmap_vpage(struct vmem *branch, vm_t vaddr)
 	pm_t *pte = __find_vmem(branch, vaddr, 0);
 	if (pte) {
 		*pte = GRAVESTONE;
-		remove_graves(branch, vm_to_index(vaddr, __mm_max_order));
+		__remove_graves(branch, vm_to_index(vaddr, __mm_max_order));
 		return OK;
 	}
 
@@ -384,12 +443,6 @@ vm_t setup_kernel_io(struct vmem *b, vm_t paddr)
 	return -TOP_PAGE_SIZE + paddr - (top_page * TOP_PAGE_SIZE);
 }
 #endif
-
-/* something of an optimisation, letting the compiler know which parts to copy
- * however it sees best */
-struct uvmem_sv39_map {
-	struct vmem *leaf[CSTACK_PAGE - 1];
-};
 
 void clone_uvmem(struct vmem *r, struct vmem *b)
 {

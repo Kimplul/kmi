@@ -62,20 +62,6 @@ vm_t get_stack(struct tcb *t)
 	return r->sp;
 }
 
-void save_regs(struct tcb *t, void *p)
-{
-	struct riscv_regs *r = (struct riscv_regs *)(t->regs) - 1;
-	struct riscv_regs *rp = (struct riscv_regs *)(p) - 1;
-	*rp = *r;
-}
-
-void load_regs(void *p, struct tcb *t)
-{
-	struct riscv_regs *r = (struct riscv_regs *)(t->regs) - 1;
-	struct riscv_regs *rp = (struct riscv_regs *)(p) - 1;
-	*r = *rp;
-}
-
 void clone_regs(struct tcb *d, struct tcb *s)
 {
 	struct riscv_regs *rd = (struct riscv_regs *)(d->regs) - 1;

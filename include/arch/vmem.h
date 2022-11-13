@@ -53,6 +53,8 @@ stat_t unmap_vpage(struct vmem *branch, vm_t vaddr);
  * @param branch Branch in which to work.
  * @param vaddr Virtual address of page.
  * @param flags Flags to set.
+ * @return \ref ERR_NF if no page could be found at \p vaddr,
+ *	\ref INFO_SEFF if modification has side effects, otherwise \ref OK.
  */
 stat_t set_vpage_flags(struct vmem *branch, vm_t vaddr, vmflags_t flags);
 
@@ -62,6 +64,8 @@ stat_t set_vpage_flags(struct vmem *branch, vm_t vaddr, vmflags_t flags);
  * @param branch Branch in which to work.
  * @param vaddr Virtual address of page.
  * @param flags Flags to clear.
+ * @return \ref ERR_NF if no page could be found at \p vaddr,
+ *	\ref INFO_SEFF if modification has side effects, otherwise \ref OK.
  */
 stat_t clear_vpage_flags(struct vmem *branch, vm_t vaddr, vmflags_t flags);
 
@@ -157,7 +161,6 @@ stat_t destroy_vmem(struct vmem *b);
  *
  * @param r Source virtual memory of clone.
  * @param b Destination virtual memory of clone.
- * @return \ref OK.
  */
 void clone_uvmem(struct vmem *r, struct vmem *b);
 

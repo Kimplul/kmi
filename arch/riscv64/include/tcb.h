@@ -11,11 +11,9 @@
 
 /**
  * riscv-specific thread handling stuff.
- *
- * Empty for now, but should probably be filled with stuff like register
- * saving of something
  */
 struct arch_tcbd {
+	/** Extra scratch register. */
 	long scratch;
 };
 

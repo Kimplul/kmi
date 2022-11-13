@@ -78,6 +78,10 @@ struct tcb {
 	/** Execution continuation point. Important that it is first. */
 	vm_t exec;
 
+	/**
+	 * Address where to save registers.
+	 * @note his address is the top of the register save structure.
+	 */
 	vm_t regs;
 
 	/** Arch-specific data. */
@@ -148,6 +152,16 @@ struct tcb {
 
 	/** RPC context of thread. */
 	struct tcb_ctx rpc;
+
+	/**
+	 * RPC server context of thread. When a thread attaches itself to this
+	 * process, its \ref rpc member is added to the list maintained in this
+	 * variable. This allows the original thread to do rpc calls without
+	 * messing up other threads' rpc status.
+	 *
+	 * I think, more testing required.
+	 */
+	struct tcb_ctx server;
 
 	/** Notifcation state of thread. */
 	enum tcb_notify notify_state;
