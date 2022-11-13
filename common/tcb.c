@@ -344,11 +344,8 @@ stat_t clone_rpc_maps(struct tcb *r)
 {
 	hard_assert(r && is_proc(r), ERR_INVAL);
 	struct tcb *t = r;
-	while ((t = t->rpc.next)) {
-		stat_t ret = clone_uvmem(r->proc.vmem, t->rpc.vmem);
-		if (ret)
-			return ret;
-	}
+	while ((t = t->rpc.next))
+		clone_uvmem(r->proc.vmem, t->rpc.vmem);
 
 	return OK;
 }
@@ -357,11 +354,8 @@ stat_t clone_proc_maps(struct tcb *r)
 {
 	hard_assert(r && is_proc(r), ERR_INVAL);
 	struct tcb *t = r;
-	while ((t = t->proc.next)) {
-		stat_t ret = clone_uvmem(r->proc.vmem, t->proc.vmem);
-		if (ret)
-			return ret;
-	}
+	while ((t = t->proc.next))
+		clone_uvmem(r->proc.vmem, t->proc.vmem);
 
 	return OK;
 }

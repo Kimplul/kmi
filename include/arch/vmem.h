@@ -159,6 +159,6 @@ stat_t destroy_vmem(struct vmem *b);
  * @param b Destination virtual memory of clone.
  * @return \ref OK.
  */
-stat_t clone_uvmem(struct vmem *r, struct vmem *b);
+void clone_uvmem(struct vmem *r, struct vmem *b);
 
 #endif /* APOS_ARCH_PAGES_H */

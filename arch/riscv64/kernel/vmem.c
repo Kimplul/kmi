@@ -89,6 +89,13 @@
  */
 #define is_branch(pte) (is_active(pte) && !(pte_flags(pte) & ~VM_V))
 
+#define GRAVESTONE 2
+
+static bool __unused(pm_t b)
+{
+	return b == GRAVESTONE || b == NULL;
+}
+
 /**
  * Find page table entry corresponding to virtual address.
  *
@@ -106,7 +113,7 @@ static pm_t *__find_vmem(struct vmem *b, vm_t v, enum mm_order *o)
 		size_t idx = vm_to_index(v, top);
 		pm_t pte = (pm_t)b->leaf[idx];
 
-		if (!pte)
+		if (__unused(pte))
 			return 0;
 
 		if (is_leaf(pte)) {
@@ -221,14 +228,29 @@ static void __destroy_branch(struct vmem *b)
 	free_page(MM_KPAGE, (pm_t)__pa(b));
 }
 
+static void add_graves(struct vmem *branch, size_t idx)
+{
+	if (idx >= CSTACK_PAGE)
+		return;
+
+	for (size_t i = idx; i < CSTACK_PAGE; ++i) {
+		if (!__unused((pm_t)branch->leaf[i]))
+			return;
+
+		branch->leaf[i] = (struct vmem *)GRAVESTONE;
+	}
+}
+
 stat_t map_vpage(struct vmem *branch, pm_t paddr, vm_t vaddr, vmflags_t flags,
                  enum mm_order order)
 {
+	struct vmem *root = branch;
 	enum mm_order top = __mm_max_order;
+
 	while (top != order) {
 		size_t idx = vm_to_index(vaddr, top);
 
-		if (!branch->leaf[idx])
+		if (__unused((pm_t)branch->leaf[idx]))
 			branch->leaf[idx] = __create_leaf();
 
 		branch = (struct vmem *)pte_addr(branch->leaf[idx]);
@@ -243,14 +265,32 @@ stat_t map_vpage(struct vmem *branch, pm_t paddr, vm_t vaddr, vmflags_t flags,
 	branch->leaf[idx] =
 		(struct vmem *)to_pte((pm_t)__pa(paddr), vp_flags(flags));
 
+	add_graves(root, vm_to_index(vaddr, __mm_max_order));
 	return top == __mm_max_order ? INFO_SEFF : OK;
+}
+
+static void remove_graves(struct vmem *branch, size_t idx)
+{
+	if (idx > CSTACK_PAGE)
+		return;
+
+	if (__unused((pm_t)branch->leaf[idx + 1]))
+		return;
+
+	for (size_t i = idx; i < CSTACK_PAGE; ++i) {
+		if (!__unused((pm_t)branch->leaf[i]))
+			return;
+
+		branch->leaf[i] = NULL;
+	}
 }
 
 stat_t unmap_vpage(struct vmem *branch, vm_t vaddr)
 {
 	pm_t *pte = __find_vmem(branch, vaddr, 0);
 	if (pte) {
-		*pte = 0;
+		*pte = GRAVESTONE;
+		remove_graves(branch, vm_to_index(vaddr, __mm_max_order));
 		return OK;
 	}
 
@@ -351,12 +391,36 @@ struct uvmem_sv39_map {
 	struct vmem *leaf[CSTACK_PAGE - 1];
 };
 
-stat_t clone_uvmem(struct vmem *r, struct vmem *b)
+void clone_uvmem(struct vmem *r, struct vmem *b)
 {
-	/** \todo error checking? */
-	struct uvmem_sv39_map *rm = (struct uvmem_sv39_map *)(r);
-	struct uvmem_sv39_map *bm = (struct uvmem_sv39_map *)(b);
-	*bm = *rm;
+	size_t i = 0;
+	for (; i < CSTACK_PAGE; i += 8) {
+		struct vmem *t = r->leaf[i + 0];
+		if (t == 0)
+			break;
 
-	return OK;
+		b->leaf[i + 0] = t;
+		b->leaf[i + 1] = r->leaf[i + 1];
+		b->leaf[i + 2] = r->leaf[i + 2];
+		b->leaf[i + 3] = r->leaf[i + 3];
+		b->leaf[i + 4] = r->leaf[i + 4];
+		b->leaf[i + 5] = r->leaf[i + 5];
+		b->leaf[i + 6] = r->leaf[i + 6];
+		b->leaf[i + 7] = r->leaf[i + 7];
+	}
+
+	for (; i < CSTACK_PAGE; i += 8) {
+		struct vmem *t = b->leaf[i + 0];
+		if (t == 0)
+			break;
+
+		b->leaf[i + 0] = 0;
+		b->leaf[i + 1] = 0;
+		b->leaf[i + 2] = 0;
+		b->leaf[i + 3] = 0;
+		b->leaf[i + 4] = 0;
+		b->leaf[i + 5] = 0;
+		b->leaf[i + 6] = 0;
+		b->leaf[i + 7] = 0;
+	}
 }

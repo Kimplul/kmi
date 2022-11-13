@@ -68,13 +68,13 @@
 #define KSTART_PAGE 256UL
 
 /** The RPC stack page. */
-#define CSTACK_PAGE 255UL
+#define CSTACK_PAGE 248UL
 
 /** User virtual memory space start. */
 #define UVMEM_START (SZ_4K)
 
 /**  User virtual memory space end. */
-#define UVMEM_END (SZ_256G - SZ_1G)
+#define UVMEM_END (SZ_256G - SZ_8G)
 
 /** RPC stack top. */
 #define RPC_STACK_TOP (UVMEM_END + SZ_1G)
