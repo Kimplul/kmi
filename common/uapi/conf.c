@@ -11,6 +11,7 @@
 #include <apos/power.h>
 #include <apos/sizes.h>
 #include <apos/uapi.h>
+#include <apos/conf.h>
 
 /** \todo stack size should really be set on a per-thread basis, and are the
  * conf*-syscalls even necessary? */
@@ -83,8 +84,8 @@ SYSCALL_DEFINE2(conf_set)(sys_arg_t param, sys_arg_t val)
 		break;
 
 	case CONF_CALL_STACK:
-		size = align_up(val, 4 * BASE_PAGE_SIZE);
-		if (size < __rpc_stack_size * 4)
+		size = align_up(val, RPC_STACK_RATIO * BASE_PAGE_SIZE);
+		if (size < __rpc_stack_size * RPC_STACK_RATIO)
 			return SYS_RET1(ERR_MISC);
 
 		__call_stack_size = size;
@@ -92,7 +93,7 @@ SYSCALL_DEFINE2(conf_set)(sys_arg_t param, sys_arg_t val)
 
 	case CONF_RPC_STACK:
 		size = align_up(val, BASE_PAGE_SIZE);
-		if (size > __call_stack_size / 4)
+		if (size > __call_stack_size / RPC_STACK_RATIO)
 			return SYS_RET1(ERR_MISC);
 
 		__rpc_stack_size = size;

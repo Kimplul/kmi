@@ -43,4 +43,10 @@ extern size_t __call_stack_size;
  */
 extern size_t __rpc_stack_size;
 
+/**
+ * Convenience macro for requirement of ratio between \ref __rpc_stack_size and
+ * \ref __call_stack_size.
+ */
+#define RPC_STACK_RATIO 4
+
 #endif /* APOS_CONF_H */

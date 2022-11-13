@@ -480,5 +480,5 @@ bool enough_rpc_stack(struct tcb *t)
 	vm_t top = RPC_STACK_BASE + __call_stack_size;
 	vm_t rpc_stack = t->rpc_stack + BASE_PAGE_SIZE;
 
-	return top - rpc_stack >= __call_stack_size / 4;
+	return top - rpc_stack >= __call_stack_size / RPC_STACK_RATIO;
 }
