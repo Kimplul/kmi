@@ -256,55 +256,61 @@ stat_t destroy_proc(struct tcb *p)
 	return __destroy_thread_data(p);
 }
 
-/**
- * Convenience marco for defining function to attach a thread to either process
- * or RPC context.
- *
- * @param name name of function to define.
- * @param type Field name of type \c tcb_ctx.
- * @param root Root \ref tcb_ctx to attach to.
- */
-#define DEFINE_ATTACH(name, type, root)            \
-	stat_t name(struct tcb *r, struct tcb *t)  \
-	{                                          \
-		hard_assert(r != t, ERR_INVAL);    \
-		struct tcb *next = r->root.next;   \
-		t->type.next = next;               \
-                                                   \
-		if (next) { next->type.prev = t; } \
-                                                   \
-		t->type.prev = r;                  \
-		r->root.next = t;                  \
-		return OK;                         \
-	}
+stat_t attach_rpc(struct tcb *r, struct tcb *t)
+{
+	hard_assert(r != t, ERR_INVAL);
+	struct tcb *next = r->server.next;
+	t->rpc.next = next;
 
-DEFINE_ATTACH(attach_rpc, rpc, server);
-DEFINE_ATTACH(attach_proc, proc, proc);
+	if (next) { next->rpc.prev = t; }
 
-/**
- * Convenience marco for defining function to detach a thread from either process
- * or RPC context.
- *
- * @param name name of function to define.
- * @param type Field name of type \c tcb_ctx.
- * @param root Root \ref tcb_ctx to detach from.
- */
-#define DEFINE_DETACH(name, type, root)               \
-	stat_t name(struct tcb *r, struct tcb *t)     \
-	{                                             \
-		MAYBE_UNUSED(r);                      \
-		hard_assert(r != t, ERR_INVAL);       \
-		struct tcb *prev = t->type.prev;      \
-		struct tcb *next = t->type.next;      \
-                                                      \
-		if (prev) { prev->type.next = next; } \
-		if (next) { next->type.prev = prev; } \
-                                                      \
-		return OK;                            \
-	}
+	t->rpc.prev = r;
+	r->server.next = t;
+	return OK;
+}
 
-DEFINE_DETACH(detach_rpc, rpc, server);
-DEFINE_DETACH(detach_proc, proc, proc);
+stat_t attach_proc(struct tcb *r, struct tcb *t)
+{
+	hard_assert(r != t, ERR_INVAL);
+	struct tcb *next = r->proc.next;
+	t->proc.next = next;
+
+	if (next) { next->proc.prev = t; }
+
+	t->proc.prev = r;
+	r->proc.next = t;
+	return OK;
+}
+
+stat_t detach_rpc(struct tcb *r, struct tcb *t)
+{
+	/* rpc handling is slightly more complex since we have separate members
+	 * for server and rpc contexts, where server is the server that
+	 * currently hosts some number of rpc guests. */
+	hard_assert(r != t, ERR_INVAL);
+	struct tcb *prev = t->rpc.prev;
+	struct tcb *next = t->rpc.next;
+
+	if (prev == r) { r->server.next = next; }
+	else if (prev) { prev->rpc.next = next; }
+
+	if (next) { next->rpc.prev = prev; }
+
+	return OK;
+}
+
+stat_t detach_proc(struct tcb *r, struct tcb *t)
+{
+	MAYBE_UNUSED(r);
+	hard_assert(r != t, ERR_INVAL);
+	struct tcb *prev = t->proc.prev;
+	struct tcb *next = t->proc.next;
+
+	if (prev) { prev->proc.next = next; }
+	if (next) { next->proc.prev = prev; }
+
+	return OK;
+}
 
 /* weak to allow optimisation on risc-v, but provide fallback for future */
 __weak struct tcb *cur_tcb()
@@ -348,9 +354,13 @@ struct tcb *get_tcb(id_t tid)
 stat_t clone_rpc_maps(struct tcb *r)
 {
 	hard_assert(r && is_proc(r), ERR_INVAL);
-	struct tcb *t = r;
-	while ((t = t->rpc.next))
+	struct tcb *t = r->server.next;
+	if (!t)
+		return OK;
+
+	do {
 		clone_uvmem(r->proc.vmem, t->rpc.vmem);
+	} while ((t = t->rpc.next));
 
 	return OK;
 }
