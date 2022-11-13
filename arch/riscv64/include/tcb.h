@@ -16,6 +16,7 @@
  * saving of something
  */
 struct arch_tcbd {
+	long scratch;
 };
 
 #endif /* ARCH_RISCV_TCB_H */

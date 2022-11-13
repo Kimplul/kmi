@@ -23,13 +23,9 @@ handle_irq:
 	 * now just spin in place */
 	1: j 1b
 _save_context:
-	/* store user stack pointer and replace it with kernel stack */
-	addi	tp, tp,-sizeof_registers
-	sr	sp, offsetof_sp(tp)
-	mv	sp, tp
-
-	/* move thread pointer back */
-	addi	tp, tp, sizeof_registers
+	sr	sp, offsetof_tcbd(tp)
+	lr	sp, offsetof_regs(tp)
+	addi	sp, sp, -sizeof_registers
 	csrrw	tp, CSR_SSCRATCH, tp
 
 	/* save registers */
@@ -67,6 +63,9 @@ _save_context:
 	/* get current tcb into tp and set scratch to 0 so we can figure out if
 	 * exception occured in kernel or userspace */
 	csrrw tp, CSR_SSCRATCH, x0
+	lr	s0, offsetof_tcbd(tp)
+	sr	s0, offsetof_sp(sp)
+	addi	sp, tp, -sizeof_registers
 
 	/* load supervisor cause */
 	csrr s4, CSR_SCAUSE
@@ -85,7 +84,7 @@ handle_exception:
 handle_dispatch:
 	/* store execution continuation point */
 	csrr    s0, CSR_SEPC
-	sr	s0, 0(tp)
+	sr	s0, offsetof_exec(tp)
 	/* allocate space for sys_ret structure on stack and shift argument
 	 * registers down one to make room for the pointer to this structure */
 	addi	sp, sp, -sizeof_sys_ret
@@ -109,10 +108,10 @@ handle_dispatch:
 	/* if we had a thread switch, load kernel stack of current thread and
 	 * restore its context */
 	/* get associated kernel stack */
-	mv	sp, tp
+	lr	sp, offsetof_regs(tp)
 	addi	sp, sp, -sizeof_registers
 	/* set execution continuation */
-	lr	s0, 0(tp)
+	lr	s0, offsetof_exec(tp)
 	csrw	CSR_SEPC, s0
 	/* restore system call result */
 	j	restore_noreturn

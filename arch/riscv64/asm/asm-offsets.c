@@ -83,4 +83,9 @@ void asm_offsets()
 	OFFSETOF(ar3, struct sys_ret);
 	OFFSETOF(ar4, struct sys_ret);
 	SIZEOF(sys_ret, struct sys_ret);
+
+	OFFSETOF(exec, struct tcb);
+	OFFSETOF(regs, struct tcb);
+	OFFSETOF(tcbd, struct tcb);
+	SIZEOF(tcb, struct tcb);
 }

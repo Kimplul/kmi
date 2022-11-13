@@ -78,6 +78,8 @@ struct tcb {
 	/** Execution continuation point. Important that it is first. */
 	vm_t exec;
 
+	vm_t regs;
+
 	/** Arch-specific data. */
 	struct arch_tcbd tcbd;
 

@@ -163,6 +163,8 @@ struct tcb *create_thread(struct tcb *p)
 	t->rpc.vmem = create_vmem();
 	__setup_rpc_stack(t, __call_stack_size);
 
+	t->regs = (vm_t)t;
+
 	set_canary(t);
 	return t;
 }
@@ -180,7 +182,6 @@ static stat_t __copy_proc(struct tcb *p, struct tcb *n)
 	/** @todo I think keeping track of userspace stack stuff is unnecessary,
 	 * unless we want unlimited stack size but that sounds dumb. Anycase, we
 	 * need to duplicate stack info, whatever we do. */
-	/** @todo should there be in-kernel child tracking? */
 	n->exec = p->exec;
 	n->callback = p->callback;
 	n->thread_stack = p->thread_stack;
@@ -409,6 +410,7 @@ static void mark_rpc_accessible(struct tcb *t, vm_t start, vm_t end)
 
 struct call_ctx {
 	vm_t exec;
+	vm_t regs;
 	vm_t rpc_stack;
 	id_t eid, pid;
 };
@@ -420,27 +422,29 @@ void save_context(struct tcb *t)
 		/** @todo what if user uses their own stack? */
 		rpc_stack = align_down(get_stack(t), BASE_PAGE_SIZE);
 
-	rpc_stack -= BASE_PAGE_SIZE;
 
-	struct call_ctx *ctx = (struct call_ctx *)rpc_stack;
+	struct call_ctx *ctx = (struct call_ctx *)(rpc_stack) - 1;
 	ctx->exec = t->exec;
 	ctx->pid = t->pid;
 	ctx->eid = t->eid;
-	ctx->rpc_stack = rpc_stack + BASE_PAGE_SIZE;
-	save_regs(t, ctx + 1);
+	ctx->regs = t->regs;
+	ctx->rpc_stack = rpc_stack;
+
+	rpc_stack -= BASE_PAGE_SIZE;
 
 	mark_rpc_inaccessible(t, rpc_stack, t->rpc_stack);
 	t->rpc_stack = rpc_stack;
+	t->regs = (vm_t)ctx;
 }
 
 void load_context(struct tcb *t)
 {
-	vm_t rpc_stack = t->rpc_stack;
-	struct call_ctx *ctx = (struct call_ctx *)rpc_stack;
+	vm_t rpc_stack = t->rpc_stack + BASE_PAGE_SIZE;
+	struct call_ctx *ctx = (struct call_ctx *)(rpc_stack) - 1;
 	set_return(t, ctx->exec);
 	mark_rpc_accessible(t, t->rpc_stack, ctx->rpc_stack);
-	load_regs(ctx + 1, t);
 	t->rpc_stack = ctx->rpc_stack;
 	t->pid = ctx->pid;
 	t->eid = ctx->eid;
+	t->regs = ctx->regs;
 }
