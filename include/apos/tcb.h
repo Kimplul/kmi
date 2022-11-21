@@ -31,12 +31,22 @@
 #define is_rpc(t) (t->rid != t->pid)
 
 /**
- * Get the process thread of current thread.
+ * Get the effective process thread of current thread.
  *
  * @param t Thread whose effective process thread to get.
  * @return The process thread of the current thread.
  */
 #define get_proc(t) (get_tcb(t->eid))
+
+#define get_eproc(t) get_proc(t)
+
+/**
+ * Get the current process thread of current thread.
+ *
+ * @param t Thread whose current process thread to get.
+ * @return The current process thread of the current thread.
+ */
+#define get_cproc(t) (get_tcb(t->pid))
 
 /**
  * Get the root process thread of current thread.

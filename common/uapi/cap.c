@@ -34,9 +34,8 @@ static capflags_t *__get_tcb_caps(id_t tid, size_t off)
  * @param caps Mask of capabilities to set.
  * @return \ref OK on success, \ref ERR_INVAL on invalid input.
  */
-SYSCALL_DEFINE3(set_cap)(sys_arg_t tid, sys_arg_t off, sys_arg_t caps)
+SYSCALL_DEFINE3(set_cap)(struct tcb *t, sys_arg_t tid, sys_arg_t off, sys_arg_t caps)
 {
-	struct tcb *t = cur_tcb();
 	if (!is_set(t->caps, CAP_CAPS))
 		return SYS_RET1(ERR_PERM);
 
@@ -55,8 +54,10 @@ SYSCALL_DEFINE3(set_cap)(sys_arg_t tid, sys_arg_t off, sys_arg_t caps)
  * @param off Offset of capability, multiple of \c bits(cap).
  * @return \ref OK, capabilities.
  */
-SYSCALL_DEFINE2(get_cap)(sys_arg_t tid, sys_arg_t off)
+SYSCALL_DEFINE2(get_cap)(struct tcb *t, sys_arg_t tid, sys_arg_t off)
 {
+	UNUSED(t);
+
 	capflags_t *c;
 	if (!(c = __get_tcb_caps(tid, off)))
 		return SYS_RET1(ERR_INVAL);
@@ -73,9 +74,8 @@ SYSCALL_DEFINE2(get_cap)(sys_arg_t tid, sys_arg_t off)
  * @return ERR_LERM if invalid permissions, ERR_INVAL if \p tid doesn't exist,
  * otherwise OK.
  */
-SYSCALL_DEFINE3(clear_cap)(sys_arg_t tid, sys_arg_t off, sys_arg_t caps)
+SYSCALL_DEFINE3(clear_cap)(struct tcb *t, sys_arg_t tid, sys_arg_t off, sys_arg_t caps)
 {
-	struct tcb *t = cur_tcb();
 	if (!is_set(t->caps, CAP_CAPS))
 		return SYS_RET1(ERR_PERM);
 

@@ -26,18 +26,19 @@
  * @return ERR_OOMEM if thread creation was unsuccessful, otherwise OK and the
  * thread id.
  */
-SYSCALL_DEFINE5(create)(sys_arg_t func,
-                        sys_arg_t d0, sys_arg_t d1, sys_arg_t d2, sys_arg_t d3){
-	struct tcb *t = create_thread(cur_tcb());
-	if (!t)
+SYSCALL_DEFINE5(create)(struct tcb *t, sys_arg_t func,
+                        sys_arg_t d0, sys_arg_t d1, sys_arg_t d2, sys_arg_t d3)
+{
+	struct tcb *c = create_thread(t);
+	if (!c)
 		return SYS_RET1(ERR_OOMEM);
 
-	alloc_stack(t);
+	alloc_stack(c);
 
-	set_args(t, SYS_RET5(t->tid, d0, d1, d2, d3));
-	set_return(t, func);
+	set_args(c, SYS_RET5(c->tid, d0, d1, d2, d3));
+	set_return(c, func);
 
-	return SYS_RET2(OK, t->tid);
+	return SYS_RET2(OK, c->tid);
 }
 
 /**
@@ -55,20 +56,21 @@ SYSCALL_DEFINE5(create)(sys_arg_t func,
  *
  * @return \ref OK and 0.
  */
-SYSCALL_DEFINE0(fork)(){
-	struct tcb *c = cur_proc();
+SYSCALL_DEFINE0(fork)(struct tcb *t)
+{
+	struct tcb *c = get_cproc(t);
 	if (!(has_cap(c->caps, CAP_PROC)))
 		return SYS_RET1(ERR_PERM);
 
-	struct tcb *t = create_proc(eff_proc());
-	if (!t)
+	struct tcb *n = create_proc(get_eproc(t));
+	if (!n)
 		return SYS_RET1(ERR_OOMEM);
 
 	/* prepare args for when we eventually swap to the new proc, giving
 	 * parent ID as third return value */
-	set_args(t, SYS_RET3(OK, 0, c->pid));
+	set_args(n, SYS_RET3(OK, 0, n->pid));
 
-	return SYS_RET2(OK, t->pid);
+	return SYS_RET2(OK, n->pid);
 }
 
 /**
@@ -78,12 +80,11 @@ SYSCALL_DEFINE0(fork)(){
  * @param interp Optional interpreter binary.
  * @return \see prepare_proc().
  */
-SYSCALL_DEFINE2(exec)(sys_arg_t bin, sys_arg_t interp){
-	/** \todo execute new process, probably with more sensible argc passing */
-	struct tcb *r = cur_tcb();
-
+SYSCALL_DEFINE2(exec)(struct tcb *t, sys_arg_t bin, sys_arg_t interp)
+{
+	/** @todo probably make sure thread is root thread of process? */
 	/* mark binary to be kept */
-	struct mem_region *b = find_used_region(&r->sp_r, bin);
+	struct mem_region *b = find_used_region(&t->sp_r, bin);
 	if (!b)
 		return SYS_RET1(ERR_INVAL);
 
@@ -92,7 +93,7 @@ SYSCALL_DEFINE2(exec)(sys_arg_t bin, sys_arg_t interp){
 	struct mem_region *i = 0;
 	if (interp) {
 		/* mark interpreter to be kept */
-		i = find_used_region(&r->sp_r, interp);
+		i = find_used_region(&t->sp_r, interp);
 		if (!i)
 			return SYS_RET1(ERR_INVAL);
 
@@ -100,14 +101,14 @@ SYSCALL_DEFINE2(exec)(sys_arg_t bin, sys_arg_t interp){
 	}
 
 	/* free everything except regions to be kept */
-	clear_uvmem(r);
+	clear_uvmem(t);
 
 	/* restore to normal */
 	clear_bit(b->flags, MR_KEEP);
 	if (interp)
 		clear_bit(b->flags, MR_KEEP);
 
-	return SYS_RET1(prepare_proc(r, bin, interp));
+	return SYS_RET1(prepare_proc(t, bin, interp));
 }
 
 /**
@@ -117,17 +118,17 @@ SYSCALL_DEFINE2(exec)(sys_arg_t bin, sys_arg_t interp){
  * @param interp Optional interpreter binary.
  * @return \see prepare_proc() and process id of the new process.
  */
-SYSCALL_DEFINE2(spawn)(sys_arg_t bin, sys_arg_t interp)
+SYSCALL_DEFINE2(spawn)(struct tcb *t, sys_arg_t bin, sys_arg_t interp)
 {
-	struct tcb *c = cur_proc();
+	struct tcb *c = get_proc(t);
 	if (!(has_cap(c->caps, CAP_PROC)))
 		return SYS_RET1(ERR_PERM);
 
-	struct tcb *t = create_proc(NULL);
-	if (!t)
+	struct tcb *n = create_proc(NULL);
+	if (!n)
 		return SYS_RET1(ERR_OOMEM);
 
-	return SYS_RET2(prepare_proc(t, bin, interp), t->pid);
+	return SYS_RET2(prepare_proc(n, bin, interp), n->pid);
 }
 
 /**
@@ -138,11 +139,13 @@ SYSCALL_DEFINE2(spawn)(sys_arg_t bin, sys_arg_t interp)
  *
  * @return ERR_PERM if not capable to kill, otherwise OK.
  */
-SYSCALL_DEFINE1(kill)(sys_arg_t tid)
+SYSCALL_DEFINE1(kill)(struct tcb *t, sys_arg_t tid)
 {
-	struct tcb *c = cur_proc();
+	struct tcb *c = get_cproc(t);
 	if (!(has_cap(c->caps, CAP_PROC)))
 		return SYS_RET1(ERR_PERM);
+
+	/** @todo implement */
 
 	return SYS_RET1(OK);
 }
@@ -157,21 +160,21 @@ SYSCALL_DEFINE1(kill)(sys_arg_t tid)
  * @param tid Thread ID to swap to.
  * @return \ref OK.
  */
-SYSCALL_DEFINE1(swap)(sys_arg_t tid){
-	struct tcb *c = cur_proc();
+SYSCALL_DEFINE1(swap)(struct tcb *t, sys_arg_t tid){
+	struct tcb *c = get_cproc(t);
 	if (!(has_cap(c->caps, CAP_PROC)))
 		return SYS_RET1(ERR_PERM);
 
-	struct tcb *t = get_tcb(tid);
-	if (!t)
+	struct tcb *s = get_tcb(tid);
+	if (!s)
 		return SYS_RET1(ERR_INVAL);
 
 	/* switch over to new thread */
-	use_tcb(t);
+	use_tcb(s);
 
 	/* set return value for current thread */
-	set_args(c, SYS_RET1(OK));
+	set_args(t, SYS_RET1(OK));
 
 	/* get register state for new thread */
-	return get_args(t);
+	return get_args(s);
 }

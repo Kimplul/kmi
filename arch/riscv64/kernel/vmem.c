@@ -444,7 +444,7 @@ vm_t setup_kernel_io(struct vmem *b, vm_t paddr)
 }
 #endif
 
-void clone_uvmem(struct vmem *r, struct vmem *b)
+void clone_uvmem(struct vmem * restrict r, struct vmem * restrict b)
 {
 	size_t i = 0;
 	for (; i < CSTACK_PAGE; i += 8) {

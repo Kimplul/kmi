@@ -35,9 +35,8 @@ enum conf_param {
  * @param param Parameter to read.
  * @return \ref OK and parameter value.
  */
-SYSCALL_DEFINE1(conf_get)(sys_arg_t param)
+SYSCALL_DEFINE1(conf_get)(struct tcb *t, sys_arg_t param)
 {
-	struct tcb *t = cur_tcb();
 	if (!has_cap(t->caps, CAP_CONF))
 		return SYS_RET1(ERR_PERM);
 
@@ -71,9 +70,8 @@ SYSCALL_DEFINE1(conf_get)(sys_arg_t param)
  * @param val Value to set \c param to.
  * @return \ref OK and \c 0.
  */
-SYSCALL_DEFINE2(conf_set)(sys_arg_t param, sys_arg_t val)
+SYSCALL_DEFINE2(conf_set)(struct tcb *t, sys_arg_t param, sys_arg_t val)
 {
-	struct tcb *t = cur_tcb();
 	if (!has_cap(t->caps, CAP_CONF))
 		return SYS_RET1(ERR_PERM);
 
@@ -110,9 +108,8 @@ SYSCALL_DEFINE2(conf_set)(sys_arg_t param, sys_arg_t val)
  * @return \ref ERR_INVAL and \c 0 if incorrect poweroff \c type give, otherwise
  * does not return.
  */
-SYSCALL_DEFINE1(poweroff)(sys_arg_t type)
+SYSCALL_DEFINE1(poweroff)(struct tcb *t, sys_arg_t type)
 {
-	struct tcb *t = cur_tcb();
 	if (!(has_cap(t->caps, CAP_POWER)))
 		return SYS_RET1(ERR_PERM);
 

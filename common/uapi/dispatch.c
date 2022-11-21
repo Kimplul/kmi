@@ -63,7 +63,9 @@ static const sys_t syscall_table[] = {
  *
  * @return \ref OK and \c 0.
  */
-SYSCALL_DEFINE0(noop)(){
+SYSCALL_DEFINE0(noop)(struct tcb *t)
+{
+	UNUSED(t);
 	info("sys_noop\n");
 	return SYS_RET1(OK);
 }
@@ -74,7 +76,10 @@ SYSCALL_DEFINE0(noop)(){
  * @param a Character to put.
  * @return \ref OK and 0.
  */
-SYSCALL_DEFINE1(putch)(sys_arg_t a){
+SYSCALL_DEFINE1(putch)(struct tcb *t, sys_arg_t a)
+{
+	UNUSED(t);
+
 	const char c[2] = {a, 0};
 	MAYBE_UNUSED(c);
 	dbg((const char *)&c);
@@ -82,31 +87,48 @@ SYSCALL_DEFINE1(putch)(sys_arg_t a){
 }
 
 struct sys_ret handle_syscall(struct tcb *t,
-                              sys_arg_t syscall, sys_arg_t a, sys_arg_t b,
-                              sys_arg_t c, sys_arg_t d, sys_arg_t e)
+		sys_arg_t syscall, sys_arg_t a, sys_arg_t b,
+		sys_arg_t c, sys_arg_t d, sys_arg_t e)
 {
 	adjust_syscall(t);
 
-	size_t sc = syscall;
-	if (sc >= ARRAY_SIZE(syscall_table)) {
-		error("Syscall %zu outside allowed range [0 - %zu]\n", sc,
-		      ARRAY_SIZE(syscall_table));
-		return SYS_RET1(ERR_INVAL);
-	}
-
-	sys_t call = syscall_table[sc];
-	if (!call) {
-		error("Syscall %zu not legitimate value\n", sc);
-		return SYS_RET1(ERR_INVAL);
-	}
-
-	struct sys_ret r = call(a, b, c, d, e);
+	struct sys_ret r;
+	switch (syscall) {
+	case SYS_NOOP: r = sys_noop(t, a, b, c, d, e); break;
+	case SYS_PUTCH: r = sys_putch(t, a, b, c, d, e); break;
+	case SYS_REQ_MEM: r = sys_req_mem(t, a, b, c, d, e); break;
+	case SYS_REQ_PMEM: r = sys_req_pmem(t, a, b, c, d, e); break;
+	case SYS_REQ_FIXMEM: r = sys_req_fixmem(t, a, b, c, d, e); break;
+	case SYS_FREE_MEM: r = sys_free_mem(t, a, b, c, d, e); break;
+	case SYS_TIMEBASE: r = sys_timebase(t, a, b, c, d, e); break;
+	case SYS_TICKS: r = sys_ticks(t, a, b, c, d, e); break;
+	case SYS_REQ_REL_TIMER: r = sys_req_rel_timer(t, a, b, c, d, e); break;
+	case SYS_REQ_ABS_TIMER: r = sys_req_abs_timer(t, a, b, c, d, e); break;
+	case SYS_IPC_SERVER: r = sys_ipc_server(t, a, b, c, d, e); break;
+	case SYS_IPC_REQ: r = sys_ipc_req(t, a, b, c, d, e); break;
+	case SYS_IPC_FWD: r = sys_ipc_fwd(t, a, b, c, d, e); break;
+	case SYS_IPC_RESP: r = sys_ipc_resp(t, a, b, c, d, e); break;
+	case SYS_IPC_NOTIFY: r = sys_ipc_notify(t, a, b, c, d, e); break;
+	case SYS_CREATE: r = sys_create(t, a, b, c, d, e); break;
+	case SYS_FORK: r = sys_fork(t, a, b, c, d, e); break;
+	case SYS_EXEC: r = sys_exec(t, a, b, c, d, e); break;
+	case SYS_SPAWN: r = sys_spawn(t, a, b, c, d, e); break;
+	case SYS_KILL: r = sys_kill(t, a, b, c, d, e); break;
+	case SYS_SWAP: r = sys_swap(t, a, b, c, d, e); break;
+	case SYS_CONF_SET: r = sys_conf_set(t, a, b, c, d, e); break;
+	case SYS_CONF_GET: r = sys_conf_get(t, a, b, c, d, e); break;
+	case SYS_SET_CAP: r = sys_set_cap(t, a, b, c, d, e); break;
+	case SYS_GET_CAP: r = sys_get_cap(t, a, b, c, d, e); break;
+	case SYS_CLEAR_CAP: r = sys_clear_cap(t, a, b, c, d, e); break;
+	case SYS_POWEROFF: r = sys_poweroff(t, a, b, c, d, e); break;
+	default:
+			   error("Syscall %zu outside allowed range [0 - %i]\n", syscall,
+					   SYS_NUM - 1);
+			   r = SYS_RET1(ERR_INVAL);
+	};
 
 	if (check_canary(t)) {
 		bug("Syscall %zu overwrote stack canary\n", syscall);
-		/** @todo should probably halt, as the system is likely in an
-		 * unstable state. */
-		return SYS_RET1(ERR_INT);
 	}
 
 	return r;

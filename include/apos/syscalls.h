@@ -126,6 +126,8 @@ enum {
 	/** Shutdown, reboot, etc. */
 	SYS_POWEROFF,
 	/** @} */
+
+	SYS_NUM,
 };
 
 /* function declarations should be somewhere else, this file could be used in

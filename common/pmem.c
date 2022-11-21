@@ -622,9 +622,10 @@ void init_pmem(void *fdt)
 	size_t probe_size = probe_pmap(ram_size);
 	size_t actual_size = populate_pmap(ram_base, ram_size, pmap_base);
 
-	if (probe_size != actual_size)
+	if (probe_size != actual_size) {
 		bug("probe_size (%#lx) != actual_size (%#lx)\n", probe_size,
 		    actual_size);
+	}
 
 	/* mark init stack, this should be unmapped once we get to executing
 	 * processes */

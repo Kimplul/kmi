@@ -16,9 +16,9 @@
  * @param callback Address of server callback.
  * @return \ref OK and \c 0.
  */
-SYSCALL_DEFINE1(ipc_server)(sys_arg_t callback)
+SYSCALL_DEFINE1(ipc_server)(struct tcb *t, sys_arg_t callback)
 {
-	cur_proc()->callback = callback;
+	get_cproc(t)->callback = callback;
 	return SYS_RET1(OK);
 }
 
@@ -33,14 +33,14 @@ SYSCALL_DEFINE1(ipc_server)(sys_arg_t callback)
  * @param fwd Whether to forward.
  * @return
  */
-static struct sys_ret do_ipc(sys_arg_t pid,
+static struct sys_ret do_ipc(struct tcb *t,
+		sys_arg_t pid,
                              sys_arg_t d0,
                              sys_arg_t d1,
                              sys_arg_t d2,
                              sys_arg_t d3,
                              bool fwd)
 {
-	struct tcb *t = cur_tcb();
 	if (!enough_rpc_stack(t))
 		return SYS_RET1(ERR_OOMEM);
 
@@ -77,10 +77,10 @@ static struct sys_ret do_ipc(sys_arg_t pid,
  * @param d3 IPC argument 3.
  * @return When succesful: OK, thread id of the caller and the arguments as-is.
  */
-SYSCALL_DEFINE5(ipc_req)(sys_arg_t pid,
+SYSCALL_DEFINE5(ipc_req)(struct tcb *t, sys_arg_t pid,
                          sys_arg_t d0, sys_arg_t d1, sys_arg_t d2, sys_arg_t d3)
 {
-	return do_ipc(pid, d0, d1, d2, d3, false);
+	return do_ipc(t, pid, d0, d1, d2, d3, false);
 }
 
 /**
@@ -93,10 +93,10 @@ SYSCALL_DEFINE5(ipc_req)(sys_arg_t pid,
  * @param d3 IPC argument 3.
  * @return
  */
-SYSCALL_DEFINE5(ipc_fwd)(sys_arg_t pid,
+SYSCALL_DEFINE5(ipc_fwd)(struct tcb *t, sys_arg_t pid,
                          sys_arg_t d0, sys_arg_t d1, sys_arg_t d2, sys_arg_t d3)
 {
-	return do_ipc(pid, d0, d1, d2, d3, true);
+	return do_ipc(t, pid, d0, d1, d2, d3, true);
 }
 
 /**
@@ -108,11 +108,10 @@ SYSCALL_DEFINE5(ipc_fwd)(sys_arg_t pid,
  * @param d3 IPC return value 3.
  * @return \c d0 and \c d1.
  */
-SYSCALL_DEFINE4(ipc_resp)(sys_arg_t d0, sys_arg_t d1, sys_arg_t d2,
+SYSCALL_DEFINE4(ipc_resp)(struct tcb *t, sys_arg_t d0, sys_arg_t d1, sys_arg_t d2,
                           sys_arg_t d3)
 {
-	struct tcb *t = cur_tcb();
-	struct tcb *r = cur_proc();
+	struct tcb *r = get_cproc(t);
 	load_context(t);
 	detach_rpc(r, t);
 
@@ -132,19 +131,22 @@ SYSCALL_DEFINE4(ipc_resp)(sys_arg_t d0, sys_arg_t d1, sys_arg_t d2,
  * @param tid Thread ID to notify.
  * @return \ref OK and 0.
  */
-SYSCALL_DEFINE1(ipc_notify)(sys_arg_t tid){
-	struct tcb *t = get_tcb(tid);
-	if (t->notify_state == NOTIFY_QUEUED)
+SYSCALL_DEFINE1(ipc_notify)(struct tcb *t, sys_arg_t tid){
+	if (!has_cap(t->caps, CAP_CALL))
+		return SYS_RET1(ERR_PERM);
+
+	struct tcb *r = get_tcb(tid);
+	if (r->notify_state == NOTIFY_QUEUED)
 		return SYS_RET1(OK);
 
-	if (t->notify_state == NOTIFY_RUNNING) {
+	if (r->notify_state == NOTIFY_RUNNING) {
 		t->notify_state = NOTIFY_QUEUED;
 		return SYS_RET1(OK);
 	}
 
-	t->notify_state = NOTIFY_QUEUED;
-	if (running(t))
-		send_ipi(t);
+	r->notify_state = NOTIFY_QUEUED;
+	if (running(r))
+		send_ipi(r);
 
 	return SYS_RET1(OK);
 }
