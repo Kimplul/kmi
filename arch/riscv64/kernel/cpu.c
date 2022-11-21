@@ -39,7 +39,8 @@ id_t cpu_id()
 /* @todo should this be the default for all arches? */
 struct tcb *cur_tcb()
 {
-	register struct tcb *t __asm__ ("tp");
+	struct tcb *t;
+	__asm__ volatile ("mv %0, tp" : "=r" (t) ::);
 	return t;
 }
 
