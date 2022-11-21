@@ -2,7 +2,7 @@ DO		!= echo -n > deps.mk
 
 # this could be done better
 DEBUGFLAGS	!= [ $(RELEASE) ] \
-			&& echo "-flto -O2 -g -DDEBUG" \
+			&& echo "-flto -O2 -g -DNDEBUG" \
 			|| echo "-O0 -g -DDEBUG"
 
 CFLAGS		= -ffreestanding -nostdlib -static -fno-pie -std=c17 -Wall -Wextra -Wvla -D$(ARCH)

@@ -16,7 +16,7 @@
  * Syscall function type.
  * Let's start with five arguments and see where that goes
  */
-typedef struct sys_ret (*sys_t)(struct tcb *t, long, long, long, long, long);
+typedef void (*sys_t)(struct tcb *t, long, long, long, long, long);
 
 /**
  * Syscall argument type.
@@ -82,13 +82,13 @@ struct sys_ret {
  *
  * @param name Name of syscall.
  */
-#define SYSCALL_DECLARE0(name)                   \
-	struct sys_ret sys_##name(struct tcb *t, \
-	                          sys_arg_t a,   \
-	                          sys_arg_t b,   \
-	                          sys_arg_t c,   \
-	                          sys_arg_t d,   \
-	                          sys_arg_t e);
+#define SYSCALL_DECLARE0(name)         \
+	void sys_##name(struct tcb *t, \
+	                sys_arg_t a,   \
+	                sys_arg_t b,   \
+	                sys_arg_t c,   \
+	                sys_arg_t d,   \
+	                sys_arg_t e);
 
 /**
  * Helper macro for declaring syscalls with one argument.
@@ -96,10 +96,10 @@ struct sys_ret {
  * @param name Name of syscall.
  * @param a Name of argument.
  */
-#define SYSCALL_DECLARE1(name, a)                                          \
-	struct sys_ret sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
-	                          sys_arg_t c,                             \
-	                          sys_arg_t d, sys_arg_t e);
+#define SYSCALL_DECLARE1(name, a)                                \
+	void sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
+	                sys_arg_t c,                             \
+	                sys_arg_t d, sys_arg_t e);
 
 /**
  * Helper macro for declaring syscalls with two arguments.
@@ -108,10 +108,10 @@ struct sys_ret {
  * @param a Name of first argument.
  * @param b Name of second argument.
  */
-#define SYSCALL_DECLARE2(name, a, b)                                       \
-	struct sys_ret sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
-	                          sys_arg_t c,                             \
-	                          sys_arg_t d, sys_arg_t e);
+#define SYSCALL_DECLARE2(name, a, b)                             \
+	void sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
+	                sys_arg_t c,                             \
+	                sys_arg_t d, sys_arg_t e);
 
 /**
  * Helper macro for declaring syscalls with three arguments.
@@ -121,10 +121,10 @@ struct sys_ret {
  * @param b Name of second argument.
  * @param c Name of third argument.
  */
-#define SYSCALL_DECLARE3(name, a, b, c)                                    \
-	struct sys_ret sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
-	                          sys_arg_t c,                             \
-	                          sys_arg_t d, sys_arg_t e);
+#define SYSCALL_DECLARE3(name, a, b, c)                          \
+	void sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
+	                sys_arg_t c,                             \
+	                sys_arg_t d, sys_arg_t e);
 
 /**
  * Helper macro for declaring syscalls with four arguments.
@@ -135,10 +135,10 @@ struct sys_ret {
  * @param c Name of third argument.
  * @param d Name of fourth argument.
  */
-#define SYSCALL_DECLARE4(name, a, b, c, d)                                 \
-	struct sys_ret sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
-	                          sys_arg_t c,                             \
-	                          sys_arg_t d, sys_arg_t e);
+#define SYSCALL_DECLARE4(name, a, b, c, d)                       \
+	void sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
+	                sys_arg_t c,                             \
+	                sys_arg_t d, sys_arg_t e);
 
 /**
  * Helper macro for declaring syscalls with five arguments.
@@ -150,122 +150,122 @@ struct sys_ret {
  * @param d Name of fourth argument.
  * @param e Name of fifth argument.
  */
-#define SYSCALL_DECLARE5(name, a, b, c, d, e)                              \
-	struct sys_ret sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
-	                          sys_arg_t c,                             \
-	                          sys_arg_t d, sys_arg_t e);
+#define SYSCALL_DECLARE5(name, a, b, c, d, e)                    \
+	void sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
+	                sys_arg_t c,                             \
+	                sys_arg_t d, sys_arg_t e);
 
 /**
  * Helper macro for defining syscall with zero arguments.
  *
  * @param name Name of syscall.
  */
-#define SYSCALL_DEFINE0(name)                                              \
-	static inline struct sys_ret __##name(struct tcb *t);              \
-	struct sys_ret sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
-	                          sys_arg_t c,                             \
-	                          sys_arg_t d, sys_arg_t e)                \
-	{                                                                  \
-		UNUSED(a);                                                 \
-		UNUSED(b);                                                 \
-		UNUSED(c);                                                 \
-		UNUSED(d);                                                 \
-		UNUSED(e);                                                 \
-		return __##name(t);                                        \
-	}                                                                  \
-	static struct sys_ret __##name
+#define SYSCALL_DEFINE0(name)                                    \
+	static inline void __##name(struct tcb *t);              \
+	void sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
+	                sys_arg_t c,                             \
+	                sys_arg_t d, sys_arg_t e)                \
+	{                                                        \
+		UNUSED(a);                                       \
+		UNUSED(b);                                       \
+		UNUSED(c);                                       \
+		UNUSED(d);                                       \
+		UNUSED(e);                                       \
+		__##name(t);                                     \
+	}                                                        \
+	static inline void __##name
 
 /**
  * Helper macro for defining syscall with one argument.
  *
  * @param name Name of syscall.
  */
-#define SYSCALL_DEFINE1(name)                                              \
-	static inline struct sys_ret __##name(struct tcb *, sys_arg_t);    \
-	struct sys_ret sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
-	                          sys_arg_t c,                             \
-	                          sys_arg_t d, sys_arg_t e)                \
-	{                                                                  \
-		UNUSED(b);                                                 \
-		UNUSED(c);                                                 \
-		UNUSED(d);                                                 \
-		UNUSED(e);                                                 \
-		return __##name(t, a);                                     \
-	}                                                                  \
-	static inline struct sys_ret __##name
+#define SYSCALL_DEFINE1(name)                                    \
+	static inline void __##name(struct tcb *, sys_arg_t);    \
+	void sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
+	                sys_arg_t c,                             \
+	                sys_arg_t d, sys_arg_t e)                \
+	{                                                        \
+		UNUSED(b);                                       \
+		UNUSED(c);                                       \
+		UNUSED(d);                                       \
+		UNUSED(e);                                       \
+		__##name(t, a);                                  \
+	}                                                        \
+	static inline void __##name
 
 /**
  * Helper macro for defining syscall with two arguments.
  *
  * @param name Name of syscall.
  */
-#define SYSCALL_DEFINE2(name)                                              \
-	static inline struct sys_ret __##name(struct tcb *, sys_arg_t,     \
-	                                      sys_arg_t);                  \
-	struct sys_ret sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
-	                          sys_arg_t c,                             \
-	                          sys_arg_t d, sys_arg_t e)                \
-	{                                                                  \
-		UNUSED(c);                                                 \
-		UNUSED(d);                                                 \
-		UNUSED(e);                                                 \
-		return __##name(t, a, b);                                  \
-	}                                                                  \
-	static inline struct sys_ret __##name
+#define SYSCALL_DEFINE2(name)                                    \
+	static inline void __##name(struct tcb *, sys_arg_t,     \
+	                            sys_arg_t);                  \
+	void sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
+	                sys_arg_t c,                             \
+	                sys_arg_t d, sys_arg_t e)                \
+	{                                                        \
+		UNUSED(c);                                       \
+		UNUSED(d);                                       \
+		UNUSED(e);                                       \
+		__##name(t, a, b);                               \
+	}                                                        \
+	static inline void __##name
 
 /**
  * Helper macro for defining syscall with three arguments.
  *
  * @param name Name of syscall.
  */
-#define SYSCALL_DEFINE3(name)                                              \
-	static inline struct sys_ret __##name(struct tcb *, sys_arg_t,     \
-	                                      sys_arg_t,                   \
-	                                      sys_arg_t);                  \
-	struct sys_ret sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
-	                          sys_arg_t c,                             \
-	                          sys_arg_t d, sys_arg_t e)                \
-	{                                                                  \
-		UNUSED(d);                                                 \
-		UNUSED(e);                                                 \
-		return __##name(t, a, b, c);                               \
-	}                                                                  \
-	static inline struct sys_ret __##name
+#define SYSCALL_DEFINE3(name)                                    \
+	static inline void __##name(struct tcb *, sys_arg_t,     \
+	                            sys_arg_t,                   \
+	                            sys_arg_t);                  \
+	void sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
+	                sys_arg_t c,                             \
+	                sys_arg_t d, sys_arg_t e)                \
+	{                                                        \
+		UNUSED(d);                                       \
+		UNUSED(e);                                       \
+		__##name(t, a, b, c);                            \
+	}                                                        \
+	static inline void __##name
 
 /**
  * Helper macro for defining syscall with four arguments.
  *
  * @param name Name of syscall.
  */
-#define SYSCALL_DEFINE4(name)                                              \
-	static inline struct sys_ret __##name(struct tcb *, sys_arg_t,     \
-	                                      sys_arg_t, sys_arg_t,        \
-	                                      sys_arg_t);                  \
-	struct sys_ret sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
-	                          sys_arg_t c,                             \
-	                          sys_arg_t d, sys_arg_t e)                \
-	{                                                                  \
-		UNUSED(e);                                                 \
-		return __##name(t, a, b, c, d);                            \
-	}                                                                  \
-	static inline struct sys_ret __##name
+#define SYSCALL_DEFINE4(name)                                    \
+	static inline void __##name(struct tcb *, sys_arg_t,     \
+	                            sys_arg_t, sys_arg_t,        \
+	                            sys_arg_t);                  \
+	void sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
+	                sys_arg_t c,                             \
+	                sys_arg_t d, sys_arg_t e)                \
+	{                                                        \
+		UNUSED(e);                                       \
+		__##name(t, a, b, c, d);                         \
+	}                                                        \
+	static inline void __##name
 
 /**
  * Helper macro for defining syscall with five arguments.
  *
  * @param name Name of syscall.
  */
-#define SYSCALL_DEFINE5(name)                                              \
-	static inline struct sys_ret __##name(struct tcb *, sys_arg_t,     \
-	                                      sys_arg_t, sys_arg_t,        \
-	                                      sys_arg_t, sys_arg_t);       \
-	struct sys_ret sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
-	                          sys_arg_t c,                             \
-	                          sys_arg_t d, sys_arg_t e)                \
-	{                                                                  \
-		return __##name(t, a, b, c, d, e);                         \
-	}                                                                  \
-	static inline struct sys_ret __##name
+#define SYSCALL_DEFINE5(name)                                    \
+	static inline void __##name(struct tcb *, sys_arg_t,     \
+	                            sys_arg_t, sys_arg_t,        \
+	                            sys_arg_t, sys_arg_t);       \
+	void sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
+	                sys_arg_t c,                             \
+	                sys_arg_t d, sys_arg_t e)                \
+	{                                                        \
+		__##name(t, a, b, c, d, e);                      \
+	}                                                        \
+	static void __##name
 
 /** @name Misc syscalls. */
 /** @{ */
@@ -273,24 +273,28 @@ struct sys_ret {
 /**
  * Noop syscall.
  *
+ * @param t Current tcb.
  * @param a Unused.
  * @param b Unused.
  * @param c Unused.
  * @param d Unused.
  * @param e Unused.
- * @return \ref OK and 0.
+ *
+ * Returns \ref OK and 0.
  */
 SYSCALL_DECLARE0(noop);
 
 /**
  * Putch syscall.
  *
+ * @param t Current tcb.
  * @param ch Character to put.
  * @param b Unused.
  * @param c Unused.
  * @param d Unused.
  * @param e Unused.
- * @return \ref OK and 0.
+ *
+ * Returns \ref OK and 0.
  */
 SYSCALL_DECLARE1(putch, ch);
 
@@ -304,12 +308,14 @@ SYSCALL_DECLARE1(putch, ch);
  * Allocates at least the specified size of allocation to current effective
  * process.
  *
+ * @param t Current tcb.
  * @param size Size of allocation.
  * @param flags Flags of allocation.
  * @param c Unused.
  * @param d Unused.
  * @param e Unused.
- * @return \ref OK and start of memory allocation.
+ *
+ * Returns \ref OK and start of memory allocation.
  */
 SYSCALL_DECLARE2(req_mem, size, flags);
 
@@ -320,12 +326,14 @@ SYSCALL_DECLARE2(req_mem, size, flags);
  * physical start address somewhere in the allocation to the current effective
  * process.
  *
+ * @param t Current tcb.
  * @param paddr Start of physical allocation.
  * @param size Size of physical allocation.
  * @param flags Flags of physical allocation.
  * @param d Unused.
  * @param e Unused.
- * @return \ref OK and start of memory allocation.
+ *
+ * Returns \ref OK and start of memory allocation.
  */
 SYSCALL_DECLARE3(req_pmem, paddr, size, flags);
 
@@ -335,12 +343,14 @@ SYSCALL_DECLARE3(req_pmem, paddr, size, flags);
  * Allocates at least the specified size of allocation which includes the start
  * address of allocation to the current effective process.
  *
+ * @param t Current tcb.
  * @param start Start of allocation.
  * @param size Size of allocation.
  * @param flags Flags of allocation.
  * @param d Unused.
  * @param e Unused.
- * @return \ref OK and start of memory allocation.
+ *
+ * Returns \ref OK and start of memory allocation.
  */
 SYSCALL_DECLARE3(req_fixmem, start, size, flags);
 
@@ -352,12 +362,14 @@ SYSCALL_DECLARE3(req_fixmem, start, size, flags);
  * underlying physical allocation will not be freed unless the owning reference
  * (server) frees it.
  *
+ * @param t Current tcb.
  * @param size Size of allocation.
  * @param flags Flags of allocation.
  * @param c Unused.
  * @param d Unused.
  * @param e Unused.
- * @return \ref OK and start of memory allocation.
+ *
+ * Returns \ref OK and start of memory allocation.
  */
 SYSCALL_DECLARE2(req_sharedmem, size, flags);
 
@@ -366,12 +378,14 @@ SYSCALL_DECLARE2(req_sharedmem, size, flags);
  *
  * \see sys_req_sharedmem().
  *
+ * @param t Current tcb.
  * @param tid Thread ID of owner of shared memory.
  * @param va Start address of shared memory.
  * @param flags Flags to use for reference.
  * @param d Unused.
  * @param e Unused.
- * @return \ref OK and start of shared memory.
+ *
+ * Returns \ref OK and start of shared memory.
  */
 SYSCALL_DECLARE3(ref_sharedmem, tid, va, flags);
 
@@ -380,12 +394,14 @@ SYSCALL_DECLARE3(ref_sharedmem, tid, va, flags);
  *
  * Frees the memory region pointed to.
  *
+ * @param t Current tcb.
  * @param start Start of memory.
  * @param b Unused.
  * @param c Unused.
  * @param d Unused.
  * @param e Unused.
- * @return \ref OK and 0.
+ *
+ * Returns \ref OK and 0.
  */
 SYSCALL_DECLARE1(free_mem, start);
 /** @} */
@@ -395,12 +411,14 @@ SYSCALL_DECLARE1(free_mem, start);
 /**
  * Get timer accuracy in Hertz syscall.
  *
+ * @param t Current tcb.
  * @param a Unused.
  * @param b Unused.
  * @param c Unused.
  * @param d Unused.
  * @param e Unused.
- * @return \ref OK and frequency.
+ *
+ * Returns \ref OK and frequency.
  * \todo Should this be some kind of config request instead of a separate
  * syscall?
  */
@@ -409,12 +427,14 @@ SYSCALL_DECLARE0(timebase);
 /**
  * Get current ticks.
  *
+ * @param t Current tcb.
  * @param a Unused.
  * @param b Unused.
  * @param c Unused.
  * @param d Unused.
  * @param e Unused.
- * @return Current ticks.
+ *
+ * Returns current ticks.
  */
 SYSCALL_DECLARE0(ticks);
 
@@ -423,12 +443,14 @@ SYSCALL_DECLARE0(ticks);
  *
  * Request timer that triggers a number of ticks in the future.
  *
+ * @param t Current tcb.
  * @param ticks Number of ticks from now.
  * @param mult Number of times to trigger.
  * @param c Unused.
  * @param d Unused.
  * @param e Unused.
- * @return \ref OK and ID of timer.
+ *
+ * Returns \ref OK and ID of timer.
  */
 SYSCALL_DECLARE2(req_rel_timer, ticks, mult);
 
@@ -437,12 +459,14 @@ SYSCALL_DECLARE2(req_rel_timer, ticks, mult);
  *
  * Request timer that triggers at some absolute timepoint.
  *
+ * @param t Current tcb.
  * @param ticks Timepoint.
  * @param mult Multiplier.
  * @param c Unused.
  * @param d Unused.
  * @param e Unused.
- * @return \ref OK and ID of timer.
+ *
+ * Returns \ref OK and ID of timer.
  * \todo Check repeat value.
  */
 SYSCALL_DECLARE2(req_abs_timer, ticks, mult);
@@ -450,12 +474,14 @@ SYSCALL_DECLARE2(req_abs_timer, ticks, mult);
 /**
  * Free timer syscall.
  *
+ * @param t Current tcb.
  * @param cid ID of timer to free.
  * @param b Unused.
  * @param c Unused.
  * @param d Unused.
  * @param e Unused.
- * @return \ref OK and 0.
+ *
+ * Returns \ref OK.
  */
 SYSCALL_DECLARE1(free_timer, cid);
 /** @} */
@@ -465,24 +491,29 @@ SYSCALL_DECLARE1(free_timer, cid);
 /**
  * Report process status as server syscall.
  *
+ * @param t Current tcb.
  * @param callback Callback to request handler.
  * @param b Unused.
  * @param c Unused.
  * @param d Unused.
  * @param e Unused.
- * @return \ref OK and 0.
+ *
+ * Returns \ref OK.
  */
 SYSCALL_DECLARE1(ipc_server, callback);
 
 /**
  * Request syscall.
  *
+ * @param t Current tcb.
  * @param pid Request target process.
  * @param d0 First request argument.
  * @param d1 Second request argument.
  * @param d2 Third forwarding argument.
  * @param d3 Fourth forwarding argument.
- * @return \c d0 and \c d1.
+ *
+ * Returns \ref OK and whatever the server sends back on success, otherwise some
+ * other status value.
  */
 SYSCALL_DECLARE5(ipc_req, pid, d0, d1, d2, d3);
 
@@ -492,36 +523,43 @@ SYSCALL_DECLARE5(ipc_req, pid, d0, d1, d2, d3);
  * In a server request handler, do a request to some other server on behalf of
  * whoever called us up.
  *
+ * @param t Current tcb.
  * @param pid Forwarding target process.
  * @param d0 First forwarding argument.
  * @param d1 Second forwarding argument.
  * @param d2 Third forwarding argument.
  * @param d3 Fourth forwarding argument.
- * @return \c d0 and \c d1.
+ *
+ * Returns \ref OK and whatever the server sends back on success, otherwise some
+ * other status value.
  */
 SYSCALL_DECLARE5(ipc_fwd, pid, d0, d1, d2, d3);
 
 /**
  * Response syscall.
  *
+ * @param t Current tcb.
  * @param d0 First response argument.
  * @param d1 Second response argument.
  * @param d2 Third response argument.
  * @param d3 Fourth response argument.
  * @param e Unused.
- * @return \c d0 and \c d1.
+ *
+ * Returns \c d0 and \c d1.
  */
 SYSCALL_DECLARE4(ipc_resp, d0, d1, d2, d3);
 
 /**
  * Notify thread syscall.
  *
+ * @param t Current tcb.
  * @param tid Thread ID to notify.
  * @param b Unused.
  * @param c Unused.
  * @param d Unused.
  * @param e Unused.
- * @return \ref OK and 0.
+ *
+ * Returns \ref OK and 0.
  */
 SYSCALL_DECLARE1(ipc_notify, tid);
 /** @} */
@@ -533,13 +571,14 @@ SYSCALL_DECLARE1(ipc_notify, tid);
  *
  * Creates thread in current effective process context.
  *
+ * @param t Current tcb.
  * @param func Function to call on startup.
  * @param d0 Argument 0.
  * @param d1 Argument 1.
  * @param d2 Argument 2.
  * @param d3 Argument 3.
  *
- * @return \ref OK and 0.
+ * Returns \ref OK and 0.
  * \todo Should this take stack size etc?
  */
 SYSCALL_DECLARE5(create, func, d0, d1, d2, d3);
@@ -549,12 +588,14 @@ SYSCALL_DECLARE5(create, func, d0, d1, d2, d3);
  *
  * Forks a process, much like in *nix systems.
  *
+ * @param t Current tcb.
  * @param a Unused.
  * @param b Unused.
  * @param c Unused.
  * @param d Unused.
  * @param e Unused.
- * @return \ref OK and 0.
+ *
+ * Returns \ref OK and 0.
  */
 SYSCALL_DECLARE0(fork);
 
@@ -563,12 +604,14 @@ SYSCALL_DECLARE0(fork);
  *
  * Executes a new binary in existing process space.
  *
+ * @param t Current tcb.
  * @param bin Address of binary.
  * @param interp Optional address of interpreter.
  * @param c Unused.
  * @param d Unused.
  * @param e Unused.
- * @return \ref OK and 0.
+ *
+ * Returns \ref OK and 0.
  * \todo Check other return codes.
  */
 SYSCALL_DECLARE2(exec, bin, interp);
@@ -578,12 +621,14 @@ SYSCALL_DECLARE2(exec, bin, interp);
  *
  * Executes a new binary in new process space.
  *
+ * @param t Current tcb.
  * @param bin Address of binary.
  * @param interp Optional address of interpreter.
  * @param c Unused.
  * @param d Unused.
  * @param e Unused.
- * @return \ref OK and 0.
+ *
+ * Retuns \ref OK and 0.
  * \todo Check other return codes.
  */
 SYSCALL_DECLARE2(spawn, bin, interp);
@@ -591,12 +636,14 @@ SYSCALL_DECLARE2(spawn, bin, interp);
 /**
  * Kill syscall.
  *
+ * @param t Current tcb.
  * @param tid Thread ID to kill. 0 if self.
  * @param b Unused.
  * @param c Unused.
  * @param d Unused.
  * @param e Unused.
- * @return No.
+ *
+ * Returns \ref OK if not called on itself, otherwise doesn't return.
  */
 SYSCALL_DECLARE1(kill, tid);
 
@@ -605,12 +652,14 @@ SYSCALL_DECLARE1(kill, tid);
  *
  * Swap currently running thread.
  *
+ * @param t Current tcb.
  * @param tid Thread to swap to.
  * @param b Unused.
  * @param c Unused.
  * @param d Unused.
  * @param e Unused.
- * @return \ref OK and 0.
+ *
+ * Returns \ref OK and 0.
  */
 SYSCALL_DECLARE1(swap, tid);
 
@@ -623,12 +672,14 @@ SYSCALL_DECLARE1(swap, tid);
  *
  * Set some runtime parameter.
  *
+ * @param t Current tcb.
  * @param param Parameter to set.
  * @param val Value to set parameter to.
  * @param c Unused.
  * @param d Unused.
  * @param e Unused.
- * @return \ref OK and 0.
+ *
+ * Returns \ref OK and 0.
  */
 SYSCALL_DECLARE2(conf_set, param, val);
 
@@ -637,48 +688,56 @@ SYSCALL_DECLARE2(conf_set, param, val);
  *
  * Get some runtime parameter.
  *
+ * @param t Current tcb.
  * @param param Parameter to get.
  * @param b Unused.
  * @param c Unused.
  * @param d Unused.
  * @param e Unused.
- * @return \ref OK.
+ *
+ * Returns \ref OK.
  */
 SYSCALL_DECLARE1(conf_get, param);
 
 /**
  * Set capabilities.
  *
+ * @param t Current tcb.
  * @param tid Thread ID whose capabilities to set.
  * @param off Offset of capability, multiple of \c bits(cap).
  * @param caps Mask of capabilities to set.
  * @param d Unused.
  * @param e Unused.
- * @return \ref OK on success, \ref ERR_INVAL on invalid input.
+ *
+ * Returns \ref OK on success, \ref ERR_INVAL on invalid input.
  */
 SYSCALL_DECLARE3(set_cap, tid, off, caps);
 
 /**
  * Get capabilities.
  *
+ * @param t Current tcb.
  * @param tid Thread ID whose capabilities to get.
  * @param off Offset of capability, multiple of \c bits(cap).
  * @param c Unused.
  * @param d Unused.
  * @param e Unused.
- * @return \ref OK, capabilities.
+ *
+ * Returns \ref OK, capabilities.
  */
 SYSCALL_DECLARE2(get_cap, tid, off);
 
 /**
  * Clear capabilities.
  *
+ * @param t Current tcb.
  * @param tid Thread ID whose capabilities to clear.
  * @param off Offset of capability, multiple of \c bits(cap).
  * @param cap Mask of capabilities to clear.
  * @param d Unused.
  * @param e Unused.
- * @return \ref OK.
+ *
+ * Returns \ref OK.
  */
 SYSCALL_DECLARE3(clear_cap, tid, off, cap);
 
@@ -687,12 +746,14 @@ SYSCALL_DECLARE3(clear_cap, tid, off, cap);
  *
  * Either shut down or reboot system.
  *
+ * @param t Current tcb.
  * @param type Type of shutdown. \see poweroff_type.
  * @param b Unused.
  * @param c Unused.
  * @param d Unused.
  * @param e Unused.
- * @return Shouldn't return at all.
+ *
+ * Shouldn't return at all.
  */
 SYSCALL_DECLARE1(poweroff, type);
 /** @} */
@@ -700,19 +761,22 @@ SYSCALL_DECLARE1(poweroff, type);
 /**
  * Dispatch to correct syscall handler.
  *
- * @param t Thread to do syscall on.
  * @param syscall Syscall number.
  * @param a Syscall argument 0.
  * @param b Syscall argument 1.
  * @param c Syscall argument 2.
  * @param d Syscall argument 3.
  * @param e Syscall argument 4.
- * @return Whatever the specified syscall returns.
+ * @param t Current tcb.
+ * Returns whatever the specified syscall returns.
  */
-struct sys_ret handle_syscall(struct tcb *t,
-                              sys_arg_t syscall, sys_arg_t a, sys_arg_t b,
-                              sys_arg_t c, sys_arg_t d, sys_arg_t e);
+void handle_syscall(sys_arg_t syscall, sys_arg_t a, sys_arg_t b,
+                    sys_arg_t c, sys_arg_t d, sys_arg_t e, struct tcb *t);
 
 /** \todo Should I add variable names as well, to make the documentation a bit
  * more readable? */
+
+#include <arch/proc.h>
+#define return_args(t, x) {set_args((t), (x)); return;}
+
 #endif /* APOS_UAPI_H */

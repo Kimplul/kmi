@@ -72,39 +72,21 @@ _save_context:
 	/* interrupts fall through, exceptions jump */
 	bge s4, zero, handle_exception
 	/* TODO: handle interrupts */
-	j restore_all
+	j _load_context
 
 handle_exception:
 	li t0, EXC_SYSCALL
 	/* system exceptions fall through, syscalls and ipis jump */
 	/* temp, at some point we want to handle system exceptions as well */
 	beq s4, t0, handle_dispatch
-	j	restore_all
+	j	_load_context
 
 handle_dispatch:
 	/* store execution continuation point */
 	csrr    s0, CSR_SEPC
 	sr	s0, offsetof_exec(tp)
-	/* allocate space for sys_ret structure on stack and shift argument
-	 * registers down one to make room for the pointer to this structure */
-	addi	sp, sp, -sizeof_sys_ret
-	mv	a6, a5
-	mv	a5, a4
-	mv	a4, a3
-	mv	a3, a2
-	mv	a2, a1
-	mv	a1, a0
-	mv	a0, sp
 	/* jump to C */
 	jal	dispatch
-	/* move structure from stack into registers. */
-	lr	a0, offsetof_s(sp)
-	lr	a1, offsetof_ar0(sp)
-	lr	a2, offsetof_ar1(sp)
-	lr	a3, offsetof_ar2(sp)
-	lr	a4, offsetof_ar3(sp)
-	lr	a5, offsetof_ar4(sp)
-	addi	sp, sp, sizeof_sys_ret
 	/* if we had a thread switch, load kernel stack of current thread and
 	 * restore its context */
 	/* get associated kernel stack */
@@ -113,18 +95,8 @@ handle_dispatch:
 	/* set execution continuation */
 	lr	s0, offsetof_exec(tp)
 	csrw	CSR_SEPC, s0
-	/* restore system call result */
-	j	restore_noreturn
 
-restore_all:
-	lr	a0, offsetof_a0(sp)
-	lr      a1, offsetof_a1(sp)
-	lr      a2, offsetof_a2(sp)
-	lr      a3, offsetof_a3(sp)
-	lr      a4, offsetof_a4(sp)
-	lr      a5, offsetof_a5(sp)
-
-restore_noreturn:
+_load_context:
 	/* restore registers besides possible return value, assume instruction
 	 * to return to has already been set (CSR_EPC) */
 	csrw CSR_SSCRATCH, tp
@@ -135,8 +107,14 @@ restore_noreturn:
 	lr      t0, offsetof_t0(sp)
 	lr      t1, offsetof_t1(sp)
 	lr      t2, offsetof_t2(sp)
-	/* a0 - a5 should not be restored when coming from a syscall */
+	lr	a0, offsetof_a0(sp)
+	lr      a1, offsetof_a1(sp)
+	lr      a2, offsetof_a2(sp)
+	lr      a3, offsetof_a3(sp)
+	lr      a4, offsetof_a4(sp)
+	lr      a5, offsetof_a5(sp)
 	lr      a6, offsetof_a6(sp)
+	lr      a7, offsetof_a7(sp)
 	lr	s0, offsetof_s0(sp)
 	lr	s1, offsetof_s1(sp)
 	lr	s2, offsetof_s2(sp)
@@ -149,7 +127,6 @@ restore_noreturn:
 	lr	s9, offsetof_s9(sp)
 	lr	s10,offsetof_s10(sp)
 	lr	s11,offsetof_s11(sp)
-	lr      a7, offsetof_a7(sp)
 	lr      t3, offsetof_t3(sp)
 	lr      t4, offsetof_t4(sp)
 	lr      t5, offsetof_t5(sp)

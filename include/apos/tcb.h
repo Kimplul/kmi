@@ -38,6 +38,10 @@
  */
 #define get_proc(t) (get_tcb(t->eid))
 
+/**
+ * Alias for \ref get_proc(), to make it more obvious that we're accessing the
+ * effective process. Might be useful in some situations.
+ */
 #define get_eproc(t) get_proc(t)
 
 /**

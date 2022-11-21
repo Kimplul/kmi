@@ -13,6 +13,8 @@
 #include <apos/uapi.h>
 #include <apos/conf.h>
 
+#include <arch/proc.h>
+
 /** \todo stack size should really be set on a per-thread basis, and are the
  * conf*-syscalls even necessary? */
 size_t __thread_stack_size = SZ_2M;
@@ -32,13 +34,14 @@ enum conf_param {
  *
  * \todo Implement parameters.
  *
+ * @param t Current tcb.
  * @param param Parameter to read.
  * @return \ref OK and parameter value.
  */
 SYSCALL_DEFINE1(conf_get)(struct tcb *t, sys_arg_t param)
 {
 	if (!has_cap(t->caps, CAP_CONF))
-		return SYS_RET1(ERR_PERM);
+		return_args(t, SYS_RET1(ERR_PERM));
 
 	long val = 0;
 	switch (param) {
@@ -55,10 +58,10 @@ SYSCALL_DEFINE1(conf_get)(struct tcb *t, sys_arg_t param)
 		break;
 
 	default:
-		return SYS_RET1(ERR_NF);
+		return_args(t, SYS_RET1(ERR_NF));
 	}
 
-	return SYS_RET2(OK, val);
+	return_args(t, SYS_RET2(OK, val));
 }
 
 /**
@@ -66,6 +69,7 @@ SYSCALL_DEFINE1(conf_get)(struct tcb *t, sys_arg_t param)
  *
  * \todo Implement parameters.
  *
+ * @param t Current tcb.
  * @param param Parameter to write.
  * @param val Value to set \c param to.
  * @return \ref OK and \c 0.
@@ -73,7 +77,7 @@ SYSCALL_DEFINE1(conf_get)(struct tcb *t, sys_arg_t param)
 SYSCALL_DEFINE2(conf_set)(struct tcb *t, sys_arg_t param, sys_arg_t val)
 {
 	if (!has_cap(t->caps, CAP_CONF))
-		return SYS_RET1(ERR_PERM);
+		return_args(t, SYS_RET1(ERR_PERM));
 
 	size_t size = 0;
 	switch (param) {
@@ -84,7 +88,7 @@ SYSCALL_DEFINE2(conf_set)(struct tcb *t, sys_arg_t param, sys_arg_t val)
 	case CONF_CALL_STACK:
 		size = align_up(val, RPC_STACK_RATIO * BASE_PAGE_SIZE);
 		if (size < __rpc_stack_size * RPC_STACK_RATIO)
-			return SYS_RET1(ERR_MISC);
+			return_args(t, SYS_RET1(ERR_MISC));
 
 		__call_stack_size = size;
 		break;
@@ -92,18 +96,19 @@ SYSCALL_DEFINE2(conf_set)(struct tcb *t, sys_arg_t param, sys_arg_t val)
 	case CONF_RPC_STACK:
 		size = align_up(val, BASE_PAGE_SIZE);
 		if (size > __call_stack_size / RPC_STACK_RATIO)
-			return SYS_RET1(ERR_MISC);
+			return_args(t, SYS_RET1(ERR_MISC));
 
 		__rpc_stack_size = size;
 		break;
 	}
 
-	return SYS_RET1(OK);
+	return_args(t, SYS_RET1(OK));
 }
 
 /**
  * Poweroff syscall handler.
  *
+ * @param t Current tcb.
  * @param type Type of poweroff.
  * @return \ref ERR_INVAL and \c 0 if incorrect poweroff \c type give, otherwise
  * does not return.
@@ -111,14 +116,14 @@ SYSCALL_DEFINE2(conf_set)(struct tcb *t, sys_arg_t param, sys_arg_t val)
 SYSCALL_DEFINE1(poweroff)(struct tcb *t, sys_arg_t type)
 {
 	if (!(has_cap(t->caps, CAP_POWER)))
-		return SYS_RET1(ERR_PERM);
+		return_args(t, SYS_RET1(ERR_PERM));
 
 	switch (type) {
 	case SHUTDOWN:
 	case COLD_REBOOT:
 	case WARM_REBOOT:
-		return SYS_RET2(OK, poweroff(type));
+		return_args(t, SYS_RET2(OK, poweroff(type)));
 	};
 
-	return SYS_RET1(ERR_INVAL);
+	return_args(t, SYS_RET1(ERR_INVAL));
 }

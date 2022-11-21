@@ -15,6 +15,7 @@
 /**
  * Memory request syscall handler.
  *
+ * @param t Current tcb.
  * @param size Minimum size of allocation.
  * @param flags Flags of allocation.
  * @return \ref OK and start of allocation when succesful,
@@ -25,14 +26,15 @@ SYSCALL_DEFINE2(req_mem)(struct tcb *t, sys_arg_t size, sys_arg_t flags)
 	struct tcb *r = get_cproc(t);
 	vm_t start = 0;
 	if ((start = alloc_uvmem(r, size, flags)))
-		return SYS_RET1(ERR_OOMEM);
+		return_args(t, SYS_RET1(ERR_OOMEM));
 
-	return SYS_RET2(OK, start);
+	return_args(t, SYS_RET2(OK, start));
 }
 
 /**
  * Fixed memory request syscall handler.
  *
+ * @param t Current tcb.
  * @param fixed Address which should be included in allocation.
  * @param size Minimum size of allocation after \c start.
  * @param flags Flags of allocation.
@@ -45,14 +47,15 @@ SYSCALL_DEFINE3(req_fixmem)(struct tcb *t, sys_arg_t fixed, sys_arg_t size,
 	struct tcb *r = get_cproc(t);
 	vm_t start = 0;
 	if ((start = alloc_fixed_uvmem(r, fixed, size, flags)))
-		return SYS_RET1(ERR_OOMEM);
+		return_args(t, SYS_RET1(ERR_OOMEM));
 
-	return SYS_RET2(OK, start);
+	return_args(t, SYS_RET2(OK, start));
 }
 
 /**
  * Free memory syscall handler.
  *
+ * @param t Current tcb.
  * @param start Start of allocation to free.
  * @return \ref OK and \c 0 when succesful, \ref ERR_NF and \c 0 otherwise.
  */
@@ -68,14 +71,15 @@ SYSCALL_DEFINE1(free_mem)(struct tcb *t, sys_arg_t start)
 		status = free_devmem(r, vm_start);
 
 	if (status)
-		return SYS_RET1(ERR_NF);
+		return_args(t, SYS_RET1(ERR_NF));
 
-	return SYS_RET1(OK);
+	return_args(t, SYS_RET1(OK));
 }
 
 /**
  * Request physical memory syscall handler.
  *
+ * @param t Current tcb.
  * @param paddr Physical address to map.
  * @param size Minimum size of allocation.
  * @param flags Flags of allocation.
@@ -93,14 +97,15 @@ SYSCALL_DEFINE3(req_pmem)(struct tcb *t, sys_arg_t paddr, sys_arg_t size,
 	struct tcb *r = get_cproc(t);
 	vm_t start = 0;
 	if ((start = alloc_devmem(r, paddr, size, flags)))
-		return SYS_RET1(ERR_OOMEM);
+		return_args(t, SYS_RET1(ERR_OOMEM));
 
-	return SYS_RET2(OK, start);
+	return_args(t, SYS_RET2(OK, start));
 }
 
 /**
  * Request shared memory syscall handler.
  *
+ * @param t Current tcb.
  * @param size Minimum size of allocation.
  * @param flags Flags of allocation.
  * @return \ref OK and start of allocation when succesful,
@@ -112,14 +117,15 @@ SYSCALL_DEFINE2(req_sharedmem)(struct tcb *t, sys_arg_t size, sys_arg_t flags)
 	struct tcb *r = get_cproc(t);
 	vm_t start = 0;
 	if ((start = alloc_shared_uvmem(r, size, flags)))
-		return SYS_RET1(ERR_OOMEM);
+		return_args(t, SYS_RET1(ERR_OOMEM));
 
-	return SYS_RET2(OK, start);
+	return_args(t, SYS_RET2(OK, start));
 }
 
 /**
  * Reference shared memory syscall handler.
  *
+ * @param t Current tcb.
  * @param tid Thread ID of shared memory owner.
  * @param va Start of shared memory in \c tid.
  * @param flags Flags of reference.
@@ -132,9 +138,9 @@ SYSCALL_DEFINE3(ref_sharedmem)(struct tcb *t, sys_arg_t tid, sys_arg_t va,
 	struct tcb *t2 = get_tcb(tid);
 	vm_t start = 0;
 	if ((start = ref_shared_uvmem(t, t2, va, flags)))
-		return SYS_RET1(ERR_OOMEM);
+		return_args(t, SYS_RET1(ERR_OOMEM));
 
-	return SYS_RET2(OK, start);
+	return_args(t, SYS_RET2(OK, start));
 }
 
 /** \todo add some way to specify who gets to access the shared memory? */

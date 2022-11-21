@@ -29,6 +29,7 @@ static capflags_t *__get_tcb_caps(id_t tid, size_t off)
 /**
  * Set capabilities.
  *
+ * @param t Current tcb.
  * @param tid Thread ID whose capabilities to set.
  * @param off Offset of capability, multiple of \c bits(cap).
  * @param caps Mask of capabilities to set.
@@ -38,37 +39,37 @@ SYSCALL_DEFINE3(set_cap)(struct tcb *t, sys_arg_t tid, sys_arg_t off,
                          sys_arg_t caps)
 {
 	if (!is_set(t->caps, CAP_CAPS))
-		return SYS_RET1(ERR_PERM);
+		return_args(t, SYS_RET1(ERR_PERM));
 
 	capflags_t *c;
 	if (!(c = __get_tcb_caps(tid, off)))
-		return SYS_RET1(ERR_INVAL);
+		return_args(t, SYS_RET1(ERR_INVAL));
 
 	set_caps(*c, off, caps);
-	return SYS_RET1(OK);
+	return_args(t, SYS_RET1(OK));
 }
 
 /**
  * Get capabilities.
  *
+ * @param t Current tcb.
  * @param tid Thread ID whose capabilities to get.
  * @param off Offset of capability, multiple of \c bits(cap).
  * @return \ref OK, capabilities.
  */
 SYSCALL_DEFINE2(get_cap)(struct tcb *t, sys_arg_t tid, sys_arg_t off)
 {
-	UNUSED(t);
-
 	capflags_t *c;
 	if (!(c = __get_tcb_caps(tid, off)))
-		return SYS_RET1(ERR_INVAL);
+		return_args(t, SYS_RET1(ERR_INVAL));
 
-	return SYS_RET2(OK, get_caps(*c, off));
+	return_args(t, SYS_RET2(OK, get_caps(*c, off)));
 }
 
 /**
  * Clear capabilities.
  *
+ * @param t Current tcb.
  * @param tid Thread ID whose capabilities to clear.
  * @param off Offset of capability, multiple of \c bits(cap).
  * @param caps Mask of capabilities to clear.
@@ -79,12 +80,12 @@ SYSCALL_DEFINE3(clear_cap)(struct tcb *t, sys_arg_t tid, sys_arg_t off,
                            sys_arg_t caps)
 {
 	if (!is_set(t->caps, CAP_CAPS))
-		return SYS_RET1(ERR_PERM);
+		return_args(t, SYS_RET1(ERR_PERM));
 
 	capflags_t *c;
 	if (!(c = __get_tcb_caps(tid, off)))
-		return SYS_RET1(ERR_INVAL);
+		return_args(t, SYS_RET1(ERR_INVAL));
 
 	clear_caps(*c, off, caps);
-	return SYS_RET1(OK);
+	return_args(t, SYS_RET1(OK));
 }
