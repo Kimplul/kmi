@@ -34,7 +34,7 @@ SYSCALL_DEFINE1(ipc_server)(struct tcb *t, sys_arg_t callback)
  * @return
  */
 static struct sys_ret do_ipc(struct tcb *t,
-		sys_arg_t pid,
+                             sys_arg_t pid,
                              sys_arg_t d0,
                              sys_arg_t d1,
                              sys_arg_t d2,
@@ -108,7 +108,8 @@ SYSCALL_DEFINE5(ipc_fwd)(struct tcb *t, sys_arg_t pid,
  * @param d3 IPC return value 3.
  * @return \c d0 and \c d1.
  */
-SYSCALL_DEFINE4(ipc_resp)(struct tcb *t, sys_arg_t d0, sys_arg_t d1, sys_arg_t d2,
+SYSCALL_DEFINE4(ipc_resp)(struct tcb *t, sys_arg_t d0, sys_arg_t d1,
+                          sys_arg_t d2,
                           sys_arg_t d3)
 {
 	struct tcb *r = get_cproc(t);

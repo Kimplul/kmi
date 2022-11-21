@@ -87,8 +87,8 @@ SYSCALL_DEFINE1(putch)(struct tcb *t, sys_arg_t a)
 }
 
 struct sys_ret handle_syscall(struct tcb *t,
-		sys_arg_t syscall, sys_arg_t a, sys_arg_t b,
-		sys_arg_t c, sys_arg_t d, sys_arg_t e)
+                              sys_arg_t syscall, sys_arg_t a, sys_arg_t b,
+                              sys_arg_t c, sys_arg_t d, sys_arg_t e)
 {
 	adjust_syscall(t);
 
@@ -122,9 +122,9 @@ struct sys_ret handle_syscall(struct tcb *t,
 	case SYS_CLEAR_CAP: r = sys_clear_cap(t, a, b, c, d, e); break;
 	case SYS_POWEROFF: r = sys_poweroff(t, a, b, c, d, e); break;
 	default:
-			   error("Syscall %zu outside allowed range [0 - %i]\n", syscall,
-					   SYS_NUM - 1);
-			   r = SYS_RET1(ERR_INVAL);
+		error("Syscall %zu outside allowed range [0 - %i]\n", syscall,
+		      SYS_NUM - 1);
+		r = SYS_RET1(ERR_INVAL);
 	};
 
 	if (check_canary(t)) {

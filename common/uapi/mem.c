@@ -39,7 +39,8 @@ SYSCALL_DEFINE2(req_mem)(struct tcb *t, sys_arg_t size, sys_arg_t flags)
  * @return \ref OK and start of allocation when succesful,
  * \ref ERR_OOMEM and \c NULL otherwise.
  */
-SYSCALL_DEFINE3(req_fixmem)(struct tcb *t, sys_arg_t fixed, sys_arg_t size, sys_arg_t flags)
+SYSCALL_DEFINE3(req_fixmem)(struct tcb *t, sys_arg_t fixed, sys_arg_t size,
+                            sys_arg_t flags)
 {
 	struct tcb *r = get_cproc(t);
 	vm_t start = 0;
@@ -81,7 +82,8 @@ SYSCALL_DEFINE1(free_mem)(struct tcb *t, sys_arg_t start)
  * @return \ref OK and start of allocation when succesful,
  * \ref ERR_OOMEM and \c NULL otherwise.
  */
-SYSCALL_DEFINE3(req_pmem)(struct tcb *t, sys_arg_t paddr, sys_arg_t size, sys_arg_t flags)
+SYSCALL_DEFINE3(req_pmem)(struct tcb *t, sys_arg_t paddr, sys_arg_t size,
+                          sys_arg_t flags)
 {
 	/* this will require some pondering, but essentially this syscall should
 	 * only be used for device access, so any addresses requested should be
@@ -124,7 +126,8 @@ SYSCALL_DEFINE2(req_sharedmem)(struct tcb *t, sys_arg_t size, sys_arg_t flags)
  * @return \ref OK and start of reference when succesful,
  * \ref ERR_OOMEM and \c NULL otherwise.
  */
-SYSCALL_DEFINE3(ref_sharedmem)(struct tcb *t, sys_arg_t tid, sys_arg_t va, sys_arg_t flags)
+SYSCALL_DEFINE3(ref_sharedmem)(struct tcb *t, sys_arg_t tid, sys_arg_t va,
+                               sys_arg_t flags)
 {
 	struct tcb *t2 = get_tcb(tid);
 	vm_t start = 0;
