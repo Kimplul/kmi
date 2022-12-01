@@ -58,8 +58,10 @@ static stat_t __clone_mapped_region(struct tcb *d, struct tcb *s,
 static stat_t __free_mapped_region(struct tcb *t, struct mem_region *m)
 {
 	stat_t status = OK;
-	pm_t pa = __addr(m->end - m->start);
-	if (unmap_freed_region(t->proc.vmem, m->start, pa, m->flags, &status))
+	pm_t start = __addr(m->start);
+	pm_t end = __addr(m->end);
+	if (!unmap_freed_region(t->proc.vmem, start, end - start, m->flags,
+	                        &status))
 		return ERR_MISC;
 
 	return status;
@@ -196,13 +198,11 @@ stat_t free_uvmem(struct tcb *r, vm_t va)
 	if (!m)
 		return ERR_NF;
 
-	free_region(&r->sp_r, va);
-
 	stat_t status = __free_mapped_region(r, m);
 	if (is_rpc(r) && status == INFO_SEFF)
 		return clone_rpc_maps(r);
 
-	return status;
+	return free_known_region(&r->sp_r, m);
 }
 
 stat_t alloc_uvmem_wrapper(struct vmem *b, pm_t *offset, vm_t vaddr,

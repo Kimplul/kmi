@@ -49,6 +49,15 @@ struct sys_ret get_args(struct tcb *t);
 void set_thread(struct tcb *t);
 
 /**
+ * Set userspace stack. I think \ref set_thread() could be replaced with this,
+ * and it's more useful.
+ *
+ * @param t Thread whose stack to set.
+ * @param s Stack to give to thread.
+ */
+void set_stack(struct tcb *t, vm_t s);
+
+/**
  * Get current userspace stack.
  *
  * @param t Thread whose stack to query.

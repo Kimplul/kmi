@@ -25,7 +25,8 @@ SYSCALL_DEFINE2(req_mem)(struct tcb *t, sys_arg_t size, sys_arg_t flags)
 {
 	struct tcb *r = get_cproc(t);
 	vm_t start = 0;
-	if ((start = alloc_uvmem(r, size, flags)))
+	/** @todo expose flags to users */
+	if (!(start = alloc_uvmem(r, size, flags)))
 		return_args(t, SYS_RET1(ERR_OOMEM));
 
 	return_args(t, SYS_RET2(OK, start));
@@ -46,7 +47,7 @@ SYSCALL_DEFINE3(req_fixmem)(struct tcb *t, sys_arg_t fixed, sys_arg_t size,
 {
 	struct tcb *r = get_cproc(t);
 	vm_t start = 0;
-	if ((start = alloc_fixed_uvmem(r, fixed, size, flags)))
+	if (!(start = alloc_fixed_uvmem(r, fixed, size, flags)))
 		return_args(t, SYS_RET1(ERR_OOMEM));
 
 	return_args(t, SYS_RET2(OK, start));
@@ -65,15 +66,15 @@ SYSCALL_DEFINE1(free_mem)(struct tcb *t, sys_arg_t start)
 	vm_t vm_start = (vm_t)start;
 
 	stat_t status = OK;
-	if (vm_start > __pre_top && vm_start < __post_base)
-		status = free_uvmem(r, vm_start);
-	else
-		status = free_devmem(r, vm_start);
+	/* try freeing normal user memory first, if that fails, try device
+	 * memory, otherwise just assume the address is borked. */
+	if (!(status = free_uvmem(r, vm_start)))
+		return_args(t, SYS_RET1(OK));
 
-	if (status)
-		return_args(t, SYS_RET1(ERR_NF));
+	if (!(status = free_devmem(r, vm_start)))
+		return_args(t, SYS_RET1(OK));
 
-	return_args(t, SYS_RET1(OK));
+	return_args(t, SYS_RET1(status));
 }
 
 /**
@@ -96,7 +97,7 @@ SYSCALL_DEFINE3(req_pmem)(struct tcb *t, sys_arg_t paddr, sys_arg_t size,
 	 */
 	struct tcb *r = get_cproc(t);
 	vm_t start = 0;
-	if ((start = alloc_devmem(r, paddr, size, flags)))
+	if (!(start = alloc_devmem(r, paddr, size, flags)))
 		return_args(t, SYS_RET1(ERR_OOMEM));
 
 	return_args(t, SYS_RET2(OK, start));
@@ -110,34 +111,16 @@ SYSCALL_DEFINE3(req_pmem)(struct tcb *t, sys_arg_t paddr, sys_arg_t size,
  * @param flags Flags of allocation.
  * @return \ref OK and start of allocation when succesful,
  * \ref ERR_OOMEM and \c NULL otherwise.
+ *
+ * @todo should we also take the thread who should get the other end of the
+ * memory?
  */
 SYSCALL_DEFINE2(req_sharedmem)(struct tcb *t, sys_arg_t size, sys_arg_t flags)
 {
 	/** \todo check that requester is server */
 	struct tcb *r = get_cproc(t);
 	vm_t start = 0;
-	if ((start = alloc_shared_uvmem(r, size, flags)))
-		return_args(t, SYS_RET1(ERR_OOMEM));
-
-	return_args(t, SYS_RET2(OK, start));
-}
-
-/**
- * Reference shared memory syscall handler.
- *
- * @param t Current tcb.
- * @param tid Thread ID of shared memory owner.
- * @param va Start of shared memory in \c tid.
- * @param flags Flags of reference.
- * @return \ref OK and start of reference when succesful,
- * \ref ERR_OOMEM and \c NULL otherwise.
- */
-SYSCALL_DEFINE3(ref_sharedmem)(struct tcb *t, sys_arg_t tid, sys_arg_t va,
-                               sys_arg_t flags)
-{
-	struct tcb *t2 = get_tcb(tid);
-	vm_t start = 0;
-	if ((start = ref_shared_uvmem(t, t2, va, flags)))
+	if (!(start = alloc_shared_uvmem(r, size, flags)))
 		return_args(t, SYS_RET1(ERR_OOMEM));
 
 	return_args(t, SYS_RET2(OK, start));

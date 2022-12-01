@@ -18,6 +18,7 @@
  */
 
 #include <stdint.h>
+#include <stddef.h>
 #include "../../../include/apos/syscalls.h"
 
 struct sys_ret {
@@ -184,6 +185,27 @@ static void sys_poweroff(long type)
 	ecall(r);
 }
 
+static void *sys_req_mem(size_t count)
+{
+	struct sys_ret r = {.a0 = SYS_REQ_MEM, .a1 = count,
+		            .a2 = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 4)};
+	r = ecall(r);
+
+	if (r.a0)
+		print_value("sys_req_mem() failed with error ", r.a0);
+
+	return (void *)r.a1;
+}
+
+static void sys_free_mem(void *p)
+{
+	struct sys_ret r = {.a0 = SYS_FREE_MEM, .a1 = (long)p};
+	r = ecall(r);
+
+	if (r.a0)
+		print_value("sys_free_mem() failed with error ", r.a0);
+}
+
 void callback(long status, long tid, long d0, long d1, long d2, long d3)
 {
 	(void)status;
@@ -244,12 +266,19 @@ void _start()
 	csr_read(CSR_TIME, i);
 	start = i; n = 0;
 	while (i < start + second) {
-		sys_ipc_req(1, d0, d1, d2, d3);
+		sys_ipc_req(1, n, d1, d2, d3);
 		csr_read(CSR_TIME, i);
 		n++;
 	}
 
 	print_value("IPC requests per second", n);
+
+	puts("Doing memory allocations...\n");
+	for (i = 0; i < 1000000; ++i) {
+		char *p = sys_req_mem(10);
+		*p = 'c';
+		sys_free_mem(p);
+	}
 
 	sys_poweroff(0);
 }

@@ -391,17 +391,18 @@ bool running(struct tcb *t);
 
 /**
  * Save thread context for rpc call.
+ * Assumes t->rpc is pointing to the correct virtual memory.
  *
  * @param t Thread whose context to save.
  */
-void save_context(struct tcb *t);
+void enter_rpc(struct tcb *t);
 
 /**
  * Load thread context from rpc call.
  *
  * @param t Thread whose context to restore.
  */
-void load_context(struct tcb *t);
+void leave_rpc(struct tcb *t);
 
 /**
  * Check that we have enough rpc stack.

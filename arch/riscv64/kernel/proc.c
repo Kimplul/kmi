@@ -63,6 +63,13 @@ void set_thread(struct tcb *t)
 	r->tp = (long)t->thread_storage;
 }
 
+void set_stack(struct tcb *t, vm_t s)
+{
+	/** @todo also set frame pointer on architectures that need it? */
+	struct riscv_regs *r = (struct riscv_regs *)(t->regs) - 1;
+	r->sp = s;
+}
+
 vm_t get_stack(struct tcb *t)
 {
 	struct riscv_regs *r = (struct riscv_regs *)(t->regs) - 1;

@@ -60,8 +60,7 @@ static void do_ipc(struct tcb *t,
 		return_args(t, SYS_RET1(ERR_NOINIT));
 
 	clone_uvmem(r->proc.vmem, t->rpc.vmem);
-	use_vmem(t->rpc.vmem);
-	save_context(t);
+	enter_rpc(t);
 
 	set_return(t, r->callback);
 	attach_rpc(r, t);
@@ -122,7 +121,7 @@ SYSCALL_DEFINE4(ipc_resp)(struct tcb *t, sys_arg_t d0, sys_arg_t d1,
                           sys_arg_t d3)
 {
 	struct tcb *r = get_cproc(t);
-	load_context(t);
+	leave_rpc(t);
 	detach_rpc(r, t);
 
 	if (is_rpc(t))

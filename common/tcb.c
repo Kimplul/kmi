@@ -435,7 +435,7 @@ struct call_ctx {
 	id_t pid;
 };
 
-void save_context(struct tcb *t)
+void enter_rpc(struct tcb *t)
 {
 	vm_t rpc_stack = t->rpc_stack;
 	if (is_rpc(t))
@@ -446,6 +446,10 @@ void save_context(struct tcb *t)
 		 * causing the stack of the next rpc to run out of memory... */
 		rpc_stack = align_down(get_stack(t), BASE_PAGE_SIZE);
 
+
+	/* make sure updates are visible when swapping to the new virtual memory */
+	mark_rpc_inaccessible(t, rpc_stack, t->rpc_stack);
+	use_vmem(t->rpc.vmem);
 
 	struct call_ctx *ctx = (struct call_ctx *)(rpc_stack) - 1;
 	ctx->exec = t->exec;
@@ -468,12 +472,12 @@ void save_context(struct tcb *t)
 	 * we'll handle it separately and if the process isn't going over the
 	 * limit just give it more.
 	 * */
-	mark_rpc_inaccessible(t, rpc_stack, t->rpc_stack);
 	t->rpc_stack = rpc_stack;
 	t->regs = (vm_t)ctx;
+	set_stack(t, rpc_stack);
 }
 
-void load_context(struct tcb *t)
+void leave_rpc(struct tcb *t)
 {
 	vm_t rpc_stack = t->rpc_stack + BASE_PAGE_SIZE;
 	struct call_ctx *ctx = (struct call_ctx *)(rpc_stack) - 1;

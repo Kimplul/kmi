@@ -44,6 +44,9 @@ enum {
 	/** Request memory at fixed virtual address. */
 	SYS_REQ_FIXMEM,
 
+	/** Request shared memory. */
+	SYS_REQ_SHAREDMEM,
+
 	/** Free memory. */
 	SYS_FREE_MEM,
 	/** @} */

@@ -185,13 +185,15 @@ stat_t destroy_region(struct mem_region_root *r)
  * */
 struct mem_region *find_used_region(struct mem_region_root *r, vm_t start)
 {
+	/** @todo check that start is aligned to page boundary? */
+	vm_t ref = __page(start);
 	struct sp_node *n = sp_root(&r->used_regions);
 	while (n) {
 		struct mem_region *t = mem_container(n);
-		if (start == t->start)
+		if (ref == t->start)
 			return t;
 
-		if (start < t->start)
+		if (ref < t->start)
 			n = sp_left(n);
 		else
 			n = sp_right(n);
@@ -500,7 +502,7 @@ stat_t free_region(struct mem_region_root *r, vm_t start)
 	if (!is_aligned(start, BASE_PAGE_SIZE))
 		return ERR_ALIGN;
 
-	struct mem_region *m = find_used_region(r, __page(start));
+	struct mem_region *m = find_used_region(r, start);
 	if (!m)
 		return ERR_NF;
 

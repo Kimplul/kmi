@@ -363,15 +363,15 @@ SYSCALL_DECLARE3(req_fixmem, start, size, flags);
  * (server) frees it.
  *
  * @param t Current tcb.
+ * @param tid Thread to share memory with.
  * @param size Size of allocation.
- * @param flags Flags of allocation.
- * @param c Unused.
- * @param d Unused.
+ * @param sflags Flags of allocation for server, that is \p t.
+ * @param cflags Flags of allocation for client, that is \p tid.
  * @param e Unused.
  *
  * Returns \ref OK and start of memory allocation.
  */
-SYSCALL_DECLARE2(req_sharedmem, size, flags);
+SYSCALL_DECLARE4(req_sharedmem, tid, size, sflags, cflags);
 
 /**
  * Reference shared memory syscall.
