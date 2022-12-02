@@ -133,12 +133,8 @@
 
 /** Memory region is used. */
 #define MR_USED (1 << 8)
-/** Memory region is shared. */
-#define MR_SHARED (1 << 9)
-/** Owner of shared region. */
-#define MR_OWNED (1 << 10)
 /** Don't free memory on clear. */
-#define MR_KEEP (1 << 11)
+#define MR_KEEP (1 << 9)
 
 /** @} */
 

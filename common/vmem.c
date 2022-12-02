@@ -48,14 +48,13 @@ static stat_t __clone_mapped_region(struct tcb *d, struct tcb *s,
 }
 
 /**
- * Convenience function for freeing mapped regions.
+ * Unmap and free private memory region.
  *
- * @param t Thread to work in.
+ * @param t Current thread.
  * @param m Memory region to free.
- * @return \ref INFO_SEFF if other thread in process should be synced, \ref OK
- * otherwise.
+ * @return \see unmap_freed_region().
  */
-static stat_t __free_mapped_region(struct tcb *t, struct mem_region *m)
+static stat_t __free_mapped_private_region(struct tcb *t, struct mem_region *m)
 {
 	stat_t status = OK;
 	pm_t start = __addr(m->start);
@@ -67,11 +66,80 @@ static stat_t __free_mapped_region(struct tcb *t, struct mem_region *m)
 	return status;
 }
 
+/**
+ * Check whether process associated with shared memory is still using it.
+ *
+ * @param pid Process to check.
+ * @param start Start of memory region
+ * @return \ref true if it is still in use, \ref false otherwise.
+ */
+static bool __proc_has_region(id_t pid, vm_t start)
+{
+	/** @todo this has a slight potential to have a race condition, where
+	 * both threads want to free the same shared region at the same time. */
+	struct tcb *p = get_tcb(pid);
+	if (!p)
+		return false;
+
+	struct mem_region *m = find_used_region(&p->sp_r, start);
+	if (!m)
+		return false;
+
+	return true;
+}
+
+/**
+ * Unmap shared region and free associated physical pages if they're not being
+ * used by the other process.
+ *
+ * @param t Current thread.
+ * @param m Memory region to free.
+ * @return \see unmap_vpage().
+ */
+static stat_t __free_mapped_shared_region(struct tcb *t, struct mem_region *m)
+{
+	vm_t start = __addr(m->start);
+	bool in_use = __proc_has_region(m->pid, m->alt_va);
+
+	size_t osize = order_size(BASE_PAGE);
+	size_t pages = m->start - m->end;
+
+	stat_t status = OK;
+	for (size_t i = 0; i < pages; ++i) {
+		vm_t va = start + i * osize;
+
+		pm_t pa;
+		stat_vpage(t->proc.vmem, va, &pa, 0, 0);
+		status = unmap_vpage(t->proc.vmem, va);
+
+		if (!in_use)
+			free_page(pa, BASE_PAGE);
+	}
+
+	return status;
+}
+
+/**
+ * Convenience function for freeing mapped regions.
+ *
+ * @param t Thread to work in.
+ * @param m Memory region to free.
+ * @return \ref INFO_SEFF if other thread in process should be synced, \ref OK
+ * otherwise.
+ */
+static stat_t __free_mapped_region(struct tcb *t, struct mem_region *m)
+{
+	if (m->pid != 0)
+		return __free_mapped_shared_region(t, m);
+
+	return __free_mapped_private_region(t, m);
+}
+
 stat_t clear_uvmem(struct tcb *t)
 {
 	struct mem_region *m = find_first_region(&t->sp_r);
 	while (m) {
-		if (is_region_owned(m) && !is_region_kept(m))
+		if (!is_region_kept(m))
 			__free_mapped_region(t, m);
 
 		m = m->next;
@@ -84,9 +152,7 @@ stat_t purge_uvmem(struct tcb *t)
 {
 	struct mem_region *m = find_first_region(&t->sp_r);
 	while (m) {
-		if (is_region_owned(m))
-			__free_mapped_region(t, m);
-
+		__free_mapped_region(t, m);
 		m = m->next;
 	}
 
@@ -164,6 +230,11 @@ stat_t alloc_shared_uvmem(struct tcb *s, struct tcb *c,
 	vm_t sv = alloc_shared_region(&s->sp_r, size, &ssize, sflags, c->rid);
 	vm_t cv = alloc_shared_region(&c->sp_r, size, &csize, cflags, s->rid);
 
+	/* not exactly optimal but good enough for now, I can start worrying
+	 * about hyperoptimizations whenever. */
+	set_alt_region_addr(&s->sp_r, sv, cv);
+	set_alt_region_addr(&c->sp_r, cv, sv);
+
 	if (csize != ssize) {
 		/** @todo cleanup, better errors? */
 		return ERR_INVAL;
@@ -190,31 +261,6 @@ stat_t alloc_shared_uvmem(struct tcb *s, struct tcb *c,
 	*cstart = cv;
 
 	return OK;
-}
-
-vm_t ref_shared_uvmem(struct tcb *t1, struct tcb *t2, vm_t va, vmflags_t flags)
-{
-	struct mem_region *m = find_used_region(&t1->sp_r, va);
-	if (!m)
-		return 0;
-
-	if (!is_set(m->flags, MR_OWNED))
-		return 0;
-
-	/* loop over all pages in this region */
-	size_t size = m->end - m->start;
-	size_t pages = __pages(size);
-	vm_t v = alloc_region(&t2->sp_r, size, &size, flags | MR_SHARED);
-	/* a for each page could be cool? */
-	vm_t runner = v;
-	for (; pages; --pages) {
-		pm_t paddr;
-		stat_vpage(t1->proc.vmem, v, &paddr, 0, 0);
-		map_vpage(t2->proc.vmem, paddr, runner, flags, MM_O0);
-		runner += order_size(MM_O0);
-	}
-
-	return v;
 }
 
 stat_t free_uvmem(struct tcb *r, vm_t va)
@@ -309,9 +355,7 @@ stat_t free_uvmem_wrapper(struct vmem *b, pm_t *offset, vm_t vaddr,
 	if (status)
 		*status = ret;
 
-	/* don't free shared pages, unless they're owned */
-	if (!is_set(flags, MR_SHARED) || is_set(flags, MR_OWNED))
-		free_page(order, paddr);
+	free_page(order, paddr);
 
 	return (ret == INFO_SEFF) ? OK : ret;
 }

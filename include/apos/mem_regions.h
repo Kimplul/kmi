@@ -32,22 +32,6 @@
 #define is_region_used(r) is_set(r->flags, MR_USED)
 
 /**
- * Check if region is owned.
- *
- * @param r Memory region to check.
- * @return \c 0 if not owned, non-zero otherwise.
- */
-#define is_region_owned(r) is_set(r->flags, MR_OWNED)
-
-/**
- * Check if region is shared.
- *
- * @param r Memory region to check.
- * @return \c 0 if not shared, non-zero otherwise.
- */
-#define is_region_shared(r) is_set(r->flags, MR_SHARED)
-
-/**
  * Check if region should be kept during clear.
  *
  * @param r Memory region to check.
@@ -85,14 +69,18 @@ struct mem_region {
 	 * MR_SHARED, MR_OWNED, MR_COW, MR_KEEP. */
 	vmflags_t flags;
 
-	/** In shared regions, mark the other pid that shared the region. */
-	id_t pid;
-
 	/** End address of memory region. */
 	vm_t end;
 
 	/** Start address of memory region. */
 	vm_t start;
+
+	/** In shared regions, mark the other pid that shared the region. */
+	id_t pid;
+
+	/** In shared regions, this is the address associated with region in the
+	 * other process. */
+	vm_t alt_va;
 };
 
 /**
@@ -138,9 +126,9 @@ vm_t alloc_region(struct mem_region_root *r, size_t size, size_t *actual_size,
  * @param pid Process to associate with region.
  * @return Address of allocated region on success, otherwise \c NULL.
  */
-stat_t alloc_shared_region(struct mem_region_root *r, size_t size,
-                           size_t *actual_size,
-                           vmflags_t flags, id_t pid);
+vm_t alloc_shared_region(struct mem_region_root *r, size_t size,
+                         size_t *actual_size,
+                         vmflags_t flags, id_t pid);
 
 /**
  * Allocate fixed memory region.
@@ -266,6 +254,15 @@ stat_t stat_region(struct mem_region_root *r, vm_t va, vmflags_t *flags);
  * \todo Implement.
  */
 stat_t mod_region(struct mem_region_root *r, vm_t va, vmflags_t flags);
+
+/**
+ * Set alternate virtual address associated with shared memory region in other process.
+ *
+ * @param r Memory region root.
+ * @param va Virtual address in \p r.
+ * @param alt_va Virtual address in other process.
+ */
+void set_alt_region_addr(struct mem_region_root *r, vm_t va, vm_t alt_va);
 
 /**
  * Conversion function between abstract memory region and actual page mappings.

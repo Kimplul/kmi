@@ -376,9 +376,9 @@ static vm_t __partition_region(struct mem_region_root *r, struct mem_region *m,
  * just ignore them for now. Note that alloc_region should only be used when
  * mmap is called with MAP_ANON, all other situations should be handled in some
  * fs server */
-stat_t alloc_shared_region(struct mem_region_root *r, size_t size,
-                           size_t *actual_size,
-                           vmflags_t flags, id_t pid)
+vm_t alloc_shared_region(struct mem_region_root *r, size_t size,
+                         size_t *actual_size,
+                         vmflags_t flags, id_t pid)
 {
 	size_t asize = align_up(size, BASE_PAGE_SIZE);
 	if (actual_size)
@@ -527,6 +527,19 @@ stat_t free_known_region(struct mem_region_root *r, struct mem_region *m)
 	__try_coalesce_regions(r, m);
 	__insert_free_region(r, m);
 	return OK;
+}
+
+void set_alt_region_addr(struct mem_region_root *r, vm_t va, vm_t alt_va)
+{
+	struct mem_region *m = find_used_region(r, va);
+	if (!m)
+		return;
+
+	/* not shared region */
+	if (m->pid == 0)
+		return;
+
+	m->alt_va = alt_va;
 }
 
 /* assuming start is chosen to start on an aligned border, this should choose
