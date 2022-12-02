@@ -323,12 +323,14 @@ struct mem_region *find_first_region(struct mem_region_root *r)
  * @param m Free memory region to carve used memory region out of.
  * @param pages Number of base order pages to give used region.
  * @param align Alignment of used region. In this case, start of used region
+ * @param pid Process ID to associate with region if shared. 0 if private.
  * from start of free region.
  * @param flags Flags of used region.
  * @return Start address of used region.
  */
 static vm_t __partition_region(struct mem_region_root *r, struct mem_region *m,
-                               size_t pages, size_t align, vmflags_t flags)
+                               size_t pages, size_t align, vmflags_t flags,
+                               id_t pid)
 {
 	sp_remove(&sp_root(&r->free_regions), &m->sp_n);
 
@@ -364,6 +366,7 @@ static vm_t __partition_region(struct mem_region_root *r, struct mem_region *m,
 	m->end = end;
 	m->start = start;
 	m->flags = flags;
+	m->pid = pid;
 	mark_region_used(m->flags);
 	__insert_used_region(r, m);
 	return __addr(start);
@@ -373,8 +376,9 @@ static vm_t __partition_region(struct mem_region_root *r, struct mem_region *m,
  * just ignore them for now. Note that alloc_region should only be used when
  * mmap is called with MAP_ANON, all other situations should be handled in some
  * fs server */
-vm_t alloc_region(struct mem_region_root *r, size_t size, size_t *actual_size,
-                  vmflags_t flags)
+stat_t alloc_shared_region(struct mem_region_root *r, size_t size,
+                           size_t *actual_size,
+                           vmflags_t flags, id_t pid)
 {
 	size_t asize = align_up(size, BASE_PAGE_SIZE);
 	if (actual_size)
@@ -388,7 +392,13 @@ vm_t alloc_region(struct mem_region_root *r, size_t size, size_t *actual_size,
 	if (!m)
 		return 0;
 
-	return __partition_region(r, m, pages, align, flags);
+	return __partition_region(r, m, pages, align, flags, pid);
+}
+
+vm_t alloc_region(struct mem_region_root *r, size_t size, size_t *actual_size,
+                  vmflags_t flags)
+{
+	return alloc_shared_region(r, size, actual_size, flags, 0);
 }
 
 vm_t alloc_fixed_region(struct mem_region_root *r, vm_t start, size_t size,
@@ -406,7 +416,7 @@ vm_t alloc_fixed_region(struct mem_region_root *r, vm_t start, size_t size,
 		return 0;
 
 	/* locate actual region where start is between the region start and end */
-	while (!((m->start <= start) && (start <= m->end))) {
+	while (!((m->start <= start) && (start < m->end))) {
 		if (start > m->start)
 			m = m->next;
 		else
@@ -422,7 +432,7 @@ vm_t alloc_fixed_region(struct mem_region_root *r, vm_t start, size_t size,
 		return 0;
 
 	/* actually start marking region used */
-	return __partition_region(r, m, pages, start - m->start, flags);
+	return __partition_region(r, m, pages, start - m->start, flags, 0);
 }
 
 /**

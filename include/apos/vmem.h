@@ -46,14 +46,18 @@ vm_t alloc_fixed_uvmem(struct tcb *r, vm_t start, size_t size, vmflags_t flags);
 /**
  * Allocate shared user virtual memory.
  *
- * Only callable by servers, who are the owners of the shared region.
- *
- * @param r Process to allocate memory in.
+ * @param s First process to allocate memory in.
+ * @param c Second process to allocate memory in.
  * @param size Minimum size of allocation.
- * @param flags Flags of allocation.
- * @return Start of allocation when succesful, \c NULL otherwise.
+ * @param sflags Flags of allocation for \p s.
+ * @param cflags Flags of allocation for \p c.
+ * @param sstart Start of allocation for \p s.
+ * @param cstart Start of allocation for \p c.
+ * @return Status of allocation.
  */
-vm_t alloc_shared_uvmem(struct tcb *r, size_t size, vmflags_t flags);
+stat_t alloc_shared_uvmem(struct tcb *s, struct tcb *c, size_t size,
+                          vmflags_t sflags, vmflags_t cflags,
+                          vm_t *sstart, vm_t *cstart);
 
 /**
  * Reference shared user virtual memory.

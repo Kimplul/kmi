@@ -53,6 +53,7 @@ void handle_syscall(sys_arg_t syscall, sys_arg_t a, sys_arg_t b,
 	case SYS_REQ_MEM: sys_req_mem(t, a, b, c, d, e); break;
 	case SYS_REQ_PMEM: sys_req_pmem(t, a, b, c, d, e); break;
 	case SYS_REQ_FIXMEM: sys_req_fixmem(t, a, b, c, d, e); break;
+	case SYS_REQ_SHAREDMEM: sys_req_sharedmem(t, a, b, c, d, e); break;
 	case SYS_FREE_MEM: sys_free_mem(t, a, b, c, d, e); break;
 	case SYS_TIMEBASE: sys_timebase(t, a, b, c, d, e); break;
 	case SYS_TICKS: sys_ticks(t, a, b, c, d, e); break;

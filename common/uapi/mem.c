@@ -107,23 +107,33 @@ SYSCALL_DEFINE3(req_pmem)(struct tcb *t, sys_arg_t paddr, sys_arg_t size,
  * Request shared memory syscall handler.
  *
  * @param t Current tcb.
+ * @param tid Thread to share memory with.
  * @param size Minimum size of allocation.
- * @param flags Flags of allocation.
- * @return \ref OK and start of allocation when succesful,
- * \ref ERR_OOMEM and \c NULL otherwise.
+ * @param sflags Flags of allocation for \p t.
+ * @param cflags Flags of allocation for \p tid.
+ * @return \ref OK and start of \p t allocation and start of \p tid allocation,
+ * in that order, \ref ERR_OOMEM otherwise.
  *
  * @todo should we also take the thread who should get the other end of the
  * memory?
  */
-SYSCALL_DEFINE2(req_sharedmem)(struct tcb *t, sys_arg_t size, sys_arg_t flags)
+SYSCALL_DEFINE4(req_sharedmem)(struct tcb *t, sys_arg_t tid,
+                               sys_arg_t size, sys_arg_t sflags,
+                               sys_arg_t cflags)
 {
-	/** \todo check that requester is server */
-	struct tcb *r = get_cproc(t);
-	vm_t start = 0;
-	if (!(start = alloc_shared_uvmem(r, size, flags)))
+	/** @todo check capability for shared memory */
+	struct tcb *u = get_tcb(tid);
+	if (!u)
+		return_args(t, SYS_RET1(ERR_INVAL));
+
+	struct tcb *s = get_cproc(t);
+	struct tcb *c = get_rproc(u);
+
+	vm_t sstart, cstart;
+	if (alloc_shared_uvmem(s, c, size, sflags, cflags, &sstart, &cstart))
 		return_args(t, SYS_RET1(ERR_OOMEM));
 
-	return_args(t, SYS_RET2(OK, start));
+	return_args(t, SYS_RET3(OK, sstart, cstart));
 }
 
 /** \todo add some way to specify who gets to access the shared memory? */

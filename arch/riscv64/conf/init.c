@@ -25,6 +25,17 @@ struct sys_ret {
 	long a0, a1, a2, a3, a4, a5;
 };
 
+char *strcpy(char * restrict dst, const char * restrict src)
+{
+	const char *s1 = src;
+	char *s2 = dst;
+
+	while (*s1)
+		*(s2++) = *(s1++);
+
+	return dst;
+}
+
 struct sys_ret ecall(struct sys_ret s)
 {
 	register long a0 asm ("a0") = s.a0;
@@ -165,7 +176,7 @@ static struct ipc_args sys_ipc_req(long tid, long d0, long d1, long d2, long d3)
 	if (r.a0)
 		print_value("ipc_req() failed with error ", r.a0);
 
-	return (struct ipc_args){r.a2, r.a3, r.a4, r.a5};
+	return (struct ipc_args){r.a1, r.a2, r.a3, r.a4};
 }
 
 static void sys_ipc_resp(long d0, long d1, long d2, long d3)
@@ -206,11 +217,36 @@ static void sys_free_mem(void *p)
 		print_value("sys_free_mem() failed with error ", r.a0);
 }
 
+static void *sys_req_sharedmem(long tid, unsigned long size, void **cbuf)
+{
+	struct sys_ret r = {.a0 = SYS_REQ_SHAREDMEM, .a1 = tid, .a2 = size,
+		            .a3 = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 4),
+		            .a4 = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 4)};
+	r = ecall(r);
+
+	if (r.a0)
+		print_value("sys_req_sharedmem() failed with error ", r.a0);
+
+	*cbuf = (void *)r.a2;
+	return (void *)r.a1;
+}
+
+/* I'm guessing my elf parser doesn't handle data pages correctly yet... */
+static char *rw_buf = 0;
+static size_t rw_buf_size = 4096;
+
 void callback(long status, long tid, long d0, long d1, long d2, long d3)
 {
 	(void)status;
-	(void)tid;
-	sys_ipc_resp(d0, d1, d2, d3);
+
+	void *cbuf = 0;
+	if (d0 == 1)
+		rw_buf = sys_req_sharedmem(tid, rw_buf_size, &cbuf);
+
+	if (d0 == 2)
+		puts(rw_buf);
+
+	sys_ipc_resp((long)cbuf, rw_buf_size, 0, 0);
 }
 
 #define CSR_TIME "0xc01"
@@ -262,11 +298,10 @@ void _start()
 	print_value("Swaps (both ways) per second", n);
 
 	puts("Doing ipc requests...\n");
-	long d0 = 0, d1 = 0, d2 = 0, d3 = 0;
 	csr_read(CSR_TIME, i);
 	start = i; n = 0;
 	while (i < start + second) {
-		sys_ipc_req(1, n, d1, d2, d3);
+		sys_ipc_req(1, 0, 0, 0, 0);
 		csr_read(CSR_TIME, i);
 		n++;
 	}
@@ -279,6 +314,16 @@ void _start()
 		*p = 'c';
 		sys_free_mem(p);
 	}
+
+	puts("Checking shared memory\n");
+	struct ipc_args r = sys_ipc_req(1, 1, 0, 0, 0);
+	rw_buf = (char *)r.a1;
+	print_value("Shared memory ptr", (uintptr_t)rw_buf);
+	print_value("Shared memory size", rw_buf_size);
+
+	rw_buf[0] = 0;
+	strcpy(rw_buf, "Hello from the other side!\n");
+	sys_ipc_req(1, 2, 0, 0, 0);
 
 	sys_poweroff(0);
 }

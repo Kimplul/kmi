@@ -54,7 +54,7 @@ static void __map_exec(struct tcb *t, vm_t bin, uint8_t ei_c, vm_t phstart,
 	 * segment fits into it */
 	/** \todo check if p_memsz is larger than p_filesz, the segment should be
 	 * filled with zeroes. */
-	/** \todo in general, make this a low more clean. */
+	/** \todo in general, make this a lot more clean. */
 	/* useful bit of info: all segments are sorted in ascending order of p_vaddr */
 	vm_t runner = phstart;
 	vmflags_t default_flags = VM_V | VM_R | VM_W | VM_X | VM_U;
@@ -74,6 +74,7 @@ static void __map_exec(struct tcb *t, vm_t bin, uint8_t ei_c, vm_t phstart,
 		uint8_t uvflags = __elf_to_uvflags(elf_flags);
 
 		map_allocd_region(t->proc.vmem, start, vsz, default_flags, 0);
+		memset((void *)start, 0, vsz);
 
 		vm_t vo = bin + program_header_prop(ei_c, runner, p_offset);
 		vm_t vfz = program_header_prop(ei_c, runner, p_filesz);

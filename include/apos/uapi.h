@@ -374,22 +374,6 @@ SYSCALL_DECLARE3(req_fixmem, start, size, flags);
 SYSCALL_DECLARE4(req_sharedmem, tid, size, sflags, cflags);
 
 /**
- * Reference shared memory syscall.
- *
- * \see sys_req_sharedmem().
- *
- * @param t Current tcb.
- * @param tid Thread ID of owner of shared memory.
- * @param va Start address of shared memory.
- * @param flags Flags to use for reference.
- * @param d Unused.
- * @param e Unused.
- *
- * Returns \ref OK and start of shared memory.
- */
-SYSCALL_DECLARE3(ref_sharedmem, tid, va, flags);
-
-/**
  * Free memory syscall.
  *
  * Frees the memory region pointed to.

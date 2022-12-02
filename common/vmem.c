@@ -151,19 +151,45 @@ vm_t alloc_fixed_uvmem(struct tcb *t, vm_t start, size_t size, vmflags_t flags)
 }
 
 /* free_shared_uvmem shouldn't be needed, likely to work with free_uvmem */
-vm_t alloc_shared_uvmem(struct tcb *t, size_t size, vmflags_t flags)
+stat_t alloc_shared_uvmem(struct tcb *s, struct tcb *c,
+                          size_t size, vmflags_t sflags, vmflags_t cflags,
+                          vm_t *sstart, vm_t *cstart)
 {
-	hard_assert(t && is_proc(t), ERR_INVAL);
+	hard_assert(sstart, ERR_INVAL);
+	hard_assert(cstart, ERR_INVAL);
+	hard_assert(s && is_proc(s), ERR_INVAL);
+	hard_assert(c && is_proc(c), ERR_INVAL);
 
-	stat_t status = OK;
-	const vm_t v = alloc_region(&t->sp_r, size, &size,
-	                            flags | MR_SHARED | MR_OWNED);
-	const vm_t w = map_shared_region(t->proc.vmem, v, size, flags, &status);
+	size_t ssize, csize;
+	vm_t sv = alloc_shared_region(&s->sp_r, size, &ssize, sflags, c->rid);
+	vm_t cv = alloc_shared_region(&c->sp_r, size, &csize, cflags, s->rid);
 
-	if (is_rpc(t) && status == INFO_SEFF)
-		clone_rpc_maps(t);
+	if (csize != ssize) {
+		/** @todo cleanup, better errors? */
+		return ERR_INVAL;
+	}
 
-	return w;
+	stat_t cstatus = OK, sstatus = OK;
+	size_t osize = order_size(BASE_PAGE);
+	size_t pages = ssize / osize;
+	for (size_t i = 0; i < pages; ++i) {
+		pm_t p = alloc_page(BASE_PAGE);
+		sstatus = map_vpage(s->proc.vmem, p, sv + i * osize, sflags,
+		                    BASE_PAGE);
+		cstatus = map_vpage(c->proc.vmem, p, cv + i * osize, cflags,
+		                    BASE_PAGE);
+	}
+
+	if (cstatus == INFO_SEFF)
+		clone_rpc_maps(c);
+
+	if (sstatus == INFO_SEFF)
+		clone_rpc_maps(s);
+
+	*sstart = sv;
+	*cstart = cv;
+
+	return OK;
 }
 
 vm_t ref_shared_uvmem(struct tcb *t1, struct tcb *t2, vm_t va, vmflags_t flags)
