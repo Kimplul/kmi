@@ -133,7 +133,9 @@ struct tcb {
 	 */
 	id_t rid;
 
-	/** Thread ID. */
+	/** Thread ID. @note all ids associated with threads use a signed type,
+	 * but are always larger than zero. This is mirroring Linux behavior,
+	 * and signed types are probably large enough. */
 	id_t tid;
 
 	/** \todo implement cpu_id to hardware cpu ID translation, first in

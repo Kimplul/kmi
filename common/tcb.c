@@ -26,7 +26,7 @@
 static id_t start_tid;
 
 /** Total number of possible thread IDs. */
-static size_t num_tids;
+static id_t num_tids;
 
 /** Pointer to array of \ref tcb structures. Length of the array is \c num_tids.*/
 static struct tcb **tcbs;
@@ -62,8 +62,16 @@ void destroy_tcbs()
  */
 static id_t __alloc_tid(struct tcb *t)
 {
+	id_t stop_tid = start_tid - 1;
 	/** \todo this would need some locking or something... */
-	for (size_t i = start_tid; i < num_tids; ++i) {
+	for (id_t i = start_tid; 1; ++i) {
+		if (i == ID_MAX)
+			i = 0;
+
+		/* we're completely full */
+		if (i == stop_tid)
+			return ERR_NF;
+
 		if (tcbs[i] || i == 0)
 			continue;
 
@@ -347,6 +355,9 @@ void use_tcb(struct tcb *t)
 struct tcb *get_tcb(id_t tid)
 {
 	hard_assert(tcbs, 0);
+
+	if (tid <= 0 || tid >= num_tids)
+		return NULL;
 
 	return tcbs[tid];
 }

@@ -441,8 +441,11 @@ typedef int32_t ssize_t;
 /** Status, used with codes in \ref status_codes. */
 typedef int_fast8_t stat_t;
 
-/** ID of something. */
-typedef uint_fast32_t id_t;
+/** ID of something. @todo should this be signed? Linux etc seems to assume it
+ * is with pids */
+typedef int_fast32_t id_t;
+
+#define ID_MAX INT_FAST32_MAX
 
 /** Memory region flags. */
 typedef uint_fast16_t vmflags_t;
