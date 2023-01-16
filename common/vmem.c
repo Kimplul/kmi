@@ -108,7 +108,7 @@ static stat_t __free_mapped_shared_region(struct tcb *t, struct mem_region *m)
 	for (size_t i = 0; i < pages; ++i) {
 		vm_t va = start + i * osize;
 
-		pm_t pa;
+		pm_t pa = 0;
 		stat_vpage(t->proc.vmem, va, &pa, 0, 0);
 		status = unmap_vpage(t->proc.vmem, va);
 
