@@ -320,6 +320,32 @@ SYSCALL_DECLARE1(putch, ch);
 SYSCALL_DECLARE2(req_mem, size, flags);
 
 /**
+ * Request one page of memory. The nearest fitting size is chosen.
+ *
+ * This might be better implemented as some number of adjacent physical pages,
+ * but the underlying physical page allocator doesn't really handle it very
+ * well. This weird design decision is because I don't know if there are devices
+ * whose drivers need multiple adjacent physical pages, only that at least
+ * virtio devices need to be able to access the physical address of a single
+ * page. Basic adjacent physical pages can be made from higher order pages,
+ * just with a massive overhead. Still, probably good eough for now.
+ *
+ * For example, if you need two adjacent 4K pages, you pass size = 8K and you
+ * get back a 2M page, if one is available.
+ *
+ * @param t Current tcb.
+ * @param size Required size of region.
+ * @param flags Mapping flags to use.
+ * @param c Unused.
+ * @param d Unused.
+ * @param e Unused.
+ *
+ * Returns \ref ERR_OOMEM if no page is available, otherwise \c OK, virtual
+ * address, actual size, physical size in that order.
+ */
+SYSCALL_DECLARE2(req_page, size, flags);
+
+/**
  * Request physical memory syscall.
  *
  * Allocates at least the specified size of allocation which includes the

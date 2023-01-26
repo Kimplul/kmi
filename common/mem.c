@@ -17,6 +17,15 @@ size_t __mm_sizes[10];
 size_t __mm_page_shift;
 enum mm_order __mm_max_order;
 
+enum mm_order nearest_order(size_t size)
+{
+	for (enum mm_order order = max_order(); order >= MM_MIN; --order)
+		if (order_size(order) >= size)
+			return order;
+
+	return MM_O0;
+}
+
 void init_mem(size_t max_order, size_t bits[10], size_t page_shift)
 {
 	__mm_max_order = max_order;

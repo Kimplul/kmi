@@ -38,6 +38,9 @@ enum {
 	/** Request memory from anywhere. */
 	SYS_REQ_MEM,
 
+	/** Request physical page from ram. */
+	SYS_REQ_PAGE,
+
 	/** Request memory with physical address. */
 	SYS_REQ_PMEM,
 

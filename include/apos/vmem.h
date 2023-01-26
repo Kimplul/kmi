@@ -28,6 +28,19 @@
 vm_t alloc_uvmem(struct tcb *r, size_t size, vmflags_t flags);
 
 /**
+ * Allocate one physical page for user virtual memory.
+ *
+ * @param r Process to allocate memory in.
+ * @param size Minimum size of allocation.
+ * @param flags Flags of allocation.
+ * @param asize Where to write actual size of allocation.
+ * @param paddr Where to write physical address of page.
+ * @return Start of allocation when succesful, \c NULL otherwise.
+ */
+vm_t alloc_uvpage(struct tcb *r, size_t size, vmflags_t flags,
+                  size_t *asize, pm_t *paddr);
+
+/**
  * Allocate fixed user virtual memory.
  *
  * Virtual memory start address is chosen so that \c start is within the

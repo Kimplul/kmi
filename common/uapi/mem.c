@@ -33,6 +33,25 @@ SYSCALL_DEFINE2(req_mem)(struct tcb *t, sys_arg_t size, sys_arg_t flags)
 }
 
 /**
+ * Allocate single page to program.
+ *
+ * @param t Current tcb.
+ * @param size Size of the allocation.
+ * @param flags Flags of allocation.
+ * @return \ref ERR_OOMEM if unsucessful, otherwise \ref OK, virtual address,
+ * actual size, physical address, in that order.
+ */
+SYSCALL_DEFINE2(req_page)(struct tcb *t, sys_arg_t size, sys_arg_t flags)
+{
+	struct tcb *r = get_cproc(t);
+	vm_t start = 0; pm_t paddr = 0; size_t asize = size;
+	if (!(start = alloc_uvpage(r, asize, flags, &asize, &paddr)))
+		return_args(t, SYS_RET1(ERR_OOMEM));
+
+	return_args(t, SYS_RET4(OK, start, asize, paddr));
+}
+
+/**
  * Fixed memory request syscall handler.
  *
  * @param t Current tcb.

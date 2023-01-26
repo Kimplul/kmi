@@ -445,6 +445,7 @@ typedef int_fast8_t stat_t;
  * is with pids */
 typedef int_fast32_t id_t;
 
+/** Maximum ID number. */
 #define ID_MAX INT_FAST32_MAX
 
 /** Memory region flags. */

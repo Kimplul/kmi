@@ -196,6 +196,14 @@ extern size_t __mm_page_shift;
 extern enum mm_order __mm_max_order;
 
 /**
+ * Find nearest order to size.
+ *
+ * @param size Size to map to an order.
+ * @return Nearest order larger than \p size.
+ */
+enum mm_order nearest_order(size_t size);
+
+/**
  * Initialize memory subsystem data. Populates __mm_* with data given.
  *
  * @param max_order Maximum order the current system supports.

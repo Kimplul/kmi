@@ -200,6 +200,36 @@ vm_t alloc_uvmem(struct tcb *t, size_t size, vmflags_t flags)
 	return w;
 }
 
+vm_t alloc_uvpage(struct tcb *t, size_t size, vmflags_t flags, size_t *asize,
+                  pm_t *paddr)
+{
+	hard_assert(t && is_proc(t), ERR_INVAL);
+
+	enum mm_order order = nearest_order(size);
+	size_t actual_size = order_size(order);
+	stat_t status = OK;
+
+	const vm_t v = alloc_region(&t->sp_r, size, &size, flags);
+	const vm_t w = __addr(__page(v));
+
+	pm_t addr = alloc_page(order);
+	/** @todo should free region */
+	if (!addr)
+		return NULL;
+
+	status = map_vpage(t->proc.vmem, addr, w, flags, order);
+	if (is_rpc(t) && status == INFO_SEFF)
+		clone_rpc_maps(t);
+
+	if (asize)
+		*asize = actual_size;
+
+	if (paddr)
+		*paddr = addr;
+
+	return w;
+}
+
 vm_t alloc_fixed_uvmem(struct tcb *t, vm_t start, size_t size, vmflags_t flags)
 {
 	hard_assert(t && is_proc(t), ERR_INVAL);
