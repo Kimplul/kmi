@@ -6,11 +6,11 @@
  * Handle initrd, implement cpio with newc format.
  */
 
-#include <apos/initrd.h>
-#include <apos/vmem.h>
-#include <apos/string.h>
-#include <apos/utils.h>
-#include <apos/attrs.h>
+#include <kmi/initrd.h>
+#include <kmi/vmem.h>
+#include <kmi/string.h>
+#include <kmi/utils.h>
+#include <kmi/attrs.h>
 #include <libfdt.h>
 
 /** GNU cpio, POSIX 'newc' format header. */

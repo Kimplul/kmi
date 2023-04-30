@@ -1,18 +1,18 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Copyright 2021 - 2022, Kim Kuparinen < kimi.h.kuparinen@gmail.com > */
 
-#ifndef APOS_RISCV_VMAP_H
-#define APOS_RISCV_VMAP_H
+#ifndef KMI_RISCV_VMAP_H
+#define KMI_RISCV_VMAP_H
 
 /**
  * @file vmem.h
  * riscv64 definitions of arch-specific virtual memory data types and macros.
- * Very likely VM_* should be moved to \ref include/apos/vmem.h and made
+ * Very likely VM_* should be moved to \ref include/kmi/vmem.h and made
  * architecture-nonspecific, but works for now.
  */
 
-#include <apos/types.h>
-#include <apos/attrs.h>
+#include <kmi/types.h>
+#include <kmi/attrs.h>
 
 /**
  * Number of entries in one page table, depends on if we're running riscv32 or
@@ -71,4 +71,4 @@ struct vmem {
 	struct vmem *leaf[RISCV_NUM_LEAVES];
 };
 
-#endif /* APOS_RISCV_VMAP_H */
+#endif /* KMI_RISCV_VMAP_H */

@@ -1,4 +1,4 @@
-#include <apos/ipi.h>
+#include <kmi/ipi.h>
 #include <arch/cpu.h>
 
 #include <arch/proc.h>

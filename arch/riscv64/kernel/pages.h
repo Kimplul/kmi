@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Copyright 2021 - 2022, Kim Kuparinen < kimi.h.kuparinen@gmail.com > */
 
-#ifndef APOS_RISCV_PAGES_H
-#define APOS_RISCV_PAGES_H
+#ifndef KMI_RISCV_PAGES_H
+#define KMI_RISCV_PAGES_H
 
 /**
  * @file pages.h
@@ -33,4 +33,4 @@
 /** riscv64 512GiB page size. */
 #define MM_TPAGE_SIZE SZ_512G
 
-#endif /* APOS_RISCV_PAGES_H */
+#endif /* KMI_RISCV_PAGES_H */

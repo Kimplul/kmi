@@ -6,12 +6,12 @@
  * Virtual memory handling, mainly userspace virtual memory.
  */
 
-#include <apos/mem_regions.h>
-#include <apos/assert.h>
-#include <apos/string.h>
-#include <apos/debug.h>
-#include <apos/bits.h>
-#include <apos/vmem.h>
+#include <kmi/mem_regions.h>
+#include <kmi/assert.h>
+#include <kmi/string.h>
+#include <kmi/debug.h>
+#include <kmi/bits.h>
+#include <kmi/vmem.h>
 #include <arch/vmem.h>
 
 stat_t init_uvmem(struct tcb *t, vm_t base, vm_t top)

@@ -7,10 +7,10 @@
  * \todo Should we return more error information?
  */
 
-#include <apos/uapi.h>
-#include <apos/utils.h>
-#include <apos/vmem.h>
-#include <apos/dmem.h>
+#include <kmi/uapi.h>
+#include <kmi/utils.h>
+#include <kmi/vmem.h>
+#include <kmi/dmem.h>
 
 /**
  * Memory request syscall handler.

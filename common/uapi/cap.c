@@ -1,6 +1,6 @@
-#include <apos/uapi.h>
-#include <apos/caps.h>
-#include <apos/tcb.h>
+#include <kmi/uapi.h>
+#include <kmi/caps.h>
+#include <kmi/tcb.h>
 
 /**
  * @file cap.c

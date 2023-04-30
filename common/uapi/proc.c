@@ -6,11 +6,11 @@
  * Process/thread handling syscall implementations.
  */
 
-#include <apos/elf.h>
-#include <apos/uapi.h>
-#include <apos/proc.h>
-#include <apos/bits.h>
-#include <apos/mem_regions.h>
+#include <kmi/elf.h>
+#include <kmi/uapi.h>
+#include <kmi/proc.h>
+#include <kmi/bits.h>
+#include <kmi/mem_regions.h>
 
 /**
  * Create syscall handler.

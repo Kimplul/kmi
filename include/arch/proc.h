@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Copyright 2021 - 2022, Kim Kuparinen < kimi.h.kuparinen@gmail.com > */
 
-#ifndef APOS_ARCH_PROC_H
-#define APOS_ARCH_PROC_H
+#ifndef KMI_ARCH_PROC_H
+#define KMI_ARCH_PROC_H
 
 /**
  * @file proc.h
@@ -15,7 +15,7 @@
 #include "../../arch/riscv32/include/proc.h"
 #endif
 
-#include <apos/uapi.h>
+#include <kmi/uapi.h>
 
 /**
  * Attach argument data to thread.
@@ -113,4 +113,4 @@ void adjust_syscall(struct tcb *t);
  */
 __noreturn void run_init(struct tcb *t, void *fdt);
 
-#endif /* APOS_ARCH_PROC_H */
+#endif /* KMI_ARCH_PROC_H */

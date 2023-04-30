@@ -1,11 +1,11 @@
-#include <apos/uapi.h>
-#include <apos/ipi.h>
+#include <kmi/uapi.h>
+#include <kmi/ipi.h>
 
 /**
  * @file dispatch.c
  *
  * Interface between assembly and C for dispatching syscalls/IPIs.
- * In apos, IPIs are a higher level concept and is not expected to be handled by
+ * In kmi, IPIs are a higher level concept and is not expected to be handled by
  * the underlying architecture. Instead, we only require that there is some way
  * to trigger an interrupt in some other core, and check if the interrupt was an
  * IPI or syscall in C.

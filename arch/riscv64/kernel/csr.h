@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Copyright 2021 - 2022, Kim Kuparinen < kimi.h.kuparinen@gmail.com > */
 
-#ifndef APOS_CSR_H
-#define APOS_CSR_H
+#ifndef KMI_CSR_H
+#define KMI_CSR_H
 
 /**
  * @file csr.h
@@ -167,4 +167,4 @@
 #define csr_clear(csr, val) \
 	__asm__ volatile ("csrc " __ASM_STR(csr) ", %0" : : "r" (val) : "memory")
 
-#endif /* APOS_CSR_H */
+#endif /* KMI_CSR_H */

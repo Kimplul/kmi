@@ -6,9 +6,9 @@
  * Implementations of some string.h stdlib functions.
  */
 
-#include <apos/string.h>
-#include <apos/types.h>
-#include <apos/attrs.h>
+#include <kmi/string.h>
+#include <kmi/types.h>
+#include <kmi/attrs.h>
 
 /* we need to undef the macros in string.h, otherwise the names get mangled */
 #undef strcpy

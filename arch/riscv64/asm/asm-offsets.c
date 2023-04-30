@@ -7,8 +7,8 @@
  * _save_context.
  */
 
-#include <apos/utils.h>
-#include <apos/uapi.h>
+#include <kmi/utils.h>
+#include <kmi/uapi.h>
 #include "../kernel/regs.h"
 
 /**

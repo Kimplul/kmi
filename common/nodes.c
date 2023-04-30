@@ -26,11 +26,11 @@
  * \todo More in-depth documentation about the node algorithm.
  */
 
-#include <apos/mem.h>
-#include <apos/pmem.h>
-#include <apos/bits.h>
-#include <apos/nodes.h>
-#include <apos/string.h>
+#include <kmi/mem.h>
+#include <kmi/pmem.h>
+#include <kmi/bits.h>
+#include <kmi/nodes.h>
+#include <kmi/string.h>
 
 /* the structure of each node_region is approximately
  *

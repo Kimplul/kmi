@@ -6,9 +6,9 @@
  * Interprocess communication syscall implementations.
  */
 
-#include <apos/uapi.h>
-#include <apos/tcb.h>
-#include <apos/ipi.h>
+#include <kmi/uapi.h>
+#include <kmi/tcb.h>
+#include <kmi/ipi.h>
 
 /**
  * IPC server notification syscall handler.

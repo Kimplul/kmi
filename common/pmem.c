@@ -27,13 +27,13 @@
  * next pointer instead of storing it?
  */
 
-#include <apos/mem_nodes.h>
-#include <apos/pmem.h>
-#include <apos/dmem.h>
-#include <apos/debug.h>
-#include <apos/initrd.h>
-#include <apos/string.h> /* memset */
-#include <apos/bits.h> /* is_nset etc */
+#include <kmi/mem_nodes.h>
+#include <kmi/pmem.h>
+#include <kmi/dmem.h>
+#include <kmi/debug.h>
+#include <kmi/initrd.h>
+#include <kmi/string.h> /* memset */
+#include <kmi/bits.h> /* is_nset etc */
 #include <libfdt.h>
 
 /* \todo add memory page counting?

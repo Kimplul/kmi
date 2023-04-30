@@ -10,11 +10,11 @@
  * allocated through the node subsystem.
  */
 
-#include <apos/vmem.h>
-#include <apos/pmem.h>
-#include <apos/mem.h>
-#include <apos/string.h>
-#include <apos/mem_nodes.h>
+#include <kmi/vmem.h>
+#include <kmi/pmem.h>
+#include <kmi/mem.h>
+#include <kmi/string.h>
+#include <kmi/mem_nodes.h>
 
 /** Memory node subsystem instance. */
 static struct node_root root;

@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Copyright 2021 - 2022, Kim Kuparinen < kimi.h.kuparinen@gmail.com > */
 
-#ifndef APOS_IRQ_H
-#define APOS_IRQ_H
+#ifndef KMI_IRQ_H
+#define KMI_IRQ_H
 
 /**
  * @file irq.h
@@ -31,4 +31,4 @@ void enable_irq();
 /** Disable IRQs. */
 void disable_irq();
 
-#endif /* APOS_IRQ_H */
+#endif /* KMI_IRQ_H */

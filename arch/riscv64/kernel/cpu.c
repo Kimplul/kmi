@@ -6,8 +6,8 @@
  * riscv64 implementation of cpu handling.
  */
 
-#include <apos/tcb.h>
-#include <apos/atomic.h>
+#include <kmi/tcb.h>
+#include <kmi/atomic.h>
 
 #include <arch/cpu.h>
 

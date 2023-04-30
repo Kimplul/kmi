@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Copyright 2021 - 2022, Kim Kuparinen < kimi.h.kuparinen@gmail.com > */
 
-#ifndef APOS_ARCH_H
-#define APOS_ARCH_H
+#ifndef KMI_ARCH_H
+#define KMI_ARCH_H
 
 /**
  * @file arch.h
@@ -10,7 +10,7 @@
  * arch/whatever/kernel/main.c
  */
 
-#include <apos/types.h>
+#include <kmi/types.h>
 
 #if defined(riscv64)
 #include "../../arch/riscv64/include/arch.h"
@@ -29,4 +29,4 @@
  */
 stat_t setup_arch(void *fdt);
 
-#endif /* APOS_ARCH_H */
+#endif /* KMI_ARCH_H */

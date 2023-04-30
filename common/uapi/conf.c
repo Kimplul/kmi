@@ -8,10 +8,10 @@
  * At the moment there are not runtime configuration parameters.
  */
 
-#include <apos/power.h>
-#include <apos/sizes.h>
-#include <apos/uapi.h>
-#include <apos/conf.h>
+#include <kmi/power.h>
+#include <kmi/sizes.h>
+#include <kmi/uapi.h>
+#include <kmi/conf.h>
 
 #include <arch/proc.h>
 

@@ -11,7 +11,7 @@
  * \todo Document sp_tree algorithm better.
  */
 
-#include <apos/sp_tree.h>
+#include <kmi/sp_tree.h>
 
 /**
  * Basic BST left turn.

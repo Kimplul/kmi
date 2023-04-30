@@ -6,11 +6,11 @@
  * Process handling, might be merged into \ref common/tcb.c.
  */
 
-#include <apos/elf.h>
-#include <apos/proc.h>
-#include <apos/conf.h>
-#include <apos/string.h>
-#include <apos/initrd.h>
+#include <kmi/elf.h>
+#include <kmi/proc.h>
+#include <kmi/conf.h>
+#include <kmi/string.h>
+#include <kmi/initrd.h>
 #include <arch/arch.h>
 #include <arch/proc.h>
 #include <arch/cpu.h>

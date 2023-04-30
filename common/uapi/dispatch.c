@@ -6,9 +6,9 @@
  * Syscall dispatch.
  */
 
-#include <apos/canary.h>
-#include <apos/debug.h>
-#include <apos/uapi.h>
+#include <kmi/canary.h>
+#include <kmi/debug.h>
+#include <kmi/uapi.h>
 
 /* not sure why doxygen requires these two definitions to state their return
  * values, when they don't actually return anything but eh */

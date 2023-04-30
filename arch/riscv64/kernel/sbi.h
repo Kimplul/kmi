@@ -1,15 +1,15 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Copyright 2021 - 2022, Kim Kuparinen < kimi.h.kuparinen@gmail.com > */
 
-#ifndef APOS_RISCV_SBI_H
-#define APOS_RISCV_SBI_H
+#ifndef KMI_RISCV_SBI_H
+#define KMI_RISCV_SBI_H
 
 /**
  * @file sbi.h
  * riscv64-specific OpenSBI definitions.
  */
 
-#include <apos/types.h>
+#include <kmi/types.h>
 
 /** Return structure of SBI calls. */
 struct sbiret {
@@ -126,4 +126,4 @@ static inline struct sbiret sbi_send_ipi(unsigned long hart_mask,
 	                 0);
 }
 
-#endif /* APOS_RISCV_SBI_H */
+#endif /* KMI_RISCV_SBI_H */

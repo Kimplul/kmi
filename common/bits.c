@@ -6,10 +6,10 @@
  * Bit manipulation helper implementations, currently just byte swaps.
  */
 
-#include <apos/types.h>
-#include <apos/attrs.h>
-#include <apos/bits.h>
-#include <apos/builtin.h>
+#include <kmi/types.h>
+#include <kmi/attrs.h>
+#include <kmi/bits.h>
+#include <kmi/builtin.h>
 
 #undef __bswap16
 __weak uint16_t __bswap16(const uint16_t u)

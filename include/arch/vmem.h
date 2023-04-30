@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Copyright 2021 - 2022, Kim Kuparinen < kimi.h.kuparinen@gmail.com > */
 
-#ifndef APOS_ARCH_PAGES_H
-#define APOS_ARCH_PAGES_H
+#ifndef KMI_ARCH_PAGES_H
+#define KMI_ARCH_PAGES_H
 
 /**
  * @file vmem.h
@@ -16,7 +16,7 @@
 #include "../../arch/riscv32/include/vmem.h"
 #endif
 
-#include <apos/types.h>
+#include <kmi/types.h>
 
 /**
  * Map one virtual page to physical page.
@@ -164,4 +164,4 @@ stat_t destroy_vmem(struct vmem *b);
  */
 void clone_uvmem(struct vmem * restrict r, struct vmem * restrict b);
 
-#endif /* APOS_ARCH_PAGES_H */
+#endif /* KMI_ARCH_PAGES_H */

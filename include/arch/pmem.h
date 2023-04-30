@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Copyright 2021 - 2022, Kim Kuparinen < kimi.h.kuparinen@gmail.com > */
 
-#ifndef APOS_ARCH_PMEM_H
-#define APOS_ARCH_PMEM_H
+#ifndef KMI_ARCH_PMEM_H
+#define KMI_ARCH_PMEM_H
 
 /**
  * @file pmem.h
@@ -10,8 +10,8 @@
  * arch/whatever/kernel/pmem.c
  */
 
-#include <apos/mem.h> /* NUM_ORDERS */
-#include <apos/types.h>
+#include <kmi/mem.h> /* NUM_ORDERS */
+#include <kmi/types.h>
 
 #if defined(riscv64)
 #include "../../arch/riscv64/include/pmem.h"
@@ -63,4 +63,4 @@
 stat_t stat_pmem_conf(void *fdt, size_t *max_order, size_t *base_bits,
                       size_t bits[NUM_ORDERS]);
 
-#endif /* APOS_ARCH_PMEM_H */
+#endif /* KMI_ARCH_PMEM_H */

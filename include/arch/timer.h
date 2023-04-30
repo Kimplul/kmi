@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Copyright 2021 - 2022, Kim Kuparinen < kimi.h.kuparinen@gmail.com > */
 
-#ifndef APOS_ARCH_TIMER_H
-#define APOS_ARCH_TIMER_H
+#ifndef KMI_ARCH_TIMER_H
+#define KMI_ARCH_TIMER_H
 
 /**
  * @file timer.h
@@ -10,7 +10,7 @@
  * arch/whatever/timer.c
  */
 
-#include <apos/timer.h>
+#include <kmi/timer.h>
 
 #if defined(riscv64)
 #include "../../arch/riscv64/include/timer.h"
@@ -41,4 +41,4 @@ void set_timer(ticks_t ticks);
  */
 ticks_t current_ticks();
 
-#endif /* APOS_ARCH_TIMER_H */
+#endif /* KMI_ARCH_TIMER_H */

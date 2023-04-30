@@ -1,5 +1,5 @@
-#include <apos/canary.h>
-#include <apos/mem.h>
+#include <kmi/canary.h>
+#include <kmi/mem.h>
 
 /**
  * @file canary.c

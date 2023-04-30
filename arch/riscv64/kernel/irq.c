@@ -6,8 +6,8 @@
  * riscv64 implementation of irq handling.
  */
 
-#include <apos/attrs.h>
-#include <apos/debug.h>
+#include <kmi/attrs.h>
+#include <kmi/debug.h>
 #include <arch/irq.h>
 #include "csr.h"
 

@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Copyright 2021 - 2022, Kim Kuparinen < kimi.h.kuparinen@gmail.com > */
 
-#ifndef APOS_CPU_H
-#define APOS_CPU_H
+#ifndef KMI_CPU_H
+#define KMI_CPU_H
 
 /**
  * @file cpu.h
@@ -10,8 +10,8 @@
  * arch/whatever/kernel/cpu.c
  */
 
-#include <apos/types.h>
-#include <apos/tcb.h>
+#include <kmi/types.h>
+#include <kmi/tcb.h>
 
 #if defined(riscv64)
 #include "../../arch/riscv64/include/cpu.h"
@@ -43,4 +43,4 @@ void cpu_assign(struct tcb *t);
  */
 void cpu_send_ipi(id_t cpu_id);
 
-#endif /* APOS_CPU_H */
+#endif /* KMI_CPU_H */

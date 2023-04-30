@@ -8,8 +8,8 @@
  * \todo Handle NUMA.
  */
 
-#include <apos/assert.h>
-#include <apos/dmem.h>
+#include <kmi/assert.h>
+#include <kmi/dmem.h>
 
 /** Region before RAM. */
 static struct mem_region_root pre_ram = { 0 };

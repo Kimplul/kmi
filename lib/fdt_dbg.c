@@ -6,7 +6,7 @@
  * Dump fdt info to serial.
  */
 
-#include <apos/debug.h>
+#include <kmi/debug.h>
 #include <libfdt.h>
 
 #if defined(DEBUG)

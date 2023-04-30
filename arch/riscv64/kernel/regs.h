@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Copyright 2021 - 2022, Kim Kuparinen < kimi.h.kuparinen@gmail.com > */
 
-#ifndef APOS_RISCV_REGS_H
-#define APOS_RISCV_REGS_H
+#ifndef KMI_RISCV_REGS_H
+#define KMI_RISCV_REGS_H
 
 /**
  * @file regs.h
@@ -82,4 +82,4 @@ struct riscv_regs {
 	        t6;
 };
 
-#endif /* APOS_RISCV_REGS_H */
+#endif /* KMI_RISCV_REGS_H */

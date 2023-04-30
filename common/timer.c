@@ -15,12 +15,12 @@
  * timers.
  */
 
-#include <apos/sp_tree.h>
-#include <apos/string.h>
-#include <apos/nodes.h>
-#include <apos/utils.h>
-#include <apos/timer.h>
-#include <apos/debug.h>
+#include <kmi/sp_tree.h>
+#include <kmi/string.h>
+#include <kmi/nodes.h>
+#include <kmi/utils.h>
+#include <kmi/timer.h>
+#include <kmi/debug.h>
 #include <arch/timer.h>
 #include <arch/cpu.h>
 

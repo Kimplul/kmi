@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Copyright 2021 - 2022, Kim Kuparinen < kimi.h.kuparinen@gmail.com > */
 
-#ifndef APOS_RISCV_CONFIG_H
-#define APOS_RISCV_CONFIG_H
+#ifndef KMI_RISCV_CONFIG_H
+#define KMI_RISCV_CONFIG_H
 
 /**
  * @file config.h
@@ -18,7 +18,7 @@
  * \todo Write more thorough documentation, maybe a separate .md file?
  */
 
-#include <apos/sizes.h>
+#include <kmi/sizes.h>
 
 /* --- START ARCH USER CONFIG VALUES --- */
 /** Physical address to where the OS image will be loaded. */
@@ -90,7 +90,7 @@
  */
 #define TOP_PAGE_SIZE SZ_1G
 
-/** Default Sv mode on rv64 in apos. */
+/** Default Sv mode on rv64 in kmi. */
 #define DEFAULT_Sv_MODE Sv39
 
 #else
@@ -114,4 +114,4 @@
 #define DEFAULT_Sv_MODE Sv32
 
 #endif
-#endif /* APOS_RISCV_CONFIG_H */
+#endif /* KMI_RISCV_CONFIG_H */

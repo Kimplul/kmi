@@ -6,12 +6,12 @@
  * Entry point for actual kernel setup.
  */
 
-#include <apos/mem_nodes.h>
-#include <apos/timer.h>
-#include <apos/attrs.h>
-#include <apos/proc.h>
-#include <apos/debug.h>
-#include <apos/vmem.h>
+#include <kmi/mem_nodes.h>
+#include <kmi/timer.h>
+#include <kmi/attrs.h>
+#include <kmi/proc.h>
+#include <kmi/debug.h>
+#include <kmi/vmem.h>
 #include <arch/arch.h>
 #include <arch/proc.h>
 #include <arch/irq.h>

@@ -16,7 +16,7 @@ BUILD		= build
 ARCH_BUILD	= $(BUILD)/arch/$(ARCH)
 ARCH_SOURCE	= arch/$(ARCH)
 
-all: apos.bin
+all: kmi.bin
 # bmake requires us to run make depend to genereate deps.mk beforehand,
 # so create an empty rule that lets the rest of the script do its job
 depend:
@@ -35,7 +35,7 @@ COMPILER	!= [ $(LLVM) ] \
 
 
 KERNEL_SOURCES	!= echo common/*.c common/uapi/*.c lib/*.c
-CLEANUP		:= build deps.mk kernel.* init.* apos.bin
+CLEANUP		:= build deps.mk kernel.* init.* kmi.bin
 CLEANUP_CMD	:=
 INIT_SOURCES	:=
 
@@ -93,8 +93,8 @@ init.bin: init.elf
 kernel.bin: kernel.elf
 	$(OBJCOPY) $(OBJCOPY_FLAGS) kernel.elf kernel.bin
 
-apos.bin: init.bin kernel.bin
-	cat init.bin kernel.bin > apos.bin
+kmi.bin: init.bin kernel.bin
+	cat init.bin kernel.bin > kmi.bin
 
 format:
 	find arch lib common include -iname '*.[ch]' |\

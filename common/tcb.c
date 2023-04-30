@@ -6,16 +6,16 @@
  * Thread control block handling implementation.
  */
 
-#include <apos/tcb.h>
-#include <apos/mem.h>
-#include <apos/conf.h>
-#include <apos/pmem.h>
-#include <apos/vmem.h>
-#include <apos/nodes.h>
-#include <apos/types.h>
-#include <apos/assert.h>
-#include <apos/string.h>
-#include <apos/canary.h>
+#include <kmi/tcb.h>
+#include <kmi/mem.h>
+#include <kmi/conf.h>
+#include <kmi/pmem.h>
+#include <kmi/vmem.h>
+#include <kmi/nodes.h>
+#include <kmi/types.h>
+#include <kmi/assert.h>
+#include <kmi/string.h>
+#include <kmi/canary.h>
 
 #include <arch/cpu.h>
 #include <arch/vmem.h>

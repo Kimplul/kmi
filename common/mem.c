@@ -6,9 +6,9 @@
  * Generic memory handling, used both by physical and virtual memory.
  */
 
-#include <apos/types.h>
-#include <apos/mem.h>
-#include <apos/vmem.h>
+#include <kmi/types.h>
+#include <kmi/mem.h>
+#include <kmi/vmem.h>
 #include <libfdt.h>
 
 size_t __mm_shifts[10];

@@ -7,11 +7,11 @@
  * subsystems.
  */
 
-#include <apos/mem_regions.h>
-#include <apos/mem_nodes.h>
-#include <apos/pmem.h>
-#include <apos/bits.h>
-#include <apos/mem.h>
+#include <kmi/mem_regions.h>
+#include <kmi/mem_nodes.h>
+#include <kmi/pmem.h>
+#include <kmi/bits.h>
+#include <kmi/mem.h>
 
 /**
  * Readability wrapper for marking region used.

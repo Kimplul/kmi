@@ -6,9 +6,9 @@
  * riscv64 implementation of arch-specific process handling.
  */
 
-#include <apos/tcb.h>
-#include <apos/elf.h>
-#include <apos/string.h>
+#include <kmi/tcb.h>
+#include <kmi/elf.h>
+#include <kmi/string.h>
 
 #include <arch/proc.h>
 

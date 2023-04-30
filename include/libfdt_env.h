@@ -7,12 +7,12 @@
 
 /**
  * @file libfdt_env.h
- * Set up apos environment for libfdt.
+ * Set up kmi environment for libfdt.
  */
 
-#include <apos/types.h>
-#include <apos/string.h>
-#include <apos/bits.h>
+#include <kmi/types.h>
+#include <kmi/string.h>
+#include <kmi/bits.h>
 
 /** 16bit integer. */
 typedef int16_t fdt16_t;

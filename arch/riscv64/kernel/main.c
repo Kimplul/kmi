@@ -6,7 +6,7 @@
  * riscv64 main
  */
 
-#include <apos/utils.h>
+#include <kmi/utils.h>
 #include <arch/arch.h>
 #include "csr.h"
 

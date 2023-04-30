@@ -1,19 +1,19 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Copyright 2021 - 2022, Kim Kuparinen < kimi.h.kuparinen@gmail.com > */
 
-#ifndef APOS_LIBFDT_H
-#define APOS_LIBFDT_H
+#ifndef KMI_LIBFDT_H
+#define KMI_LIBFDT_H
 
 /**
  * @file libfdt.h
- * Main include file in apos for functions in libfdt.
+ * Main include file in kmi for functions in libfdt.
  */
 
 #include "../dtc/libfdt/libfdt.h"
-#include <apos/unaligned.h>
-#include <apos/types.h>
+#include <kmi/unaligned.h>
+#include <kmi/types.h>
 
-/* apos additions, implementation can be found in common/fdt.c */
+/* kmi additions, implementation can be found in common/fdt.c */
 
 /**
  * FDT cell info.

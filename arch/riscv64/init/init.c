@@ -7,10 +7,10 @@
  * memory.
  */
 
-#include <apos/types.h>
-#include <apos/attrs.h>
-#include <apos/utils.h>
-#include <apos/vmem.h>
+#include <kmi/types.h>
+#include <kmi/attrs.h>
+#include <kmi/utils.h>
+#include <kmi/vmem.h>
 #include <arch/vmem.h>
 #include "../kernel/csr.h"
 

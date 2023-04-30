@@ -19,7 +19,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include "../../../include/apos/syscalls.h"
+#include "../../../include/kmi/syscalls.h"
 
 struct sys_ret {
 	long a0, a1, a2, a3, a4, a5;

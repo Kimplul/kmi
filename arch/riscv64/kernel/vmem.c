@@ -6,11 +6,11 @@
  * riscv64 implementation of arch-specific virtual memory handling.
  */
 
-#include <apos/string.h>
-#include <apos/pmem.h>
-#include <apos/vmem.h>
-#include <apos/mem.h>
-#include <apos/debug.h>
+#include <kmi/string.h>
+#include <kmi/pmem.h>
+#include <kmi/vmem.h>
+#include <kmi/mem.h>
+#include <kmi/debug.h>
 #include <arch/cpu.h>
 #include "pages.h"
 #include "csr.h"

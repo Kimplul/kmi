@@ -12,8 +12,8 @@
  * and outs of the undefined behaviour sanitizer subsystem.
  */
 
-#include <apos/types.h>
-#include <apos/debug.h>
+#include <kmi/types.h>
+#include <kmi/debug.h>
 
 #if defined(DEBUG)
 /* ubsan is only sensible if we're in debug mode. */

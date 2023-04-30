@@ -6,11 +6,11 @@
  * Handle elf executables, set up requested memory mappings etc.
  */
 
-#include <apos/elf.h>
-#include <apos/vmem.h>
-#include <apos/bits.h>
-#include <apos/string.h>
-#include <apos/assert.h>
+#include <kmi/elf.h>
+#include <kmi/vmem.h>
+#include <kmi/bits.h>
+#include <kmi/string.h>
+#include <kmi/assert.h>
 
 /**
  * Convert ELF flags to page flags.

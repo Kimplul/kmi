@@ -7,11 +7,11 @@
  * when running a debug build to save space in release mode.
  */
 
-#include <apos/types.h>
-#include <apos/debug.h>
-#include <apos/bits.h>
-#include <apos/vmem.h>
-#include <apos/pmem.h>
+#include <kmi/types.h>
+#include <kmi/debug.h>
+#include <kmi/bits.h>
+#include <kmi/vmem.h>
+#include <kmi/pmem.h>
 #include <arch/vmem.h>
 #include <libfdt.h>
 #include <stdarg.h>
