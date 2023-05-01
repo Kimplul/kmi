@@ -79,8 +79,6 @@ INIT_LD		!= ./scripts/gen-deps --init --link "$(INIT_LINK).S"
 
 $(INIT_LD): kernel.bin
 
-lint: $(INIT_OBJECTS:.o=.o.l) $(KERNEL_OBJECTS:.o=.o.l)
-
 init.elf: $(INIT_OBJECTS) $(INIT_LD)
 	$(GENELF) -T $(INIT_LD) $(INIT_OBJECTS) -o init.elf $(LINK_FLAGS)
 
@@ -96,15 +94,25 @@ kernel.bin: kernel.elf
 kmi.bin: init.bin kernel.bin
 	cat init.bin kernel.bin > kmi.bin
 
+.PHONY:
+lint: $(INIT_OBJECTS:.o=.o.l) $(KERNEL_OBJECTS:.o=.o.l)
+
+.PHONY: format
 format:
 	find arch lib common include -iname '*.[ch]' |\
 		xargs -n 10 -P 0 uncrustify -c uncrustify.conf --no-backup -F -
+
+.PHONY: license
+license:
+	find arch lib common include -iname '*.[ch]' |\
+		xargs -n 10 -P 0 ./scripts/license
 
 .PHONY: docs
 docs:
 	./scripts/warn-undocumented
 	doxygen docs/doxygen.conf
 
+# bmake didn't seem to have the -f flag on by default
 RM	?= rm -f
 
 .PHONY: clean

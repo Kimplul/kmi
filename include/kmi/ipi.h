@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: copyleft-next-0.3.1 */
+/* Copyright 2023 Kim Kuparinen < kimi.h.kuparinen@gmail.com > */
+
 #ifndef KMI_IPI_H
 #define KMI_IPI_H
 
