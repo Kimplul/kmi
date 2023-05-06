@@ -45,3 +45,28 @@ out of this repo.
 + `clean/clean_docs/clean_run/clean_all`: Clean compile artefacts, clean documentation artefacts,
 clean run artefacts and clean all artefacts, respectively. Note that `clean_run` and `clean_all` may
 need root privileges.
+
+# Top-level view
+
+This should eventually be moved into documentation with more details, but in short, `kmi` is a hybrid
+kernel with thread migration as the main method of inter-process communication. The kernel itself
+handles interrupts, memory management and thread migration, but everything else is inteded to be
+up to the operating system built on top of the kernel.
+
+I chose thread migration as the main IPC method because it seemed interesting, somewhat out of the
+ordinary and has some parallel features that I think might come in handy as computers slowly but surely
+become more parallel.
+
+I chose to implement memory management in the kernel mainly for ease of development. While I am
+generally in favor of microkernels and separating responsibilities, I find that memory is central
+enough to computers that trying to write a kernel without memory management would be too difficult
+for me.
+
+# Future plans
+
+Interrupt and exception handling is still largely TODO.
+
+To keep things interesting I'm working on a heavily simplified Unix-like operating system,
+as of yet unreleased, that runs on the `kmi` kernel, with my main goals to provide a shell environment
+and disk access. I'm hoping that having a somewhat usable 'full' system will help me run into bugs more
+effectively and keep me more motivated to work on the project.
