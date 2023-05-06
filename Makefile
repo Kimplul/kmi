@@ -23,15 +23,15 @@ depend:
 
 # default values, overwrite if/when needed
 ARCH		?= riscv64
-CROSS_COMPILE	?= $(ARCH)-unknown-elf
+CROSS_COMPILE	?= $(ARCH)-unknown-elf-
 
 OBJCOPY		!= [ $(LLVM) ] \
 			&& echo llvm-objcopy \
-			|| echo $(CROSS_COMPILE)-objcopy
+			|| echo $(CROSS_COMPILE)objcopy
 
 COMPILER	!= [ $(LLVM) ] \
 			&& echo clang --target="$(CROSS_COMPILE)" \
-			|| echo $(CROSS_COMPILE)-gcc
+			|| echo $(CROSS_COMPILE)gcc
 
 
 KERNEL_SOURCES	!= echo common/*.c common/uapi/*.c lib/*.c

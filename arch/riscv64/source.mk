@@ -13,7 +13,7 @@ DEBUGFLAGS	!= [ $(LLVM) ] && echo $(DEBUGFLAGS:-flto=) || echo $(DEBUGFLAGS)
 
 # llvm-objcopy is buggy, use gnu tools instead
 # christ, not much LLVM tooling available for RISCV :D
-OBJCOPY		:= $(CROSS_COMPILE)-objcopy
+OBJCOPY		:= $(CROSS_COMPILE)objcopy
 
 run:
 	$(ARCH_SOURCE)/conf/mkimage.sh $(ARCH)
