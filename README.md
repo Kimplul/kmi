@@ -17,7 +17,8 @@ Simple build with default configuration:
 This results in `kmi.bin`, which is the bootloader and the payload kernel.
 Currently the kernel expects to be loaded into a specific address, allowing arbitrary boot
 locations is on my TODO list. The load address depends on the configured RAM base address,
-see `arch/riscv64/conf/kmi.its` and `PM_KERN_BASE`. Dynamically detecting RAM base is also TODO.
+see `arch/riscv64/conf/kmi.its` and `PM_KERN_BASE`. Dynamically detecting RAM base is
+also TODO.
 
 Useful `make` flags and targets:
 
@@ -33,40 +34,43 @@ compatible serial devices are supported.
 + `LLVM=<0/1>`: Use LLVM toolchain when set to `1`. Default is `0`.
 Note that due to some bugs and missing features in LLVM RISC-V support, some GNU
 binutils tools are still needed, mainly `objcopy`. Also, when combined with `RELEASE`,
-disables LTO as `lld` seemed to have issues with some relaxed instructions with LTO enabled.
+disables LTO as `lld` seemed to have issues with some relaxed instructions with
+LTO enabled.
 
-+ `UBSAN=<0/1>`: Enable undefined behavior sanitizer, outputs a number of warnings at runtime when
-undefined behavior is detected. Only available with `RELEASE=0`.
++ `UBSAN=<0/1>`: Enable undefined behavior sanitizer, outputs a number of warnings at
+runtime when undefined behavior is detected. Only available with `RELEASE=0`.
 
-+ `run`: Load a test program into `qemu` and run it. Requires some outside support at the moment,
-please see [kmi-example](https://github.com/Kimplul/kmi-example). This command might eventually be moved
-out of this repo.
++ `run`: Load a test program into `qemu` and run it. Requires some outside support at
+the moment, please see [kmi-example](https://github.com/Kimplul/kmi-example).
+This command might eventually be moved out of this repo.
 
-+ `clean/clean_docs/clean_run/clean_all`: Clean compile artefacts, clean documentation artefacts,
-clean run artefacts and clean all artefacts, respectively. Note that `clean_run` and `clean_all` may
-need root privileges.
++ `clean/clean_docs/clean_run/clean_all`: Clean compile artefacts, clean documentation
+artefacts, clean run artefacts and clean all artefacts, respectively.
+Note that `clean_run` and `clean_all` may need root privileges.
 
 # Top-level view
 
-This should eventually be moved into documentation with more details, but in short, `kmi` is a hybrid
-kernel with thread migration as the main method of inter-process communication. The kernel itself
-handles interrupts, memory management and thread migration, but everything else is inteded to be
-up to the operating system built on top of the kernel.
+This should eventually be moved into documentation with more details, but in short, `kmi`
+is a hybrid kernel with thread migration as the main method of inter-process
+communication. The kernel itself handles interrupts, memory management and thread
+migration, but everything else is inteded to be up to the operating system built on top
+of the kernel.
 
-I chose thread migration as the main IPC method because it seemed interesting, somewhat out of the
-ordinary and has some parallel features that I think might come in handy as computers slowly but surely
-become more parallel.
+I chose thread migration as the main IPC method because it seemed interesting, somewhat
+out of the ordinary and has some parallel features that I think might come in handy as
+computers slowly but surely become more parallel.
 
-I chose to implement memory management in the kernel mainly for ease of development. While I am
-generally in favor of microkernels and separating responsibilities, I find that memory is central
-enough to computers that trying to write a kernel without memory management would be too difficult
-for me.
+I chose to implement memory management in the kernel mainly for ease of development.
+While I am generally in favor of microkernels and separating responsibilities, I find
+that memory is central enough to computers that trying to write a kernel without memory
+management would be too difficult for me.
 
 # Future plans
 
 Interrupt and exception handling is still largely TODO.
 
 To keep things interesting I'm working on a heavily simplified Unix-like operating system,
-as of yet unreleased, that runs on the `kmi` kernel, with my main goals to provide a shell environment
-and disk access. I'm hoping that having a somewhat usable 'full' system will help me run into bugs more
-effectively and keep me more motivated to work on the project.
+as of yet unreleased, that runs on the `kmi` kernel, with my main goals to provide a
+shell environment and disk access. I'm hoping that having a somewhat usable 'full'
+system will help me run into bugs more effectively and keep me more motivated to
+work on the project.
