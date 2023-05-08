@@ -109,7 +109,8 @@ license:
 
 .PHONY: docs
 docs:
-	./scripts/warn-undocumented
+	find arch lib common include -iname '*.[ch]' -not -path */gen/* |\
+		xargs ./scripts/warn-undocumented
 	doxygen docs/doxygen.conf
 
 # bmake didn't seem to have the -f flag on by default
