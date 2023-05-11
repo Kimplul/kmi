@@ -5,7 +5,9 @@ DEBUGFLAGS	!= [ $(RELEASE) ] \
 			&& echo "-flto -O2 -DNDEBUG" \
 			|| echo "-O0 -DDEBUG"
 
-CFLAGS		= -ffreestanding -nostdlib -fno-pie -std=c17 -Wall -Wextra -Wvla -D$(ARCH) -g
+CFLAGS		= -ffreestanding -nostdlib -static -fno-pie -std=c17 \
+		  -Wall -Wextra -Wvla -D$(ARCH) -g
+
 DEPFLAGS	= -MT $@ -MMD -MP -MF $@.d
 LINTFLAGS	= -fsyntax-only
 PREPROCESS	= -E
