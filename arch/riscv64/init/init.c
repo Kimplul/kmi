@@ -12,12 +12,9 @@
 #include <kmi/utils.h>
 #include <kmi/vmem.h>
 #include <arch/vmem.h>
-#include "../kernel/csr.h"
+#include <libfdt.h>
 
-/** Temporary virtual memory space.
- * Assume 64bit riscv for now.
- */
-struct vmem *root_branch;
+#include "../kernel/csr.h"
 
 /**
  * Create page table entry.
@@ -28,22 +25,44 @@ struct vmem *root_branch;
  */
 #define to_pte(a, f) (((a) >> 12) << 10 | (f))
 
-/** Jump into virtual memory. */
-static void init_bootmem()
+/**
+ * Get RAM base address from fdt.
+ * @todo in case of multiple RAM banks, should try to just find one
+ * of them and let the kernel figure the rest out. Kernel doesn't currently
+ * support multiple RAM banks.
+ *
+ * @param fdt FDT pointer.
+ * @return Physical address of ram base.
+ */
+static pm_t __fdt_ram_base(void *fdt)
+{
+	struct cell_info ci = get_reginfo(fdt, "/memory");
+	int mem_offset = fdt_path_offset(fdt, "/memory");
+	uint8_t *mem_reg = (uint8_t *)fdt_getprop(fdt, mem_offset, "reg", NULL);
+	return (pm_t)fdt_load_int_ptr(ci.addr_cells, mem_reg);
+}
+
+/**
+ * Jump into virtual memory.
+ *
+ * @param load_addr Address where init has been loaded.
+ * @param ram_base RAM base.
+ */
+static void init_bootmem(uintptr_t load_addr, uintptr_t ram_base)
 {
 	size_t flags = VM_V | VM_X | VM_R | VM_W;
 
-	extern char *__init_end;
+	extern char *__kernel;
 	extern char *__kernel_size;
-	uintptr_t top = (uintptr_t)&__init_end + (uintptr_t)&__kernel_size;
+	uintptr_t top = load_addr + (uintptr_t)&__kernel + (uintptr_t)&__kernel_size;
 
 	/* this could be risky, as we might overwrite some bits of initrd or fdt
 	 * if they're allocated too close to the kernel payload.
 	 * @todo Allocate root_branch statically? */
-	root_branch = (struct vmem *)align_up(top, SZ_4K);
+	struct vmem *root_branch = (struct vmem *)align_up(top, SZ_4K);
 
 	/* direct mapping (temp) */
-	for (size_t i = 0; i < CSTACK_PAGE; ++i)
+	for (size_t i = 0; i <= CSTACK_PAGE; ++i)
 		root_branch->leaf[i] = (struct vmem *)to_pte(TOP_PAGE_SIZE * i,
 		                                             flags);
 
@@ -51,7 +70,7 @@ static void init_bootmem()
 	flags |= VM_G;
 	for (size_t i = KSTART_PAGE; i < IO_PAGE; ++i)
 		root_branch->leaf[i] = (struct vmem *)to_pte(
-			RAM_BASE + TOP_PAGE_SIZE * (i - KSTART_PAGE), flags);
+			ram_base + TOP_PAGE_SIZE * (i - KSTART_PAGE), flags);
 
 	/* kernel IO, map to 0 for now, will be updated in the future */
 	root_branch->leaf[IO_PAGE] = (struct vmem *)to_pte(0, flags);
@@ -66,48 +85,37 @@ static void init_bootmem()
 	csr_write(CSR_SATP, mode | ((uintptr_t)root_branch >> 12));
 }
 
-/** Relocate kernel proper. */
-static void move_kernel()
+/**
+ * Relocate kernel proper.
+ * @param load_addr Address to where init has been loaded.
+ * Used in calculating kernel start address.
+ */
+static void move_kernel(uintptr_t load_addr)
 {
-	extern char *__init_end;
+	extern char *__kernel;
 	extern char *__kernel_size;
 
-	unsigned long sz = (unsigned long)&__kernel_size;
-	char *src = (char *)&__init_end;
+	size_t sz = (size_t)&__kernel_size;
+	char *src = load_addr + (char *)&__kernel;
 	char *dst = (char *)VM_KERN;
 	for (size_t i = 0; i < sz; ++i)
 		dst[i] = src[i];
 }
 
 /**
- * Convert an existing physical address in a register to a virtual address.
- * There is probably an easier way to do this, but this seems to work alright.
- *
- * @param reg Register to modify.
- */
-#define __va_reg(reg)                                             \
-	{                                                         \
-		vm_t reg = 0;                                     \
-		__asm__ ("mv %0, " QUOTE(reg) : "=r" (reg)::);    \
-		reg = (vm_t)__va(reg);                            \
-		__asm__ ("mv " QUOTE(reg) ", %0" ::"rK" (reg) :); \
-	}
-
-/**
  * Main driver for the init loader.
  *
  * @param fdt Global FDT pointer, provided by bootloader.
+ * @param load_addr Address to where init has been loaded.
  */
-void init(void *fdt)
+void init(void *fdt, pm_t load_addr)
 {
-	extern char *__init_end;
-	extern void jump_to_kernel(void *k, void *fdt);
+	extern void jump_to_kernel(void *fdt, pm_t ram_base, void *k);
 
-	init_bootmem();
-	move_kernel();
-	__va_reg(sp);
-	__va_reg(fp);
-	__va_reg(gp);
+	pm_t ram_base = __fdt_ram_base(fdt);
 
-	jump_to_kernel((void *)VM_KERN, __va(fdt));
+	init_bootmem(load_addr, ram_base);
+	move_kernel(load_addr);
+
+	jump_to_kernel(fdt, ram_base, (void *)VM_KERN);
 }

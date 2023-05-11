@@ -5,8 +5,10 @@
 .global _start
 /* Entry point to the kernel loader. */
 _start:
-/* load static stack */
-li sp, PM_STACK_TOP
+/* get load address */
+auipc a1, 0
+/* keep using bootloader stack for now */
+//li sp, PM_STACK_TOP
 /* make sure there's no garbage in tp, important for id assignment */
 li tp, 0
 call init
@@ -14,6 +16,12 @@ call init
 .section .text
 .global jump_to_kernel
 jump_to_kernel:
-mv a2, a0 // store kernel addr
-mv a0, a1 // move fdt pointer to first argument
+li sp, VM_STACK_TOP // load virtual stack address
+li fp, 0
+li gp, 0
 jr a2 // jump to kernel
+
+/* there should be a kernel payload after this address */
+.section .top
+.global __kernel
+__kernel:

@@ -22,7 +22,7 @@
 
 /* --- START ARCH USER CONFIG VALUES --- */
 /** Physical address to where the OS image will be loaded. */
-#define RAM_BASE 0x80000000
+//#define RAM_BASE 0x80000000
 /* --- END ARCH USER CONFIG VALUES --- */
 
 /* don't touch >:( */
@@ -37,20 +37,14 @@
 /** \todo UBSAN is getting pretty close to this limit, should it be raised? */
 #define PM_KERN_SIZE (SZ_256K)
 
-/** Physical address to where the kernel proper will be relocated. */
-#define PM_KERN_BASE (RAM_BASE + FW_MAX_SIZE + PM_KERN_SIZE)
+/** Virtual memory stack base. In this case, right after the kernel. */
+#define VM_STACK_BASE (VM_KERN + PM_KERN_SIZE)
 
-/** Highest allowed physical address where kernel stuff may lie. */
-#define PM_KERN_TOP (PM_KERN_BASE + PM_KERN_SIZE)
+/** Size of virtual memory stack. */
+#define VM_STACK_SIZE (SZ_4K)
 
-/** Physical memory stack base. In this case, right after the kernel. */
-#define PM_STACK_BASE (PM_KERN_BASE + PM_KERN_SIZE)
-
-/** Size of physical memory stack. */
-#define PM_STACK_SIZE (SZ_256K)
-
-/** Top of physical memory stack. */
-#define PM_STACK_TOP (PM_STACK_BASE + PM_STACK_SIZE)
+/** Top of virtual memory stack. */
+#define VM_STACK_TOP (VM_STACK_BASE + VM_STACK_SIZE)
 
 #if defined(riscv64)
 /* 64bit */
@@ -67,7 +61,11 @@
 /** Direct mapping starts from this page. */
 #define KSTART_PAGE 256UL
 
-/** The RPC stack page. */
+/**
+ * The RPC stack page.
+ * @todo this should be page before KSTART, but currently
+ * RPC_STACK_TOP is too low (why? was there a reason to place it so low?) and overlaps.
+ */
 #define CSTACK_PAGE 248UL
 
 /** User virtual memory space start. */

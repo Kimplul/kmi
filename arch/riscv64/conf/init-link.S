@@ -5,11 +5,13 @@ OUTPUT_ARCH(riscv)
 ENTRY(_start)
 
 SECTIONS {
-	. = ABSOLUTE(PM_KERN_BASE);
-	__init_start = .;
+	/* slight hack, the binary is position independent code but technically
+	   not a PIE, so avoid globals and just add the load address to external
+	   addresses. */
+	__init_start = 0;
 
 	/* objcopy only copies these three sections (as far as I'm aware) into the
-	   produces binary, so __init_end should point to the correct location in the
+	   produced binary, so __init_end should point to the correct location in the
 	   final binary
 	 */
 	.text ALIGN(4K) : AT(0) {
@@ -29,7 +31,10 @@ SECTIONS {
 		*(.sbss*) *(.bss*) *(COMMON)
 	}
 
-	__init_end = . ;
+	.top : {
+		*(.top*)
+	}
+
 	__kernel_size = <KERNEL_SIZE>;
 
 	.garbage : {

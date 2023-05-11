@@ -92,7 +92,7 @@
  * @param x Physical address.
  * @return Corresponding virtual address.
  */
-#define __va(x) (void *)(((uintptr_t)(x)) + VM_DMAP - RAM_BASE)
+#define __va(x) (void *)(((uintptr_t)(x)) + VM_DMAP - get_ram_base())
 
 /**
  * Convert virtual address to physical address in direct mapping.
@@ -100,7 +100,7 @@
  * @param x Virtual address.
  * @return Corresponding physical address.
  */
-#define __pa(x) (void *)(((uintptr_t)(x)) - VM_DMAP + RAM_BASE)
+#define __pa(x) (void *)(((uintptr_t)(x)) - VM_DMAP + get_ram_base())
 
 /**
  * Get page number of physical address.
@@ -212,6 +212,22 @@ enum mm_order nearest_order(size_t size);
  * \todo Should likely also be stat_t?
  */
 void init_mem(size_t max_order, size_t shifts[10], size_t page_shift);
+
+/**
+ * Set RAM base address for global access.
+ * For now supports only one RAM bank.
+ *
+ * @param base RAM base address.
+ */
+void set_ram_base(pm_t base);
+
+/**
+ * Get RAM base address.
+ * Very much assumes set_ram_base() has been called beforehand.
+ *
+ * @return RAM base address.
+ */
+pm_t get_ram_base();
 
 
 /** Base page size. */

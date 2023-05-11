@@ -17,6 +17,12 @@ size_t __mm_sizes[10];
 size_t __mm_page_shift;
 enum mm_order __mm_max_order;
 
+/**
+ * RAM base address. Not sure if it should be provided through a macro
+ * like __mm_*.
+ */
+pm_t ram_base;
+
 enum mm_order nearest_order(size_t size)
 {
 	for (enum mm_order order = max_order(); order >= MM_MIN; --order)
@@ -40,4 +46,14 @@ void init_mem(size_t max_order, size_t bits[10], size_t page_shift)
 		__mm_shifts[i] = __mm_shifts[i - 1] + bits[i - 1];
 		__mm_sizes[i] = 1UL << __mm_shifts[i];
 	}
+}
+
+void set_ram_base(uintptr_t base)
+{
+	ram_base = base;
+}
+
+uintptr_t get_ram_base()
+{
+	return ram_base;
 }

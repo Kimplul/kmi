@@ -5,7 +5,7 @@ DEBUGFLAGS	!= [ $(RELEASE) ] \
 			&& echo "-flto -O2 -DNDEBUG" \
 			|| echo "-O0 -DDEBUG"
 
-CFLAGS		= -ffreestanding -nostdlib -static -fno-pie -std=c17 -Wall -Wextra -Wvla -D$(ARCH) -g
+CFLAGS		= -ffreestanding -nostdlib -fno-pie -std=c17 -Wall -Wextra -Wvla -D$(ARCH) -g -fpic
 DEPFLAGS	= -MT $@ -MMD -MP -MF $@.d
 LINTFLAGS	= -fsyntax-only
 PREPROCESS	= -E
@@ -13,7 +13,8 @@ LDFLAGS		!= [ $(LLVM) ] \
 			|| echo -static-libgcc -lgcc
 
 BUILD		= build
-ARCH_BUILD	= $(BUILD)/arch/$(ARCH)
+ARCH_KERN_BUILD	= $(BUILD)/kernel/arch/$(ARCH)
+ARCH_INIT_BUILD = $(BUILD)/init/arch/$(ARCH)
 ARCH_SOURCE	= arch/$(ARCH)
 
 all: kmi.bin
@@ -35,9 +36,11 @@ COMPILER	!= [ $(LLVM) ] \
 
 
 KERNEL_SOURCES	!= echo common/*.c common/uapi/*.c lib/*.c
+# might consider renaming common, currently it refers to stuff common
+# to all arches but clearly there are bits that are common to init and kernel
+INIT_SOURCES	!= echo lib/fdt*.c common/fdt.c common/string.c
 CLEANUP		:= build deps.mk kernel.* init.* kmi.bin
 CLEANUP_CMD	:=
-INIT_SOURCES	:=
 
 include arch/$(ARCH)/source.mk
 
@@ -80,10 +83,10 @@ INIT_LD		!= ./scripts/gen-deps --init --link "$(INIT_LINK).S"
 $(INIT_LD): kernel.bin
 
 init.elf: $(INIT_OBJECTS) $(INIT_LD)
-	$(GENELF) -T $(INIT_LD) $(INIT_OBJECTS) -o init.elf $(LINK_FLAGS)
+	$(GENELF) $(INIT_FLAGS) -T $(INIT_LD) $(INIT_OBJECTS) -o init.elf $(LINK_FLAGS)
 
 kernel.elf: $(KERNEL_OBJECTS) $(KERNEL_LD)
-	$(GENELF) -T $(KERNEL_LD) $(KERNEL_OBJECTS) -o kernel.elf $(LINK_FLAGS)
+	$(GENELF) $(KERNEL_FLAGS) -T $(KERNEL_LD) $(KERNEL_OBJECTS) -o kernel.elf $(LINK_FLAGS)
 
 init.bin: init.elf
 	$(OBJCOPY) $(OBJCOPY_FLAGS) init.elf init.bin

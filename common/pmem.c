@@ -609,8 +609,8 @@ void init_pmem(void *fdt)
 	stat_pmem_conf(fdt, &max_order, &base_bits, bits);
 	init_mem(max_order, bits, base_bits);
 
-	pm_t ram_size = __get_ramtop(fdt) - RAM_BASE;
-	pm_t ram_base = (pm_t)__va(RAM_BASE);
+	pm_t ram_size = __get_ramtop(fdt) - get_ram_base();
+	pm_t ram_base = (pm_t)__va(get_ram_base());
 
 	pm_t initrd_top = get_initrdtop(fdt);
 	pm_t fdt_top = __get_fdttop(fdt);
@@ -629,7 +629,7 @@ void init_pmem(void *fdt)
 
 	/* mark init stack, this should be unmapped once we get to executing
 	 * processes */
-	__mark_area_used((pm_t)__va(PM_STACK_BASE), (pm_t)__va(PM_STACK_TOP));
+	__mark_area_used(VM_STACK_BASE, VM_STACK_TOP);
 
 	/* mark kernel */
 	/* this could be made more explicit, I suppose. */

@@ -23,11 +23,17 @@
  * Sets up all kernel subsystems and jumps into \c init program, does not
  * return.
  *
- * @param fdt Global FDT pointer.
+ * @param fdt Global FDT pointer in physical memory.
+ * @param ram_base RAM base.
  * @return Should not.
  */
-void __main main(void *fdt)
+void __main main(void *fdt, uintptr_t ram_base)
 {
+	set_ram_base(ram_base);
+
+	/* convert physical address to virtual address */
+	fdt = __va(fdt);
+
 	/* dbg uses direct mapping at this point */
 	init_dbg(fdt);
 	setup_dmap_dbg();

@@ -1,9 +1,9 @@
 #!/bin/sh
 
 gencommon () {
-	lint="build/${s%.*}${1}.l"
-	dep="build/${s%.*}${1}.d"
-	obj="build/${s%.*}${1}"
+	lint="build/${path}/${s%.*}${1}.l"
+	dep="build/${path}/${s%.*}${1}.d"
+	obj="build/${path}/${s%.*}${1}"
 
 	echo "${dep}:"		>> deps.mk
 	echo "-include ${dep}"	>> deps.mk
@@ -30,9 +30,11 @@ genrule () {
 case "${1}" in
 	--kernel)
 		kern=1
+		path=kernel
 		flags='$(KERN_FLAGS)'
 		;;
 	--init)
+		path=init
 		flags='$(INIT_FLAGS)'
 		;;
 esac
@@ -48,7 +50,8 @@ case "${2}" in
 esac
 
 # create all subdirectories
-mkdir -p $(echo "${3}" | xargs -n 1 dirname | uniq | sed 's|^|build/|g')
+mkdir -p $(echo "${3}" | xargs -n 1 dirname | uniq | sed 's|^|build/init/|g')
+mkdir -p $(echo "${3}" | xargs -n 1 dirname | uniq | sed 's|^|build/kernel/|g')
 
 for s in ${3}
 do

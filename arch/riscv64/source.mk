@@ -21,7 +21,7 @@ run:
 include $(ARCH_SOURCE)/asm/source.mk
 
 # dependecy generation
-$(ARCH_BUILD)/kernel/entry.o: $(ARCH_SOURCE)/kernel/gen/asm-offsets.h
+$(ARCH_KERN_BUILD)/kernel/entry.o: $(ARCH_SOURCE)/kernel/gen/asm-offsets.h
 
 # full cleanup
 CLEANUP_CMD	:= $(ARCH_SOURCE)/conf/rmimage.sh

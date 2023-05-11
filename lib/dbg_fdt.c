@@ -2,7 +2,7 @@
 /* Copyright 2021 - 2022, Kim Kuparinen < kimi.h.kuparinen@gmail.com > */
 
 /**
- * @file fdt_dbg.c
+ * @file dbg_fdt.c
  * Dump fdt info to serial.
  */
 
