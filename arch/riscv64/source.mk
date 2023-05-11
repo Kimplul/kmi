@@ -5,6 +5,11 @@ INIT_SOURCES	+= $(ARCH_SOURCE)/init/*.[cS]
 # this doesn't work for rv32, but fine for now */
 ARCH_CFLAGS	:= -mcmodel=medany
 
+# oof, LLVM's riscv support has become better since I last looked into
+# it, but for some reason LTO still causes a crash. Meaning it has to be
+# disabled again, though for a different reason than last time
+DEBUGFLAGS	!= [ $(LLVM) ] && echo $(DEBUGFLAGS:-flto=) || echo $(DEBUGFLAGS)
+
 run:
 	$(ARCH_SOURCE)/conf/mkimage.sh $(ARCH)
 
