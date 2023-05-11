@@ -14,11 +14,10 @@ RISC-V 32 bit support, but at the moment I'm focusing on 64 bit and 32 is less t
 Simple build with default configuration:
 + `make`
 
-This results in `kmi.bin`, which is the bootloader and the payload kernel.
-Currently the kernel expects to be loaded into a specific address, allowing arbitrary boot
-locations is on my TODO list. The load address depends on the configured RAM base address,
-see `arch/riscv64/conf/kmi.its` and `PM_KERN_BASE`. Dynamically detecting RAM base is
-also TODO.
+This results in `kmi.bin`, which is the loader and the payload kernel.
+The loader should support being loaded to arbitrary memory locations.
+You should avoid the lowest 1 MiB of RAM, as the kernel is relocated thereabouts
+after the loader has kicked itself into virtual memory.
 
 Useful `make` flags and targets:
 
@@ -32,10 +31,7 @@ I'd like to provide it as a separate userspace driver. At the moment only NS1655
 compatible serial devices are supported.
 
 + `LLVM=<0/1>`: Use LLVM toolchain when set to `1`. Default is `0`.
-Note that due to some bugs and missing features in LLVM RISC-V support, some GNU
-binutils tools are still needed, mainly `objcopy`. Also, when combined with `RELEASE`,
-disables LTO as `lld` seemed to have issues with some relaxed instructions with
-LTO enabled.
+Note that due to some bugs in the toolchain, LTO is disabled with `RELEASE=1`.
 
 + `UBSAN=<0/1>`: Enable undefined behavior sanitizer, outputs a number of warnings at
 runtime when undefined behavior is detected. Only available with `RELEASE=0`.
