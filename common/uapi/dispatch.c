@@ -36,9 +36,7 @@ SYSCALL_DEFINE0(noop)(struct tcb *t)
  */
 SYSCALL_DEFINE1(putch)(struct tcb *t, sys_arg_t a)
 {
-	const char c[2] = {a, 0};
-	MAYBE_UNUSED(c);
-	dbg((const char *)&c);
+	dbg("%c", (char)a);
 	set_args(t, SYS_RET1(OK));
 }
 

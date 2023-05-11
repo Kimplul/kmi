@@ -5,7 +5,7 @@ DEBUGFLAGS	!= [ $(RELEASE) ] \
 			&& echo "-flto -O2 -DNDEBUG" \
 			|| echo "-O0 -DDEBUG"
 
-CFLAGS		= -ffreestanding -nostdlib -fno-pie -std=c17 -Wall -Wextra -Wvla -D$(ARCH) -g -fpic
+CFLAGS		= -ffreestanding -nostdlib -fno-pie -std=c17 -Wall -Wextra -Wvla -D$(ARCH) -g
 DEPFLAGS	= -MT $@ -MMD -MP -MF $@.d
 LINTFLAGS	= -fsyntax-only
 PREPROCESS	= -E
@@ -71,7 +71,7 @@ KERNEL_LINK	:= arch/$(ARCH)/conf/kernel-link
 INIT_LINK	:= arch/$(ARCH)/conf/init-link
 
 KERN_FLAGS	!= [ $(UBSAN) ] && echo -fsanitize=undefined || echo
-INIT_FLAGS	:=
+INIT_FLAGS	:= -fpic
 
 KERNEL_OBJECTS	!= ./scripts/gen-deps --kernel --compile "$(KERNEL_SOURCES)"
 INIT_OBJECTS	!= ./scripts/gen-deps --init --compile "$(INIT_SOURCES)"
