@@ -15,7 +15,7 @@ SECTIONS {
 	   final binary
 	 */
 	.text ALIGN(4K) : AT(0) {
-		*(.init.start)
+		*(.init*)
 		*(.text*);
 	}
 
@@ -31,10 +31,7 @@ SECTIONS {
 		*(.sbss*) *(.bss*) *(COMMON)
 	}
 
-	.top : {
-		*(.top*)
-	}
-
+	__kernel = .;
 	__kernel_size = <KERNEL_SIZE>;
 
 	.garbage : {

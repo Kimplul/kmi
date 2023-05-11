@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: copyleft-next-0.3.1 */
 /* Copyright 2021 - 2022, Kim Kuparinen < kimi.h.kuparinen@gmail.com > */
 
-.section .init.start
+.section .init
 .global _start
 /* Entry point to the kernel loader. */
 _start:
@@ -20,8 +20,3 @@ li sp, VM_STACK_TOP // load virtual stack address
 li fp, 0
 li gp, 0
 jr a2 // jump to kernel
-
-/* there should be a kernel payload after this address */
-.section .top
-.global __kernel
-__kernel:

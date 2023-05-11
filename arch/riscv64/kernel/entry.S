@@ -14,7 +14,6 @@
 
 /* very much based on linux, but why change it if works, eh? */
 .section .text
-.align 4
 .global handle_irq
 handle_irq:
 	csrrw tp, CSR_SSCRATCH, tp
