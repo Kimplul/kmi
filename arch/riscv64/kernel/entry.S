@@ -14,6 +14,19 @@
 
 /* very much based on linux, but why change it if works, eh? */
 .section .text
+
+.option push
+/* norelax necessary for LLVM, as relaxed alignment is apparently unimplemented
+ * (as of 2023/05/17, clang 14.0.6):
+ */
+.option norelax
+/* align 2, meaning 2^2 = 4 bytes, necessary as CSR_STVEC requires minimum
+ * four byte alignment
+ */
+.align 2
+/* we can go back to relaxed mode if we want */
+.option pop
+
 .global handle_irq
 handle_irq:
 	csrrw tp, CSR_SSCRATCH, tp
