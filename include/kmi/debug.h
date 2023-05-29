@@ -320,8 +320,8 @@
 #if defined(DEBUG)
 /** Serial devices supported. */
 enum serial_dev {
-	/** NS16550A and compatible. Currently the only supported serial device. */
-	NS16550A,
+	/** 8250 and compatible. Currently the only supported serial device. */
+	UART_8250,
 };
 
 /**

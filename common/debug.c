@@ -59,8 +59,8 @@ vm_t map_io_dbg(struct vmem *b)
  * try to implement some kind of basic driver subsystem, but this is good enough
  * for now. */
 
-/** NS16550A and compatible serial drivers. */
-struct __packed ns16550a {
+/** 8250 and compatible serial drivers. */
+struct __packed uart_8250 {
 	/** Receiver buffer/transmitter holding register. */
 	uint8_t data;
 
@@ -111,10 +111,10 @@ struct __packed ns16550a {
 #define LSR_ERR (1 << 7)
 
 /**
- * Address of ns16550a port. If other serial drivers are added, this should
- * maybe be made a void *.
+ * Address of generic 8250 port. If other serial drivers are added, this should
+ * maybe be made a void *. No support for quirks at the moment.
  */
-static struct ns16550a *port = 0;
+static struct uart_8250 *port = 0;
 
 /**
  * Serial transmitter empty.
@@ -150,8 +150,17 @@ static void __putchar(char c)
  */
 static enum serial_dev __serial_dev_enum(const char *dev_name)
 {
+	/* qemu, for example */
 	if (strncmp("ns16550", dev_name, 7) == 0)
-		return NS16550A;
+		return UART_8250;
+
+	/* mentioned in dtc documentation as an example */
+	if (strncmp("ns8250", dev_name, 7) == 0)
+		return UART_8250;
+
+	/* starfive visionfive 2, for example (hopefully works) */
+	if (strncmp("snps,dw-apb-uart", dev_name, 16) == 0)
+		return UART_8250;
 
 	return -1;
 }
@@ -194,8 +203,8 @@ static struct dbg_info __dbg_from_fdt(const void *fdt)
 void __setup_dbg(vm_t pt, enum serial_dev dev)
 {
 	switch (dev) {
-	case NS16550A:
-		port = (struct ns16550a *)pt;
+	case UART_8250:
+		port = (struct uart_8250 *)pt;
 		break;
 	}
 

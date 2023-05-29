@@ -324,3 +324,139 @@ __weak int memcmp(const void *ptr1, const void *ptr2, size_t num)
 
 	return (int)(p1[-1] - p2[-1]);
 }
+
+/**
+ * Convert ASCII hex character to integer.
+ * Allows both upper- and lowercase letters.
+ *
+ * @param c Character to convert.
+ * @return Corresponding integer value. That is, '1' => 1, '2' => 2, etc.
+ * \c -1 if conversion failed.
+ */
+static int __hexval(char c)
+{
+	if (c >= '0' && c <= '9')
+		return c - '0';
+
+	if (c >= 'a' && c <= 'f')
+		return c - 'a';
+
+	if (c >= 'A' && c <= 'F')
+		return c - 'A';
+
+	return -1;
+}
+
+/**
+ * Convert string assumed to represent hex
+ * value to corresponding pointer.
+ *
+ * @param s String to convert to value.
+ * @return Corresponding pointer value.
+ */
+static uintptr_t __hexuintptr(const char *s)
+{
+	uintptr_t res = 0;
+	int val = 0;
+	while ((val = __hexval(*(s++))) != -1) {
+		res *= 16;
+		res += val;
+	}
+
+	return res;
+}
+
+/**
+ * Convert ASCII decimal character to integer.
+ *
+ * @param c Character to convert.
+ * @return Corresponding integer value. That is, '1' => 1, '2' => 2, etc.
+ * \c -1 if conversion failed.
+ */
+static int __decval(char c)
+{
+	if (c >= '0' && c <= '9')
+		return c - '0';
+
+	return -1;
+}
+
+/**
+ * Convert string assumed to represent decimal
+ * value to corresponding pointer.
+ *
+ * @param s String to convert to value.
+ * @return Corresponding pointer value.
+ */
+static uintptr_t __decuintptr(const char *s)
+{
+	uintptr_t res = 0;
+	int val = 0;
+	while ((val = __decval(*(s++))) != -1) {
+		res *= 10;
+		res += val;
+	}
+
+	return res;
+}
+
+/**
+ * Convert ASCII octal character to integer.
+ *
+ * @param c Character to convert.
+ * @return Corresponding integer value. That is, '1' => 1, '2' => 2, etc.
+ * \c -1 if conversion failed.
+ */
+static int __octval(char c)
+{
+	if (c >= '0' && c <= '7')
+		return c - '0';
+
+	return -1;
+}
+
+/**
+ * Convert string assumed to represent octal
+ * value to corresponding pointer.
+ *
+ * @param s String to convert to value.
+ * @return Corresponding pointer value.
+ */
+static uintptr_t __octuintptr(const char *s)
+{
+	uintptr_t res = 0;
+	int val = 0;
+	while ((val = __octval(*(s++))) != -1) {
+		res *= 8;
+		res += val;
+	}
+
+	return res;
+}
+
+uintptr_t strtouintptr(const char *s)
+{
+	if (!s)
+		return 0;
+
+	if (s[0] == 0)
+		return 0;
+
+	if (s[0] == '0') {
+		if (s[1] == 0)
+			return 0;
+
+		if (s[1] == 'x' || s[1] == 'X')
+			return __hexuintptr(s + 2);
+
+		return __octuintptr(s + 1);
+	}
+
+	if (s[0] == '-')
+		return -__decuintptr(s + 1);
+
+	if (s[0] == '+')
+		return __decuintptr(s + 1);
+
+	return __decuintptr(s);
+}

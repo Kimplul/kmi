@@ -427,7 +427,8 @@ stat_t populate_kvmem(struct vmem *b)
 	size_t flags = VM_V | VM_R | VM_W | VM_X | VM_G;
 	for (size_t i = KSTART_PAGE; i < IO_PAGE; ++i)
 		b->leaf[i] = (struct vmem *)to_pte(
-			get_ram_base() + TOP_PAGE_SIZE * (i - KSTART_PAGE), flags);
+			get_ram_base() + TOP_PAGE_SIZE * (i - KSTART_PAGE),
+			flags);
 
 	/* map in IO region */
 	map_io_dbg(b);

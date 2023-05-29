@@ -5,6 +5,9 @@ DEBUGFLAGS	!= [ $(RELEASE) ] \
 			&& echo "-flto -O2 -DNDEBUG" \
 			|| echo "-O0 -DDEBUG"
 
+UBOOTFLAGS	!= [ $(GENERIC_UBOOT) ] \
+			&& echo "-DGENERIC_UBOOT=1"
+
 CFLAGS		= -ffreestanding -nostdlib -static -fno-pie -std=c17 \
 		  -Wall -Wextra -Wvla -D$(ARCH) -g
 
@@ -46,7 +49,7 @@ CLEANUP_CMD	:=
 
 include arch/$(ARCH)/source.mk
 
-COMPILE_FLAGS	:= $(CFLAGS) $(ARCH_CFLAGS)
+COMPILE_FLAGS	:= $(CFLAGS) $(ARCH_CFLAGS) $(UBOOTFLAGS)
 LINK_FLAGS	:= $(LDFLAGS) $(ARCH_LDFLAGS)
 
 INCLUDE_FLAGS	:= -I include -include config.h -include arch/$(ARCH)/config.h

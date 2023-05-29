@@ -612,6 +612,8 @@ void init_pmem(void *fdt)
 	pm_t ram_size = __get_ramtop(fdt) - get_ram_base();
 	pm_t ram_base = (pm_t)__va(get_ram_base());
 
+	/** @todo could probably improve error messages on failing to get fdt
+	 * values */
 	pm_t initrd_top = get_initrdtop(fdt);
 	pm_t fdt_top = __get_fdttop(fdt);
 

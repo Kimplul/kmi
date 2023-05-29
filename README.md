@@ -27,7 +27,7 @@ Open `docs/output/html/index.html` in your favorite web browser.
 
 + `RELEASE=<0/1>`: Enable optimizations when set to `1`. Default is `0`.
 Note that with `RELEASE=1` the built in serial driver is disabled, as eventually
-I'd like to provide it as a separate userspace driver. At the moment only NS16550A and
+I'd like to provide it as a separate userspace driver. At the moment only 8250 and
 compatible serial devices are supported.
 
 + `LLVM=<0/1>`: Use LLVM toolchain when set to `1`. Default is `0`.
@@ -35,6 +35,22 @@ Note that due to some bugs in the toolchain, LTO is disabled with `RELEASE=1`.
 
 + `UBSAN=<0/1>`: Enable undefined behavior sanitizer, outputs a number of warnings at
 runtime when undefined behavior is detected. Only available with `RELEASE=0`.
+
++ `GENERIC_UBOOT=<0/1>`: Compile for use with generic u-boot. This allows
+booting the kernel through u-boot's `go` command. This would in theory allow
+using essentially any precompiled u-boot as a bootloader, but requires some
+extra effort by the user to manage loading different parts to where they should
+go. I should probably come up with a full example, but approximately:
+
+1. Load `kmi.bin` to address `A`
+2. Load `initrd` to address `B`
+3. Load FDT to address `C` (either provided by u-boot or a separate file)
+4. Add `initrd` to FDT's `chosen` node
+5. Boot with `go ${A} ${C}`.
+
+Note that u-boot likes to skip the `0x` prefix for
+hexadecimal values, which can confuse my string converter.
+Check that the strings you pass to `go` have their correct prefixes.
 
 + `run`: Load a test program into `qemu` and run it. Requires some outside support at
 the moment, please see [kmi-example](https://github.com/Kimplul/kmi-example).

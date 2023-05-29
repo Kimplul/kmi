@@ -54,7 +54,8 @@ static void init_bootmem(uintptr_t load_addr, uintptr_t ram_base)
 
 	extern char *__kernel;
 	extern char *__kernel_size;
-	uintptr_t top = load_addr + (uintptr_t)&__kernel + (uintptr_t)&__kernel_size;
+	uintptr_t top = load_addr + (uintptr_t)&__kernel +
+	                (uintptr_t)&__kernel_size;
 
 	/* this could be risky, as we might overwrite some bits of initrd or fdt
 	 * if they're allocated too close to the kernel payload.
@@ -119,3 +120,17 @@ void init(void *fdt, pm_t load_addr)
 
 	jump_to_kernel(fdt, ram_base, (void *)VM_KERN);
 }
+
+#if GENERIC_UBOOT
+void init_go(int argc, char **argv, pm_t load_addr)
+{
+	if (argc != 2)
+		return;
+
+	void *fdt = (void *)strtouintptr(argv[1]);
+
+	/* fdt is passed as second argument, load address first but since we
+	 * already have it due to our ingenious _start, no need to parse it */
+	init(fdt, load_addr);
+}
+#endif

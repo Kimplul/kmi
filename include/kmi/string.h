@@ -215,6 +215,21 @@ void *memmove(void *dst, const void *src, size_t num);
  */
 int memcmp(const void *ptr1, const void *ptr2, size_t num);
 
+/**
+ * Try to convert string \p s into a corresponding
+ * \c uintptr_t. Handles decimal, octal and hex,
+ * assuming hex starts with \c 0x or \c 0X and octal with
+ * \c 0, otherwise assumes decimal. Allows \c + and \c - in
+ * decimal.
+ *
+ * Note that u-boot likes to skip leading \c 0x when using hex,
+ * so if you're passing u-boot variables make sure to check prefixes.
+ *
+ * @param s String to convert to pointer.
+ * @return Corresponding pointer value.
+ */
+uintptr_t strtouintptr(const char *s);
+
 /* Honorable mentions:
  *
  * char *strerror(int err);
