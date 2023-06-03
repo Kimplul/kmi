@@ -203,6 +203,8 @@ stat_t clear_vpage_flags(struct vmem *branch, vm_t vaddr, vmflags_t flags)
 
 stat_t mod_vpage(struct vmem *branch, vm_t vaddr, pm_t paddr, vmflags_t flags)
 {
+	flags |= VM_A | VM_D;
+
 	enum mm_order order;
 	pm_t *pte = __find_vmem(branch, vaddr, &order);
 	if (pte) {
@@ -296,6 +298,10 @@ stat_t map_vpage(struct vmem *branch, pm_t paddr, vm_t vaddr, vmflags_t flags,
 	struct vmem *root = branch;
 	enum mm_order top = __mm_max_order;
 
+	/* eventually we may want to keep track of page accesses,
+	 * but for now they're mainly a nuisance. */
+	flags |= VM_A | VM_D;
+
 	while (top != order) {
 		size_t idx = vm_to_index(vaddr, top);
 
@@ -356,13 +362,19 @@ stat_t unmap_vpage(struct vmem *branch, vm_t vaddr)
 	return ERR_NF;
 }
 
-void flush_tlb()
+void flush_tlb(uintptr_t addr)
 {
-	__asm__ volatile ("sfence.vma %0\n" : : "r" (0) : "memory");
+	__asm__ volatile ("sfence.vma %0, x0\n" : : "r" (addr) : "memory");
+}
+
+void flush_tlb_full()
+{
+	__asm__ volatile ("sfence.vma %0\n" :: "r" (0) : "memory");
 }
 
 void flush_tlb_all()
 {
+	/** @todo this only works on a single core atm. */
 	__asm__ volatile ("sfence.vma\n" ::: "memory");
 }
 
@@ -386,8 +398,8 @@ static void __use_vmem(struct vmem *branch, enum mm_mode m)
 	else if (m == Sv48)
 		mode = SATP_MODE_Sv48;
 
+	flush_tlb_full();
 	csr_write(CSR_SATP, mode | pn);
-	flush_tlb();
 	/* Sv57 && Sv64 in the future? */
 	/** @todo ASID table for maybe faster context switches? */
 }
@@ -424,7 +436,7 @@ stat_t destroy_vmem(struct vmem *b)
 
 stat_t populate_kvmem(struct vmem *b)
 {
-	size_t flags = VM_V | VM_R | VM_W | VM_X | VM_G;
+	size_t flags = VM_V | VM_R | VM_W | VM_X | VM_G | VM_D | VM_A;
 	for (size_t i = KSTART_PAGE; i < IO_PAGE; ++i)
 		b->leaf[i] = (struct vmem *)to_pte(
 			get_ram_base() + TOP_PAGE_SIZE * (i - KSTART_PAGE),
@@ -440,7 +452,7 @@ vm_t setup_kernel_io(struct vmem *b, vm_t paddr)
 {
 	pm_t top_page = paddr / TOP_PAGE_SIZE;
 	b->leaf[IO_PAGE] = (struct vmem *)to_pte(top_page * TOP_PAGE_SIZE,
-	                                         VM_V | VM_R | VM_W);
+	                                         VM_V | VM_R | VM_W | VM_A | VM_D);
 	return -TOP_PAGE_SIZE + paddr - (top_page * TOP_PAGE_SIZE);
 }
 #endif

@@ -16,6 +16,13 @@
 
 #include "../kernel/csr.h"
 
+void flush_tlb_full()
+{
+	/** @todo could be nice to have a common set of features with kernel,
+	 * but for now this is good enough. */
+	__asm__ volatile ("sfence.vma\n" ::: "memory");
+}
+
 /**
  * Create page table entry.
  * Copy from \ref arch/riscv64/kernel/vmem.c.
@@ -50,7 +57,9 @@ static pm_t __fdt_ram_base(void *fdt)
  */
 static void init_bootmem(uintptr_t load_addr, uintptr_t ram_base)
 {
-	size_t flags = VM_V | VM_X | VM_R | VM_W;
+	/* set all flags on, especially A and D since MMUs are allowed to raise
+	 * exceptions that we're not ready to handle if they're unset. */
+	size_t flags = VM_V | VM_X | VM_R | VM_W | VM_D | VM_A;
 
 	extern char *__kernel;
 	extern char *__kernel_size;
@@ -83,6 +92,8 @@ static void init_bootmem(uintptr_t load_addr, uintptr_t ram_base)
 	case Sv48: mode = SATP_MODE_Sv48; break;
 	default: break;
 	};
+
+	flush_tlb_full();
 	csr_write(CSR_SATP, mode | ((uintptr_t)root_branch >> 12));
 }
 

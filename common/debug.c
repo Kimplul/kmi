@@ -123,6 +123,12 @@ static struct uart_8250 *port = 0;
  */
 static int __serial_tx_empty()
 {
+	/**
+	 * @todo visionfive2 loops on lsr indefinitely, why?
+	 * answer: because apparently visionfive2 uart has reg-shift = 2,
+	 * meaning the registers are spaced apart more in memory than my naive
+	 * struct.
+	 * */
 	return port->lsr & LSR_THRE;
 }
 
@@ -177,7 +183,13 @@ static struct dbg_info __dbg_from_fdt(const void *fdt)
 	const char *stdout =
 		fdt_getprop(fdt, chosen_offset, "stdout-path", NULL);
 
-	int stdout_offset = fdt_path_offset(fdt, stdout);
+	/* discard options */
+	size_t baselen = strlen(stdout);
+	const char *options = strchr(stdout, ':');
+	if (options)
+		baselen = options - stdout;
+
+	int stdout_offset = fdt_path_offset_namelen(fdt, stdout, baselen);
 
 	/* get serial device type */
 	const char *dev_name = (const char *)fdt_getprop(fdt, stdout_offset,

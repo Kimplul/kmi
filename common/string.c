@@ -105,13 +105,13 @@ __weak char *strchr(const char *str, int chr)
 	const char *s1 = str;
 	ssize_t num = strlen(s1);
 
-	while (num-- && *(s1--) != chr)
+	while (num-- && *(s1++) != chr)
 		;
 
 	if (num < 0)
 		return 0;
 
-	return (char *)(s1 + 1);
+	return (char *)(s1 - 1);
 }
 
 #undef strtok
@@ -339,10 +339,10 @@ static int __hexval(char c)
 		return c - '0';
 
 	if (c >= 'a' && c <= 'f')
-		return c - 'a';
+		return 10 + c - 'a';
 
 	if (c >= 'A' && c <= 'F')
-		return c - 'A';
+		return 10 + c - 'A';
 
 	return -1;
 }
