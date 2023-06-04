@@ -398,8 +398,8 @@ static void __use_vmem(struct vmem *branch, enum mm_mode m)
 	else if (m == Sv48)
 		mode = SATP_MODE_Sv48;
 
-	flush_tlb_full();
 	csr_write(CSR_SATP, mode | pn);
+	flush_tlb_full();
 	/* Sv57 && Sv64 in the future? */
 	/** @todo ASID table for maybe faster context switches? */
 }
@@ -468,33 +468,19 @@ vm_t setup_kernel_io(struct vmem *b, vm_t paddr)
 void clone_uvmem(struct vmem * restrict r, struct vmem * restrict b)
 {
 	size_t i = 0;
-	for (; i < CSTACK_PAGE; i += 8) {
+	for (; i < CSTACK_PAGE; ++i) {
 		struct vmem *t = r->leaf[i + 0];
 		if (t == 0)
 			break;
 
-		b->leaf[i + 0] = t;
-		b->leaf[i + 1] = r->leaf[i + 1];
-		b->leaf[i + 2] = r->leaf[i + 2];
-		b->leaf[i + 3] = r->leaf[i + 3];
-		b->leaf[i + 4] = r->leaf[i + 4];
-		b->leaf[i + 5] = r->leaf[i + 5];
-		b->leaf[i + 6] = r->leaf[i + 6];
-		b->leaf[i + 7] = r->leaf[i + 7];
+		b->leaf[i] = t;
 	}
 
-	for (; i < CSTACK_PAGE; i += 8) {
+	for (; i < CSTACK_PAGE; ++i) {
 		struct vmem *t = b->leaf[i + 0];
 		if (t == 0)
 			break;
 
-		b->leaf[i + 0] = 0;
-		b->leaf[i + 1] = 0;
-		b->leaf[i + 2] = 0;
-		b->leaf[i + 3] = 0;
-		b->leaf[i + 4] = 0;
-		b->leaf[i + 5] = 0;
-		b->leaf[i + 6] = 0;
-		b->leaf[i + 7] = 0;
+		b->leaf[i] = 0;
 	}
 }

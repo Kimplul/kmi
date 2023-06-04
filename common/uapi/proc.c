@@ -183,5 +183,5 @@ SYSCALL_DEFINE1(swap)(struct tcb *t, sys_arg_t tid){
 	set_args(t, SYS_RET1(OK));
 
 	/* get register state for new thread */
-	return_args(t, get_args(s));
+	return_args(s, get_args(s));
 }

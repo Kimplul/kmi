@@ -158,21 +158,27 @@ struct sys_ret {
 /**
  * Helper macro for defining syscall with zero arguments.
  *
+ * Note the \c __noinline attribute, might seem weird but turned out
+ * that gcc liked to inline all system calls into handle_syscall(),
+ * which seems to add quite a bit of moving registers around and spilling
+ * into memory. Forcing the syscalls to not be inlined removed this
+ * overhead and sped things up by ~7 %.
+ *
  * @param name Name of syscall.
  */
-#define SYSCALL_DEFINE0(name)                                    \
-	static inline void __##name(struct tcb *t);              \
-	void sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
-	                sys_arg_t c,                             \
-	                sys_arg_t d, sys_arg_t e)                \
-	{                                                        \
-		UNUSED(a);                                       \
-		UNUSED(b);                                       \
-		UNUSED(c);                                       \
-		UNUSED(d);                                       \
-		UNUSED(e);                                       \
-		__##name(t);                                     \
-	}                                                        \
+#define SYSCALL_DEFINE0(name)                                               \
+	static inline void __##name(struct tcb *t);                         \
+	void __noinline sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
+	                           sys_arg_t c,                             \
+	                           sys_arg_t d, sys_arg_t e)                \
+	{                                                                   \
+		UNUSED(a);                                                  \
+		UNUSED(b);                                                  \
+		UNUSED(c);                                                  \
+		UNUSED(d);                                                  \
+		UNUSED(e);                                                  \
+		__##name(t);                                                \
+	}                                                                   \
 	static inline void __##name
 
 /**
@@ -180,18 +186,18 @@ struct sys_ret {
  *
  * @param name Name of syscall.
  */
-#define SYSCALL_DEFINE1(name)                                    \
-	static inline void __##name(struct tcb *, sys_arg_t);    \
-	void sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
-	                sys_arg_t c,                             \
-	                sys_arg_t d, sys_arg_t e)                \
-	{                                                        \
-		UNUSED(b);                                       \
-		UNUSED(c);                                       \
-		UNUSED(d);                                       \
-		UNUSED(e);                                       \
-		__##name(t, a);                                  \
-	}                                                        \
+#define SYSCALL_DEFINE1(name)                                               \
+	static inline void __##name(struct tcb *, sys_arg_t);               \
+	void __noinline sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
+	                           sys_arg_t c,                             \
+	                           sys_arg_t d, sys_arg_t e)                \
+	{                                                                   \
+		UNUSED(b);                                                  \
+		UNUSED(c);                                                  \
+		UNUSED(d);                                                  \
+		UNUSED(e);                                                  \
+		__##name(t, a);                                             \
+	}                                                                   \
 	static inline void __##name
 
 /**
@@ -199,18 +205,18 @@ struct sys_ret {
  *
  * @param name Name of syscall.
  */
-#define SYSCALL_DEFINE2(name)                                    \
-	static inline void __##name(struct tcb *, sys_arg_t,     \
-	                            sys_arg_t);                  \
-	void sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
-	                sys_arg_t c,                             \
-	                sys_arg_t d, sys_arg_t e)                \
-	{                                                        \
-		UNUSED(c);                                       \
-		UNUSED(d);                                       \
-		UNUSED(e);                                       \
-		__##name(t, a, b);                               \
-	}                                                        \
+#define SYSCALL_DEFINE2(name)                                               \
+	static inline void __##name(struct tcb *, sys_arg_t,                \
+	                            sys_arg_t);                             \
+	void __noinline sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
+	                           sys_arg_t c,                             \
+	                           sys_arg_t d, sys_arg_t e)                \
+	{                                                                   \
+		UNUSED(c);                                                  \
+		UNUSED(d);                                                  \
+		UNUSED(e);                                                  \
+		__##name(t, a, b);                                          \
+	}                                                                   \
 	static inline void __##name
 
 /**
@@ -218,18 +224,18 @@ struct sys_ret {
  *
  * @param name Name of syscall.
  */
-#define SYSCALL_DEFINE3(name)                                    \
-	static inline void __##name(struct tcb *, sys_arg_t,     \
-	                            sys_arg_t,                   \
-	                            sys_arg_t);                  \
-	void sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
-	                sys_arg_t c,                             \
-	                sys_arg_t d, sys_arg_t e)                \
-	{                                                        \
-		UNUSED(d);                                       \
-		UNUSED(e);                                       \
-		__##name(t, a, b, c);                            \
-	}                                                        \
+#define SYSCALL_DEFINE3(name)                                               \
+	static inline void __##name(struct tcb *, sys_arg_t,                \
+	                            sys_arg_t,                              \
+	                            sys_arg_t);                             \
+	void __noinline sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
+	                           sys_arg_t c,                             \
+	                           sys_arg_t d, sys_arg_t e)                \
+	{                                                                   \
+		UNUSED(d);                                                  \
+		UNUSED(e);                                                  \
+		__##name(t, a, b, c);                                       \
+	}                                                                   \
 	static inline void __##name
 
 /**
@@ -237,17 +243,17 @@ struct sys_ret {
  *
  * @param name Name of syscall.
  */
-#define SYSCALL_DEFINE4(name)                                    \
-	static inline void __##name(struct tcb *, sys_arg_t,     \
-	                            sys_arg_t, sys_arg_t,        \
-	                            sys_arg_t);                  \
-	void sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
-	                sys_arg_t c,                             \
-	                sys_arg_t d, sys_arg_t e)                \
-	{                                                        \
-		UNUSED(e);                                       \
-		__##name(t, a, b, c, d);                         \
-	}                                                        \
+#define SYSCALL_DEFINE4(name)                                               \
+	static inline void __##name(struct tcb *, sys_arg_t,                \
+	                            sys_arg_t, sys_arg_t,                   \
+	                            sys_arg_t);                             \
+	void __noinline sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
+	                           sys_arg_t c,                             \
+	                           sys_arg_t d, sys_arg_t e)                \
+	{                                                                   \
+		UNUSED(e);                                                  \
+		__##name(t, a, b, c, d);                                    \
+	}                                                                   \
 	static inline void __##name
 
 /**
@@ -255,16 +261,16 @@ struct sys_ret {
  *
  * @param name Name of syscall.
  */
-#define SYSCALL_DEFINE5(name)                                    \
-	static inline void __##name(struct tcb *, sys_arg_t,     \
-	                            sys_arg_t, sys_arg_t,        \
-	                            sys_arg_t, sys_arg_t);       \
-	void sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
-	                sys_arg_t c,                             \
-	                sys_arg_t d, sys_arg_t e)                \
-	{                                                        \
-		__##name(t, a, b, c, d, e);                      \
-	}                                                        \
+#define SYSCALL_DEFINE5(name)                                               \
+	static inline void __##name(struct tcb *, sys_arg_t,                \
+	                            sys_arg_t, sys_arg_t,                   \
+	                            sys_arg_t, sys_arg_t);                  \
+	void __noinline sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
+	                           sys_arg_t c,                             \
+	                           sys_arg_t d, sys_arg_t e)                \
+	{                                                                   \
+		__##name(t, a, b, c, d, e);                                 \
+	}                                                                   \
 	static void __##name
 
 /** @name Misc syscalls. */
