@@ -1,9 +1,10 @@
-# `kmi`
+# kmi
 
-`kmi` is a ***K***ernel with ***MI***grating threads I've been writing as a hobby project.
+`kmi` is a ***K*** ernel with ***MI*** grating threads I've been writing as a hobby project.
 To see it in action, have a look at [kmi-example](https://github.com/Kimplul/kmi-example).
 
-Currently the kernel only works in `qemu` with RISC-V 64 bit. There is some code for
+Currently the kernel has been run on `qemu` with the `virt` board and on a
+StarFive VisionFive2 with RISC-V 64 bit. There is some code for
 RISC-V 32 bit support, but at the moment I'm focusing on 64 bit and 32 is less tested.
 
 # Building
@@ -40,17 +41,7 @@ runtime when undefined behavior is detected. Only available with `RELEASE=0`.
 booting the kernel through u-boot's `go` command. This would in theory allow
 using essentially any precompiled u-boot as a bootloader, but requires some
 extra effort by the user to manage loading different parts to where they should
-go. I should probably come up with a full example, but approximately:
-
-1. Load `kmi.bin` to address `A`
-2. Load `initrd` to address `B`
-3. Load FDT to address `C` (either provided by u-boot or a separate file)
-4. Add `initrd` to FDT's `chosen` node
-5. Boot with `go ${A} ${C}`.
-
-Note that u-boot likes to skip the `0x` prefix for
-hexadecimal values, which can confuse my string converter.
-Check that the strings you pass to `go` have their correct prefixes.
+go. See `docs/visionfive2.md` for an example.
 
 + `run`: Load a test program into `qemu` and run it. Requires some outside support at
 the moment, please see [kmi-example](https://github.com/Kimplul/kmi-example).

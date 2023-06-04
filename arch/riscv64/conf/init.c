@@ -256,6 +256,8 @@ void callback(long status, long tid, long d0, long d1, long d2, long d3)
 #define csr_read(csr, \
 	         res) __asm__ volatile ("csrr %0, " csr : "=r" (res) :: "memory")
 
+#define CSR_CYCLE "0xc00"
+
 void _start()
 {
 	sys_noop();
@@ -264,17 +266,20 @@ void _start()
 	uint64_t second = sys_timebase();
 	print_value("Timebase", second);
 
-	uint64_t n = 0, i, start;
+	uint64_t n = 0, i, start, cn, cstart, cend;
 	start = i = sys_ticks();
 	print_value("Start ticks", start);
 
+	csr_read(CSR_CYCLE, cstart);
 	while (i < start + second) {
 		i = sys_ticks();
 		n++;
 	}
+	csr_read(CSR_CYCLE, cend);
 
 	print_value("End ticks", i);
 	print_value("Syscalls per second", n);
+	print_value("Executed cycles per second", cend - cstart);
 
 	puts("Setting callback...");
 	sys_ipc_server(callback);
