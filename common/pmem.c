@@ -647,7 +647,8 @@ void init_pmem(void *fdt)
 	info("found fdt at [%lx - %lx]\n", fdt_base, fdt_top);
 
 	/* find probably most suitable contiguous region of ram for our physical
-	 * ram map */
+	 * ram map  */
+	/** @todo this could be better? */
 	pm_t pmap_base = align_up(MAX(initrd_top, fdt_top), sizeof(int));
 	info("choosing to place pmem map at %lx\n", pmap_base);
 

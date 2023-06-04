@@ -38,14 +38,15 @@ sync
 
 With the SD card ready to go, reset the device and manually run these commands:
 
-1. `fdt move 0xcce379d0 ${fdt_addr_r}`
+1. `fdt move ${fdtaddr} ${fdt_addr_r}`
 2. `load mmc 1:3 0x47000000 kmi.bin`
 3. `load mmc 1:3 0x48000000 initrd`
 4. `fdt chosen 0x48000000 0x48001000`
 5. `go 0x47000000 ${fdt_addr_r}`
 
-These commands are pretty hard coded and might not work in the future, in which
-case I should come and update them.
+These commands are pretty hard coded and might not work in the future. At least
+currently `${fdt_addr_r}` is `0x46000000`, so you can probably see where the
+other addresses come from.
 
 Other things to note:
 
