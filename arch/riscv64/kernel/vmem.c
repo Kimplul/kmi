@@ -369,7 +369,7 @@ void flush_tlb(uintptr_t addr)
 
 void flush_tlb_full()
 {
-	__asm__ volatile ("sfence.vma %0\n" :: "r" (0) : "memory");
+	__asm__ volatile ("sfence.vma %0\n" : : "r" (0) : "memory");
 }
 
 void flush_tlb_all()
@@ -451,9 +451,17 @@ stat_t populate_kvmem(struct vmem *b)
 vm_t setup_kernel_io(struct vmem *b, vm_t paddr)
 {
 	pm_t top_page = paddr / TOP_PAGE_SIZE;
-	b->leaf[IO_PAGE] = (struct vmem *)to_pte(top_page * TOP_PAGE_SIZE,
-	                                         VM_V | VM_R | VM_W | VM_A | VM_D);
-	return -TOP_PAGE_SIZE + paddr - (top_page * TOP_PAGE_SIZE);
+	pm_t addr = top_page * TOP_PAGE_SIZE;
+	b->leaf[IO_PAGE] = (struct vmem *)to_pte(addr,
+	                                         VM_V | VM_R | VM_W | VM_A |
+	                                         VM_D);
+	/* flush might be necessary when we're in the actual vmem we're
+	 * modifying, or during the startup stage where we don't have a tcb yet.
+	 * I don't think checking the rpc context is necessary? */
+	if (!cur_tcb() || cur_tcb()->proc.vmem == b)
+		flush_tlb((uintptr_t)pte_addr(b->leaf[IO_PAGE]));
+
+	return -TOP_PAGE_SIZE + paddr - addr;
 }
 #endif
 

@@ -21,8 +21,7 @@
 #include <kmi/sizes.h>
 
 /* --- START ARCH USER CONFIG VALUES --- */
-/** Physical address to where the OS image will be loaded. */
-//#define RAM_BASE 0x80000000
+/* nada for now */
 /* --- END ARCH USER CONFIG VALUES --- */
 
 /* don't touch >:( */

@@ -11,6 +11,7 @@
 #include <kmi/string.h>
 #include <kmi/utils.h>
 #include <kmi/attrs.h>
+#include <kmi/debug.h>
 #include <libfdt.h>
 
 /** GNU cpio, POSIX 'newc' format header. */

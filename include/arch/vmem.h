@@ -98,7 +98,11 @@ stat_t mod_vpage(struct vmem *branch, vm_t vaddr, pm_t paddr, vmflags_t flags);
 stat_t stat_vpage(struct vmem *branch, vm_t vaddr, pm_t *paddr,
                   enum mm_order *order, vmflags_t *flags);
 
-/** Flush tlb entry where associated with address \p addr. */
+/**
+ * Flush tlb entry where associated with address \p addr.
+ *
+ * @param addr Virtual address region to flush.
+ */
 void flush_tlb(uintptr_t addr);
 
 /** Flush full tlb of current address space. */

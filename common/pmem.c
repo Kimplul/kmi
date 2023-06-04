@@ -518,6 +518,11 @@ pm_t probe_pmap(size_t ram_size)
  */
 static void __mark_area_used(pm_t base, pm_t top)
 {
+	if (top < base) {
+		bug("top < base: %lx < %lx\n", top, base);
+		return;
+	}
+
 	size_t area_left = top - base;
 	pm_t runner = base;
 	while (area_left >= BASE_PAGE_SIZE) {
@@ -537,20 +542,29 @@ static void __mark_area_used(pm_t base, pm_t top)
  */
 static void __mark_reserved_mem(void *fdt)
 {
-	int rmem_offset = fdt_path_offset(fdt, "/reserved-memory/mmode_resv0");
-	struct cell_info ci = get_reginfo(fdt, "/reserved-memory/mmode_resv0");
-	uint8_t *rmem_reg =
-		(uint8_t *)fdt_getprop(fdt, rmem_offset, "reg", NULL);
+	int rmem_offset = fdt_path_offset(fdt, "/reserved-memory");
+	struct cell_info ci = get_reginfo(fdt, "/reserved-memory");
 
-	pm_t base = (pm_t)fdt_load_int_ptr(ci.addr_cells, rmem_reg);
+	int node = 0;
+	fdt_for_each_subnode(node, fdt, rmem_offset) {
+		uint8_t *rmem_reg =
+			(uint8_t *)fdt_getprop(fdt, node, "reg", NULL);
 
-	if (ci.addr_cells == 2)
-		rmem_reg += sizeof(fdt64_t);
-	else
-		rmem_reg += sizeof(fdt32_t);
+		pm_t base = (pm_t)fdt_load_int_ptr(ci.addr_cells, rmem_reg);
 
-	pm_t top = (pm_t)fdt_load_int_ptr(ci.size_cells, rmem_reg) + base;
-	__mark_area_used((pm_t)__va(base), (pm_t)__va(top));
+		if (ci.addr_cells == 2)
+			rmem_reg += sizeof(fdt64_t);
+		else
+			rmem_reg += sizeof(fdt32_t);
+
+		/** @todo make sure the top of a reserved memory area doesn't go
+		 * against our assumptions in FW_MAX_SIZE? */
+		pm_t top =
+			(pm_t)fdt_load_int_ptr(ci.size_cells, rmem_reg) + base;
+		__mark_area_used((pm_t)__va(base), (pm_t)__va(top));
+		info("marked [%lx - %lx] reserved\n", (pm_t)__va(
+			     base), (pm_t)__va(top));
+	}
 }
 
 /**
@@ -603,6 +617,13 @@ static pm_t __get_fdtbase(void *fdt)
 
 void init_pmem(void *fdt)
 {
+	/** @todo should I keep the info outputs? I suppose it's nice to see
+	 * if any assumption is being broken in the serial log, but in that case
+	 * I should really try adding more of them to other parts of the
+	 * codebase as well, the pmem subsystem isn't really especially complex.
+	 */
+	info("initializing pmem\n");
+
 	size_t max_order = 0;
 	size_t base_bits = 0;
 	size_t bits[NUM_ORDERS] = { 0 };
@@ -612,17 +633,29 @@ void init_pmem(void *fdt)
 	pm_t ram_size = __get_ramtop(fdt) - get_ram_base();
 	pm_t ram_base = (pm_t)__va(get_ram_base());
 
+	info("using ram range [%lx - %lx]\n",
+	     ram_base, ram_base + ram_size);
+
 	/** @todo could probably improve error messages on failing to get fdt
 	 * values */
+	pm_t initrd_base = get_initrdbase(fdt);
 	pm_t initrd_top = get_initrdtop(fdt);
+	info("found initrd at [%lx - %lx]\n", initrd_base, initrd_top);
+
 	pm_t fdt_top = __get_fdttop(fdt);
+	pm_t fdt_base = __get_fdtbase(fdt);
+	info("found fdt at [%lx - %lx]\n", fdt_base, fdt_top);
 
 	/* find probably most suitable contiguous region of ram for our physical
 	 * ram map */
 	pm_t pmap_base = align_up(MAX(initrd_top, fdt_top), sizeof(int));
+	info("choosing to place pmem map at %lx\n", pmap_base);
 
 	size_t probe_size = probe_pmap(ram_size);
+	info("pmem map probe size returned %lu\n", probe_size);
+
 	size_t actual_size = populate_pmap(ram_base, ram_size, pmap_base);
+	info("pmem map actual size %lu\n", actual_size);
 
 	if (probe_size != actual_size) {
 		bug("probe_size (%#lx) != actual_size (%#lx)\n", probe_size,
@@ -632,17 +665,25 @@ void init_pmem(void *fdt)
 	/* mark init stack, this should be unmapped once we get to executing
 	 * processes */
 	__mark_area_used(VM_STACK_BASE, VM_STACK_TOP);
+	info("marked stack [%lx - %lx] used\n", VM_STACK_BASE, VM_STACK_TOP);
 
 	/* mark kernel */
 	/* this could be made more explicit, I suppose. */
 	__mark_area_used(VM_KERN, VM_KERN + PM_KERN_SIZE);
+	info("marked kernel [%lx - %lx] used\n", VM_KERN,
+	     VM_KERN + PM_KERN_SIZE);
 
 	/* mark fdt and initrd */
-	__mark_area_used(get_initrdbase(fdt), initrd_top);
-	__mark_area_used(__get_fdtbase(fdt), fdt_top);
+	__mark_area_used(initrd_base, initrd_top);
+	info("marked initrd [%lx - %lx] used\n", initrd_base, initrd_top);
+
+	__mark_area_used(fdt_base, fdt_top);
+	info("marked fdt [%lx - %lx] used\n", fdt_base, fdt_top);
 
 	/* mark pmap */
 	__mark_area_used(pmap_base, pmap_base + actual_size);
+	info("marked pmap [%lx - %lx] used\n", pmap_base,
+	     pmap_base + actual_size);
 
 	/* mark reserved mem */
 	__mark_reserved_mem(fdt);

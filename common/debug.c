@@ -20,18 +20,21 @@
 
 /** Debug context structure. */
 struct dbg_info {
-	/** Address of serial device in memory. */
-	pm_t dbg_ptr;
-
+	/** Address of serial device in virtual memory. Always access registers
+	 * through this address rather than \p addr. */
+	pm_t base;
+	/** Shift count between registers of serial device. */
+	size_t shift;
 	/** Type of serial device. */
 	enum serial_dev dev;
+	/** Physical address of serial device. */
+	pm_t addr;
 };
 
 /** Static debugging information. */
 static struct dbg_info dbg_info = (struct dbg_info){ 0 };
 
 /* forward declarations. */
-static void __setup_dbg(pm_t pt, enum serial_dev dev);
 static struct dbg_info __dbg_from_fdt(const void *fdt);
 
 void init_dbg(const void *fdt)
@@ -41,50 +44,40 @@ void init_dbg(const void *fdt)
 
 void setup_dmap_dbg()
 {
-	__setup_dbg(dbg_info.dbg_ptr, dbg_info.dev);
+	/* noop with the new 8250 driver, though might still be useful in the
+	 * future if I add in some other kind of simple uart */
 }
 
 void setup_io_dbg(struct vmem *b)
 {
-	vm_t io_ptr = map_io_dbg(b);
-	__setup_dbg(io_ptr, dbg_info.dev);
+	dbg_info.base = map_io_dbg(b);
 }
 
 vm_t map_io_dbg(struct vmem *b)
 {
-	return setup_kernel_io(b, dbg_info.dbg_ptr);
+	return setup_kernel_io(b, dbg_info.addr);
 }
+
+/** 8250 data register index. */
+#define UART_8250_DATA 0
+/** 8250 irq register idex. */
+#define UART_8250_IRQ 1
+/** 8250 ird_id register index. */
+#define UART_8250_IRQ_ID 2
+/** 8250 lcr register index. */
+#define UART_8250_LCR 3
+/** 8250 mcr register index. */
+#define UART_8250_MCR 4
+/** 8250 lsr register index. */
+#define UART_8250_LSR 5
+/** 8250 msr register index. */
+#define UART_8250_MSR 6
+/** 8250 scr register index. */
+#define UART_8250_SCR 7
 
 /* if there arises a need for more supported serial drivers, I should probably
  * try to implement some kind of basic driver subsystem, but this is good enough
  * for now. */
-
-/** 8250 and compatible serial drivers. */
-struct __packed uart_8250 {
-	/** Receiver buffer/transmitter holding register. */
-	uint8_t data;
-
-	/** Interrupt enable register. */
-	uint8_t irq;
-
-	/** Interrupt identity/FIFO control register. */
-	uint8_t irq_id;
-
-	/** Line control register. */
-	uint8_t lcr;
-
-	/** Modem control register. */
-	uint8_t mcr;
-
-	/** Line status register. */
-	uint8_t lsr;
-
-	/** Modem status register. */
-	uint8_t msr;
-
-	/** Scratch register. */
-	uint8_t scr;
-};
 
 /** Line status data ready. */
 #define LSR_DR (1 << 0)
@@ -111,17 +104,11 @@ struct __packed uart_8250 {
 #define LSR_ERR (1 << 7)
 
 /**
- * Address of generic 8250 port. If other serial drivers are added, this should
- * maybe be made a void *. No support for quirks at the moment.
- */
-static struct uart_8250 *port = 0;
-
-/**
- * Serial transmitter empty.
+ * 8250 transmitter empty.
  *
  * @return \c 0 if not empty, non-zero otherwise.
  */
-static int __serial_tx_empty()
+static int __8250_tx_empty()
 {
 	/**
 	 * @todo visionfive2 loops on lsr indefinitely, why?
@@ -129,23 +116,43 @@ static int __serial_tx_empty()
 	 * meaning the registers are spaced apart more in memory than my naive
 	 * struct.
 	 * */
-	return port->lsr & LSR_THRE;
+	volatile uint8_t *lsr = (uint8_t *)dbg_info.base +
+	                        (UART_8250_LSR << dbg_info.shift);
+	return (*lsr) & LSR_THRE;
 }
 
 /**
- * Put character out onto serial lines.
+ * Put character out onto 8250 serial lines.
  *
  * @param c Character to output.
  */
-static void __putchar(char c)
+static void __8250_putchar(char c)
 {
-	if (!port)
+	if (!dbg_info.base)
 		return;
 
-	while (__serial_tx_empty() == 0)
+	while (__8250_tx_empty() == 0)
 		;
 
-	port->data = c;
+	volatile uint8_t *data = (uint8_t *)dbg_info.base +
+	                         (UART_8250_DATA << dbg_info.shift);
+	*data = c;
+}
+
+/**
+ * Put one character out on the serial lines.
+ * Automatically handles newlines.
+ *
+ * @param c Character to put.
+ */
+static void __putchar(char c)
+{
+	if (c == '\n')
+		__putchar('\r');
+
+	switch (dbg_info.dev) {
+	case UART_8250: __8250_putchar(c); return;
+	}
 }
 
 /**
@@ -200,28 +207,18 @@ static struct dbg_info __dbg_from_fdt(const void *fdt)
 	/* get serial device address */
 	struct cell_info ci = get_reginfo(fdt, stdout);
 	void *reg_ptr = (void *)fdt_getprop(fdt, stdout_offset, "reg", NULL);
-
 	pm_t dbg_ptr = (pm_t)fdt_load_int_ptr(ci.addr_cells, reg_ptr);
 
-	return (struct dbg_info){ dbg_ptr, dev };
-}
+	/* get serial device offset if present */
+	size_t shift = 0;
+	void *shift_ptr = (void *)fdt_getprop(fdt, stdout_offset, "reg-shift",
+	                                      NULL);
+	if (shift_ptr)
+		shift = (size_t)fdt_load_int32_ptr(shift_ptr);
 
-/**
- * Set static port.
- *
- * @param pt Address of memory mapped serial device.
- * @param dev Chosen device.
- */
-void __setup_dbg(vm_t pt, enum serial_dev dev)
-{
-	switch (dev) {
-	case UART_8250:
-		port = (struct uart_8250 *)pt;
-		break;
-	}
-
-	/* in the future possibly configure the serial connection, though the
-	 * defaults (set by U-boot) seem to work alright */
+	/* while in direct map, base == addr, and this changes only when we jump
+	 * into virtually mapped io */
+	return (struct dbg_info){ dbg_ptr, shift, dev, dbg_ptr };
 }
 
 /** Printf formatting left align flag. */
