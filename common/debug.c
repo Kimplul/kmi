@@ -110,12 +110,6 @@ vm_t map_io_dbg(struct vmem *b)
  */
 static int __8250_tx_empty()
 {
-	/**
-	 * @todo visionfive2 loops on lsr indefinitely, why?
-	 * answer: because apparently visionfive2 uart has reg-shift = 2,
-	 * meaning the registers are spaced apart more in memory than my naive
-	 * struct.
-	 * */
 	volatile uint8_t *lsr = (uint8_t *)dbg_info.base +
 	                        (UART_8250_LSR << dbg_info.shift);
 	return (*lsr) & LSR_THRE;
