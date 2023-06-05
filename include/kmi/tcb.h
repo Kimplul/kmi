@@ -391,27 +391,4 @@ void set_return(struct tcb *t, vm_t r);
  */
 bool running(struct tcb *t);
 
-/**
- * Save thread context for rpc call.
- * Assumes t->rpc is pointing to the correct virtual memory.
- *
- * @param t Thread whose context to save.
- */
-void enter_rpc(struct tcb *t);
-
-/**
- * Load thread context from rpc call.
- *
- * @param t Thread whose context to restore.
- */
-void leave_rpc(struct tcb *t);
-
-/**
- * Check that we have enough rpc stack.
- *
- * @param t Thread whose rpc stack to check.
- * @return \ref true if we have enough, \ref false otherwise.
- */
-bool enough_rpc_stack(struct tcb *t);
-
 #endif /* KMI_TCB_H */

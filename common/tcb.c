@@ -107,6 +107,13 @@ static vm_t __setup_rpc_stack(struct tcb *t, size_t bytes)
 		map_vpage(t->rpc.vmem, offset,
 		          RPC_STACK_TOP - BASE_PAGE_SIZE * i,
 		          flags, BASE_PAGE);
+
+		/* map stack into both process and rpc vmem since we want to
+		 * optimistically write data into it during initialization of an
+		 * rpc. */
+		map_vpage(t->proc.vmem, offset,
+		          RPC_STACK_TOP - BASE_PAGE_SIZE * i,
+		          flags, BASE_PAGE);
 	}
 	t->rpc_stack = RPC_STACK_TOP;
 	return RPC_STACK_TOP - BASE_PAGE_SIZE * pages;
@@ -394,116 +401,4 @@ void set_return(struct tcb *t, vm_t v)
 bool running(struct tcb *t)
 {
 	return cpu_tcb(t->cpu_id) == t;
-}
-
-/**
- * Mark rpc stack between \p start and \p end inaccessible.
- *
- * @param t Thread whose rpc stack to modify.
- * @param start Start address of rpc stack to mark inaccessible.
- * @param end End address of rpc stack to mark inaccessible.
- */
-static void mark_rpc_inaccessible(struct tcb *t, vm_t start, vm_t end)
-{
-	size_t page_size = BASE_PAGE_SIZE;
-	size_t size = end - start;
-	size_t pages = size / page_size;
-	while (pages--)
-		clear_vpage_flags(t->rpc.vmem, start + pages * page_size, VM_U);
-}
-
-/**
- * Mark rpc stack between \p start and \p end accessible.
- *
- * @param t Thread whose rpc stack to modify.
- * @param start Start address of rpc stack to mark accessible.
- * @param end End address of rpc stack to mark accessible.
- */
-static void mark_rpc_accessible(struct tcb *t, vm_t start, vm_t end)
-{
-	size_t page_size = BASE_PAGE_SIZE;
-	size_t size = end - start;
-	size_t pages = size / page_size;
-	while (pages--)
-		set_vpage_flags(t->rpc.vmem, start + pages * page_size, VM_U);
-}
-
-/** Structure for maintaingin the required context data for an rpc call. */
-struct call_ctx {
-	/** Execution continuation point. */
-	vm_t exec;
-
-	/** Register save area. */
-	vm_t regs;
-
-	/** Position in rpc stack. */
-	vm_t rpc_stack;
-
-	/** Effective process ID. */
-	id_t eid;
-
-	/** Current process ID. */
-	id_t pid;
-};
-
-void enter_rpc(struct tcb *t)
-{
-	vm_t rpc_stack = t->rpc_stack;
-	if (is_rpc(t))
-		/** @todo what if user uses their own stack? Or is a dick and
-		 * sets the stack pointer to RPC_STACK_TOP or something? It'll
-		 * likely only cause a fuckup in the process who did the dumb
-		 * thing, so maybe just consider it user error? Except by
-		 * causing the stack of the next rpc to run out of memory... */
-		rpc_stack = align_down(get_stack(t), BASE_PAGE_SIZE);
-
-
-	/* make sure updates are visible when swapping to the new virtual memory */
-	mark_rpc_inaccessible(t, rpc_stack, t->rpc_stack);
-	use_vmem(t->rpc.vmem);
-
-	struct call_ctx *ctx = (struct call_ctx *)(rpc_stack) - 1;
-	ctx->exec = t->exec;
-	ctx->pid = t->pid;
-	ctx->eid = t->eid;
-	ctx->regs = t->regs;
-	ctx->rpc_stack = rpc_stack;
-
-	/** @todo if we run out of rpc_stack space we should just stop, likely
-	 * return a status? */
-	rpc_stack -= BASE_PAGE_SIZE;
-
-	/** @todo what if each stack is only some number of pages, and if a proc
-	 * goes over the limit is is seen as programming error? Possibly user
-	 * configurable number as well, might actually use the config subsystem
-	 * :D
-	 * In such a case it would probably be smarter to mark all pages
-	 * inaccessible at first, and then mark the first page accessible. If
-	 * the process needs more stack space it'll cause a paging exception,
-	 * we'll handle it separately and if the process isn't going over the
-	 * limit just give it more.
-	 * */
-	t->rpc_stack = rpc_stack;
-	t->regs = (vm_t)ctx;
-	set_stack(t, rpc_stack);
-}
-
-void leave_rpc(struct tcb *t)
-{
-	vm_t rpc_stack = t->rpc_stack + BASE_PAGE_SIZE;
-	struct call_ctx *ctx = (struct call_ctx *)(rpc_stack) - 1;
-	set_return(t, ctx->exec);
-	mark_rpc_accessible(t, t->rpc_stack, ctx->rpc_stack);
-	t->rpc_stack = ctx->rpc_stack;
-	t->pid = ctx->pid;
-	t->eid = ctx->eid;
-	t->regs = ctx->regs;
-}
-
-bool enough_rpc_stack(struct tcb *t)
-{
-	vm_t top = RPC_STACK_BASE + __call_stack_size;
-	vm_t rpc_stack = t->rpc_stack + BASE_PAGE_SIZE;
-
-	return top - rpc_stack >= __call_stack_size / RPC_STACK_RATIO;
 }

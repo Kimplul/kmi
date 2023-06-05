@@ -268,8 +268,6 @@ void _start()
 
 	uint64_t n = 0, i, start, cn, cstart, cend;
 	start = i = sys_ticks();
-	print_value("Start ticks", start);
-
 	csr_read(CSR_CYCLE, cstart);
 	while (i < start + second) {
 		i = sys_ticks();
@@ -277,6 +275,7 @@ void _start()
 	}
 	csr_read(CSR_CYCLE, cend);
 
+	print_value("Start ticks", start);
 	print_value("End ticks", i);
 	print_value("Syscalls per second", n);
 	print_value("Executed cycles per second", cend - cstart);
@@ -326,6 +325,7 @@ void _start()
 	puts("Checking shared memory\n");
 	struct ipc_args r = sys_ipc_req(1, 1, 0, 0, 0);
 	rw_buf = (char *)r.a1;
+	rw_buf_size = (size_t)r.a2;
 	print_value("Shared memory ptr", (uintptr_t)rw_buf);
 	print_value("Shared memory size", rw_buf_size);
 
