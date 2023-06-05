@@ -155,6 +155,11 @@ static struct stack_diff enter_rpc(struct tcb *t, struct sys_ret a)
  */
 static void leave_rpc(struct tcb *t, struct sys_ret a)
 {
+	/* if we're not in an rpc, the user messed something up. */
+	/** @todo choose or come up with more fitting error value. */
+	if (!is_rpc(t))
+		return_args(t, SYS_RET1(ERR_MISC));
+
 	vm_t rpc_stack = t->rpc_stack + BASE_PAGE_SIZE;
 	struct call_ctx *ctx = (struct call_ctx *)(rpc_stack) - 1;
 	t->regs = ctx->regs;
