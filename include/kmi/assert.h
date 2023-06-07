@@ -22,7 +22,7 @@
 #include <kmi/utils.h>
 
 /** \todo should this exit or do something explosive like that? */
-#if defined(DEBUG)
+#if defined(ASSERT)
 
 /**
  * The kernel is in an irrepairable state, just give up.

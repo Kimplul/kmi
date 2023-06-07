@@ -1,21 +1,31 @@
 DO		!= echo -n > deps.mk
 
 # this could be done better
-DEBUGFLAGS	!= [ $(RELEASE) ] \
-			&& echo "-flto -O2 -DNDEBUG" \
-			|| echo "-O0 -DDEBUG"
+RELEASE		?= 0
+OPTFLAGS	!= [ "$(RELEASE)" != "0" ] \
+			&& echo "-O3 -flto" \
+			|| echo "-O0"
 
-UBOOTFLAGS	!= [ $(GENERIC_UBOOT) ] \
+DEBUG		?= 1
+DEBUGFLAGS	!= [ "$(DEBUG)" != "0" ] \
+			&& echo "-DDEBUG=1" \
+			|| echo "-DNDEBUG=1"
+
+GENERIC_UBOOT	?= 0
+UBOOTFLAGS	!= [ "$(GENERIC_UBOOT)" != "0" ] \
 			&& echo "-DGENERIC_UBOOT=1"
 
-CFLAGS		= -ffreestanding -nostdlib -static -fno-pie -std=c17 \
-		  -Wall -Wextra -Wvla -D$(ARCH) -g
+ASSERT		?= 1
+ASSERTFLAGS	!= [ "$(ASSERT)" != "0" ] \
+			&& echo "-DASSERT=1"
 
 DEPFLAGS	= -MT $@ -MMD -MP -MF $@.d
 LINTFLAGS	= -fsyntax-only
 PREPROCESS	= -E
-LDFLAGS		!= [ $(LLVM) ] \
-			|| echo -static-libgcc -lgcc
+
+LLVM		?= 0
+LDFLAGS		!= [ "$(LLVM)" = "0" ] \
+			&& echo -static-libgcc -lgcc
 
 BUILD		= build
 ARCH_KERN_BUILD	= $(BUILD)/kernel/arch/$(ARCH)
@@ -31,11 +41,11 @@ depend:
 ARCH		?= riscv64
 CROSS_COMPILE	?= $(ARCH)-unknown-elf-
 
-OBJCOPY		!= [ $(LLVM) ] \
+OBJCOPY		!= [ "$(LLVM)" != "0" ] \
 			&& echo llvm-objcopy \
 			|| echo $(CROSS_COMPILE)objcopy
 
-COMPILER	!= [ $(LLVM) ] \
+COMPILER	!= [ "$(LLVM)" != "0" ] \
 			&& echo clang --target="$(CROSS_COMPILE)" \
 			|| echo $(CROSS_COMPILE)gcc
 
@@ -47,9 +57,15 @@ INIT_SOURCES	!= echo lib/fdt*.c common/fdt.c common/string.c
 CLEANUP		:= build deps.mk kernel.* init.* kmi.bin
 CLEANUP_CMD	:=
 
+OBFLAGS		:= -ffreestanding -nostdlib -static -fno-pie -std=c17 -g
+WARNFLAGS	:= -Wall -Wextra -Wvla
+ARCH_CFLAGS	:= -D$(ARCH)
+
 include arch/$(ARCH)/source.mk
 
-COMPILE_FLAGS	:= $(CFLAGS) $(ARCH_CFLAGS) $(UBOOTFLAGS)
+COMPILE_FLAGS	:= $(CFLAGS) $(WARNFLAGS) $(OPTFLAGS) $(OBFLAGS) $(ASSERTFLAGS) \
+		   $(DEBUGFLAGS) $(UBOOTFLAGS) $(ARCH_CFLAGS)
+
 LINK_FLAGS	:= $(LDFLAGS) $(ARCH_LDFLAGS)
 
 INCLUDE_FLAGS	:= -I include -include config.h -include arch/$(ARCH)/config.h
@@ -58,13 +74,13 @@ INCLUDE_FLAGS	:= -I include -include config.h -include arch/$(ARCH)/config.h
 OBJCOPY_FLAGS	?= -Obinary -R .garbage \
 		   --set-section-flags .bss=alloc,load,contents
 
-COMPILE		= $(COMPILER) $(DEBUGFLAGS)\
+COMPILE		= $(COMPILER) \
 		  $(COMPILE_FLAGS) $(DEPFLAGS) $(INCLUDE_FLAGS)
 
-LINT		= $(COMPILER) $(DEBUGFLAGS)\
+LINT		= $(COMPILER) \
 		  $(COMPILE_FLAGS) $(LINTFLAGS) $(INCLUDE_FLAGS)
 
-GENELF		= $(COMPILER) $(DEBUGFLAGS)\
+GENELF		= $(COMPILER) \
 		  $(COMPILE_FLAGS) $(INCLUDE_FLAGS)
 
 GENLINK		= $(COMPILER) $(COMPILE_FLAGS) $(PREPROCESS) $(DEPFLAGS) $(INCLUDE_FLAGS)
@@ -75,7 +91,10 @@ KERN_INFO	= sed "s/<KERNEL_SIZE>/$$($(KERN_SIZE))/"
 KERNEL_LINK	:= arch/$(ARCH)/conf/kernel-link
 INIT_LINK	:= arch/$(ARCH)/conf/init-link
 
-KERN_FLAGS	!= [ $(UBSAN) ] && echo -fsanitize=undefined || echo
+UBSAN		?= 0
+KERN_FLAGS	!= [ "$(UBSAN)" != "0" ] \
+			&& echo -fsanitize=undefined
+
 INIT_FLAGS	:= -fpic
 
 KERNEL_OBJECTS	!= ./scripts/gen-deps --kernel --compile "$(KERNEL_SOURCES)"
