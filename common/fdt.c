@@ -22,7 +22,7 @@ struct cell_info get_reginfo(const void *fdt, const char *path)
 		return (struct cell_info){ 0, 0 };
 
 	size_t baselen = i - path;
-	if (i == 0)
+	if (baselen == 0)
 		/* root node */
 		baselen = 1;
 
