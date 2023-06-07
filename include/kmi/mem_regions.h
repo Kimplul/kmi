@@ -65,22 +65,23 @@ struct mem_region {
 	/** Previous memory region by end address. */
 	struct mem_region *prev;
 
-	/** Memory region flags, both access as well as metadata. \see MR_USED,
-	 * MR_SHARED, MR_OWNED, MR_COW, MR_KEEP. */
-	vmflags_t flags;
-
 	/** End address of memory region. */
 	vm_t end;
 
 	/** Start address of memory region. */
 	vm_t start;
 
-	/** In shared regions, mark the other pid that shared the region. */
-	id_t pid;
-
 	/** In shared regions, this is the address associated with region in the
 	 * other process. */
 	vm_t alt_va;
+
+	/** In shared regions, mark the other pid that shared the region. */
+	id_t pid;
+
+	/** Memory region flags, both access as well as metadata. \see MR_USED,
+	 * MR_SHARED, MR_OWNED, MR_COW, MR_KEEP. */
+	vmflags_t flags;
+
 };
 
 /**

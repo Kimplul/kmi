@@ -104,6 +104,42 @@ struct tcb {
 	/** Memory mapping data. */
 	struct mem_region_root sp_r;
 
+	/** Address of callback function in servers. */
+	vm_t callback;
+
+	/** Address of this thread's stack base. */
+	vm_t thread_stack;
+
+	/** Address of this thread's stack top. */
+	vm_t thread_stack_top;
+
+	/** Current address of usable rpc stack. */
+	vm_t rpc_stack;
+
+	/** \todo Check if each thread should be allowed more than just one
+	 * region of thread local storage. */
+	/** Possible thread local storage. */
+	vm_t thread_storage;
+
+	/** Process context of thread. */
+	struct tcb_ctx proc;
+
+	/** RPC context of thread. */
+	struct tcb_ctx rpc;
+
+	/**
+	 * RPC server context of thread. When a thread attaches itself to this
+	 * process, its \ref rpc member is added to the list maintained in this
+	 * variable. This allows the original thread to do rpc calls without
+	 * messing up other threads' rpc status.
+	 *
+	 * I think, more testing required.
+	 */
+	struct tcb_ctx server;
+
+	/** Notifcation state of thread. */
+	enum tcb_notify notify_state;
+
 	/**
 	 * Effective process ID.
 	 *
@@ -143,44 +179,8 @@ struct tcb {
 	/** Cpu currently executing this thread. */
 	id_t cpu_id;
 
-	/** Address of callback function in servers. */
-	vm_t callback;
-
 	/** Capabilities of thread. */
 	capflags_t caps;
-
-	/** Address of this thread's stack base. */
-	vm_t thread_stack;
-
-	/** Address of this thread's stack top. */
-	vm_t thread_stack_top;
-
-	/** Current address of usable rpc stack. */
-	vm_t rpc_stack;
-
-	/** \todo Check if each thread should be allowed more than just one
-	 * region of thread local storage. */
-	/** Possible thread local storage. */
-	vm_t thread_storage;
-
-	/** Process context of thread. */
-	struct tcb_ctx proc;
-
-	/** RPC context of thread. */
-	struct tcb_ctx rpc;
-
-	/**
-	 * RPC server context of thread. When a thread attaches itself to this
-	 * process, its \ref rpc member is added to the list maintained in this
-	 * variable. This allows the original thread to do rpc calls without
-	 * messing up other threads' rpc status.
-	 *
-	 * I think, more testing required.
-	 */
-	struct tcb_ctx server;
-
-	/** Notifcation state of thread. */
-	enum tcb_notify notify_state;
 
 	/** Whether thread has gotten an IPI */
 	bool ipi;

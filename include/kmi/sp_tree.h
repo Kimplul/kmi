@@ -87,9 +87,6 @@
  * \see common/mem_region.c, for example.
  */
 struct sp_node {
-	/** Hint. Approximate maximum tree height up to the current node. */
-	int_fast16_t hint;
-
 	/** Lefthand node. */
 	struct sp_node *left;
 
@@ -99,6 +96,9 @@ struct sp_node {
 	/** Parent node. Technically speaking not necessary, but in this case I
 	 * went with time over space. */
 	struct sp_node *parent;
+
+	/** Hint. Approximate maximum tree height up to the current node. */
+	int_fast16_t hint;
 };
 
 /** Convenience structure for trees. */
