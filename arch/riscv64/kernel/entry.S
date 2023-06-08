@@ -149,3 +149,24 @@ _load_context:
 
 	/* assume supervisor for now */
 	sret
+
+.global ret_userspace_fast
+ret_userspace_fast:
+	lr	sp, offsetof_regs(tp)
+	addi	sp, sp, -sizeof_registers
+
+	lr	s0, offsetof_exec(tp)
+	csrw	CSR_SEPC, s0
+
+	csrw CSR_SSCRATCH, tp
+
+	lr	a0, offsetof_a0(sp)
+	lr      a1, offsetof_a1(sp)
+	lr      a2, offsetof_a2(sp)
+	lr      a3, offsetof_a3(sp)
+	lr      a4, offsetof_a4(sp)
+	lr      a5, offsetof_a5(sp)
+
+	lr	sp, offsetof_sp(sp)
+
+	sret

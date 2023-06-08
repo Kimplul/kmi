@@ -255,6 +255,7 @@ static void do_ipc(struct tcb *t,
 		t->eid = t->pid;
 
 	finalize_rpc(t, r, sd);
+	ret_userspace_fast();
 }
 /**
  * IPC request syscall handler.

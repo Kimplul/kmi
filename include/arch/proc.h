@@ -113,4 +113,14 @@ void adjust_syscall(struct tcb *t);
  */
 __noreturn void run_init(struct tcb *t, void *fdt);
 
+/**
+ * Return to userspace fast.
+ * Doesn't load registers besides arguments.
+ * Mainly for do_ipc().
+ * Note that this skips canary checking,
+ * but at least do_ipc() uses basically zero stack space
+ * so I'm not too worried.
+ */
+__noreturn void ret_userspace_fast();
+
 #endif /* KMI_ARCH_PROC_H */
