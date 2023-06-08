@@ -27,19 +27,16 @@
 /* we can go back to relaxed mode if we want */
 .option pop
 
-.global handle_irq
-handle_irq:
-	csrrw tp, CSR_SSCRATCH, tp
-	bnez tp, _save_context
-	/* the exception came from the kernel, should probably handle but for
-	 * now just spin in place */
-	1: j 1b
-_save_context:
-	sr	sp, offsetof_tcbd(tp)
-	lr	sp, offsetof_regs(tp)
-	addi	sp, sp, -sizeof_registers
-	csrrw	tp, CSR_SSCRATCH, tp
+.macro save_args
+	sr      a0, offsetof_a0(sp)
+	sr      a1, offsetof_a1(sp)
+	sr      a2, offsetof_a2(sp)
+	sr      a3, offsetof_a3(sp)
+	sr      a4, offsetof_a4(sp)
+	sr      a5, offsetof_a5(sp)
+.endm
 
+.macro save_regs
 	/* save registers */
 	sr      ra, offsetof_ra(sp)
 	sr	gp, offsetof_gp(sp)
@@ -49,12 +46,6 @@ _save_context:
 	sr      t2, offsetof_t2(sp)
 	sr      s0, offsetof_s0(sp)
 	sr	s1, offsetof_s1(sp)
-	sr      a0, offsetof_a0(sp)
-	sr      a1, offsetof_a1(sp)
-	sr      a2, offsetof_a2(sp)
-	sr      a3, offsetof_a3(sp)
-	sr      a4, offsetof_a4(sp)
-	sr      a5, offsetof_a5(sp)
 	sr      a6, offsetof_a6(sp)
 	sr      a7, offsetof_a7(sp)
 	sr	s2, offsetof_s2(sp)
@@ -69,34 +60,69 @@ _save_context:
 	sr	s11,offsetof_s11(sp)
 	sr      t3, offsetof_t3(sp)
 	sr      t4, offsetof_t4(sp)
+.endm
+
+.global handle_irq
+handle_irq:
+	csrrw tp, CSR_SSCRATCH, tp
+	bnez tp, continue_irq
+	/* the exception came from the kernel, should probably handle but for
+	 * now just spin in place */
+	1: j 1b
+
+continue_irq:
+	sr	sp, offsetof_tcbd(tp)
+	lr	sp, offsetof_regs(tp)
+	addi	sp, sp, -sizeof_registers
+	csrrw	tp, CSR_SSCRATCH, tp
+
 	sr      t5, offsetof_t5(sp)
 	sr      t6, offsetof_t6(sp)
 
 	/* get current tcb into tp and set scratch to 0 so we can figure out if
 	 * exception occured in kernel or userspace */
 	csrrw tp, CSR_SSCRATCH, x0
-	lr	s0, offsetof_tcbd(tp)
-	sr	s0, offsetof_sp(sp)
-	addi	sp, tp, -sizeof_registers
+	lr	t5, offsetof_tcbd(tp)
+	sr	t5, offsetof_sp(sp)
 
 	/* load supervisor cause */
-	csrr s4, CSR_SCAUSE
+	csrr t5, CSR_SCAUSE
 	/* interrupts fall through, exceptions jump */
-	bge s4, zero, handle_exception
+	bge t5, zero, handle_exception
+
+	save_regs
+	save_args
+
 	/* TODO: handle interrupts */
 	j _load_context
 
 handle_exception:
-	li t0, EXC_SYSCALL
+	li t6, EXC_SYSCALL
 	/* system exceptions fall through, syscalls and ipis jump */
 	/* temp, at some point we want to handle system exceptions as well */
-	beq s4, t0, handle_dispatch
+	beq t5, t6, handle_dispatch
+
+	save_regs
+	save_args
+
 	j	_load_context
 
 handle_dispatch:
+	li	t5, SYS_IPC_RESP
+	bne	a0, t5, slow_dispatch
+	/* we're a sys_ipc_resp */
+	lw	t5, offsetof_rid(tp)
+	lw	t6, offsetof_pid(tp)
+	/* we're in an rpc, so we can skip saving the rest of the registers */
+	beq	t5, t6, fast_dispatch
+
+slow_dispatch:
+	save_regs
+
+fast_dispatch:
 	/* store execution continuation point */
-	csrr    s0, CSR_SEPC
-	sr	s0, offsetof_exec(tp)
+	csrr    t5, CSR_SEPC
+	sr	t5, offsetof_exec(tp)
 	/* jump to C */
 	jal	dispatch
 	/* if we had a thread switch, load kernel stack of current thread and
@@ -105,8 +131,8 @@ handle_dispatch:
 	lr	sp, offsetof_regs(tp)
 	addi	sp, sp, -sizeof_registers
 	/* set execution continuation */
-	lr	s0, offsetof_exec(tp)
-	csrw	CSR_SEPC, s0
+	lr	t5, offsetof_exec(tp)
+	csrw	CSR_SEPC, t5
 
 _load_context:
 	/* restore registers besides possible return value, assume instruction

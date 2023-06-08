@@ -38,6 +38,13 @@
 #define SIZEOF(n, s) DEFINE(sizeof_##n, sizeof(s))
 
 /**
+ * Insert enum.
+ *
+ * @param e Name of enum value.
+ */
+#define ENUM(e) DEFINE(e, e)
+
+/**
  * Generate assembly with calculated offsets and sizes.
  * See arch/riscv64/gen/source.mk for how the assembly is used.
  */
@@ -86,9 +93,13 @@ void asm_offsets()
 
 	OFFSETOF(exec, struct tcb);
 	OFFSETOF(regs, struct tcb);
+	OFFSETOF(rid, struct tcb);
+	OFFSETOF(pid, struct tcb);
 	/* At the moment tcbd is just a single register slot, so this works, but
 	 * if it's expanded in the future I'll need to figure out a way to
 	 * target specific substructure members. */
 	OFFSETOF(tcbd, struct tcb);
 	SIZEOF(tcb, struct tcb);
+
+	ENUM(SYS_IPC_RESP);
 }
