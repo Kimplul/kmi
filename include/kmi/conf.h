@@ -24,6 +24,13 @@ extern size_t __thread_stack_size;
 /**
  * Provides access to the runtime global parameter.
  * Must be at most RPC_STACK_TOP - RPC_STACK_BASE.
+ * Essentially, each thread gets allocated this many bytes of total stack space
+ * that will be used during thread migrations. Each migration instance may at
+ * most take up __rpc_stack_size bytes, and during a thread migration the
+ * currently available free stack space is checked.
+ *
+ * Previous instances are unmapped, making them unaccessible to the current
+ * instance.
  *
  * \see __thread_stack_size.
  * \global
@@ -35,18 +42,8 @@ extern size_t __call_stack_size;
  * Provides access to the runtime global parameter. This sets the maximum size
  * a single rpc stack instance can be.
  *
- * Must be at most a fourth of \ref __call_stack_size?
- * (that way we can maybe pretty quickly check that we're running out of memory
- * for stack stuff and can return an error about it)
- *
  * \global
  */
 extern size_t __rpc_stack_size;
-
-/**
- * Convenience macro for requirement of ratio between \ref __rpc_stack_size and
- * \ref __call_stack_size.
- */
-#define RPC_STACK_RATIO 4
 
 #endif /* KMI_CONF_H */

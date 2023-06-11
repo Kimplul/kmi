@@ -86,8 +86,8 @@ SYSCALL_DEFINE2(conf_set)(struct tcb *t, sys_arg_t param, sys_arg_t val)
 		break;
 
 	case CONF_CALL_STACK:
-		size = align_up(val, RPC_STACK_RATIO * BASE_PAGE_SIZE);
-		if (size < __rpc_stack_size * RPC_STACK_RATIO)
+		size = align_up(val, BASE_PAGE_SIZE);
+		if (size < __rpc_stack_size)
 			return_args(t, SYS_RET1(ERR_MISC));
 
 		__call_stack_size = size;
@@ -95,7 +95,7 @@ SYSCALL_DEFINE2(conf_set)(struct tcb *t, sys_arg_t param, sys_arg_t val)
 
 	case CONF_RPC_STACK:
 		size = align_up(val, BASE_PAGE_SIZE);
-		if (size > __call_stack_size / RPC_STACK_RATIO)
+		if (size > __call_stack_size)
 			return_args(t, SYS_RET1(ERR_MISC));
 
 		__rpc_stack_size = size;

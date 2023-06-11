@@ -36,6 +36,11 @@ static void mark_rpc_inaccessible(struct tcb *t, vm_t start, vm_t end)
  */
 static void mark_rpc_accessible(struct tcb *t, vm_t start, vm_t end)
 {
+	/** @todo this could still be optimized with arch-specific stuff I would
+	 * imagine, as set_vpage_flags() has to traverse the whole tree for each
+	 * page to mark. Instead it should be possible to mark the pages
+	 * continuously once they've been traversed once. Or maybe even keep
+	 * around a pointer to where the last stack left off? */
 	size_t page_size = BASE_PAGE_SIZE;
 	size_t size = end - start;
 	size_t pages = size / page_size;
@@ -43,7 +48,7 @@ static void mark_rpc_accessible(struct tcb *t, vm_t start, vm_t end)
 		set_vpage_flags(t->rpc.vmem, start + pages * page_size, VM_U);
 }
 
-/** Structure for maintaingin the required context data for an rpc call. */
+/** Structure for maintaining the required context data for an rpc call. */
 struct call_ctx {
 	/** Execution continuation point. */
 	vm_t exec;
@@ -189,10 +194,14 @@ static void leave_rpc(struct tcb *t, struct sys_ret a)
  */
 static bool enough_rpc_stack(struct tcb *t)
 {
+	/* get top of call stack */
 	vm_t top = RPC_STACK_BASE + __call_stack_size;
+	/* get start of the next rpc stack instance */
 	vm_t rpc_stack = t->rpc_stack + BASE_PAGE_SIZE;
 
-	return top - rpc_stack >= __call_stack_size / RPC_STACK_RATIO;
+	/* if we can still fit an rpc stack into the call stack, we can safely
+	 * do the migration. */
+	return top - rpc_stack >= __rpc_stack_size;
 }
 
 /**
