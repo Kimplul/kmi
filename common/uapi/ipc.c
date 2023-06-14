@@ -160,11 +160,6 @@ static struct stack_diff enter_rpc(struct tcb *t, struct sys_ret a)
  */
 static void leave_rpc(struct tcb *t, struct sys_ret a)
 {
-	/* if we're not in an rpc, the user messed something up. */
-	/** @todo choose or come up with more fitting error value. */
-	if (unlikely(!is_rpc(t)))
-		return_args(t, SYS_RET1(ERR_MISC));
-
 	vm_t rpc_stack = t->rpc_stack + BASE_PAGE_SIZE;
 	struct call_ctx *ctx = (struct call_ctx *)(rpc_stack) - 1;
 	t->regs = ctx->regs;
@@ -314,6 +309,12 @@ SYSCALL_DEFINE4(ipc_resp)(struct tcb *t, sys_arg_t d0, sys_arg_t d1,
                           sys_arg_t d2,
                           sys_arg_t d3)
 {
+	/* if we're not in an rpc, the user messed something up. */
+	/** @todo choose or come up with more fitting error value. */
+	if (unlikely(!is_rpc(t)))
+		return_args(t, SYS_RET1(ERR_MISC));
+
+	/* we need the current proc before leaving the rpc */
 	struct tcb *r = get_cproc(t);
 	leave_rpc(t, SYS_RET6(OK, t->tid, d0, d1, d2, d3));
 	detach_rpc(r, t);
