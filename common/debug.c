@@ -201,7 +201,7 @@ static struct dbg_info __dbg_from_fdt(const void *fdt)
 	/* get serial device address */
 	struct cell_info ci = get_reginfo(fdt, stdout);
 	void *reg_ptr = (void *)fdt_getprop(fdt, stdout_offset, "reg", NULL);
-	pm_t dbg_ptr = (pm_t)fdt_load_int_ptr(ci.addr_cells, reg_ptr);
+	pm_t dbg_ptr = (pm_t)fdt_load_reg_addr(ci, reg_ptr, 0);
 
 	/* get serial device offset if present */
 	size_t shift = 0;

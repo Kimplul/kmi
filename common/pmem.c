@@ -534,17 +534,11 @@ static void __mark_reserved_mem(void *fdt)
 		uint8_t *rmem_reg =
 			(uint8_t *)fdt_getprop(fdt, node, "reg", NULL);
 
-		pm_t base = (pm_t)fdt_load_int_ptr(ci.addr_cells, rmem_reg);
-
-		if (ci.addr_cells == 2)
-			rmem_reg += sizeof(fdt64_t);
-		else
-			rmem_reg += sizeof(fdt32_t);
+		pm_t base = (pm_t)fdt_load_reg_addr(ci, rmem_reg, 0);
 
 		/** @todo make sure the top of a reserved memory area doesn't go
 		 * against our assumptions in FW_MAX_SIZE? */
-		pm_t top =
-			(pm_t)fdt_load_int_ptr(ci.size_cells, rmem_reg) + base;
+		pm_t top = (pm_t)fdt_load_reg_size(ci, rmem_reg, 0) + base;
 		__mark_area_used((pm_t)__va(base), (pm_t)__va(top));
 		info("marked [%lx - %lx] reserved\n",
 		     (pm_t)__va(base), (pm_t)__va(top));
@@ -563,14 +557,8 @@ static pm_t __get_ramtop(void *fdt)
 	int mem_offset = fdt_path_offset(fdt, "/memory");
 	uint8_t *mem_reg = (uint8_t *)fdt_getprop(fdt, mem_offset, "reg", NULL);
 
-	pm_t base = (pm_t)fdt_load_int_ptr(ci.addr_cells, mem_reg);
-
-	if (ci.addr_cells == 2)
-		mem_reg += sizeof(fdt64_t);
-	else
-		mem_reg += sizeof(fdt32_t);
-
-	return (pm_t)fdt_load_int_ptr(ci.size_cells, mem_reg) + base;
+	pm_t base = (pm_t)fdt_load_reg_addr(ci, mem_reg, 0);
+	return (pm_t)fdt_load_reg_size(ci, mem_reg, 0) + base;
 }
 
 /**

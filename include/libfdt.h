@@ -11,6 +11,7 @@
 
 #include "../dtc/libfdt/libfdt.h"
 #include <kmi/unaligned.h>
+#include <kmi/assert.h>
 #include <kmi/types.h>
 
 /* kmi additions, implementation can be found in common/fdt.c */
@@ -94,5 +95,38 @@ void __dbg_fdt(const void *fdt, int node_offset, int depth);
  */
 #define fdt_load_int_ptr(c, p) \
 	((c) == 2 ? fdt_load_int64_ptr(p) : fdt_load_int32_ptr(p))
+
+/**
+ * Helper for reading address value from reg nodes.
+ * No larger than 64 bit values allowed.
+ *
+ * @param ci Cell info.
+ * @param p Pointer to node.
+ * @param i Index of address to read.
+ * @return Address in reg cell.
+ */
+static inline fdt64_t fdt_load_reg_addr(struct cell_info ci, void *p, size_t i)
+{
+	hard_assert(ci.addr_cells == 2 || ci.addr_cells == 1, 0);
+	size_t offset = i * (ci.addr_cells + ci.size_cells) * sizeof(fdt32_t);
+	char *addr = ((char *)p) + 0;
+	return fdt_load_int_ptr(ci.addr_cells, addr + offset);
+}
+
+/**
+ * Helper for reading the size cell of a reg node.
+ *
+ * @param ci Cell info.
+ * @param p Pointer to node.
+ * @param i Index of size to read.
+ * @return Size in reg cell.
+ */
+static inline fdt64_t fdt_load_reg_size(struct cell_info ci, void *p, size_t i)
+{
+	hard_assert(ci.size_cells == 2 || ci.size_cells == 1, 0);
+	size_t offset = i * (ci.addr_cells + ci.size_cells) * sizeof(fdt32_t);
+	char *addr = ((char *)p) + ci.addr_cells * sizeof(fdt32_t);
+	return fdt_load_int_ptr(ci.size_cells, addr + offset);
+}
 
 #endif
