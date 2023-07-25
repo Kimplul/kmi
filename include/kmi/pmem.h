@@ -46,20 +46,23 @@ pm_t alloc_page(enum mm_order order);
  * of usage maps, but for now we assume all RAM is contiguous.
  *
  * @param ram_base Base physical address of RAM.
- * @param ram_size Size of phsyical RAM.
+ * @param ram_size Size of physical RAM.
  * @param cont Physical address where to place the map.
  * @return Size of physical map. Check that is matches with \ref probe_pmap().
  */
-pm_t populate_pmap(pm_t ram_base, size_t ram_size, pm_t cont);
+size_t populate_pmap(pm_t ram_base, size_t ram_size, pm_t cont);
 
 /**
  * Probe size of RAM usage map.
+ * 'Pretends' to be populate_pmap().
  *
+ * @param ram_base Base physical address RAM.
  * @param ram_size Size of physical RAM.
+ * @param cont Physical address where to place the map.
  * @return Size of physical map. Check that it matches with \ref
  * populate_pmap().
  */
-pm_t probe_pmap(size_t ram_size);
+size_t probe_pmap(pm_t ram_base, size_t ram_size, pm_t cont);
 
 /**
  * Initialize physical memory subsystem.

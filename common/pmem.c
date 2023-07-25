@@ -367,80 +367,115 @@ pm_t alloc_page(enum mm_order order)
 }
 
 /**
+ * Zero out memory at \p cont if \p populate.
+ *
+ * @param populate Whether to populate at \p cont.
+ * @param cont Where to zero out memory.
+ * @param size How many bytes to zero.
+ * @return \code cont + size \endcode
+ */
+static pm_t __zero_if(bool populate, pm_t cont, size_t size)
+{
+	if (populate)
+		memset((void *)cont, 0, size);
+
+	return cont + size;
+}
+
+/**
  * Populate tree.
  *
+ * @param populate Whether to populate map or just probe.
  * @param cont Address at which to continue placing data.
  * @param num Number of elements in branch.
  * @param cur_order Current branch order.
  * @param req_order Requested tree order.
  * @return Top of tree.
  */
-static pm_t __populate_tree(pm_t cont, size_t num,
+static pm_t __populate_tree(bool populate, pm_t cont, size_t num,
                             enum mm_order cur_order, enum mm_order req_order)
 {
-	size_t s = sizeof_branch(num);
 	struct mm_branch *branch = (struct mm_branch *)cont;
-	memset(branch, 0, s);
-	cont += s;
+	cont = __zero_if(populate, cont, sizeof_branch(num));
 
-	branch->num = num;
+	if (populate)
+		branch->num = num;
+
 	if (cur_order == req_order)
 		return cont;
 
 	pm_t prev = cont;
 	foreach_page(num) {
 		prev = cont;
-		cont = __populate_tree(cont, order_width(cur_order - 1),
+		cont = __populate_tree(populate, cont,
+		                       order_width(cur_order - 1),
 		                       cur_order - 1, req_order);
 	}
 
-	branch->size = cont - prev;
+	if (populate)
+		branch->size = cont - prev;
+
 	return cont;
 }
 
 /**
  * Populate bucket.
  *
+ * @param populate Whether to actually populate or just probe.
  * @param cont Address at which to continue placing data.
  * @param base Base of bucket.
  * @param num Number of elements in top level trees.
  * @param order Bucket order.
  * @return Top of bucket.
  */
-static pm_t __populate_bucket(pm_t cont, pm_t base, size_t num,
+static pm_t __populate_bucket(bool populate, pm_t cont, pm_t base, size_t num,
                               enum mm_order order)
 {
 	struct mm_bucket *bucket = (struct mm_bucket *)cont;
-	memset(bucket, 0, sizeof(*bucket));
-	cont += sizeof(*bucket);
+	cont = __zero_if(populate, cont, sizeof(*bucket));
 
-	bucket->order = order;
-	bucket->base = base;
+	if (populate) {
+		bucket->order = order;
+		bucket->base = base;
+	}
 
 	enum mm_order iter = order;
 	reverse_foreach_order_init(iter) {
-		bucket->tree[iter] = (struct mm_branch *)cont;
-		cont = __populate_tree(cont, num, order, iter);
+		if (populate)
+			bucket->tree[iter] = (struct mm_branch *)cont;
+
+		cont = __populate_tree(populate, cont, num, order, iter);
 	}
 
 	return cont;
 }
 
-pm_t populate_pmap(pm_t ram_base, size_t ram_size, pm_t cont)
+/**
+ * Main worker for populating and probing the memory map.
+ *
+ * @param populate Whether to populate the map of just probe.
+ * @param ram_base Base physical address of RAM.
+ * @param ram_size Size of physical RAM.
+ * @param cont Where to place the map.
+ * @return Size of physical map.
+ */
+static size_t __populate_pmap(bool populate, pm_t ram_base, size_t ram_size,
+                              pm_t cont)
 {
 	pm_t start = cont;
 
 	pmap = (struct mm_pmap *)cont;
-	memset(pmap, 0, sizeof(*pmap));
-	cont += sizeof(*pmap);
+	cont = __zero_if(populate, cont, sizeof(*pmap));
 
 	reverse_foreach_order(iter) {
 		size_t num = ram_size / order_size(iter);
 		if (num == 0)
 			continue;
 
-		pmap->bucket[iter] = (struct mm_bucket *)cont;
-		cont = __populate_bucket(cont, ram_base, num, iter);
+		if (populate)
+			pmap->bucket[iter] = (struct mm_bucket *)cont;
+
+		cont = __populate_bucket(populate, cont, ram_base, num, iter);
 
 		ram_size -= order_size(iter) * num;
 		ram_base += order_size(iter) * num;
@@ -449,65 +484,14 @@ pm_t populate_pmap(pm_t ram_base, size_t ram_size, pm_t cont)
 	return cont - start;
 }
 
-/**
- * Probe tree size.
- *
- * @param cont Size to continue adding to.
- * @param num Number of elements in tree.
- * @param cur_order Current branch order.
- * @param req_order Requested tree order.
- * @return Size of tree added to \p cont.
- */
-static pm_t __probe_tree(pm_t cont, size_t num, enum mm_order cur_order,
-                         enum mm_order req_order)
+size_t populate_pmap(pm_t ram_base, size_t ram_size, pm_t cont)
 {
-	cont += sizeof_branch(num);
-
-	if (cur_order == req_order)
-		return cont;
-
-	foreach_page(num) {
-		cont = __probe_tree(cont, order_width(cur_order - 1),
-		                    cur_order - 1, req_order);
-	}
-
-	return cont;
+	return __populate_pmap(true, ram_base, ram_size, cont);
 }
 
-/**
- * Probe bucket size.
- *
- * @param cont Size to continue adding to.
- * @param num Number of elements in bucket.
- * @param order Bucket order.
- * @return Size of bucket added to \p cont.
- */
-static pm_t __probe_bucket(pm_t cont, size_t num, enum mm_order order)
+size_t probe_pmap(pm_t ram_base, size_t ram_size, pm_t cont)
 {
-	cont += sizeof(struct mm_bucket);
-
-	reverse_foreach_order(iter) {
-		cont = __probe_tree(cont, num, order, iter);
-	}
-
-	return cont;
-}
-
-pm_t probe_pmap(size_t ram_size)
-{
-	pm_t cont = sizeof(struct mm_pmap);
-
-	reverse_foreach_order(iter) {
-		size_t num = ram_size / order_size(iter);
-		if (num == 0)
-			continue;
-
-		cont = __probe_bucket(cont, num, iter);
-
-		ram_size -= order_size(iter) * num;
-	}
-
-	return cont;
+	return __populate_pmap(false, ram_base, ram_size, cont);
 }
 
 /**
@@ -562,8 +546,8 @@ static void __mark_reserved_mem(void *fdt)
 		pm_t top =
 			(pm_t)fdt_load_int_ptr(ci.size_cells, rmem_reg) + base;
 		__mark_area_used((pm_t)__va(base), (pm_t)__va(top));
-		info("marked [%lx - %lx] reserved\n", (pm_t)__va(
-			     base), (pm_t)__va(top));
+		info("marked [%lx - %lx] reserved\n",
+		     (pm_t)__va(base), (pm_t)__va(top));
 	}
 }
 
@@ -652,7 +636,7 @@ void init_pmem(void *fdt)
 	pm_t pmap_base = align_up(MAX(initrd_top, fdt_top), sizeof(int));
 	info("choosing to place pmem map at %lx\n", pmap_base);
 
-	size_t probe_size = probe_pmap(ram_size);
+	size_t probe_size = probe_pmap(ram_base, ram_size, pmap_base);
 	info("pmem map probe size returned %lu\n", probe_size);
 
 	size_t actual_size = populate_pmap(ram_base, ram_size, pmap_base);
