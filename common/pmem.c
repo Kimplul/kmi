@@ -177,12 +177,11 @@ static void __mark_free(struct mm_branch *branch, pm_t page,
 		return;
 	}
 
+	/* freeing a page results in always clearing a full bit */
+	bitmap_clear(branch->used, idx);
 	if(cur_order != tree_order)
 		__mark_free(sub_branch(branch, idx), page,
 		            req_order, cur_order - 1, tree_order);
-
-	/* freeing a page results in always clearing a full bit */
-	bitmap_clear(branch->used, idx);
 }
 
 /**
@@ -319,7 +318,36 @@ static pm_t __branch_find_first_unset(struct mm_branch *branch)
 }
 
 /**
+ * Main worker for searching a free page.
+ * Passing the address worked up so far allows the compiler to performa
+ * tail call optimization, speeding things up a little.
+ *
+ * @param branch Current branch.
+ * @param cur_order Current order of branch.
+ * @param req_order Requested page order.
+ * @param addr Address built up so far.
+ * @return Final address of found free page if found, -1 otherwise.
+ */
+static pm_t __search_branch(struct mm_branch *branch,
+                            enum mm_order cur_order,
+                            enum mm_order req_order,
+                            pm_t addr)
+{
+	pm_t page = __branch_find_first_unset(branch);
+	if (page == (pm_t)(-1))
+		return -1;
+
+	if (cur_order == req_order)
+		return addr | page << order_shift(cur_order);
+
+	return __search_branch(sub_branch(branch, page),
+	                       cur_order - 1, req_order,
+	                       addr | page << order_shift(cur_order));
+}
+
+/**
  * Search for unused pages in tree.
+ * Easy wrapper for __search_branch.
  *
  * @param branch Current branch.
  * @param cur_order Current order of branch.
@@ -331,20 +359,7 @@ static pm_t __search_tree(struct mm_branch *branch,
                           enum mm_order cur_order,
                           enum mm_order req_order)
 {
-	pm_t page = __branch_find_first_unset(branch);
-	if (page == (pm_t)(-1))
-		return -1;
-
-	if (cur_order == req_order)
-		return page << order_shift(cur_order);
-
-	pm_t r = __search_tree(sub_branch(branch, page),
-	                       cur_order - 1, req_order);
-
-	if (r == (pm_t)(-1))
-		return -1;
-
-	return (page << order_shift(cur_order)) + r;
+	return __search_branch(branch, cur_order, req_order, 0);
 }
 
 pm_t alloc_page(enum mm_order order)
