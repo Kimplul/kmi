@@ -199,6 +199,10 @@ static void __mark_bucket_page_free(struct mm_bucket *bucket,
 	enum mm_order iter = bucket->order;
 
 	reverse_foreach_order_init(iter) {
+		struct mm_branch *tree = bucket->tree[iter];
+		if (!tree)
+			continue;
+
 		__mark_free(bucket->tree[iter], fixup_addr,
 		            order, bucket->order, iter);
 	}
@@ -272,6 +276,10 @@ static void __mark_bucket_page_used(struct mm_bucket *bucket,
 {
 	pm_t fixed_addr = addr - bucket->base;
 	reverse_foreach_order(iter) {
+		struct mm_branch *tree = bucket->tree[iter];
+		if (!tree)
+			continue;
+
 		__mark_used(bucket->tree[iter], fixed_addr,
 		            order, bucket->order, iter);
 	}
