@@ -41,7 +41,7 @@ enum conf_param {
 SYSCALL_DEFINE1(conf_get)(struct tcb *t, sys_arg_t param)
 {
 	if (!has_cap(t->caps, CAP_CONF))
-		return_args(t, SYS_RET1(ERR_PERM));
+		return_args1(t, ERR_PERM);
 
 	long val = 0;
 	switch (param) {
@@ -58,10 +58,10 @@ SYSCALL_DEFINE1(conf_get)(struct tcb *t, sys_arg_t param)
 		break;
 
 	default:
-		return_args(t, SYS_RET1(ERR_NF));
+		return_args1(t, ERR_NF);
 	}
 
-	return_args(t, SYS_RET2(OK, val));
+	return_args2(t, OK, val);
 }
 
 /**
@@ -77,7 +77,7 @@ SYSCALL_DEFINE1(conf_get)(struct tcb *t, sys_arg_t param)
 SYSCALL_DEFINE2(conf_set)(struct tcb *t, sys_arg_t param, sys_arg_t val)
 {
 	if (!has_cap(t->caps, CAP_CONF))
-		return_args(t, SYS_RET1(ERR_PERM));
+		return_args1(t, ERR_PERM);
 
 	size_t size = 0;
 	switch (param) {
@@ -96,13 +96,13 @@ SYSCALL_DEFINE2(conf_set)(struct tcb *t, sys_arg_t param, sys_arg_t val)
 	case CONF_RPC_STACK:
 		size = align_up(val, BASE_PAGE_SIZE);
 		if (size > __call_stack_size)
-			return_args(t, SYS_RET1(ERR_MISC));
+			return_args1(t, ERR_MISC);
 
 		__rpc_stack_size = size;
 		break;
 	}
 
-	return_args(t, SYS_RET1(OK));
+	return_args1(t, OK);
 }
 
 /**
@@ -116,14 +116,14 @@ SYSCALL_DEFINE2(conf_set)(struct tcb *t, sys_arg_t param, sys_arg_t val)
 SYSCALL_DEFINE1(poweroff)(struct tcb *t, sys_arg_t type)
 {
 	if (!(has_cap(t->caps, CAP_POWER)))
-		return_args(t, SYS_RET1(ERR_PERM));
+		return_args1(t, ERR_PERM);
 
 	switch (type) {
 	case SHUTDOWN:
 	case COLD_REBOOT:
 	case WARM_REBOOT:
-		return_args(t, SYS_RET2(OK, poweroff(type)));
+		return_args2(t, OK, poweroff(type));
 	};
 
-	return_args(t, SYS_RET1(ERR_INVAL));
+	return_args1(t, ERR_INVAL);
 }

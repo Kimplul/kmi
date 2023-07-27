@@ -42,14 +42,14 @@ SYSCALL_DEFINE3(set_cap)(struct tcb *t, sys_arg_t tid, sys_arg_t off,
                          sys_arg_t caps)
 {
 	if (!is_set(t->caps, CAP_CAPS))
-		return_args(t, SYS_RET1(ERR_PERM));
+		return_args1(t, ERR_PERM);
 
 	capflags_t *c;
 	if (!(c = __get_tcb_caps(tid, off)))
-		return_args(t, SYS_RET1(ERR_INVAL));
+		return_args1(t, ERR_INVAL);
 
 	set_caps(*c, off, caps);
-	return_args(t, SYS_RET1(OK));
+	return_args1(t, OK);
 }
 
 /**
@@ -64,9 +64,9 @@ SYSCALL_DEFINE2(get_cap)(struct tcb *t, sys_arg_t tid, sys_arg_t off)
 {
 	capflags_t *c;
 	if (!(c = __get_tcb_caps(tid, off)))
-		return_args(t, SYS_RET1(ERR_INVAL));
+		return_args1(t, ERR_INVAL);
 
-	return_args(t, SYS_RET2(OK, get_caps(*c, off)));
+	return_args2(t, OK, get_caps(*c, off));
 }
 
 /**
@@ -83,12 +83,12 @@ SYSCALL_DEFINE3(clear_cap)(struct tcb *t, sys_arg_t tid, sys_arg_t off,
                            sys_arg_t caps)
 {
 	if (!is_set(t->caps, CAP_CAPS))
-		return_args(t, SYS_RET1(ERR_PERM));
+		return_args1(t, ERR_PERM);
 
 	capflags_t *c;
 	if (!(c = __get_tcb_caps(tid, off)))
-		return_args(t, SYS_RET1(ERR_INVAL));
+		return_args1(t, ERR_INVAL);
 
 	clear_caps(*c, off, caps);
-	return_args(t, SYS_RET1(OK));
+	return_args1(t, OK);
 }

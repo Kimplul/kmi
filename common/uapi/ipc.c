@@ -134,7 +134,7 @@ static struct stack_diff enter_rpc(struct tcb *t, struct sys_ret a,
 
 	/* try to get rid of args as fast as possible to free up registers for
 	 * later use */
-	set_args(t, a);
+	set_args(t, 6, a);
 
 	ctx->exec = t->exec;
 	ctx->pid = t->pid;
@@ -185,7 +185,7 @@ static void leave_rpc(struct tcb *t, struct sys_ret a)
 
 	t->regs = ctx->regs;
 	/* again, get rid of args as fast as possible */
-	set_args(t, a);
+	set_args(t, 6, a);
 
 	set_return(t, ctx->exec);
 	/* if we're returning from a failed rpc, this should essentially be a
@@ -230,7 +230,7 @@ static bool enough_rpc_stack(struct tcb *t)
 SYSCALL_DEFINE1(ipc_server)(struct tcb *t, sys_arg_t callback)
 {
 	get_cproc(t)->callback = callback;
-	return_args(t, SYS_RET1(OK));
+	return_args1(t, OK);
 }
 
 /**
@@ -261,7 +261,7 @@ static void do_ipc(struct tcb *t,
                    enum ipc_kind kind)
 {
 	if (unlikely(!enough_rpc_stack(t)))
-		return_args(t, SYS_RET1(ERR_OOMEM));
+		return_args1(t, ERR_OOMEM);
 
 	struct stack_diff sd =
 		enter_rpc(t, SYS_RET6(OK, t->eid, d0, d1, d2, d3), kind);
@@ -283,6 +283,9 @@ static void do_ipc(struct tcb *t,
 		t->eid = t->pid;
 
 	finalize_rpc(t, r, sd);
+	/* I tested out passing the return values as arguments to
+	 * ret_userspace_fast, but apparently that causes enough stack shuffling
+	 * to be slower overall. */
 	ret_userspace_fast();
 }
 /**
@@ -354,7 +357,7 @@ SYSCALL_DEFINE4(ipc_resp)(struct tcb *t, sys_arg_t d0, sys_arg_t d1,
 	/* if we're not in an rpc, the user messed something up. */
 	/** @todo choose or come up with more fitting error value. */
 	if (unlikely(!is_rpc(t)))
-		return_args(t, SYS_RET1(ERR_MISC));
+		return_args1(t, ERR_MISC);
 
 	/* we need the current proc before leaving the rpc */
 	struct tcb *r = get_cproc(t);
@@ -373,20 +376,20 @@ SYSCALL_DEFINE4(ipc_resp)(struct tcb *t, sys_arg_t d0, sys_arg_t d1,
  */
 SYSCALL_DEFINE1(ipc_notify)(struct tcb *t, sys_arg_t tid){
 	if (!has_cap(t->caps, CAP_CALL))
-		return_args(t, SYS_RET1(ERR_PERM));
+		return_args1(t, ERR_PERM);
 
 	struct tcb *r = get_tcb(tid);
 	if (r->notify_state == NOTIFY_QUEUED)
-		return_args(t, SYS_RET1(OK));
+		return_args1(t, OK);
 
 	if (r->notify_state == NOTIFY_RUNNING) {
 		t->notify_state = NOTIFY_QUEUED;
-		return_args(t, SYS_RET1(OK));
+		return_args1(t, OK);
 	}
 
 	r->notify_state = NOTIFY_QUEUED;
 	if (running(r))
 		send_ipi(r);
 
-	return_args(t, SYS_RET1(OK));
+	return_args1(t, OK);
 }

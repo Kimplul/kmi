@@ -43,9 +43,9 @@ SYSCALL_DEFINE0(timebase)(struct tcb *t)
 {
 	ticks_t tm = secs_to_ticks(1);
 #if defined(_LP64)
-	return_args(t, SYS_RET2(OK, tm));
+	return_args2(t, OK, tm);
 #else
-	return_args(t, SYS_RET3(OK, tm >> 32, tm));
+	return_args3(t, OK, tm >> 32, tm);
 #endif
 }
 
@@ -64,9 +64,9 @@ SYSCALL_DEFINE0(ticks)(struct tcb *t)
 {
 	ticks_t tm = current_ticks();
 #if defined(_LP64)
-	return_args(t, SYS_RET2(OK, tm));
+	return_args2(t, OK, tm);
 #else
-	return_args(t, SYS_RET3(OK, tm >> 32, tm));
+	return_args3(t, OK, tm >> 32, tm);
 #endif
 }
 
@@ -84,9 +84,7 @@ SYSCALL_DEFINE0(ticks)(struct tcb *t)
  */
 SYSCALL_DEFINE2(req_rel_timer)(struct tcb *t, sys_arg_t ticks, sys_arg_t mult)
 {
-	return_args(t,
-	            SYS_RET2(OK,
-	                     new_rel_timer(t->tid, scaled_ticks(ticks, mult))));
+	return_args2(t, OK, new_rel_timer(t->tid, scaled_ticks(ticks, mult)));
 }
 
 /**
@@ -100,9 +98,7 @@ SYSCALL_DEFINE2(req_rel_timer)(struct tcb *t, sys_arg_t ticks, sys_arg_t mult)
  */
 SYSCALL_DEFINE2(req_abs_timer)(struct tcb *t, sys_arg_t ticks, sys_arg_t mult)
 {
-	return_args(t,
-	            SYS_RET2(OK,
-	                     new_abs_timer(t->tid, scaled_ticks(ticks, mult))));
+	return_args2(t, OK, new_abs_timer(t->tid, scaled_ticks(ticks, mult)));
 }
 
 /**
@@ -117,8 +113,8 @@ SYSCALL_DEFINE1(free_timer)(struct tcb *t, sys_arg_t cid)
 {
 	struct timer *timer = find_timer(cid);
 	if (!timer)
-		return_args(t, SYS_RET1(ERR_NF));
+		return_args1(t, ERR_NF);
 
 	remove_timer(timer);
-	return_args(t, SYS_RET1(OK));
+	return_args1(t, OK);
 }

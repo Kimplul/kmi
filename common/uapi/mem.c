@@ -27,9 +27,9 @@ SYSCALL_DEFINE2(req_mem)(struct tcb *t, sys_arg_t size, sys_arg_t flags)
 	vm_t start = 0;
 	/** @todo expose flags to users */
 	if (!(start = alloc_uvmem(r, size, flags)))
-		return_args(t, SYS_RET1(ERR_OOMEM));
+		return_args1(t, ERR_OOMEM);
 
-	return_args(t, SYS_RET2(OK, start));
+	return_args2(t, OK, start);
 }
 
 /**
@@ -46,9 +46,9 @@ SYSCALL_DEFINE2(req_page)(struct tcb *t, sys_arg_t size, sys_arg_t flags)
 	struct tcb *r = get_cproc(t);
 	vm_t start = 0; pm_t paddr = 0; size_t asize = size;
 	if (!(start = alloc_uvpage(r, asize, flags, &asize, &paddr)))
-		return_args(t, SYS_RET1(ERR_OOMEM));
+		return_args1(t, ERR_OOMEM);
 
-	return_args(t, SYS_RET4(OK, start, asize, paddr));
+	return_args4(t, OK, start, asize, paddr);
 }
 
 /**
@@ -67,9 +67,9 @@ SYSCALL_DEFINE3(req_fixmem)(struct tcb *t, sys_arg_t fixed, sys_arg_t size,
 	struct tcb *r = get_cproc(t);
 	vm_t start = 0;
 	if (!(start = alloc_fixed_uvmem(r, fixed, size, flags)))
-		return_args(t, SYS_RET1(ERR_OOMEM));
+		return_args1(t, ERR_OOMEM);
 
-	return_args(t, SYS_RET2(OK, start));
+	return_args2(t, OK, start);
 }
 
 /**
@@ -88,12 +88,12 @@ SYSCALL_DEFINE1(free_mem)(struct tcb *t, sys_arg_t start)
 	/* try freeing normal user memory first, if that fails, try device
 	 * memory, otherwise just assume the address is borked. */
 	if (!(status = free_uvmem(r, vm_start)))
-		return_args(t, SYS_RET1(OK));
+		return_args1(t, OK);
 
 	if (!(status = free_devmem(r, vm_start)))
-		return_args(t, SYS_RET1(OK));
+		return_args1(t, OK);
 
-	return_args(t, SYS_RET1(status));
+	return_args1(t, status);
 }
 
 /**
@@ -117,9 +117,9 @@ SYSCALL_DEFINE3(req_pmem)(struct tcb *t, sys_arg_t paddr, sys_arg_t size,
 	struct tcb *r = get_cproc(t);
 	vm_t start = 0;
 	if (!(start = alloc_devmem(r, paddr, size, flags)))
-		return_args(t, SYS_RET1(ERR_OOMEM));
+		return_args1(t, ERR_OOMEM);
 
-	return_args(t, SYS_RET2(OK, start));
+	return_args2(t, OK, start);
 }
 
 /**
@@ -143,16 +143,16 @@ SYSCALL_DEFINE4(req_sharedmem)(struct tcb *t, sys_arg_t tid,
 	/** @todo check capability for shared memory */
 	struct tcb *u = get_tcb(tid);
 	if (!u)
-		return_args(t, SYS_RET1(ERR_INVAL));
+		return_args1(t, ERR_INVAL);
 
 	struct tcb *s = get_cproc(t);
 	struct tcb *c = get_rproc(u);
 
 	vm_t sstart, cstart;
 	if (alloc_shared_uvmem(s, c, size, sflags, cflags, &sstart, &cstart))
-		return_args(t, SYS_RET1(ERR_OOMEM));
+		return_args1(t, ERR_OOMEM);
 
-	return_args(t, SYS_RET3(OK, sstart, cstart));
+	return_args3(t, OK, sstart, cstart);
 }
 
 /** \todo add some way to specify who gets to access the shared memory? */

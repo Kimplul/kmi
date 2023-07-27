@@ -23,7 +23,7 @@
  * @param t Thread that will run after return.
  * @param a Arguments to attach.
  */
-void set_args(struct tcb *t, struct sys_ret a);
+void set_args(struct tcb *t, size_t n, struct sys_ret a);
 
 /**
  * Get argument data attached to thread.

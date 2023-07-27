@@ -23,7 +23,7 @@
 SYSCALL_DEFINE0(noop)(struct tcb *t)
 {
 	info("sys_noop\n");
-	set_args(t, SYS_RET1(OK));
+	set_args1(t, OK);
 }
 
 /**
@@ -37,7 +37,7 @@ SYSCALL_DEFINE0(noop)(struct tcb *t)
 SYSCALL_DEFINE1(putch)(struct tcb *t, sys_arg_t a)
 {
 	dbg("%c", (char)a);
-	set_args(t, SYS_RET1(OK));
+	set_args1(t, OK);
 }
 
 void handle_syscall(sys_arg_t syscall, sys_arg_t a, sys_arg_t b,
@@ -79,7 +79,7 @@ void handle_syscall(sys_arg_t syscall, sys_arg_t a, sys_arg_t b,
 	default:
 		error("Syscall %zu outside allowed range [0 - %i]\n", syscall,
 		      SYS_NUM - 1);
-		set_args(t, SYS_RET1(ERR_INVAL));
+		set_args1(t, ERR_INVAL);
 	};
 
 	if (check_canary(t)) {

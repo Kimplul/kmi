@@ -39,40 +39,69 @@ char *strcpy(char * restrict dst, const char * restrict src)
 	return dst;
 }
 
-struct sys_ret ecall(struct sys_ret s)
+static inline struct sys_ret ecall(size_t n,
+                                   long arg0, long arg1, long arg2, long arg3,
+                                   long arg4, long arg5)
 {
-	register long a0 asm ("a0") = s.a0;
-	register long a1 asm ("a1") = s.a1;
-	register long a2 asm ("a2") = s.a2;
-	register long a3 asm ("a3") = s.a3;
-	register long a4 asm ("a4") = s.a4;
-	register long a5 asm ("a5") = s.a5;
+	/* here a static assert of n <= 6 && n >= 1 would be ideal */
 
-	asm volatile ("ecall"
-	              : "=r" (a0), "=r" (a1), "=r" (a2), "=r" (a3), "=r" (a4),
-	              "=r" (a5)
-	              : "r" (a0), "r" (a1), "r" (a2), "r" (a3), "r" (a4),
-	              "r" (a5));
+	register long a0 asm ("a0") = arg0;
+	register long a1 asm ("a1") = arg1;
+	register long a2 asm ("a2") = arg2;
+	register long a3 asm ("a3") = arg3;
+	register long a4 asm ("a4") = arg4;
+	register long a5 asm ("a5") = arg5;
 
+#define OUTPUTS "+r" (a0), "=r" (a1), "=r" (a2), "=r" (a3), "=r" (a4), "=r" (a5)
+
+	if (n == 1)
+		asm volatile ("ecall" : OUTPUTS : "r" (a0));
+
+	else if (n == 2)
+		asm volatile ("ecall" : OUTPUTS : "r" (a0), "r" (a1));
+
+	else if (n == 3)
+		asm volatile ("ecall" : OUTPUTS : "r" (a0), "r" (a1), "r" (a2));
+
+	else if (n == 4)
+		asm volatile ("ecall" : OUTPUTS
+		              : "r" (a0), "r" (a1), "r" (a2), "r" (a3));
+
+	else if (n == 5)
+		asm volatile ("ecall" : OUTPUTS
+		              : "r" (a0), "r" (a1), "r" (a2), "r" (a3),
+		              "r" (a4));
+
+	else if (n == 6)
+		asm volatile ("ecall"
+		              : OUTPUTS
+		              : "r" (a0), "r" (a1), "r" (a2), "r" (a3),
+		              "r" (a4), "r" (a5));
+
+#undef OUTPUTS
 	return (struct sys_ret){a0, a1, a2, a3, a4, a5};
 }
 
+#define ecall1(a) ecall(1, a, 0, 0, 0, 0, 0)
+#define ecall2(a, b) ecall(2, a, b, 0, 0, 0, 0)
+#define ecall3(a, b, c) ecall(3, a, b, c, 0, 0, 0)
+#define ecall4(a, b, c, d) ecall(4, a, b, c, d, 0, 0)
+#define ecall5(a, b, c, d, e) ecall(5, a, b, c, d, e, 0)
+#define ecall6(a, b, c, d, e, f) ecall(6, a, b, c, d, e, f)
+
 static void sys_noop()
 {
-	struct sys_ret r = {.a0 = SYS_NOOP};
-	ecall(r);
+	ecall1(SYS_NOOP);
 }
 
 static void sys_putch(char c)
 {
-	struct sys_ret r = {.a0 = SYS_PUTCH, .a1 = c};
-	ecall(r);
+	ecall2(SYS_PUTCH, c);
 }
 
 static uint64_t sys_timebase()
 {
-	struct sys_ret r = {.a0 = SYS_TIMEBASE};
-	r = ecall(r);
+	struct sys_ret r = ecall1(SYS_TIMEBASE);
 #if defined(_LP64)
 	return r.a1;
 #else
@@ -84,8 +113,7 @@ static uint64_t sys_timebase()
 
 static uint64_t sys_ticks()
 {
-	struct sys_ret r = {.a0 = SYS_TICKS};
-	r = ecall(r);
+	struct sys_ret r = ecall1(SYS_TICKS);
 #if defined(_LP64)
 	return r.a1;
 #else
@@ -131,30 +159,31 @@ static void print_value(const char *s, uint64_t v)
 
 static uint64_t sys_fork()
 {
-	struct sys_ret r = {.a0 = SYS_FORK};
-	r = ecall(r);
+	struct sys_ret r = ecall1(SYS_FORK);
 
-	if (r.a0 != 0)
+	if (r.a0 != 0) {
 		print_value("fork() failed with error ", r.a0);
+		return r.a0;
+	}
 
 	return r.a1;
 }
 
 static uint64_t sys_swap(long tid)
 {
-	struct sys_ret r = {.a0 = SYS_SWAP, .a1 = tid};
-	r = ecall(r);
+	struct sys_ret r = ecall2(SYS_SWAP, tid);
 
-	if (r.a0 != 0)
+	if (r.a0 != 0) {
 		print_value("swap() failed with error ", r.a0);
+		return r.a0;
+	}
 
-	return r.a0;
+	return 0;
 }
 
 static void sys_ipc_server(void *f)
 {
-	struct sys_ret r = {.a0 = SYS_IPC_SERVER, .a1 = (long)f};
-	r = ecall(r);
+	struct sys_ret r = ecall2(SYS_IPC_SERVER, (long)f);
 
 	if (r.a0 != 0)
 		print_value("ipc_server() failed with error ", r.a0);
@@ -162,59 +191,47 @@ static void sys_ipc_server(void *f)
 
 /** Helper for ipc arguments/return values. */
 struct ipc_args {
-	long a0, a1, a2, a3;
+	long s; long a0, a1, a2, a3;
 };
 
-static struct ipc_args sys_ipc_req(long tid, long d0, long d1, long d2, long d3)
+static inline struct ipc_args sys_ipc_req(long tid, long d0, long d1, long d2,
+                                          long d3)
 {
-	struct sys_ret r = {.a0 = SYS_IPC_REQ,
-		            .a1 = tid,
-		            .a2 = d0,
-		            .a3 = d1,
-		            .a4 = d2,
-		            .a5 = d3};
+	struct sys_ret r = ecall6(SYS_IPC_REQ, tid, d0, d1, d2, d3);
 
-	r = ecall(r);
-
-	if (r.a0)
+	if (r.a0) {
 		print_value("ipc_req() failed with error ", r.a0);
+		return (struct ipc_args){r.a0, 0, 0, 0, 0};
+	}
 
-	return (struct ipc_args){r.a1, r.a2, r.a3, r.a4};
+	return (struct ipc_args){r.a0, r.a1, r.a2, r.a3, r.a4};
 }
 
 static void sys_ipc_resp(long d0, long d1, long d2, long d3)
 {
-	struct sys_ret r = {.a0 = SYS_IPC_RESP,
-		            .a1 = d0,
-		            .a2 = d1,
-		            .a3 = d2,
-		            .a4 = d3};
-
-	ecall(r);
+	ecall5(SYS_IPC_RESP, d0, d1, d2, d3);
 }
 
 static void sys_poweroff(long type)
 {
-	struct sys_ret r = {.a0 = SYS_POWEROFF, .a1 = type};
-	ecall(r);
+	ecall2(SYS_POWEROFF, type);
 }
 
 static void *sys_req_mem(size_t count)
 {
-	struct sys_ret r = {.a0 = SYS_REQ_MEM, .a1 = count,
-		            .a2 = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 4)};
-	r = ecall(r);
-
-	if (r.a0)
+	struct sys_ret r = ecall3(SYS_REQ_MEM, count,
+	                          (1 << 0) | (1 << 1) | (1 << 2) | (1 << 4));
+	if (r.a0) {
 		print_value("sys_req_mem() failed with error ", r.a0);
+		return NULL;
+	}
 
 	return (void *)r.a1;
 }
 
 static void sys_free_mem(void *p)
 {
-	struct sys_ret r = {.a0 = SYS_FREE_MEM, .a1 = (long)p};
-	r = ecall(r);
+	struct sys_ret r = ecall2(SYS_FREE_MEM, (long)p);
 
 	if (r.a0)
 		print_value("sys_free_mem() failed with error ", r.a0);
@@ -222,13 +239,13 @@ static void sys_free_mem(void *p)
 
 static void *sys_req_sharedmem(long tid, unsigned long size, void **cbuf)
 {
-	struct sys_ret r = {.a0 = SYS_REQ_SHAREDMEM, .a1 = tid, .a2 = size,
-		            .a3 = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 4),
-		            .a4 = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 4)};
-	r = ecall(r);
-
-	if (r.a0)
+	struct sys_ret r = ecall5(SYS_REQ_SHAREDMEM, tid, size,
+	                          (1 << 0) | (1 << 1) | (1 << 2) | (1 << 4),
+	                          (1 << 0) | (1 << 1) | (1 << 2) | (1 << 4));
+	if (r.a0) {
 		print_value("sys_req_sharedmem() failed with error ", r.a0);
+		return NULL;
+	}
 
 	*cbuf = (void *)r.a2;
 	return (void *)r.a1;
@@ -242,14 +259,20 @@ void callback(long status, long tid, long d0, long d1, long d2, long d3)
 {
 	(void)status;
 
-	void *cbuf = 0;
-	if (d0 == 1)
+	if (d0 == 1) {
+		void *cbuf = 0;
 		rw_buf = sys_req_sharedmem(tid, rw_buf_size, &cbuf);
+		sys_ipc_resp((long)cbuf, rw_buf_size, 0, 0);
+		__builtin_unreachable();
 
-	if (d0 == 2)
+	} else if (d0 == 2) {
 		puts(rw_buf);
+		sys_ipc_resp(0, 0, 0, 0);
+		__builtin_unreachable();
+	}
 
-	sys_ipc_resp((long)cbuf, rw_buf_size, 0, 0);
+	sys_ipc_resp(0, 0, 0, 0);
+	__builtin_unreachable();
 }
 
 #define CSR_TIME "0xc01"

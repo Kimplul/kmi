@@ -817,6 +817,33 @@ void handle_syscall(sys_arg_t syscall, sys_arg_t a, sys_arg_t b,
  * more readable? */
 
 #include <arch/proc.h>
-#define return_args(t, x) {set_args((t), (x)); return;}
+
+#define set_args1(t, a) set_args(t, 1, SYS_RET1(a))
+#define set_args2(t, a, b) set_args(t, 2, SYS_RET2(a, b))
+#define set_args3(t, a, b, c) set_args(t, 3, SYS_RET3(a, b, c))
+#define set_args4(t, a, b, c, d) set_args(t, 4, SYS_RET4(a, b, c, d))
+#define set_args5(t, a, b, c, d, e) set_args(t, 5, SYS_RET5(a, b, c, d, e))
+#define set_args6(t, a, b, c, d, e, f) set_args(t, 6, \
+	                                        SYS_RET6(a, b, c, d, e, f))
+
+#define return_args1(t, a) \
+	{set_args1(t, a); return;}
+
+#define return_args2(t, a, b) \
+	{set_args2(t, a, b); return;}
+
+#define return_args3(t, a, b, c) \
+	{set_args3(t, a, b, c); return;}
+
+#define return_args4(t, a, b, c, d) \
+	{set_args4(t, a, b, c, d); return;}
+
+#define return_args5(t, a, b, c, d, e) \
+	{set_args5(t, a, b, c, d, e); return;}
+
+#define return_args6(t, a, b, c, d, e, f) \
+	{set_args6(t, a, b, c, d, e, f); return;}
+
+#define return_args(t, x) {set_args((t), 6, (x)); return;}
 
 #endif /* KMI_UAPI_H */
