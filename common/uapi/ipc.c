@@ -64,6 +64,9 @@ struct call_ctx {
 
 	/** Current process ID. */
 	id_t pid;
+
+	/** Whether this context should be skipped when responding. */
+	bool kick;
 };
 
 /**
@@ -75,6 +78,11 @@ struct stack_diff {
 	vm_t start;
 	/** Difference end, i.e. previous stack start. */
 	vm_t end;
+};
+
+/** Enumerator for IPC kind. Used by do_ipc(). */
+enum ipc_kind {
+	IPC_REQ, IPC_FWD, IPC_KICK
 };
 
 /**
@@ -104,9 +112,11 @@ static void finalize_rpc(struct tcb *t, struct tcb *r, struct stack_diff sd)
  *
  * @param t Thread to migrate.
  * @param a RPC arguments.
+ * @param kind Kind of IPC we're doing. Essentially toggles kick boolean.
  * @return RPC stack difference that should be passed to finalize_rpc().
  */
-static struct stack_diff enter_rpc(struct tcb *t, struct sys_ret a)
+static struct stack_diff enter_rpc(struct tcb *t, struct sys_ret a,
+                                   enum ipc_kind kind)
 {
 	vm_t rpc_stack = t->rpc_stack;
 	if (is_rpc(t))
@@ -130,6 +140,9 @@ static struct stack_diff enter_rpc(struct tcb *t, struct sys_ret a)
 	ctx->pid = t->pid;
 	ctx->eid = t->eid;
 	ctx->rpc_stack = rpc_stack;
+
+	/* only rpcs can be kicked forward */
+	ctx->kick = kind == IPC_KICK && is_rpc(t);
 
 	/** @todo if we run out of rpc_stack space we should just stop, likely
 	 * return a status? except it shouldn't happen after we've run
@@ -162,6 +175,14 @@ static void leave_rpc(struct tcb *t, struct sys_ret a)
 {
 	vm_t rpc_stack = t->rpc_stack + BASE_PAGE_SIZE;
 	struct call_ctx *ctx = (struct call_ctx *)(rpc_stack) - 1;
+	vm_t top = ctx->rpc_stack;
+
+	/* find first instance of not kicked context */
+	while (ctx->kick) {
+		rpc_stack = ctx->rpc_stack + BASE_PAGE_SIZE;
+		ctx = (struct call_ctx *)(rpc_stack) - 1;
+	}
+
 	t->regs = ctx->regs;
 	/* again, get rid of args as fast as possible */
 	set_args(t, a);
@@ -169,7 +190,7 @@ static void leave_rpc(struct tcb *t, struct sys_ret a)
 	set_return(t, ctx->exec);
 	/* if we're returning from a failed rpc, this should essentially be a
 	 * no-op */
-	mark_rpc_accessible(t, t->rpc_stack, ctx->rpc_stack);
+	mark_rpc_accessible(t, t->rpc_stack, top);
 	t->rpc_stack = ctx->rpc_stack;
 	t->pid = ctx->pid;
 	t->eid = ctx->eid;
@@ -221,12 +242,15 @@ SYSCALL_DEFINE1(ipc_server)(struct tcb *t, sys_arg_t callback)
  * @param d1 IPC argument 1.
  * @param d2 IPC argument 2.
  * @param d3 IPC argument 3.
- * @param fwd Whether to forward.
+ * @param kind Which kind of IPC to perform.
  *
  * Returns \ref ERR_OOMEM if there isn't enough IPC stack left, \ref ERR_INVAL
  * if the the target process doesn't exist, \ref ERR_NOINIT if the target
  * process hasn't defined a callback. Otherwise \ref OK and whatever the target
  * process sends back.
+ *
+ * @todo should all static functions have double underscores? I seem to be
+ * inconsistent.
  */
 static void do_ipc(struct tcb *t,
                    sys_arg_t pid,
@@ -234,13 +258,13 @@ static void do_ipc(struct tcb *t,
                    sys_arg_t d1,
                    sys_arg_t d2,
                    sys_arg_t d3,
-                   bool fwd)
+                   enum ipc_kind kind)
 {
 	if (unlikely(!enough_rpc_stack(t)))
 		return_args(t, SYS_RET1(ERR_OOMEM));
 
 	struct stack_diff sd =
-		enter_rpc(t, SYS_RET6(OK, t->eid, d0, d1, d2, d3));
+		enter_rpc(t, SYS_RET6(OK, t->eid, d0, d1, d2, d3), kind);
 
 	struct tcb *r = get_tcb(pid);
 	if (unlikely(!r)) {
@@ -255,7 +279,7 @@ static void do_ipc(struct tcb *t,
 		return;
 	}
 
-	if (!fwd)
+	if (kind != IPC_REQ)
 		t->eid = t->pid;
 
 	finalize_rpc(t, r, sd);
@@ -275,7 +299,7 @@ static void do_ipc(struct tcb *t,
 SYSCALL_DEFINE5(ipc_req)(struct tcb *t, sys_arg_t pid,
                          sys_arg_t d0, sys_arg_t d1, sys_arg_t d2, sys_arg_t d3)
 {
-	do_ipc(t, pid, d0, d1, d2, d3, false);
+	do_ipc(t, pid, d0, d1, d2, d3, IPC_REQ);
 }
 
 /**
@@ -287,12 +311,30 @@ SYSCALL_DEFINE5(ipc_req)(struct tcb *t, sys_arg_t pid,
  * @param d1 IPC argument 1.
  * @param d2 IPC argument 2.
  * @param d3 IPC argument 3.
- * @return
+ * @return When succesful: OK, thread id of the caller and the arguments as-is.
  */
 SYSCALL_DEFINE5(ipc_fwd)(struct tcb *t, sys_arg_t pid,
                          sys_arg_t d0, sys_arg_t d1, sys_arg_t d2, sys_arg_t d3)
 {
-	do_ipc(t, pid, d0, d1, d2, d3, true);
+	do_ipc(t, pid, d0, d1, d2, d3, IPC_FWD);
+}
+
+/**
+ * IPC kicking syscall handler.
+ *
+ * @param t Current tcb.
+ * @param pid Process to request RPC to.
+ * @param d0 IPC argument 0.
+ * @param d1 IPC argument 1.
+ * @param d2 IPC argument 2.
+ * @param d3 IPC argument 3.
+ * @return When succesful: OK, thread id of the caller and the arguments as-is.
+ */
+SYSCALL_DEFINE5(ipc_kick)(struct tcb *t, sys_arg_t pid,
+                          sys_arg_t d0, sys_arg_t d1, sys_arg_t d2,
+                          sys_arg_t d3)
+{
+	do_ipc(t, pid, d0, d1, d2, d3, IPC_KICK);
 }
 
 /**

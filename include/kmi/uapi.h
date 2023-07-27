@@ -552,6 +552,30 @@ SYSCALL_DECLARE5(ipc_req, pid, d0, d1, d2, d3);
 SYSCALL_DECLARE5(ipc_fwd, pid, d0, d1, d2, d3);
 
 /**
+ * Kicking syscall.
+ * Kicks the handling of an IPC req/fwd to someone else, jumping over the
+ * current process at ipc_resp().
+ *
+ * I'm imagining that this is useful in cases where an init process connects a
+ * client to another server, and kicks the actual request handling to the
+ * server. Note that ipc_resp() returning the ID of the process that handled a
+ * request is useful in case the client and server should continue communicating
+ * with eachother instead of going through init every time.
+ *
+ * Otherwise identical to ipc_fwd().
+ *
+ * @param t Current tcb.
+ * @param pid Process to kick req/fwd to.
+ * @param d0 First argument.
+ * @param d1 Second argument.
+ * @param d2 Third argument.
+ * @param d3 Fourth argument.
+ *
+ * Doesn't return.
+ */
+SYSCALL_DECLARE5(ipc_kick, pid, d0, d1, d2, d3);
+
+/**
  * Response syscall.
  *
  * @param t Current tcb.

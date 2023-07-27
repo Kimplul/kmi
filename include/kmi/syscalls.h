@@ -83,6 +83,9 @@ enum {
 	/** Forward IPC request from client. */
 	SYS_IPC_FWD,
 
+	/** Kick request handling to someone else. */
+	SYS_IPC_KICK,
+
 	/** IPC response from server. */
 	SYS_IPC_RESP,
 
