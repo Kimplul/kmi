@@ -34,6 +34,9 @@ enum {
 
 	/** Thread is allowed to access configuration parameters. */
 	CAP_CONF = (1 << 4),
+
+	/** Thread is allowed to request to handle IRQs. */
+	CAP_IRQ = (1 << 5),
 };
 
 /**

@@ -8,34 +8,78 @@
 
 #include <kmi/attrs.h>
 #include <kmi/debug.h>
-#include <arch/irq.h>
+#include <kmi/timer.h>
+#include <kmi/ipi.h>
+#include <kmi/irq.h>
 #include "csr.h"
 
 /** Defined in arch/riscv64/kernel/entry.S. */
-extern void handle_irq();
+extern void handle_trap();
 
-/** Called from arch/riscv64/kernel/entry.S. */
-void handle_sys_irq()
-{
-}
-
-void init_irq(void *fdt)
+void setup_irq(void *fdt)
 {
 	UNUSED(fdt);
-	csr_write(CSR_STVEC, &handle_irq);
+	csr_write(CSR_STVEC, &handle_trap);
 
 	long s = 0;
 	csr_read(CSR_SIE, s);
 	info("CSR_SIE: %lx\n", s);
 }
 
+stat_t activate_irq(irq_t id)
+{
+	/** @todo implement plic */
+	return OK;
+}
+
+stat_t deactivate_irq(irq_t id)
+{
+	/** @todo implement plic */
+	return OK;
+}
+
 /* very simple for now */
-void enable_irq()
+void enable_irqs()
 {
 	csr_set(CSR_SSTATUS, CSR_SIE);
 }
 
-void disable_irq()
+void disable_irqs()
 {
 	csr_clear(CSR_SSTATUS, CSR_SIE);
+}
+
+irq_t get_irq()
+{
+	/** @todo implement */
+	return 0;
+}
+
+/**
+ * Prints out a bug message about unknown interrupt cause.
+ *
+ * @param id ID of interrupt.
+ */
+static void riscv_unknown_interrupt(long id)
+{
+	bug("unknown interrupt: %llu\n", (unsigned long long)id);
+}
+
+/**
+ * Handle RISCV interrupt.
+ * Branches out to correct interrupt handler.
+ *
+ * @param id ID of interrupt, with interrupt bit still set.
+ */
+void riscv_handle_interrupt(long id)
+{
+	id = -id;
+
+	switch (id) {
+	/* I think */
+	case 1: handle_ipi(); break;
+	case 5: handle_timer(); break;
+	case 9: handle_irq(); break;
+	default: riscv_unknown_interrupt(id); break;
+	}
 }

@@ -151,6 +151,7 @@ SYSCALL_DEFINE1(kill)(struct tcb *t, sys_arg_t tid)
 		return_args1(t, ERR_PERM);
 
 	/** @todo implement */
+	/** @todo remember to unregister IRQ handlers */
 
 	return_args1(t, OK);
 }

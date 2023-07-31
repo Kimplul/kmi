@@ -195,7 +195,7 @@ ticks_t nsecs_to_ticks(tunit_t nsecs)
 }
 
 /* call to this function from exception handlers */
-void update_timers()
+void handle_timer()
 {
 	struct timer *t = newest_timer();
 	remove_timer(t);

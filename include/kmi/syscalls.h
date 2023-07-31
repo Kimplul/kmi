@@ -134,6 +134,10 @@ enum {
 
 	/** Shutdown, reboot, etc. */
 	SYS_POWEROFF,
+
+	/** Request to handle IRQ. */
+	SYS_IRQ_REQ,
+
 	/** @} */
 
 	SYS_NUM,

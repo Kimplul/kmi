@@ -62,15 +62,18 @@
 	sr      t4, offsetof_t4(sp)
 .endm
 
-.global handle_irq
-handle_irq:
+.global handle_trap
+handle_trap:
 	csrrw tp, CSR_SSCRATCH, tp
-	bnez tp, continue_irq
-	/* the exception came from the kernel, should probably handle but for
-	 * now just spin in place */
-	1: j 1b
+	bnez tp, continue_trap
+	/* the trap came from the kernel, should never happen so just panic
+	 * and abort or whatever */
+	csrr a0, CSR_SEPC
+	csrr a1, CSR_STVAL
+	csrr a2, CSR_SCAUSE
+	call kernel_panic
 
-continue_irq:
+continue_trap:
 	sr	sp, offsetof_tcbd(tp)
 	lr	sp, offsetof_regs(tp)
 	addi	sp, sp, -sizeof_registers
@@ -88,12 +91,15 @@ continue_irq:
 	/* load supervisor cause */
 	csrr t5, CSR_SCAUSE
 	/* interrupts fall through, exceptions jump */
+	/* (leading 1 means the value is interpreted as negative) */
 	bge t5, zero, handle_exception
 
 	save_regs
 	save_args
 
-	/* TODO: handle interrupts */
+	mv t5, a0
+	call riscv_handle_interrupt
+
 	j _load_context
 
 handle_exception:

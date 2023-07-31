@@ -21,6 +21,8 @@
  * Attach argument data to thread.
  *
  * @param t Thread that will run after return.
+ * @param n How many of the arguments to attach. Might micro-optimize some
+ * stuff.
  * @param a Arguments to attach.
  */
 void set_args(struct tcb *t, size_t n, struct sys_ret a);

@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: copyleft-next-0.3.1 */
 /* Copyright 2021 - 2022, Kim Kuparinen < kimi.h.kuparinen@gmail.com > */
 
-#ifndef KMI_CPU_H
-#define KMI_CPU_H
+#ifndef KMI_ARCH_CPU_H
+#define KMI_ARCH_CPU_H
 
 /**
  * @file cpu.h
@@ -43,4 +43,4 @@ void cpu_assign(struct tcb *t);
  */
 void cpu_send_ipi(id_t cpu_id);
 
-#endif /* KMI_CPU_H */
+#endif /* KMI_ARCH_CPU_H */

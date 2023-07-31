@@ -51,6 +51,7 @@ associated program. Easy. (started)
 + Start working on proper context swaps and RPC swaps. (which thread ID should
 		be visible from cur_tcb() when in an RPC? should I use some kind
 		of effective tid instead of cur_tcb()?)
++ Export VM flags to userspace, separate header or something?
 
 !!! FUTURE:
 + Cache locality?

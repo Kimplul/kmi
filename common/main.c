@@ -12,9 +12,9 @@
 #include <kmi/proc.h>
 #include <kmi/debug.h>
 #include <kmi/vmem.h>
+#include <kmi/irq.h>
 #include <arch/arch.h>
 #include <arch/proc.h>
-#include <arch/irq.h>
 #include <libfdt.h>
 
 /**

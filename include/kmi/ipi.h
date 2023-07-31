@@ -29,12 +29,7 @@ bool clear_ipi(struct tcb *t);
  */
 void send_ipi(struct tcb *t);
 
-/**
- * Handle IPI.
- *
- * @param t Thread who was interrupted by IPI.
- * @return Possible arguments to IPI.
- */
-struct sys_ret handle_ipi(struct tcb *t);
+/** Handle IPI. */
+void handle_ipi();
 
 #endif /* KMI_IPI_H */

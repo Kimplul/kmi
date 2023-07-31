@@ -25,11 +25,11 @@ void send_ipi(struct tcb *t)
 	cpu_send_ipi(t->cpu_id);
 }
 
-struct sys_ret handle_ipi(struct tcb *t)
+void handle_ipi()
 {
+	struct tcb *t = cur_tcb();
 	adjust_ipi(t);
 
 	/** @todo use rpc stack */
 	set_return(t, t->callback);
-	return get_args(t);
 }

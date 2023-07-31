@@ -796,6 +796,21 @@ SYSCALL_DECLARE3(clear_cap, tid, off, cap);
  * Shouldn't return at all.
  */
 SYSCALL_DECLARE1(poweroff, type);
+
+/**
+ * Request to handle IRQ.
+ *
+ * @param t Current tcb.
+ * @param id ID if IRQ to handle.
+ * @param b Unused.
+ * @param c Unused.
+ * @param d Unused.
+ * @param e Unused.
+ *
+ * Returns OK on success, non-zero otherwise.
+ * @todo document error codes better.
+ */
+SYSCALL_DECLARE1(irq_req, id);
 /** @} */
 
 /**
@@ -818,32 +833,147 @@ void handle_syscall(sys_arg_t syscall, sys_arg_t a, sys_arg_t b,
 
 #include <arch/proc.h>
 
+/**
+ * Set one argument to pass to thread when returning to userspace.
+ *
+ * @param t Thread whose arguments to set.
+ * @param a First argument.
+ */
 #define set_args1(t, a) set_args(t, 1, SYS_RET1(a))
-#define set_args2(t, a, b) set_args(t, 2, SYS_RET2(a, b))
-#define set_args3(t, a, b, c) set_args(t, 3, SYS_RET3(a, b, c))
-#define set_args4(t, a, b, c, d) set_args(t, 4, SYS_RET4(a, b, c, d))
-#define set_args5(t, a, b, c, d, e) set_args(t, 5, SYS_RET5(a, b, c, d, e))
-#define set_args6(t, a, b, c, d, e, f) set_args(t, 6, \
-	                                        SYS_RET6(a, b, c, d, e, f))
 
+/**
+ * Set two arguments to pass to thread when returning to userspace.
+ *
+ * @param t Thread whose arguments to set.
+ * @param a First argument.
+ * @param b Second argument.
+ */
+#define set_args2(t, a, b) set_args(t, 2, SYS_RET2(a, b))
+
+/**
+ * Set three arguments to pass to thread when returning to userspace.
+ *
+ * @param t Thread whose arguments to set.
+ * @param a First argument.
+ * @param b Second argument.
+ * @param c Third argument.
+ */
+#define set_args3(t, a, b, c) set_args(t, 3, SYS_RET3(a, b, c))
+
+/**
+ * Set four arguments to pass to thread when returning to userspace.
+ *
+ * @param t Thread whose arguments to set.
+ * @param a First argument.
+ * @param b Second argument.
+ * @param c Third argument.
+ * @param d Fourth argument.
+ */
+#define set_args4(t, a, b, c, d) set_args(t, 4, SYS_RET4(a, b, c, d))
+
+/**
+ * Set five arguments to pass to thread when returning to userspace.
+ *
+ * @param t Thread whose arguments to set.
+ * @param a First argument.
+ * @param b Second argument.
+ * @param c Third argument.
+ * @param d Fourth argument.
+ * @param e Fifth argument.
+ */
+#define set_args5(t, a, b, c, d, e) set_args(t, 5, SYS_RET5(a, b, c, d, e))
+
+/**
+ * Set six arguments to pass to thread when returning to userspace.
+ *
+ * @param t Thread whose arguments to set.
+ * @param a First argument.
+ * @param b Second argument.
+ * @param c Third argument.
+ * @param d Fourth argument.
+ * @param e Fifth argument.
+ * @param f Sixth argument.
+ */
+#define set_args6(t, a, b, c, d, e, f) \
+	set_args(t, 6, SYS_RET6(a, b, c, d, e, f))
+
+/**
+ * Set one argument and return from uapi function.
+ * Essentially a beauty macro and slight micro-optimization, avoiding setting
+ * registers to zero when not required.
+ *
+ * @param t Thread whose arguments to set.
+ * @param a First argument.
+ */
 #define return_args1(t, a) \
 	{set_args1(t, a); return;}
 
+/**
+ * Set two arguments and return from uapi function.
+ *
+ * @param t Thread whose arguments to set.
+ * @param a First argument.
+ * @param b Second argument.
+ */
 #define return_args2(t, a, b) \
 	{set_args2(t, a, b); return;}
 
+/**
+ * Set three arguments and return from uapi function.
+ *
+ * @param t Thread whose arguments to set.
+ * @param a First argument.
+ * @param b Second argument.
+ * @param c Third argument.
+ */
 #define return_args3(t, a, b, c) \
 	{set_args3(t, a, b, c); return;}
 
+/**
+ * Set four arguments and return from uapi function.
+ *
+ * @param t Thread whose arguments to set.
+ * @param a First argument.
+ * @param b Second argument.
+ * @param c Third argument.
+ * @param d Fourth argument.
+ */
 #define return_args4(t, a, b, c, d) \
 	{set_args4(t, a, b, c, d); return;}
 
+/**
+ * Set five arguments and return from uapi function.
+ *
+ * @param t Thread whose arguments to set.
+ * @param a First argument.
+ * @param b Second argument.
+ * @param c Third argument.
+ * @param d Fourth argument.
+ * @param e Fifth argument.
+ */
 #define return_args5(t, a, b, c, d, e) \
 	{set_args5(t, a, b, c, d, e); return;}
 
+/**
+ * Set six arguments and return from uapi function.
+ *
+ * @param t Thread whose arguments to set.
+ * @param a First argument.
+ * @param b Second argument.
+ * @param c Third argument.
+ * @param d Fourth argument.
+ * @param e Fifth argument.
+ * @param f Sixth argument.
+ */
 #define return_args6(t, a, b, c, d, e, f) \
 	{set_args6(t, a, b, c, d, e, f); return;}
 
+/**
+ * Set all arguments and return from uapi function.
+ *
+ * @param t Thread whose arguments to set.
+ * @param x Arguments to set.
+ */
 #define return_args(t, x) {set_args((t), 6, (x)); return;}
 
 #endif /* KMI_UAPI_H */
