@@ -44,34 +44,7 @@ struct tcb *cur_tcb()
 	return t;
 }
 
-/**
- * Helper for cpu_send_ipi() to convert linear \p cpu_id to SBI \c
- * hart_mask_base.
- *
- * @param cpu_id CPU id to convert.
- * @return Corresponding \c hart_mask_base.
- */
-static long __cpu_offset(id_t cpu_id)
-{
-	return cpu_id / (sizeof(long) * 8);
-}
-
-/**
- * Helper for cpu_send_ipi() to convert linear \p cpu_id to SBI \c
- * hart_mask.
- *
- * @param cpu_id CPU id to convert.
- * @param offset Offset from __cpu_offset().
- * @return Corresponding \c hart_mask.
- */
-static long __cpu_mask(id_t cpu_id, long offset)
-{
-	return cpu_id - offset * sizeof(long) * 8;
-}
-
 void cpu_send_ipi(id_t cpu_id)
 {
-	long offset = __cpu_offset(cpu_id);
-	long mask = __cpu_mask(cpu_id, offset);
-	sbi_send_ipi(mask, offset);
+	sbi_send_ipi(1, cpu_id);
 }

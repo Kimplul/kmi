@@ -122,8 +122,8 @@ static inline struct sbiret sbi_system_reset(uint32_t reset_type,
 static inline struct sbiret sbi_send_ipi(unsigned long hart_mask,
                                          unsigned long hart_mask_base)
 {
-	return sbi_ecall(EID_sPI, FID_IPI, hart_mask, hart_mask_base, 0, 0, 0,
-	                 0);
+	return sbi_ecall(EID_sPI, FID_IPI, hart_mask, hart_mask_base,
+	                 0, 0, 0, 0);
 }
 
 #endif /* KMI_RISCV_SBI_H */
