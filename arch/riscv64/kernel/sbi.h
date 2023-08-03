@@ -64,7 +64,7 @@ struct sbiret sbi_ecall(int ext, int fid, unsigned long arg0,
 #define EID_TIME 0x54494D45
 
 /** Function ID of sbi_set_timer(). */
-#define FID_SET_TIMER 0
+#define FID_TIME_SET_TIMER 0
 
 /**
  * Start timer. IRQs have to be enabled for the timer to trigger.
@@ -76,10 +76,11 @@ struct sbiret sbi_ecall(int ext, int fid, unsigned long arg0,
 static inline struct sbiret sbi_set_timer(uint64_t stime_value)
 {
 #if defined(riscv32)
-	return sbi_ecall(EID_TIME, FID_SET_TIMER, stime_value,
+	return sbi_ecall(EID_TIME, FID_TIME_SET_TIMER, stime_value,
 	                 stime_value >> 32, 0, 0, 0, 0);
 #else
-	return sbi_ecall(EID_TIME, FID_SET_TIMER, stime_value, 0, 0, 0, 0, 0);
+	return sbi_ecall(EID_TIME, FID_TIME_SET_TIMER, stime_value,
+	                 0, 0, 0, 0, 0);
 #endif
 }
 
@@ -87,7 +88,7 @@ static inline struct sbiret sbi_set_timer(uint64_t stime_value)
 #define EID_SRST 0x53525354
 
 /** Function ID of sbi_system_reset(). */
-#define FID_RESET 0
+#define FID_SRST_RESET 0
 
 /**
  * Reset system.
@@ -102,15 +103,15 @@ static inline struct sbiret sbi_set_timer(uint64_t stime_value)
 static inline struct sbiret sbi_system_reset(uint32_t reset_type,
                                              uint32_t reset_reason)
 {
-	return sbi_ecall(EID_SRST, FID_RESET, reset_type, reset_reason, 0, 0, 0,
-	                 0);
+	return sbi_ecall(EID_SRST, FID_SRST_RESET, reset_type, reset_reason,
+	                 0, 0, 0, 0);
 }
 
 /** Supervisor IPI extension ID. */
 #define EID_sPI 0x735049
 
 /** Supervisor IPI function ID. */
-#define FID_IPI 0
+#define FID_sPI_IPI 0
 
 /**
  * Send IPI.
@@ -122,8 +123,22 @@ static inline struct sbiret sbi_system_reset(uint32_t reset_type,
 static inline struct sbiret sbi_send_ipi(unsigned long hart_mask,
                                          unsigned long hart_mask_base)
 {
-	return sbi_ecall(EID_sPI, FID_IPI, hart_mask, hart_mask_base,
+	return sbi_ecall(EID_sPI, FID_sPI_IPI, hart_mask, hart_mask_base,
 	                 0, 0, 0, 0);
+}
+
+/** Hart state management extension ID. */
+#define EID_HSM 0x48534D
+
+/** Hart start function ID. */
+#define FID_HSM_START 0
+
+static inline struct sbiret sbi_hart_start(unsigned long hartid,
+                                           unsigned long start_addr,
+                                           unsigned long opaque)
+{
+	return sbi_ecall(EID_HSM, FID_HSM_START, hartid, start_addr, opaque,
+	                 0, 0, 0);
 }
 
 #endif /* KMI_RISCV_SBI_H */
