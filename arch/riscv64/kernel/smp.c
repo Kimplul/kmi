@@ -74,9 +74,9 @@ void smp_bringup(struct vmem *b, void *fdt)
 
 		struct sbiret r = sbi_hart_status(hartid);
 		if (r.error) {
-			warn("failed getting hart %d status: %ld\n",
-			     hartid,
-			     r.error);
+			warn("failed getting hart %ld status: %ld\n",
+			     (long)hartid,
+			     (long)r.error);
 			continue;
 		}
 
@@ -97,9 +97,9 @@ void smp_bringup(struct vmem *b, void *fdt)
 		                   (unsigned long)__pa(riscv_bringup), satp);
 
 		if (r.error) {
-			warn("failed bringing up hart %d: %ld\n",
-			     hartid,
-			     r.error);
+			warn("failed bringing up hart %ld: %ld\n",
+			     (long)hartid,
+			     (long)r.error);
 			continue;
 		}
 	}
@@ -114,7 +114,10 @@ void core_bringup(long hartid)
 {
 	/* assume smp_bringup assigned our cpuid correctly */
 	id_t cpuid = hartid_to_cpuid(hartid);
-	info("core %d online\n", cpuid);
+	info("core %ld online\n", (long)cpuid);
+
+	/* realistically stuff after this point could probably be placed
+	 * somewhere in common/ */
 
 	/* add us as a thread to init program that cpu 0 is hopefully running by
 	 * now */
