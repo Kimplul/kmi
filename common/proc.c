@@ -36,6 +36,12 @@ stat_t init_proc(void *fdt)
 	if (!t)
 		return ERR_OOMEM;
 
+	/* we're the first cpu, so we always have ID 0 */
+	t->cpu_id = 0;
+
+	/* force tcb for core */
+	tcb_assign(t);
+
 	/* set current tcb */
 	use_tcb(t);
 

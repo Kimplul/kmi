@@ -199,14 +199,15 @@ static struct dbg_info __dbg_from_fdt(const void *fdt)
 	enum serial_dev dev = __serial_dev_enum(dev_name);
 
 	/* get serial device address */
-	struct cell_info ci = get_reginfo(fdt, stdout);
-	void *reg_ptr = (void *)fdt_getprop(fdt, stdout_offset, "reg", NULL);
+	const void *reg_ptr = fdt_getprop(fdt, stdout_offset, "reg", NULL);
+	struct cell_info ci = get_cellinfo(fdt, stdout_offset);
 	pm_t dbg_ptr = (pm_t)fdt_load_reg_addr(ci, reg_ptr, 0);
 
 	/* get serial device offset if present */
 	size_t shift = 0;
-	void *shift_ptr = (void *)fdt_getprop(fdt, stdout_offset, "reg-shift",
-	                                      NULL);
+	const void *shift_ptr = fdt_getprop(fdt, stdout_offset, "reg-shift",
+	                                    NULL);
+
 	if (shift_ptr)
 		shift = (size_t)fdt_load_int32_ptr(shift_ptr);
 

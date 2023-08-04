@@ -15,4 +15,14 @@
 #include "../../arch/riscv32/include/tcb.h"
 #endif
 
+/**
+ * Force store tcb \p t in arch-specific way.
+ * cpu_assign() is allowed to assume there's always a valid tcb
+ * set, so during init we have to force set a tcb before cpu_assign() can be
+ * used.
+ *
+ * @param t tcb to set.
+ */
+void tcb_assign(struct tcb *t);
+
 #endif /* KMI_ARCH_TCB_H */

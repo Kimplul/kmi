@@ -26,6 +26,7 @@
 
 /**
  * The kernel is in an irrepairable state, just give up.
+ * Should maybe call kernel_panic()?
  *
  * @param x Condition to check for.
  */

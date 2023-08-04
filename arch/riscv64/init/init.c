@@ -43,9 +43,10 @@ void flush_tlb_full()
  */
 static pm_t __fdt_ram_base(void *fdt)
 {
-	struct cell_info ci = get_reginfo(fdt, "/memory");
 	int mem_offset = fdt_path_offset(fdt, "/memory");
-	uint8_t *mem_reg = (uint8_t *)fdt_getprop(fdt, mem_offset, "reg", NULL);
+	const void *mem_reg = fdt_getprop(fdt, mem_offset, "reg", NULL);
+
+	struct cell_info ci = get_cellinfo(fdt, mem_offset);
 	return (pm_t)fdt_load_int_ptr(ci.addr_cells, mem_reg);
 }
 

@@ -13,6 +13,7 @@
 #include <kmi/debug.h>
 #include <arch/cpu.h>
 #include "pages.h"
+#include "arch.h"
 #include "csr.h"
 
 /**
@@ -386,28 +387,33 @@ void flush_tlb_all()
  */
 static void __use_vmem(struct vmem *branch, enum mm_mode m)
 {
-	branch = (struct vmem *)__pa(branch);
-	pm_t pn = (pm_t)(branch) >> page_shift();
-
-	pm_t mode = DEFAULT_Sv_MODE;
-
-	if (m == Sv32)
-		mode = SATP_MODE_Sv32;
-	else if (m == Sv39)
-		mode = SATP_MODE_Sv39;
-	else if (m == Sv48)
-		mode = SATP_MODE_Sv48;
-
-	csr_write(CSR_SATP, mode | pn);
+	pm_t satp = branch_to_satp(branch, m);
+	csr_write(CSR_SATP, satp);
 	flush_tlb_full();
-	/* Sv57 && Sv64 in the future? */
 	/** @todo ASID table for maybe faster context switches? */
+}
+
+/**
+ * Populate \p branch with direct mapping.
+ * Mainly intended for bringup and init stuff.
+ * Arguably works only for riscv64 and is sort of shared with init.c, so could
+ * still be improved.
+ *
+ * @param branch Branch to populate.
+ */
+static void __populate_dmap(struct vmem *branch)
+{
+	size_t flags = VM_V | VM_R | VM_W | VM_X | VM_G | VM_D | VM_A;
+	for (size_t i = 0; i < CSTACK_PAGE; ++i)
+		branch->leaf[i] =
+			(struct vmem *)to_pte(TOP_PAGE_SIZE * i, flags);
 }
 
 struct vmem *init_vmem(void *fdt)
 {
 	UNUSED(fdt);
 	struct vmem *b = create_vmem();
+	__populate_dmap(b);
 	/* update which memory branch to use */
 	use_vmem(b);
 	return b;

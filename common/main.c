@@ -15,6 +15,7 @@
 #include <kmi/irq.h>
 #include <arch/arch.h>
 #include <arch/proc.h>
+#include <arch/smp.h>
 #include <libfdt.h>
 
 /**
@@ -51,9 +52,9 @@ void __main main(void *fdt, uintptr_t ram_base)
 	init_irq(fdt);
 	init_timer(fdt);
 	init_proc(fdt);
-	/* free temporary virtual memory now that we're in the init process
-	 * space */
-	destroy_vmem(b);
+
+	/* try to bring up other cores on system */
+	smp_bringup(b, fdt);
 
 	/* start running init program */
 	run_init(cur_tcb(), fdt);

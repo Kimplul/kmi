@@ -9,6 +9,9 @@
  * Process/thread handling.
  */
 
+/* forward declaration */
+struct tcb;
+
 #include <kmi/mem_regions.h>
 #include <kmi/caps.h>
 #include <kmi/types.h>
@@ -59,9 +62,6 @@
  * @return The root process thread of the current thread.
  */
 #define get_rproc(t) (get_tcb(t->rid))
-
-/* forward declaration */
-struct tcb;
 
 /** Convenience structure for \ref tcb. */
 struct tcb_ctx {

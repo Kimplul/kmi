@@ -35,15 +35,6 @@ struct cell_info {
  */
 struct cell_info get_cellinfo(const void *fdt, const int offset);
 
-/**
- * Get information about a register.
- *
- * @param fdt Pointer to the global fdt.
- * @param path Path to be searched.
- * @return Register information.
- */
-struct cell_info get_reginfo(const void *fdt, const char *path);
-
 #if defined(DEBUG)
 /**
  * Print FDT node at specified location.
@@ -89,7 +80,7 @@ void __dbg_fdt(const void *fdt, int node_offset, int depth);
  * Load int{32,64} from FDT at location specified by pointer.
  *
  * @param c Size of int, where 2 == int64 and everything else int32. Query int
- * size from FDT with \ref get_cellinfo() and \ref get_reginfo().
+ * size from FDT with \ref get_cellinfo().
  * @param p Pointer to int{32,64} inside the global FDT.
  * @return Value of integer at location p.
  */
@@ -105,7 +96,8 @@ void __dbg_fdt(const void *fdt, int node_offset, int depth);
  * @param i Index of address to read.
  * @return Address in reg cell.
  */
-static inline fdt64_t fdt_load_reg_addr(struct cell_info ci, void *p, size_t i)
+static inline fdt64_t fdt_load_reg_addr(struct cell_info ci, const void *p,
+                                        size_t i)
 {
 	hard_assert(ci.addr_cells == 2 || ci.addr_cells == 1, 0);
 	size_t offset = i * (ci.addr_cells + ci.size_cells) * sizeof(fdt32_t);
@@ -121,7 +113,8 @@ static inline fdt64_t fdt_load_reg_addr(struct cell_info ci, void *p, size_t i)
  * @param i Index of size to read.
  * @return Size in reg cell.
  */
-static inline fdt64_t fdt_load_reg_size(struct cell_info ci, void *p, size_t i)
+static inline fdt64_t fdt_load_reg_size(struct cell_info ci, const void *p,
+                                        size_t i)
 {
 	hard_assert(ci.size_cells == 2 || ci.size_cells == 1, 0);
 	size_t offset = i * (ci.addr_cells + ci.size_cells) * sizeof(fdt32_t);

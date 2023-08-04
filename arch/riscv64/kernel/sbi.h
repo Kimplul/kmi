@@ -133,6 +133,14 @@ static inline struct sbiret sbi_send_ipi(unsigned long hart_mask,
 /** Hart start function ID. */
 #define FID_HSM_START 0
 
+/**
+ * Start hart.
+ *
+ * @param hartid Hart to start.
+ * @param start_addr Address to jump to in S mode.
+ * @param opaque OS-specific argument passed to hart.
+ * @return SBI call return. \see sbiret.
+ */
 static inline struct sbiret sbi_hart_start(unsigned long hartid,
                                            unsigned long start_addr,
                                            unsigned long opaque)
@@ -140,5 +148,26 @@ static inline struct sbiret sbi_hart_start(unsigned long hartid,
 	return sbi_ecall(EID_HSM, FID_HSM_START, hartid, start_addr, opaque,
 	                 0, 0, 0);
 }
+
+/** Hart status function ID. */
+#define FID_HSM_STATUS 2
+
+/**
+ * Get hart status.
+ *
+ * @param hartid Hart ID.
+ * @return SBI call return. \see sbiret.
+ */
+static inline struct sbiret sbi_hart_status(unsigned long hartid)
+{
+	return sbi_ecall(EID_HSM, FID_HSM_STATUS, hartid,
+	                 0, 0, 0, 0, 0);
+}
+
+/**
+ * Status code \ref sbi_hart_status() returns for a started hart.
+ * The only one we're currently interested in.
+ */
+#define SBI_HART_STARTED 0
 
 #endif /* KMI_RISCV_SBI_H */

@@ -550,7 +550,7 @@ static void __mark_area_used(pm_t base, pm_t top)
 static void __mark_reserved_mem(void *fdt)
 {
 	int rmem_offset = fdt_path_offset(fdt, "/reserved-memory");
-	struct cell_info ci = get_reginfo(fdt, "/reserved-memory");
+	struct cell_info ci = get_cellinfo(fdt, rmem_offset);
 
 	int node = 0;
 	fdt_for_each_subnode(node, fdt, rmem_offset) {
@@ -576,10 +576,12 @@ static void __mark_reserved_mem(void *fdt)
  */
 static pm_t __get_ramtop(void *fdt)
 {
-	struct cell_info ci = get_reginfo(fdt, "/memory");
 	int mem_offset = fdt_path_offset(fdt, "/memory");
-	uint8_t *mem_reg = (uint8_t *)fdt_getprop(fdt, mem_offset, "reg", NULL);
+	const void *mem_reg = fdt_getprop(fdt, mem_offset, "reg", NULL);
 
+	/* here we actually want the root offset because /memory itself doesn't
+	 * have children, I guess? */
+	struct cell_info ci = get_cellinfo(fdt, fdt_path_offset(fdt, "/"));
 	pm_t base = (pm_t)fdt_load_reg_addr(ci, mem_reg, 0);
 	return (pm_t)fdt_load_reg_size(ci, mem_reg, 0) + base;
 }

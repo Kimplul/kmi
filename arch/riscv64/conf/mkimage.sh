@@ -33,6 +33,6 @@ qemu-system-riscv${XLEN} \
 	-bios ../rv${XLEN}/opensbi/build/platform/generic/firmware/fw_jump.elf \
 	-device virtio-blk-device,drive=hd0 \
 	-drive file=rootfs.img,format=raw,id=hd0 \
-	-icount 0 \
 	-S -s -m 2G \
+	-smp 2 \
 	-serial stdio

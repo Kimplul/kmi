@@ -13,18 +13,16 @@
 
 #include "sbi.h"
 
-/** Keeps track of initialized cpus. */
-static atomic_long cpus = 0;
-
 void cpu_assign(struct tcb *t)
 {
-	/* bounce cpu id forward, or if first time here, get a cpu id */
+	/* bounce cpu id forward */
 	struct tcb *c = cur_tcb();
-	if (likely(c))
-		t->cpu_id = c->cpu_id;
-	else
-		t->cpu_id = cpus++;
+	t->cpu_id = c->cpu_id;
+	__asm__ volatile ("mv tp, %0\n" : : "r" (t) :);
+}
 
+void tcb_assign(struct tcb *t)
+{
 	__asm__ volatile ("mv tp, %0\n" : : "r" (t) :);
 }
 

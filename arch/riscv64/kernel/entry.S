@@ -3,14 +3,7 @@
 
 #include "../kernel/gen/asm-offsets.h"
 #include "../kernel/csr.h"
-
-#if __riscv_xlen == 64
-#define sr sd
-#define lr ld
-#else
-#define sr sw
-#define lr lw
-#endif
+#include "asm.h"
 
 /* very much based on linux, but why change it if works, eh? */
 .section .text
