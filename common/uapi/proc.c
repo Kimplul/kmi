@@ -68,7 +68,7 @@ SYSCALL_DEFINE0(fork)(struct tcb *t)
 
 	/* prepare args for when we eventually swap to the new proc, giving
 	 * parent ID as third return value */
-	set_args3(n, OK, 0, n->pid);
+	set_args3(n, OK, 0, get_eproc(t)->pid);
 
 	return_args2(t, OK, n->pid);
 }
