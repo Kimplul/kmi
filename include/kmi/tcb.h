@@ -13,6 +13,7 @@
 struct tcb;
 
 #include <kmi/mem_regions.h>
+#include <kmi/atomic.h>
 #include <kmi/caps.h>
 #include <kmi/types.h>
 #include <arch/tcb.h> /* arch-specific data */
@@ -67,12 +68,6 @@ struct tcb;
 struct tcb_ctx {
 	/** Virtual address space of context. */
 	struct vmem *vmem;
-
-	/** Next thread in context. */
-	struct tcb *next;
-
-	/** Previous thread in context. */
-	struct tcb *prev;
 };
 
 /** Enum for notification states. */
@@ -120,6 +115,9 @@ struct tcb {
 	 * region of thread local storage. */
 	/** Possible thread local storage. */
 	vm_t thread_storage;
+
+	/** Reference count to process. */
+	atomic_int_fast32_t refcount;
 
 	/** Process context of thread. */
 	struct tcb_ctx proc;
@@ -184,6 +182,10 @@ struct tcb {
 
 	/** Whether thread has gotten an IPI */
 	bool ipi;
+
+	/** Whether thread is dead. If thread is process, then corresponds to
+	 * whole process. */
+	bool dead;
 };
 
 /**
@@ -254,49 +256,6 @@ stat_t destroy_thread(struct tcb *t);
 stat_t destroy_proc(struct tcb *p);
 
 /**
- * Attach a thread to an RPC context.
- *
- * Essentially inserts thread \c t into the process \c r, with access to the
- * same memory except for the RPC stack.
- *
- * @param r Process to attach to.
- * @param t Thread to attach.
- * @return \ref OK on success, \ref ERR_INVAL if pointers are the same.
- */
-stat_t attach_rpc(struct tcb *r, struct tcb *t);
-
-/**
- * Detach a thread from an RPC context.
- *
- * \see attach_rpc().
- *
- * @param r Process to detach from.
- * @param t Thread to detach.
- * @return \ref OK on success, \ref ERR_INVAL if pointers are the same.
- *
- * \todo Should probably check that thread exists in the process?
- */
-stat_t detach_rpc(struct tcb *r, struct tcb *t);
-
-/**
- * Attach a thread in a process context.
- *
- * @param r Process to attach to.
- * @param t Thread to attach.
- * @return \ref OK on success, \ref ERR_INVAL if pointers are the same.
- */
-stat_t attach_proc(struct tcb *r, struct tcb *t);
-
-/**
- * Detach a thread from a process context.
- *
- * @param r Process to detach from.
- * @param t Thread to detach.
- * @return \ref OK on success, \ref ERR_INVAL if pointers are the same.
- */
-stat_t detach_proc(struct tcb *r, struct tcb *t);
-
-/**
  * Get currently executing thread.
  *
  * @return Current \ref tcb.
@@ -343,29 +302,6 @@ void use_tcb(struct tcb *t);
 struct tcb *get_tcb(id_t tid);
 
 /**
- * Clone process context memory mappings.
- *
- * Essentially make sure all threads in the process have identical memory
- * mappings.
- *
- * @param p Process whose memory mappings to clone.
- * @return \ref OK on success, something else otherwise.
- * \todo Check up on return codes.
- */
-stat_t clone_proc_maps(struct tcb *p);
-
-/**
- * Clone RPC context memory mappings.
- *
- * \see clone_proc_maps().
- *
- * @param r Server whose memory mappings to clone to threads in RPC to it.
- * @return \ref OK on success, something else otherwise.
- * \todo Check up on return codes.
- */
-stat_t clone_rpc_maps(struct tcb *r);
-
-/**
  * Allocate stacks for thread.
  *
  * Both user stack and RPC stack.
@@ -390,5 +326,29 @@ void set_return(struct tcb *t, vm_t r);
  * @return \c true if it is running, \c false otherwise.
  */
 bool running(struct tcb *t);
+
+/**
+ * Add a reference to a process.
+ * Instead of lists of threads that belong to a process, we give the process'
+ * owning thread a reference counter. When a process is killed, a 'dead' bit is
+ * set, and the thread that owns the process is unreferenced. All data
+ * associated with the process can immediately be freed, but the tid is still
+ * reserved until the reference count reaches zero.
+ *
+ * We have to make sure that all ways a process might be entered check that the
+ * process is still alive, and unmapping pages causes other threads to update
+ * their page tables as well. Then if a segfault happens, we can check if it was
+ * due to being in a dead process. This is still largely TODO.
+ *
+ * @param p Process to reference.
+ */
+void reference_proc(struct tcb *p);
+
+/**
+ * Unreference a process.
+ *
+ * @param p Process to unreference.
+ */
+void unreference_proc(struct tcb *p);
 
 #endif /* KMI_TCB_H */

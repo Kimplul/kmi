@@ -25,11 +25,43 @@
  */
 void tcb_assign(struct tcb *t);
 
+/**
+ * Set up RPC stack in a way that is convenient for the underlying architecture.
+ *
+ * @param t Thread whose RPC stack should be set up.
+ */
 void setup_rpc_stack(struct tcb *t);
+
+/**
+ * Maximum size of one individual RPC stack instance.
+ *
+ * @return Max size of one individual RPC stack instance.
+ */
 size_t max_rpc_size();
 
+/**
+ * Current highest address in RPC stack. Allowed to be inaccurate to one base page.
+ *
+ * @param t Thread whose position in the RPC stack is to be determined.
+ * @return Virtual address corresponding to the current RPC stack position.
+ */
 vm_t rpc_position(struct tcb *t);
+
+/**
+ * Mark RPC stack up to \p top accessible from userspace.
+ *
+ * @param t Thread whose RPC stack is being modified.
+ * @param top Address up to where stack should be accessible from userspace.
+ */
 void mark_rpc_valid(struct tcb *t, vm_t top);
+
+/**
+ * Mark RPC stack down to \p bottom inaccessible from userspace.
+ *
+ * @param t Thread whose RPC stack is being modified.
+ * @param bottom Address down to where stack should be inaccessible from
+ * userspace.
+ */
 void mark_rpc_invalid(struct tcb *t, vm_t bottom);
 
 #endif /* KMI_ARCH_TCB_H */

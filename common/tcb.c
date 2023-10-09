@@ -125,6 +125,7 @@ struct tcb *create_thread(struct tcb *p)
 	id_t tid = __alloc_tid(t);
 	tcbs[tid] = t;
 	t->tid = tid;
+	t->dead = false;
 
 	if (likely(p)) {
 		t->pid = p->pid;
@@ -144,6 +145,7 @@ struct tcb *create_thread(struct tcb *p)
 	t->rid = p->rid;
 	t->rpc.vmem = create_vmem();
 	setup_rpc_stack(t);
+	reference_proc(p);
 
 	t->regs = (vm_t)t;
 
@@ -215,10 +217,12 @@ stat_t destroy_thread(struct tcb *t)
 	hard_assert(!is_proc(t), ERR_INVAL);
 
 	/* remove thread id from list */
+	/** @todo what about if thread is in rpc? should it rather just be
+	 * marked dead? */
 	tcbs[t->tid] = 0;
 
-	/* remove thread from process list */
-	detach_proc(get_rproc(t), t);
+	/* remove reference to root process */
+	unreference_proc(get_rproc(t));
 
 	return __destroy_thread_data(t);
 }
@@ -228,67 +232,28 @@ stat_t destroy_proc(struct tcb *p)
 	hard_assert(tcbs, ERR_NOINIT);
 	hard_assert(is_proc(p), ERR_INVAL);
 
-	for (struct tcb *iter = p; (iter = iter->proc.next);)
-		destroy_thread(iter);
+	p->dead = true;
+	/* unreference ourselves */
+	unreference_proc(p);
 
 	catastrophic_assert(destroy_uvmem(p));
 	return __destroy_thread_data(p);
 }
 
-stat_t attach_rpc(struct tcb *r, struct tcb *t)
+void reference_proc(struct tcb *p)
 {
-	hard_assert(r != t, ERR_INVAL);
-	struct tcb *next = r->server.next;
-	t->rpc.next = next;
-
-	if (next) { next->rpc.prev = t; }
-
-	t->rpc.prev = r;
-	r->server.next = t;
-	return OK;
+	hard_assert(is_proc(p), RETURN_VOID);
+	p->refcount++;
 }
 
-stat_t attach_proc(struct tcb *r, struct tcb *t)
+void unreference_proc(struct tcb *p)
 {
-	hard_assert(r != t, ERR_INVAL);
-	struct tcb *next = r->proc.next;
-	t->proc.next = next;
-
-	if (next) { next->proc.prev = t; }
-
-	t->proc.prev = r;
-	r->proc.next = t;
-	return OK;
-}
-
-stat_t detach_rpc(struct tcb *r, struct tcb *t)
-{
-	/* rpc handling is slightly more complex since we have separate members
-	 * for server and rpc contexts, where server is the server that
-	 * currently hosts some number of rpc guests. */
-	hard_assert(r != t, ERR_INVAL);
-	struct tcb *prev = t->rpc.prev;
-	struct tcb *next = t->rpc.next;
-
-	if (prev == r) { r->server.next = next; }
-	else if (prev) { prev->rpc.next = next; }
-
-	if (next) { next->rpc.prev = prev; }
-
-	return OK;
-}
-
-stat_t detach_proc(struct tcb *r, struct tcb *t)
-{
-	MAYBE_UNUSED(r);
-	hard_assert(r != t, ERR_INVAL);
-	struct tcb *prev = t->proc.prev;
-	struct tcb *next = t->proc.next;
-
-	if (prev) { prev->proc.next = next; }
-	if (next) { next->proc.prev = prev; }
-
-	return OK;
+	hard_assert(is_proc(p), RETURN_VOID);
+	p->refcount--;
+	if (p->dead && p->refcount == 0) {
+		dbg("thread %d is completely destroyed\n", p->tid);
+		/** @todo actually destroy */
+	}
 }
 
 /* weak to allow optimisation on risc-v, but provide fallback for future */
@@ -331,30 +296,6 @@ struct tcb *get_tcb(id_t tid)
 		return NULL;
 
 	return tcbs[tid];
-}
-
-stat_t clone_rpc_maps(struct tcb *r)
-{
-	hard_assert(r && is_proc(r), ERR_INVAL);
-	struct tcb *t = r->server.next;
-	if (!t)
-		return OK;
-
-	do {
-		clone_uvmem(r->proc.vmem, t->rpc.vmem);
-	} while ((t = t->rpc.next));
-
-	return OK;
-}
-
-stat_t clone_proc_maps(struct tcb *r)
-{
-	hard_assert(r && is_proc(r), ERR_INVAL);
-	struct tcb *t = r;
-	while ((t = t->proc.next))
-		clone_uvmem(r->proc.vmem, t->proc.vmem);
-
-	return OK;
 }
 
 void set_return(struct tcb *t, vm_t v)

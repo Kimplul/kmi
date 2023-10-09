@@ -106,14 +106,15 @@ vm_t alloc_devmem(struct tcb *t, pm_t dev_start, size_t bytes, vmflags_t flags)
 		region = alloc_region(&post_ram, bytes, 0, flags);
 
 	if (!region)
-		return 0;
+		return NULL;
 
 	stat_t status = OK;
 	const vm_t w = map_fill_region(t->proc.vmem, &dev_alloc_wrapper,
 	                               dev_start, region,
 	                               bytes, flags, &status);
-	if (is_rpc(t) && status == INFO_SEFF)
-		clone_rpc_maps(t);
+
+	if (status)
+		return NULL;
 
 	return w;
 }
@@ -142,8 +143,6 @@ stat_t free_devmem(struct tcb *t, vm_t dev_start)
 	stat_t status = OK;
 	map_fill_region(t->proc.vmem, &dev_free_wrapper, dev_paddr, dev_start,
 	                region_size, 0, &status);
-	if (is_rpc(t) && status == INFO_SEFF)
-		clone_rpc_maps(t);
 
 	if (dev_paddr < __pre_top)
 		free_region(&pre_ram, dev_paddr);
@@ -151,5 +150,5 @@ stat_t free_devmem(struct tcb *t, vm_t dev_start)
 	if (dev_paddr > __post_base)
 		free_region(&post_ram, dev_paddr);
 
-	return OK;
+	return status;
 }

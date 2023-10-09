@@ -124,8 +124,7 @@ static stat_t __free_mapped_shared_region(struct tcb *t, struct mem_region *m)
  *
  * @param t Thread to work in.
  * @param m Memory region to free.
- * @return \ref INFO_SEFF if other thread in process should be synced, \ref OK
- * otherwise.
+ * @return \ref OK
  */
 static stat_t __free_mapped_region(struct tcb *t, struct mem_region *m)
 {
@@ -190,13 +189,6 @@ vm_t alloc_uvmem(struct tcb *t, size_t size, vmflags_t flags)
 	stat_t status = OK;
 	const vm_t v = alloc_region(&t->sp_r, size, &size, flags);
 	const vm_t w = map_allocd_region(t->proc.vmem, v, size, flags, &status);
-	/** \todo this could be changed so that each thread allocated the memory
-	 * region for itself to start with, and only when someone tries to
-	 * access it from some other thread, is it actually cloned. Would likely
-	 * need some major reworkings, so this is good enough for now. */
-	if (is_rpc(t) && status == INFO_SEFF)
-		clone_rpc_maps(t);
-
 	return w;
 }
 
@@ -218,8 +210,8 @@ vm_t alloc_uvpage(struct tcb *t, size_t size, vmflags_t flags, size_t *asize,
 		return NULL;
 
 	status = map_vpage(t->proc.vmem, addr, w, flags, order);
-	if (is_rpc(t) && status == INFO_SEFF)
-		clone_rpc_maps(t);
+	if (status)
+		return NULL;
 
 	if (asize)
 		*asize = actual_size;
@@ -237,12 +229,6 @@ vm_t alloc_fixed_uvmem(struct tcb *t, vm_t start, size_t size, vmflags_t flags)
 	stat_t status = OK;
 	const vm_t v = alloc_fixed_region(&t->sp_r, start, size, &size, flags);
 	const vm_t w = map_allocd_region(t->proc.vmem, v, size, flags, &status);
-
-	/** @todo should probably update rpc maps even if the thread that does
-	 * the allocation isn't in an ipc? */
-	if (is_rpc(t) && status == INFO_SEFF)
-		clone_rpc_maps(t);
-
 	return w;
 }
 
@@ -281,14 +267,14 @@ stat_t alloc_shared_uvmem(struct tcb *s, struct tcb *c,
 		                    BASE_PAGE);
 	}
 
-	if (cstatus == INFO_SEFF)
-		clone_rpc_maps(c);
-
-	if (sstatus == INFO_SEFF)
-		clone_rpc_maps(s);
-
 	*sstart = sv;
 	*cstart = cv;
+
+	if (sstatus)
+		return sstatus;
+
+	if (cstatus)
+		return cstatus;
 
 	return OK;
 }
@@ -301,8 +287,8 @@ stat_t free_uvmem(struct tcb *r, vm_t va)
 		return ERR_NF;
 
 	stat_t status = __free_mapped_region(r, m);
-	if (is_rpc(r) && status == INFO_SEFF)
-		return clone_rpc_maps(r);
+	if (status)
+		return ERR_MISC;
 
 	return free_known_region(&r->sp_r, m);
 }
@@ -319,7 +305,7 @@ stat_t alloc_uvmem_wrapper(struct vmem *b, pm_t *offset, vm_t vaddr,
 	if (status)
 		*status = ret;
 
-	return (ret == INFO_SEFF) ? OK : ret;
+	return ret;
 }
 
 stat_t alloc_shared_wrapper(struct vmem *b, pm_t *offset, vm_t vaddr,
@@ -334,7 +320,8 @@ stat_t alloc_shared_wrapper(struct vmem *b, pm_t *offset, vm_t vaddr,
 	ret = map_vpage(b, *offset, vaddr, flags, order);
 	if (status)
 		*status = ret;
-	return (ret == INFO_SEFF) ? OK : ret;
+
+	return ret;
 }
 
 stat_t copy_allocd_wrapper(struct vmem *b, pm_t *offset, vm_t vaddr,
@@ -387,5 +374,5 @@ stat_t free_uvmem_wrapper(struct vmem *b, pm_t *offset, vm_t vaddr,
 
 	free_page(order, paddr);
 
-	return (ret == INFO_SEFF) ? OK : ret;
+	return ret;
 }

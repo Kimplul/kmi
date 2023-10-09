@@ -177,11 +177,7 @@ stat_t set_vpage_flags(struct vmem *branch, vm_t vaddr, vmflags_t flags)
 	pm_t *pte = __find_vmem(branch, vaddr, &order);
 	if (pte) {
 		set_bits(*pte, vp_flags(flags));
-
-		if (order == __mm_max_order)
-			return INFO_SEFF;
-		else
-			return OK;
+		return OK;
 	}
 
 	return ERR_NF;
@@ -193,11 +189,7 @@ stat_t clear_vpage_flags(struct vmem *branch, vm_t vaddr, vmflags_t flags)
 	pm_t *pte = __find_vmem(branch, vaddr, &order);
 	if (pte) {
 		clear_bits(*pte, vp_flags(flags));
-
-		if (order == __mm_max_order)
-			return INFO_SEFF;
-		else
-			return OK;
+		return OK;
 	}
 
 	return ERR_NF;
@@ -211,13 +203,7 @@ stat_t mod_vpage(struct vmem *branch, vm_t vaddr, pm_t paddr, vmflags_t flags)
 	pm_t *pte = __find_vmem(branch, vaddr, &order);
 	if (pte) {
 		*pte = to_pte((pm_t)__pa(paddr), vp_flags(flags));
-		/* if we're modifying a top level mapping, we will have to
-		 * update the same one for all the other threads in this process
-		 * */
-		if (order == __mm_max_order)
-			return INFO_SEFF;
-		else
-			return OK;
+		return OK;
 	}
 
 	return ERR_NF;
@@ -323,7 +309,7 @@ stat_t map_vpage(struct vmem *branch, pm_t paddr, vm_t vaddr, vmflags_t flags,
 		(struct vmem *)to_pte((pm_t)__pa(paddr), vp_flags(flags));
 
 	__add_graves(root, vm_to_index(vaddr, __mm_max_order));
-	return top == __mm_max_order ? INFO_SEFF : OK;
+	return OK;
 }
 
 /**

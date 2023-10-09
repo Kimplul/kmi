@@ -54,13 +54,13 @@ enum ipc_kind {
  *
  * @param t Thread to migrate.
  * @param r Process to migrate to.
- * @param sd RPC stack regions to mark inaccessible.
+ * @param s RPC stack regions to mark inaccessible.
  */
 static void finalize_rpc(struct tcb *t, struct tcb *r, vm_t s)
 {
 	clone_uvmem(r->proc.vmem, t->rpc.vmem);
 	set_return(t, r->callback);
-	attach_rpc(r, t);
+	reference_proc(r);
 	t->pid = r->rid;
 
 	/* make sure updates are visible when swapping to the new virtual memory */
@@ -135,6 +135,7 @@ static void leave_rpc(struct tcb *t, struct sys_ret a)
 	while (ctx->kick) {
 		rpc_stack = ctx->rpc_stack + BASE_PAGE_SIZE;
 		ctx = (struct call_ctx *)(rpc_stack) - 1;
+		unreference_proc(get_tcb(ctx->pid));
 	}
 
 	t->regs = ctx->regs;
@@ -224,6 +225,10 @@ static void do_ipc(struct tcb *t,
 	}
 
 	r = get_rproc(r);
+	if (unlikely(r->dead)) {
+		leave_rpc(t, SYS_RET1(ERR_INVAL));
+		return;
+	}
 
 	if (unlikely(!r->callback)) {
 		leave_rpc(t, SYS_RET1(ERR_NOINIT));
@@ -310,10 +315,7 @@ SYSCALL_DEFINE4(ipc_resp)(struct tcb *t, sys_arg_t d0, sys_arg_t d1,
 	if (unlikely(!is_rpc(t)))
 		return_args1(t, ERR_MISC);
 
-	/* we need the current proc before leaving the rpc */
-	struct tcb *r = get_cproc(t);
 	leave_rpc(t, SYS_RET6(OK, t->tid, d0, d1, d2, d3));
-	detach_rpc(r, t);
 }
 
 /**

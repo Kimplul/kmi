@@ -16,7 +16,11 @@ struct arch_tcbd {
 	/** Extra scratch register. */
 	long scratch;
 
+	/** RPC stack page table leaf node. */
 	struct vmem *rpc_leaf;
+
+	/** Index into \p rpc_leaf with the lowest accessed page so far in a
+	 * certain context. */
 	int rpc_idx;
 };
 
