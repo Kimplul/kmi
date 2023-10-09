@@ -67,7 +67,7 @@ handle_trap:
 	call kernel_panic
 
 continue_trap:
-	sr	sp, offsetof_tcbd(tp)
+	sr	sp, offsetof_arch(tp)
 	lr	sp, offsetof_regs(tp)
 	addi	sp, sp, -sizeof_registers
 	csrrw	tp, CSR_SSCRATCH, tp
@@ -78,7 +78,7 @@ continue_trap:
 	/* get current tcb into tp and set scratch to 0 so we can figure out if
 	 * exception occured in kernel or userspace */
 	csrrw tp, CSR_SSCRATCH, x0
-	lr	t5, offsetof_tcbd(tp)
+	lr	t5, offsetof_arch(tp)
 	sr	t5, offsetof_sp(sp)
 
 	/* load supervisor cause */

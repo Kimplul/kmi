@@ -11,43 +11,6 @@
 #include <kmi/ipi.h>
 #include <kmi/conf.h>
 
-/**
- * Mark rpc stack between \p start and \p end inaccessible.
- *
- * @param t Thread whose rpc stack to modify.
- * @param start Start address of rpc stack to mark inaccessible.
- * @param end End address of rpc stack to mark inaccessible.
- */
-static void mark_rpc_inaccessible(struct tcb *t, vm_t start, vm_t end)
-{
-	size_t page_size = BASE_PAGE_SIZE;
-	size_t size = end - start;
-	size_t pages = size / page_size;
-	while (pages--)
-		clear_vpage_flags(t->rpc.vmem, start + pages * page_size, VM_U);
-}
-
-/**
- * Mark rpc stack between \p start and \p end accessible.
- *
- * @param t Thread whose rpc stack to modify.
- * @param start Start address of rpc stack to mark accessible.
- * @param end End address of rpc stack to mark accessible.
- */
-static void mark_rpc_accessible(struct tcb *t, vm_t start, vm_t end)
-{
-	/** @todo this could still be optimized with arch-specific stuff I would
-	 * imagine, as set_vpage_flags() has to traverse the whole tree for each
-	 * page to mark. Instead it should be possible to mark the pages
-	 * continuously once they've been traversed once. Or maybe even keep
-	 * around a pointer to where the last stack left off? */
-	size_t page_size = BASE_PAGE_SIZE;
-	size_t size = end - start;
-	size_t pages = size / page_size;
-	while (pages--)
-		set_vpage_flags(t->rpc.vmem, start + pages * page_size, VM_U);
-}
-
 /** Structure for maintaining the required context data for an rpc call. */
 struct call_ctx {
 	/** Execution continuation point. */
@@ -93,7 +56,7 @@ enum ipc_kind {
  * @param r Process to migrate to.
  * @param sd RPC stack regions to mark inaccessible.
  */
-static void finalize_rpc(struct tcb *t, struct tcb *r, struct stack_diff sd)
+static void finalize_rpc(struct tcb *t, struct tcb *r, vm_t s)
 {
 	clone_uvmem(r->proc.vmem, t->rpc.vmem);
 	set_return(t, r->callback);
@@ -101,7 +64,7 @@ static void finalize_rpc(struct tcb *t, struct tcb *r, struct stack_diff sd)
 	t->pid = r->rid;
 
 	/* make sure updates are visible when swapping to the new virtual memory */
-	mark_rpc_inaccessible(t, sd.start, sd.end);
+	mark_rpc_invalid(t, s);
 	use_vmem(t->rpc.vmem);
 }
 
@@ -115,18 +78,10 @@ static void finalize_rpc(struct tcb *t, struct tcb *r, struct stack_diff sd)
  * @param kind Kind of IPC we're doing. Essentially toggles kick boolean.
  * @return RPC stack difference that should be passed to finalize_rpc().
  */
-static struct stack_diff enter_rpc(struct tcb *t, struct sys_ret a,
+static vm_t enter_rpc(struct tcb *t, struct sys_ret a,
                                    enum ipc_kind kind)
 {
-	vm_t rpc_stack = t->rpc_stack;
-	if (is_rpc(t))
-		/** @todo what if user uses their own stack? Or is a dick and
-		 * sets the stack pointer to RPC_STACK_TOP or something? It'll
-		 * likely only cause a fuckup in the process who did the dumb
-		 * thing, so maybe just consider it user error? Except by
-		 * causing the stack of the next rpc to run out of memory... */
-		rpc_stack = align_down(get_stack(t), BASE_PAGE_SIZE);
-
+	vm_t rpc_stack = rpc_position(t);
 
 	struct call_ctx *ctx = (struct call_ctx *)(rpc_stack) - 1;
 	ctx->regs = t->regs;
@@ -148,7 +103,6 @@ static struct stack_diff enter_rpc(struct tcb *t, struct sys_ret a,
 	 * return a status? except it shouldn't happen after we've run
 	 * enough_rpc_stack(). */
 	vm_t new_stack = rpc_stack - BASE_PAGE_SIZE;
-	struct stack_diff sd = {new_stack, t->rpc_stack};
 
 	/** @todo what if each stack is only some number of pages, and if a proc
 	 * goes over the limit is is seen as programming error? Possibly user
@@ -162,7 +116,7 @@ static struct stack_diff enter_rpc(struct tcb *t, struct sys_ret a,
 	 * */
 	t->rpc_stack = new_stack;
 	set_stack(t, new_stack);
-	return sd;
+	return new_stack;
 }
 
 /**
@@ -190,7 +144,7 @@ static void leave_rpc(struct tcb *t, struct sys_ret a)
 	set_return(t, ctx->exec);
 	/* if we're returning from a failed rpc, this should essentially be a
 	 * no-op */
-	mark_rpc_accessible(t, t->rpc_stack, top);
+	mark_rpc_valid(t, top);
 	t->rpc_stack = ctx->rpc_stack;
 	t->pid = ctx->pid;
 	t->eid = ctx->eid;
@@ -211,13 +165,11 @@ static void leave_rpc(struct tcb *t, struct sys_ret a)
 static bool enough_rpc_stack(struct tcb *t)
 {
 	/* get top of call stack */
-	vm_t top = RPC_STACK_BASE + __call_stack_size;
-	/* get start of the next rpc stack instance */
-	vm_t rpc_stack = t->rpc_stack + BASE_PAGE_SIZE;
+	vm_t top = rpc_position(t);
 
 	/* if we can still fit an rpc stack into the call stack, we can safely
 	 * do the migration. */
-	return top - rpc_stack >= __rpc_stack_size;
+	return (top - BASE_PAGE_SIZE) >= (t->rpc_stack - __rpc_stack_size);
 }
 
 /**
@@ -263,8 +215,7 @@ static void do_ipc(struct tcb *t,
 	if (unlikely(!enough_rpc_stack(t)))
 		return_args1(t, ERR_OOMEM);
 
-	struct stack_diff sd =
-		enter_rpc(t, SYS_RET6(OK, t->eid, d0, d1, d2, d3), kind);
+	vm_t s = enter_rpc(t, SYS_RET6(OK, t->eid, d0, d1, d2, d3), kind);
 
 	struct tcb *r = get_tcb(pid);
 	if (unlikely(!r)) {
@@ -282,7 +233,7 @@ static void do_ipc(struct tcb *t,
 	if (kind != IPC_REQ)
 		t->eid = t->pid;
 
-	finalize_rpc(t, r, sd);
+	finalize_rpc(t, r, s);
 	/* I tested out passing the return values as arguments to
 	 * ret_userspace_fast, but apparently that causes enough stack shuffling
 	 * to be slower overall. */

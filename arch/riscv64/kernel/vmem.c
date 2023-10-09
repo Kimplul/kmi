@@ -6,6 +6,7 @@
  * riscv64 implementation of arch-specific virtual memory handling.
  */
 
+#include <kmi/assert.h>
 #include <kmi/string.h>
 #include <kmi/pmem.h>
 #include <kmi/vmem.h>
@@ -375,7 +376,7 @@ void flush_tlb_full()
 
 void flush_tlb_all()
 {
-	/** @todo this only works on a single core atm. */
+	/** @todo this only works on a single core atm. needs to do an IPI */
 	__asm__ volatile ("sfence.vma\n" ::: "memory");
 }
 
@@ -489,4 +490,82 @@ void clone_uvmem(struct vmem * restrict r, struct vmem * restrict b)
 
 		b->leaf[i] = 0;
 	}
+}
+
+size_t max_rpc_size()
+{
+	return SZ_512K;
+}
+
+void setup_rpc_stack(struct tcb *t)
+{
+	/* by default rpc stack is marked inaccessible to generate segfaults on
+	 * access so as to ease stack usage tracking */
+	vmflags_t flags = VM_V | VM_R | VM_W | VM_U;
+
+	size_t pages = order_size(MM_O1) / BASE_PAGE_SIZE;
+	for (size_t i = 0; i < pages; ++i) {
+		pm_t page = alloc_page(BASE_PAGE);
+		map_vpage(t->rpc.vmem, page,
+				RPC_STACK_BASE + BASE_PAGE_SIZE * i,
+				flags, BASE_PAGE);
+
+		map_vpage(t->proc.vmem, page,
+				RPC_STACK_BASE + BASE_PAGE_SIZE * i,
+				flags, BASE_PAGE);
+	}
+
+	/* we allocated a second order page for rpc stack usage */
+	t->rpc_stack = RPC_STACK_BASE + order_size(MM_O1);
+	/* slightly hacky maybe but we know the first pte is at RPC_STACK_BASE,
+	 * which means that it must also be the leaf */
+	t->arch.rpc_leaf = (struct vmem *)__find_vmem(t->rpc.vmem,
+			RPC_STACK_BASE, BASE_PAGE);
+	/* 'reserve' top page of stack for kernel use */
+	t->arch.rpc_idx = 511;
+}
+
+vm_t rpc_position(struct tcb *t)
+{
+	/** @todo we assume rpc_idx is updated on every segfault of the rpc stack */
+	/** @todo hmm, technically speaking we always know that on riscv the base
+	 * page size if 4096, would it be a good idea to replace BASE_PAGE_SIZE in
+	 * riscv-specific code with a RISCV_BASE_PAGE_SIZE or something? */
+	return RPC_STACK_BASE + (BASE_PAGE_SIZE * t->arch.rpc_idx);
+}
+
+void mark_rpc_invalid(struct tcb *t, vm_t top)
+{
+	struct vmem *b = t->arch.rpc_leaf;
+	int top_idx = t->arch.rpc_idx;
+	int bottom_idx = (top - RPC_STACK_BASE) / BASE_PAGE_SIZE;
+	catastrophic_assert(bottom_idx < top_idx);
+
+	while (top_idx != bottom_idx) {
+		pm_t *pte = (pm_t *)&b->leaf[top_idx];
+		/* make page not accessible from userspace */
+		clear_bits(*pte, vp_flags(VM_U));
+		top_idx--;
+	}
+
+	t->arch.rpc_idx = top_idx;
+}
+
+void mark_rpc_valid(struct tcb *t, vm_t bottom)
+{
+	struct vmem *b = t->arch.rpc_leaf;
+	int bottom_idx = t->arch.rpc_idx;
+	int top_idx = (bottom - RPC_STACK_BASE) / BASE_PAGE_SIZE;
+	catastrophic_assert(bottom_idx < top_idx);
+
+	while (top_idx != bottom_idx) {
+		pm_t *pte = (pm_t *)&b->leaf[bottom_idx];
+		/* make page accessible from userspace */
+		set_bits(*pte, vp_flags(VM_U));
+		/* clear used bits */
+		clear_bits(*pte, vp_flags(VM_A | VM_D));
+		bottom_idx++;
+	}
+
+	t->arch.rpc_idx = bottom_idx;
 }

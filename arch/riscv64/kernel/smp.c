@@ -114,6 +114,9 @@ void core_bringup(long hartid)
 {
 	/* assume smp_bringup assigned our cpuid correctly */
 	id_t cpuid = hartid_to_cpuid(hartid);
+
+	/* output is somewhat messed up due to no synchronisation but I guess
+	 * that's fine for now */
 	info("core %ld online\n", (long)cpuid);
 
 	/* realistically stuff after this point could probably be placed

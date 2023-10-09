@@ -73,9 +73,6 @@
 /**  User virtual memory space end. */
 #define UVMEM_END (SZ_256G - SZ_8G)
 
-/** RPC stack top. */
-#define RPC_STACK_TOP (UVMEM_END + SZ_1G)
-
 /** RPC stack base. */
 #define RPC_STACK_BASE (UVMEM_END)
 

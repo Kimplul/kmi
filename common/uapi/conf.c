@@ -18,14 +18,12 @@
 /** \todo stack size should really be set on a per-thread basis, and are the
  * conf*-syscalls even necessary? */
 size_t __thread_stack_size = SZ_2M;
-size_t __call_stack_size = SZ_2M;
 size_t __rpc_stack_size = SZ_512K;
 
 /** IDs for configuration parameters. */
 /** @todo should probably be moved somewhere so it can be shared with userspace */
 enum conf_param {
 	CONF_THREAD_STACK = 0,
-	CONF_CALL_STACK,
 	CONF_RPC_STACK,
 };
 
@@ -47,10 +45,6 @@ SYSCALL_DEFINE1(conf_get)(struct tcb *t, sys_arg_t param)
 	switch (param) {
 	case CONF_THREAD_STACK:
 		val = __thread_stack_size;
-		break;
-
-	case CONF_CALL_STACK:
-		val = __call_stack_size;
 		break;
 
 	case CONF_RPC_STACK:
@@ -85,17 +79,9 @@ SYSCALL_DEFINE2(conf_set)(struct tcb *t, sys_arg_t param, sys_arg_t val)
 		__thread_stack_size = align_up(val, BASE_PAGE_SIZE);
 		break;
 
-	case CONF_CALL_STACK:
-		size = align_up(val, BASE_PAGE_SIZE);
-		if (size < __rpc_stack_size)
-			return_args(t, SYS_RET1(ERR_MISC));
-
-		__call_stack_size = size;
-		break;
-
 	case CONF_RPC_STACK:
 		size = align_up(val, BASE_PAGE_SIZE);
-		if (size > __call_stack_size)
+		if (size > max_rpc_size())
 			return_args1(t, ERR_MISC);
 
 		__rpc_stack_size = size;

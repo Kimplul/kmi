@@ -15,6 +15,9 @@
 struct arch_tcbd {
 	/** Extra scratch register. */
 	long scratch;
+
+	struct vmem *rpc_leaf;
+	int rpc_idx;
 };
 
 #endif /* ARCH_RISCV_TCB_H */

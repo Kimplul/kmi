@@ -99,7 +99,7 @@ struct tcb {
 	vm_t regs;
 
 	/** Arch-specific data. */
-	struct arch_tcbd tcbd;
+	struct arch_tcbd arch;
 
 	/** Memory mapping data. */
 	struct mem_region_root sp_r;

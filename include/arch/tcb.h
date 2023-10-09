@@ -25,4 +25,11 @@
  */
 void tcb_assign(struct tcb *t);
 
+void setup_rpc_stack(struct tcb *t);
+size_t max_rpc_size();
+
+vm_t rpc_position(struct tcb *t);
+void mark_rpc_valid(struct tcb *t, vm_t top);
+void mark_rpc_invalid(struct tcb *t, vm_t bottom);
+
 #endif /* KMI_ARCH_TCB_H */

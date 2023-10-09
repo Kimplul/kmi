@@ -84,42 +84,6 @@ static id_t __alloc_tid(struct tcb *t)
 }
 
 /**
- * Setup RPC stack.
- *
- * RPC stack is local to each thread, and should not be visible to other threads
- * in the same process. Currently maps the RPC stack in BASE_PAGE increments, to
- * hopefully allow us to later quickly disallow access to programs lower down in
- * the RPC call chain by turning off all stack pages lower than the current
- * stack pointer. We shall see if this actually works or not.
- *
- * @param t Thread to setup RPC stack for.
- * @param bytes Minimum size of RPC stack.
- * @return Base of allocated RPC stack.
- *
- * \todo add error checking */
-static vm_t __setup_rpc_stack(struct tcb *t, size_t bytes)
-{
-	pm_t offset = 0;
-	size_t pages = __pages(bytes);
-	vmflags_t flags = VM_V | VM_R | VM_W | VM_U;
-	for (size_t i = 1; i <= pages; ++i) {
-		offset = alloc_page(BASE_PAGE);
-		map_vpage(t->rpc.vmem, offset,
-		          RPC_STACK_TOP - BASE_PAGE_SIZE * i,
-		          flags, BASE_PAGE);
-
-		/* map stack into both process and rpc vmem since we want to
-		 * optimistically write data into it during initialization of an
-		 * rpc. */
-		map_vpage(t->proc.vmem, offset,
-		          RPC_STACK_TOP - BASE_PAGE_SIZE * i,
-		          flags, BASE_PAGE);
-	}
-	t->rpc_stack = RPC_STACK_TOP;
-	return RPC_STACK_TOP - BASE_PAGE_SIZE * pages;
-}
-
-/**
  * Setup thread stack.
  *
  * @param t Thread to setup stack for.
@@ -179,7 +143,7 @@ struct tcb *create_thread(struct tcb *p)
 	t->eid = t->pid;
 	t->rid = p->rid;
 	t->rpc.vmem = create_vmem();
-	__setup_rpc_stack(t, __call_stack_size);
+	setup_rpc_stack(t);
 
 	t->regs = (vm_t)t;
 
