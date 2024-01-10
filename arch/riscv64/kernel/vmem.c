@@ -493,12 +493,12 @@ void setup_rpc_stack(struct tcb *t)
 	for (size_t i = 0; i < pages; ++i) {
 		pm_t page = alloc_page(BASE_PAGE);
 		map_vpage(t->rpc.vmem, page,
-				RPC_STACK_BASE + BASE_PAGE_SIZE * i,
-				flags, BASE_PAGE);
+		          RPC_STACK_BASE + BASE_PAGE_SIZE * i,
+		          flags, BASE_PAGE);
 
 		map_vpage(t->proc.vmem, page,
-				RPC_STACK_BASE + BASE_PAGE_SIZE * i,
-				flags, BASE_PAGE);
+		          RPC_STACK_BASE + BASE_PAGE_SIZE * i,
+		          flags, BASE_PAGE);
 	}
 
 	/* we allocated a second order page for rpc stack usage */
@@ -506,7 +506,8 @@ void setup_rpc_stack(struct tcb *t)
 	/* slightly hacky maybe but we know the first pte is at RPC_STACK_BASE,
 	 * which means that it must also be the leaf */
 	t->arch.rpc_leaf = (struct vmem *)__find_vmem(t->rpc.vmem,
-			RPC_STACK_BASE, BASE_PAGE);
+	                                              RPC_STACK_BASE,
+	                                              BASE_PAGE);
 	/* 'reserve' top page of stack for kernel use */
 	t->arch.rpc_idx = 511;
 }

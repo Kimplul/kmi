@@ -57,5 +57,6 @@ void __main main(void *fdt, uintptr_t ram_base)
 	smp_bringup(b, fdt);
 
 	/* start running init program */
-	run_init(cur_tcb(), fdt);
+	void *initrd = (void *)get_initrdbase(fdt);
+	run_init(cur_tcb(), fdt, initrd);
 }

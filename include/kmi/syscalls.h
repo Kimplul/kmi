@@ -9,6 +9,13 @@
  * Table of system calls.
  */
 
+/* pass VM_X etc. to userspace */
+#if defined(riscv64)
+#include "../../arch/riscv64/include/vmem.h"
+#elif defined(riscv32)
+#include "../../arch/riscv32/include/vmem.h"
+#endif
+
 /** enum for now, possibly macros in the future once I get an approximate idea of
  * which syscalls are necessary etc. */
 enum {
@@ -145,5 +152,39 @@ enum {
 
 /* function declarations should be somewhere else, this file could be used in
  * userspace applications as well */
+
+/**
+ * Syscall argument type.
+ *
+ * \todo: Should this be arch specific? should be the size of an integer
+ * register.
+ */
+typedef long sys_arg_t;
+
+/**
+ * Return structure of syscall.
+ * \note Field names are generic, and can be used for whatever,
+ * check documentation of whatever you're doing.
+ * @todo should this be placed into syscalls.h?
+ */
+struct sys_ret {
+	/** Status. */
+	sys_arg_t s;
+
+	/** First argument. */
+	sys_arg_t ar0;
+
+	/** Second argument. */
+	sys_arg_t ar1;
+
+	/** Third argument. */
+	sys_arg_t ar2;
+
+	/** Fourth argument. */
+	sys_arg_t ar3;
+
+	/** Fifth argument. */
+	sys_arg_t ar4;
+};
 
 #endif /* KMI_SYSCALLS_H */

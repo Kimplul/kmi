@@ -15,9 +15,9 @@
 #include "regs.h"
 #include "csr.h"
 
-void run_init(struct tcb *t, void *fdt)
+void run_init(struct tcb *t, void *fdt, void *initrd)
 {
-	/** \todo actually map fdt into the target address space */
+	/** \todo actually map fdt and initrd into the target address space */
 	csr_write(CSR_SSCRATCH, t);
 	csr_write(CSR_SEPC, t->exec);
 	/* gcc gives a warning 'the value of the stack pointer after an asm
@@ -27,10 +27,15 @@ void run_init(struct tcb *t, void *fdt)
 	 * Could be fixed with a separate pure asm run_init, but I guess this
 	 * works for now.
 	 */
-	__asm__ volatile ("mv sp, %0\n" : : "r" (t->thread_stack_top) : "memory");
-	__asm__ volatile ("mv a0, %0\n" : : "r" (t->tid) : "a0");
-	__asm__ volatile ("mv a1, %0\n" : : "r" (fdt) : "a1");
-	__asm__ volatile ("sret\n" ::: "memory");
+	__asm__ volatile ("mv sp, %0\n"
+	                  "mv a0, %1\n"
+	                  "mv a1, %2\n"
+	                  "mv a2, %3\n"
+	                  "sret\n"
+	                  :
+	                  : "r" (t->thread_stack_top), "r" (t->tid), "r" (fdt),
+	                  "r" (initrd)
+	                  : "memory");
 	/* we should never reach this */
 	unreachable();
 }

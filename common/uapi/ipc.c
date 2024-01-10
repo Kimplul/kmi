@@ -79,7 +79,7 @@ static void finalize_rpc(struct tcb *t, struct tcb *r, vm_t s)
  * @return RPC stack difference that should be passed to finalize_rpc().
  */
 static vm_t enter_rpc(struct tcb *t, struct sys_ret a,
-                                   enum ipc_kind kind)
+                      enum ipc_kind kind)
 {
 	vm_t rpc_stack = rpc_position(t);
 

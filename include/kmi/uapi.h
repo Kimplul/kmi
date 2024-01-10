@@ -18,40 +18,6 @@
  */
 typedef void (*sys_t)(struct tcb *t, long, long, long, long, long);
 
-/**
- * Syscall argument type.
- *
- * \todo: Should this be arch specific? should be the size of an integer
- * register.
- */
-typedef long sys_arg_t;
-
-/**
- * Return structure of syscall.
- * \note Field names are generic, and can be used for whatever,
- * check documentation of whatever you're doing.
- * @todo should this be placed into syscalls.h?
- */
-struct sys_ret {
-	/** Status. */
-	sys_arg_t s;
-
-	/** First argument. */
-	sys_arg_t ar0;
-
-	/** Second argument. */
-	sys_arg_t ar1;
-
-	/** Third argument. */
-	sys_arg_t ar2;
-
-	/** Fourth argument. */
-	sys_arg_t ar3;
-
-	/** Fifth argument. */
-	sys_arg_t ar4;
-};
-
 /** Helper for returning sys_ret with 0 arguments. */
 #define SYS_RET0() (struct sys_ret){0, 0, 0, 0, 0, 0}
 

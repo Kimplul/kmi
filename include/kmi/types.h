@@ -127,6 +127,12 @@ typedef uint32_t size_t;
 typedef int32_t ssize_t;
 #endif
 
+/** Maximum alignment. Works for most platforms, I think. */
+typedef union {
+	intmax_t ll;
+	long double ld;
+} max_align_t;
+
 /** Expands to integer constant of type \ref int8_t. */
 #define INT8_C __INT8_C
 

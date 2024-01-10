@@ -307,6 +307,7 @@ __weak void *memmove(void *dst, const void *src, size_t num)
 	m1 += num;
 	m2 += num;
 
+	/* doesn't really take into account aliasing yet */
 	while (num--)
 		*(--m2) = *(--m1);
 
