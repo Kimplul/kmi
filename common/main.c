@@ -7,6 +7,7 @@
  */
 
 #include <kmi/mem_nodes.h>
+#include <kmi/initrd.h>
 #include <kmi/timer.h>
 #include <kmi/attrs.h>
 #include <kmi/proc.h>
