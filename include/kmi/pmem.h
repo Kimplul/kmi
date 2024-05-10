@@ -31,9 +31,8 @@ void mark_used(enum mm_order order, pm_t addr);
 
 /**
  * Allocate physical page.
- * Allows the user to specify a hint as to which address to start looking for.
- * Useful for allocating many pages for one virtual allocation, for example, and
- * allows us to skip already checked pages when allocating a second page.
+ * Page is returned as a virtual address within the kernel address space, and
+ * can be converted to a physical address via the \ref __pa() macro.
  *
  * @param order Order of page to allocate.
  * @return pm_t Physical address of page when succesful, else \c NULL.

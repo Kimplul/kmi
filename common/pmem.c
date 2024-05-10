@@ -6,25 +6,13 @@
  * Physical memory subsystem. Allocates physical memory pages, with support for
  * different ordered pages, depending on the underlying architecture.
  *
- * Quick overview of the physical memory subsystem: Somewhere in RAM there
- * exists a number of buckets, each with an n-tree representing different order
- * pages and their status (used/free). When a lower-order memory page (i.e.
- * smaller) is allocated, it blocks allocation of higher-order pages (i.e.
- * larger) whose addresses would overlap. This is avoided by marking all
- * higher-order pages as used in their respective buckets.
- *
- * This approach is reasonably efficient at handling the different possible page
- * sizes, but requires that the caller maintains some data about page sizes, as
- * the algorithm doesn't keep any of that information. Allocating a region of a
- * certain page order and freeing it as another could easily be a
- * source of difficult to track bugs.
- *
- * \todo More in depth documentation about the physical memory algorithms,
- * unfortunately it is quite difficult to follow.
- *
- * \todo See if there are improvements to be made, either to the implementation
- * or code in general. Could I use bitmaps, for example, and maybe calculate the
- * next pointer instead of storing it?
+ * Effectively, each page order (4096, 2M, 1G...) has a free list of bitmaps for
+ * each page size. When an order runs out of free nodes, it just 'allocates' a
+ * node from a higher order list, and gives out those maps. This turned out to
+ * be around 50% faster than the previous method, with about half the necessary
+ * code. Could still probably be cleaned up a little bit, in particular I don't
+ * really care for probe_pmap() vs populate_pmap() but I suppose it's fine for
+ * now.
  */
 
 #include <kmi/mem_nodes.h>
@@ -41,31 +29,6 @@
  */
 
 /**
- * Beauty macro for looping over all page indexes.
- * The current page index is stored in \c page.
- *
- * @param num Number of pages in branch.
- */
-#define foreach_page(num) \
-	for (pm_t page = 0; page < num; ++page)
-
-/**
- * Loop over orders, giving the iterator the name \p iter.
- *
- * @param iter Name of iterator.
- */
-#define foreach_order(iter) \
-	for (enum mm_order iter = MM_O0; iter <= max_order(); ++iter)
-
-/**
- * Loop over orders, with already initialized start iterator \p iter.
- *
- * @param iter Name of iterator.
- */
-#define foreach_order_init(iter) \
-	for (; iter <= max_order(); ++iter)
-
-/**
  * Loop over orders in reverse, starting with highest, giving the iterator the
  * name \p iter.
  *
@@ -74,328 +37,63 @@
 #define reverse_foreach_order(iter) \
 	for (enum mm_order iter = max_order(); iter != MM_MIN; --iter)
 
-/**
- * Loop over orders in reverse, starting with highest, with already initialized
- * start iterator \p iter.
- *
- * @param iter Name of iterator.
- */
-#define reverse_foreach_order_init(iter) \
-	for (; iter != MM_MIN; --iter)
-
-/** Beauty typedef for uint8_t *, used for bitmaps in this file. */
-typedef uint8_t mm_bitmap_t[];
-
-/** Memory page branch. */
-struct mm_branch {
-	/** Number of entries in leaf. */
-	size_t num;
-
-	/** Size of one whole span of one sub branch. */
+/** Page bitmap node */
+struct mm_bmap {
+	/** How many bits this node has. This is generally the same as \c bits in
+	 * mm_bucket, but could be used for trailing nodes with some irregular
+	 * number of bits. */
 	size_t size;
 
-	/** Bitmap of used pages. */
-	mm_bitmap_t used;
+	/** How many pages are currently used */
+	size_t used;
+
+	/** Next node in freelist */
+	struct mm_bmap *next;
+
+	/** Previous node in freelist */
+	struct mm_bmap *prev;
+
+	/** Actual bitmap */
+	uint8_t bits[];
 };
 
-/** Order map. */
+/** Bucket of bitmaps for some order of pages */
 struct mm_bucket {
-	/** Base address of map. */
-	pm_t base;
+	/** How many bits per (regular) bitmap, see \c size in mm_bmap */
+	size_t bits;
 
-	/** Order of map. */
-	enum mm_order order;
+	/** Size in bytes of a page of this order */
+	size_t page_size;
 
-	/** Pointer to array of nodes. */
-	struct mm_branch *tree[MM_NUM];
+	/** Current head of freelist */
+	struct mm_bmap *head;
+
+	/** Bitmaps in contiguous array, to make populating easier. */
+	struct mm_bmap bmap[];
 };
 
 /** Physical map. */
 struct mm_pmap {
+	/** Base address of our map. Note that this should be the virtual base
+	 * address of the physical ram. */
+	pm_t base;
 	/** Buckets, one per order up to maximum order. */
-	struct mm_bucket *bucket[NUM_ORDERS];
+	struct mm_bucket *buckets[MM_NUM];
 };
 
-/** Static physical map address. \note If I support NUMA, this should not be
+/** Static physical map address. \note If I support NUMA, this should probably not be
  * static, rather one physical map per NUMA region. */
 static struct mm_pmap *pmap = 0;
 
 /**
- * Calculate size of branch structure plus bitmap for branch.
+ * Zero out memory if \p populate is true.
+ * Helper for populate_pmap(), makes it a bit more easy to follow when we're
+ * just calculating the size of out physical map versus actually building it.
  *
- * @param num Number of elements in branch.
- * @return Size in bytes of a branch.
- */
-static size_t sizeof_branch(size_t num)
-{
-	return align_up(sizeof(struct mm_branch) + (num + 8) / 8,
-	                sizeof(struct mm_branch));
-}
-
-/**
- * Get top of current branch, that is, the start of a following branch.
- *
- * @param branch Branch whose top to calculate.
- * @return Top of \p branch.
- */
-static struct mm_branch *branch_top(struct mm_branch *branch)
-{
-	return (struct mm_branch *)(sizeof_branch(branch->num) + (pm_t)branch);
-}
-
-/**
- * Get the branch under \p branch at \p index.
- *
- * @param branch Branch whose sub branches to access.
- * @param index Index of sub branch to access.
- * @return Pointer to sub branch.
- */
-static struct mm_branch *sub_branch(struct mm_branch *branch, size_t index)
-{
-	struct mm_branch *sub_start = branch_top(branch);
-	return (struct mm_branch *)(index * branch->size + (pm_t)sub_start);
-}
-
-/**
- * Mark a page free in tree.
- *
- * @param branch Branch wherein some part of \p page lies.
- * @param page Page address relative to start of RAM.
- * @param req_order Order of page to be marked free.
- * @param cur_order Current page order.
- * @param tree_order Order context we're in.
- */
-static void __mark_free(struct mm_branch *branch, pm_t page,
-                        enum mm_order req_order,
-                        enum mm_order cur_order,
-                        enum mm_order tree_order)
-{
-	size_t idx = pm_to_index(page, cur_order);
-
-	if (cur_order == req_order) {
-		bitmap_clear(branch->used, idx);
-		return;
-	}
-
-	/* freeing a page results in always clearing a full bit */
-	bitmap_clear(branch->used, idx);
-	if(cur_order != tree_order)
-		__mark_free(sub_branch(branch, idx), page,
-		            req_order, cur_order - 1, tree_order);
-}
-
-/**
- * Mark page in bucket free in all trees.
- *
- * @param bucket Bucket page lies in.
- * @param order Order of page to free.
- * @param addr Physical address of page.
- */
-static void __mark_bucket_page_free(struct mm_bucket *bucket,
-                                    enum mm_order order, pm_t addr)
-{
-	pm_t fixup_addr = addr - bucket->base;
-	enum mm_order iter = bucket->order;
-
-	reverse_foreach_order_init(iter) {
-		struct mm_branch *tree = bucket->tree[iter];
-		if (!tree)
-			continue;
-
-		__mark_free(bucket->tree[iter], fixup_addr,
-		            order, bucket->order, iter);
-	}
-}
-
-void free_page(enum mm_order order, pm_t addr)
-{
-	foreach_order(iter) {
-		struct mm_bucket *bucket = pmap->bucket[iter];
-		if (!bucket)
-			continue;
-
-		if (addr < bucket->base)
-			continue;
-
-		__mark_bucket_page_free(bucket, order, addr);
-		return;
-	}
-}
-
-/**
- * Mark page used in tree.
- *
- * @param branch Current branch.
- * @param page Page address relative to start of RAM.
- * @param req_order Page order.
- * @param cur_order Current order.
- * @param tree_order Order of context we're in.
- * @return Whether the branch below got filled up.
- */
-static bool __mark_used(struct mm_branch *branch, pm_t page,
-                        enum mm_order req_order,
-                        enum mm_order cur_order,
-                        enum mm_order tree_order)
-{
-	size_t idx = pm_to_index(page, cur_order);
-
-	if (cur_order == req_order || cur_order == tree_order) {
-		bitmap_set(branch->used, idx);
-
-		if (idx == max_index(cur_order))
-			return true;
-
-		return false;
-	}
-
-	bool r = __mark_used(sub_branch(branch, idx), page,
-	                     req_order,
-	                     cur_order - 1,
-	                     tree_order);
-
-	if (r) {
-		bitmap_set(branch->used, idx);
-
-		if (idx == max_index(cur_order))
-			return true;
-	}
-
-	return false;
-}
-
-/**
- * Mark page in bucket used.
- *
- * @param bucket Bucket in which \p page lies.
- * @param order Order of \p page.
- * @param addr Physical address of \p page.
- */
-static void __mark_bucket_page_used(struct mm_bucket *bucket,
-                                    enum mm_order order, pm_t addr)
-{
-	pm_t fixed_addr = addr - bucket->base;
-	reverse_foreach_order(iter) {
-		struct mm_branch *tree = bucket->tree[iter];
-		if (!tree)
-			continue;
-
-		__mark_used(bucket->tree[iter], fixed_addr,
-		            order, bucket->order, iter);
-	}
-}
-
-void mark_used(enum mm_order order, pm_t addr)
-{
-	enum mm_order iter = order;
-	foreach_order_init(iter) {
-		struct mm_bucket *bucket = pmap->bucket[iter];
-		if (!bucket)
-			continue;
-
-		if (addr < bucket->base)
-			continue;
-
-		__mark_bucket_page_used(bucket, iter, addr);
-		return;
-	}
-}
-
-/**
- * Find first unused page on branch.
- * Helper for converting between bitmap and pmem error conditions.
- *
- * @param branch Branch to look for unused pages on.
- * @return \c -1 if there are no free pages, otherwise the index of first unused
- * page.
- */
-static pm_t __branch_find_first_unset(struct mm_branch *branch)
-{
-	size_t r = bitmap_find_first_unset(branch->used, branch->num);
-	if (r > branch->num)
-		return -1;
-
-	return r;
-}
-
-/**
- * Main worker for searching a free page.
- * Passing the address worked up so far allows the compiler to performa
- * tail call optimization, speeding things up a little.
- *
- * @param branch Current branch.
- * @param cur_order Current order of branch.
- * @param req_order Requested page order.
- * @param addr Address built up so far.
- * @return Final address of found free page if found, -1 otherwise.
- */
-static pm_t __search_branch(struct mm_branch *branch,
-                            enum mm_order cur_order,
-                            enum mm_order req_order,
-                            pm_t addr)
-{
-	pm_t page = __branch_find_first_unset(branch);
-	if (page == (pm_t)(-1))
-		return -1;
-
-	if (cur_order == req_order)
-		return addr | page << order_shift(cur_order);
-
-	return __search_branch(sub_branch(branch, page),
-	                       cur_order - 1, req_order,
-	                       addr | page << order_shift(cur_order));
-}
-
-/**
- * Search for unused pages in tree.
- * Easy wrapper for __search_branch.
- *
- * @param branch Current branch.
- * @param cur_order Current order of branch.
- * @param req_order Requested page order.
- * @return \c -1 if there are no free pages, otherwise the address of the lower
- * order page found.
- */
-static pm_t __search_tree(struct mm_branch *branch,
-                          enum mm_order cur_order,
-                          enum mm_order req_order)
-{
-	return __search_branch(branch, cur_order, req_order, 0);
-}
-
-pm_t alloc_page(enum mm_order order)
-{
-	if (order > max_order())
-		return 0;
-
-	pm_t p = -1;
-	struct mm_bucket *bucket;
-	enum mm_order iter = order;
-	foreach_order_init(iter) {
-		bucket = pmap->bucket[iter];
-		if (!bucket)
-			continue;
-
-		p = __search_tree(bucket->tree[order], bucket->order, order);
-
-		if (p != (pm_t)(-1))
-			break;
-	}
-
-	if (p == (pm_t)(-1))
-		return 0;
-
-	p = p + bucket->base;
-	__mark_bucket_page_used(bucket, order, p);
-	return p;
-}
-
-/**
- * Zero out memory at \p cont if \p populate.
- *
- * @param populate Whether to populate at \p cont.
- * @param cont Where to zero out memory.
- * @param size How many bytes to zero.
- * @return \code cont + size \endcode
+ * @param populate Whether to write anything.
+ * @param cont Where to write.
+ * @param size How many bytes to write.
+ * @return Address following last written byte.
  */
 static pm_t __zero_if(bool populate, pm_t cont, size_t size)
 {
@@ -406,115 +104,311 @@ static pm_t __zero_if(bool populate, pm_t cont, size_t size)
 }
 
 /**
- * Populate tree.
+ * Get size in bytes of (regular) bitmap node in this bucket.
  *
- * @param populate Whether to populate map or just probe.
- * @param cont Address at which to continue placing data.
- * @param num Number of elements in branch.
- * @param cur_order Current branch order.
- * @param req_order Requested tree order.
- * @return Top of tree.
+ * @param bucket Bucket.
+ * @return Size in bytes of (regular) bitmap node.
  */
-static pm_t __populate_tree(bool populate, pm_t cont, size_t num,
-                            enum mm_order cur_order, enum mm_order req_order)
+static size_t __get_set_size(struct mm_bucket *bucket)
 {
-	struct mm_branch *branch = (struct mm_branch *)cont;
-	cont = __zero_if(populate, cont, sizeof_branch(num));
-
-	if (populate)
-		branch->num = num;
-
-	if (cur_order == req_order)
-		return cont;
-
-	pm_t prev = cont;
-	foreach_page(num) {
-		prev = cont;
-		cont = __populate_tree(populate, cont,
-		                       order_width(cur_order - 1),
-		                       cur_order - 1, req_order);
-	}
-
-	if (populate)
-		branch->size = cont - prev;
-
-	return cont;
+	return sizeof(bucket->bmap[0]) + bucket->bits / 8;
 }
 
 /**
- * Populate bucket.
+ * Get pointer to bitmap node at index \p set.
  *
- * @param populate Whether to actually populate or just probe.
- * @param cont Address at which to continue placing data.
- * @param base Base of bucket.
- * @param num Number of elements in top level trees.
- * @param order Bucket order.
- * @return Top of bucket.
+ * @param bucket Bucket.
+ * @param set Index of bitmap node to get.
+ * @return Pointer to bitmap node.
  */
-static pm_t __populate_bucket(bool populate, pm_t cont, pm_t base, size_t num,
-                              enum mm_order order)
+static struct mm_bmap *__get_set(struct mm_bucket *bucket, size_t set)
+{
+	uintptr_t bmap = (uintptr_t)bucket->bmap;
+	return (struct mm_bmap *)(bmap + __get_set_size(bucket) * set);
+}
+
+/**
+ * Get index from pointer to \p bmap within \p bucket.
+ *
+ * @param bucket Bucket.
+ * @param bmap Bitmap node.
+ * @return Index of \p bmap within \p bucket.
+ */
+static size_t __get_set_index(struct mm_bucket *bucket, struct mm_bmap *bmap)
+{
+	size_t s = (uintptr_t)bmap - (uintptr_t)bucket->bmap;
+	return s / __get_set_size(bucket);
+}
+
+/**
+ * Attach bitmap \p bmap to freelist within \p bucket.
+ *
+ * @param bucket Bucket.
+ * @param bmap Bitmap node.
+ */
+static void __attach_set(struct mm_bucket *bucket, struct mm_bmap *bmap)
+{
+	/* already attached */
+	if (bmap->next)
+		return;
+
+	bmap->next = bucket->head;
+	bucket->head = bmap;
+	if (bmap->next)
+		bmap->next->prev = bmap;
+}
+
+/**
+ * Remove bitmap \p bmap from freelist within \p bucket.
+ *
+ * @param bucket Bucket.
+ * @param bmap Bitmap node.
+ */
+static void __detach_set(struct mm_bucket *bucket, struct mm_bmap *bmap)
+{
+	if (bucket->head == bmap)
+		bucket->head = bmap->next;
+
+	if (bmap->next)
+		bmap->next->prev = bmap->prev;
+
+	if (bmap->prev)
+		bmap->prev->next = bmap->next;
+}
+
+/**
+ * Calculate address of page within bucket.
+ *
+ * @param bucket Bucket.
+ * @param s Index of bitmap node.
+ * @param b Bit within bitmap.
+ * @return Address of corresponding page.
+ */
+static pm_t __page_addr(struct mm_bucket *bucket, size_t s, size_t b)
+{
+	return pmap->base
+	       + s * bucket->page_size * bucket->bits
+	       + b * bucket->page_size;
+}
+
+/**
+ * Calculate which bitmap node index and bit within bitmap an address
+ * corresponds to.
+ *
+ * @param bucket Bucket.
+ * @param a Address.
+ * @param s Corresponding bitmap node index.
+ * @param b Bitmap node bit index.
+ */
+static void __get_bit(struct mm_bucket *bucket, pm_t a, size_t *s, size_t *b)
+{
+	a -= pmap->base;
+	size_t p = a / bucket->page_size;
+	*s = p / bucket->bits;
+	*b = p % bucket->bits;
+}
+
+void free_page(enum mm_order order, pm_t addr)
+{
+	struct mm_bucket *bucket = pmap->buckets[order];
+	if (!bucket)
+		return;
+
+	size_t set = 0, bit = 0;
+	__get_bit(bucket, addr, &set, &bit);
+
+	struct mm_bmap *bmap = __get_set(bucket, set);
+	bmap->used--;
+
+	bitmap_clear(bmap->bits, bit);
+	__attach_set(bucket, bmap);
+
+	if (bmap->used == 0) {
+		__detach_set(bucket, bmap);
+
+		if (bmap->size == order_width(order + 1))
+			free_page(order + 1, __page_addr(bucket, set, bit));
+	}
+}
+
+pm_t alloc_page(enum mm_order order)
+{
+	struct mm_bucket *bucket = pmap->buckets[order];
+	if (!bucket)
+		return 0;
+
+	struct mm_bmap *bmap = bucket->head;
+	if (!bmap) {
+		pm_t a = alloc_page(order + 1);
+		if (!a)
+			return 0;
+
+		size_t set = 0, bit = 0;
+		__get_bit(bucket, a, &set, &bit);
+
+		bmap = __get_set(bucket, set);
+		bmap->used = 0;
+		bitmap_clear_all(bmap->bits, bmap->size);
+		__attach_set(bucket, bmap);
+		return alloc_page(order);
+	}
+
+	bmap->used++;
+
+	size_t set = __get_set_index(bucket, bmap);
+	size_t bit = bitmap_find_first_unset(bmap->bits, bmap->size);
+	bitmap_set(bmap->bits, bit);
+
+	if (bmap->used == bmap->size)
+		__detach_set(bucket, bmap);
+
+	return __page_addr(bucket, set, bit);
+}
+
+void mark_used(enum mm_order order, pm_t addr)
+{
+	struct mm_bucket *bucket = pmap->buckets[order];
+	if (!bucket)
+		return;
+
+	size_t set = 0, bit = 0;
+	__get_bit(bucket, addr, &set, &bit);
+
+	struct mm_bmap *bmap = __get_set(bucket, set);
+	if (bmap->used == 0) {
+		bitmap_clear_all(bmap->bits, bmap->size);
+		__attach_set(bucket, bmap);
+		mark_used(order + 1, addr);
+	}
+
+	/* a page already in use can just be left alone. This MIGHT hide some
+	 * bugs in case two separate things overlap in memory during
+	 * initialization, but that scenario should probably be handled outside
+	 * of this function anyway. */
+	if (bitmap_is_set(bmap->bits, bit))
+		return;
+
+	bmap->used++;
+	bitmap_set(bmap->bits, bit);
+
+	if (bmap->used == bmap->size)
+		__detach_set(bucket, bmap);
+}
+
+/**
+ * Helper for probing/populating a bucket.
+ *
+ * @param n How many pages in total to account for.
+ * @todo currently may cut off some pages if \p n is larger than but not a multiple of order
+ * width.
+ * @param cont Where to place bucket.
+ * @param order Order of bucket to populate.
+ * @param first First bucket being populated. Top bucket, owns all pages to
+ * start with.
+ * @param populate Whether to actually write bucket to memory.
+ * @return Address right after where last byte of bycket would be.
+ */
+static pm_t __maybe_populate_bucket(size_t n, pm_t cont, enum mm_order order,
+                                    bool first, bool populate)
 {
 	struct mm_bucket *bucket = (struct mm_bucket *)cont;
-	cont = __zero_if(populate, cont, sizeof(*bucket));
+	/* todo max order? */
+	size_t bits = order_width(order + 1);
+	if (bits == 0)
+		bits = n;
 
 	if (populate) {
-		bucket->order = order;
-		bucket->base = base;
+		bucket->bits = bits;
+		bucket->page_size = order_size(order);
+		bucket->head = NULL;
 	}
 
-	enum mm_order iter = order;
-	reverse_foreach_order_init(iter) {
-		if (populate)
-			bucket->tree[iter] = (struct mm_branch *)cont;
+	size_t set_size = sizeof(struct mm_bmap) + bits / 8;
 
-		cont = __populate_tree(populate, cont, num, order, iter);
+	cont += sizeof(struct mm_bucket);
+
+	size_t sets = n / bits;
+	for (size_t i = 0; i < sets; ++i) {
+		struct mm_bmap *bmap = (struct mm_bmap *)cont;
+		if (populate) {
+			memset(bmap, 0, set_size);
+			bmap->size = bits;
+		}
+
+		if (first && populate)
+			__attach_set(bucket, bmap);
+
+		n -= bits;
+		cont += set_size;
+	}
+
+	if (n) {
+		struct mm_bmap *bmap = (struct mm_bmap *)cont;
+		if (populate)
+			bmap->size = n;
+
+		if (first && populate)
+			__attach_set(bucket, bmap);
+
+		cont += set_size;
 	}
 
 	return cont;
 }
 
 /**
- * Main worker for populating and probing the memory map.
+ * Probe how many bytes the physical map would take up, optionally populate
+ * empty physical map if \p populate is given.
  *
- * @param populate Whether to populate the map of just probe.
- * @param ram_base Base physical address of RAM.
- * @param ram_size Size of physical RAM.
- * @param cont Where to place the map.
- * @return Size of physical map.
+ * I realize it sounds like two
+ * different functions, and that it might be a good idea to split in twine,
+ * but my thinking was that using the same algorithm with a
+ * flag to enable writing to memory would decrease chances that I would
+ * calculate the size differently from what is actually needed. We need an
+ * accurate estimate of the pmap size to know whether we can place it somewhere
+ * and not overwrite something else.
+ *
+ * @param ram_base Address in kernel space where the physical RAM starts.
+ * @param ram_size Size of RAM in bytes.
+ * @param start Where to start building pmap.
+ * @param populate Whether to actually write anything out to memory.
+ * @return Size of pmap in bytes.
  */
-static size_t __populate_pmap(bool populate, pm_t ram_base, size_t ram_size,
-                              pm_t cont)
+static pm_t __maybe_populate_pmap(pm_t ram_base, size_t ram_size, pm_t start,
+                                  bool populate)
 {
-	pm_t start = cont;
+	pm_t cont = start;
 
-	pmap = (struct mm_pmap *)cont;
+	pmap = (struct mm_pmap *)start;
 	cont = __zero_if(populate, cont, sizeof(*pmap));
+	if (populate)
+		pmap->base = ram_base;
 
+	bool first = true;
 	reverse_foreach_order(iter) {
 		size_t num = ram_size / order_size(iter);
 		if (num == 0)
 			continue;
 
 		if (populate)
-			pmap->bucket[iter] = (struct mm_bucket *)cont;
+			pmap->buckets[iter] = (struct mm_bucket *)cont;
 
-		cont = __populate_bucket(populate, cont, ram_base, num, iter);
-
-		ram_size -= order_size(iter) * num;
-		ram_base += order_size(iter) * num;
+		cont = __maybe_populate_bucket(num, cont, iter, first,
+		                               populate);
+		first = false;
 	}
 
 	return cont - start;
 }
 
-size_t populate_pmap(pm_t ram_base, size_t ram_size, pm_t cont)
+pm_t populate_pmap(pm_t ram_base, size_t ram_size, pm_t start)
 {
-	return __populate_pmap(true, ram_base, ram_size, cont);
+	return __maybe_populate_pmap(ram_base, ram_size, start, true);
 }
 
-size_t probe_pmap(pm_t ram_base, size_t ram_size, pm_t cont)
+pm_t probe_pmap(pm_t ram_base, size_t ram_size, pm_t start)
 {
-	return __populate_pmap(false, ram_base, ram_size, cont);
+	return __maybe_populate_pmap(ram_base, ram_size, start, false);
 }
 
 /**
@@ -645,8 +539,9 @@ void init_pmem(void *fdt)
 
 	/* find probably most suitable contiguous region of ram for our physical
 	 * ram map  */
-	/** @todo this could be better? */
-	pm_t pmap_base = align_up(MAX(initrd_top, fdt_top), sizeof(int));
+	/** @todo this really should check that there's enough space in RAM
+	 * instead of just forcing the pmap to be populated */
+	pm_t pmap_base = align_up(MAX(initrd_top, fdt_top), BASE_PAGE_SIZE);
 	info("choosing to place pmem map at %lx\n", pmap_base);
 
 	size_t probe_size = probe_pmap(ram_base, ram_size, pmap_base);

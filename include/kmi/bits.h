@@ -10,6 +10,7 @@
  */
 
 #include <kmi/types.h>
+#include <kmi/string.h>
 #include <kmi/builtin.h>
 
 /** @name Arithmetic integer bit manipulation. */
@@ -143,6 +144,23 @@ static inline void bitmap_clear(void *bmap, size_t n)
 	size_t i = n / 8;
 	size_t r = n - (i * 8);
 	clear_nbit(bitmap[i], r);
+}
+
+/**
+ * Clear all bits in bitmap.
+ *
+ * @param bmap Bitmap.
+ * @param n Size of bitmap.
+ */
+static inline void bitmap_clear_all(void *bmap, size_t n)
+{
+	uint8_t *bitmap = bmap;
+	size_t i = n / 8;
+	size_t r = n - (i * 8);
+	memset(bitmap, 0, i);
+
+	for (size_t k = 0; k < r; ++k)
+		clear_nbit(bitmap[i], k);
 }
 
 /**

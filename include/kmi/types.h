@@ -129,7 +129,9 @@ typedef int32_t ssize_t;
 
 /** Maximum alignment. Works for most platforms, I think. */
 typedef union {
+	/** Either the system has an integer as its maximum width */
 	intmax_t ll;
+	/** Or it has a long double. */
 	long double ld;
 } max_align_t;
 
