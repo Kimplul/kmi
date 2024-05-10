@@ -73,7 +73,7 @@
  * @param pte Page table entry.
  * @return \c 0 if entry is not active, non-zero otherwise.
  */
-#define is_active(pte) (pte_flags(pte) & VM_V)
+#define is_active(pte) (pte_flags(pte) &VM_V)
 
 /**
  * Check if page table entry is a leaf.

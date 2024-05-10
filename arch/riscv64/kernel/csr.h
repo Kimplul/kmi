@@ -146,8 +146,9 @@
  * @param csr Name of CSR.
  * @param val Value to be written.
  */
-#define csr_write(csr, val) \
-	__asm__ volatile ("csrw " __ASM_STR(csr) ", %0" : : "r" (val) : "memory")
+#define csr_write(csr, val)                  \
+	__asm__ volatile ("csrw " __ASM_STR( \
+				  csr) ", %0" : : "r" (val) : "memory")
 
 /**
  * Set bits in CSR.
@@ -155,8 +156,9 @@
  * @param csr Name of CSR.
  * @param val Mask of bits to set.
  */
-#define csr_set(csr, val) \
-	__asm__ volatile ("csrs " __ASM_STR(csr) ", %0" : : "r" (val) : "memory")
+#define csr_set(csr, val)                    \
+	__asm__ volatile ("csrs " __ASM_STR( \
+				  csr) ", %0" : : "r" (val) : "memory")
 
 /**
  * Clear bits in CSR.
@@ -164,7 +166,8 @@
  * @param csr Name of CSR.
  * @param val Mask of bits to clear.
  */
-#define csr_clear(csr, val) \
-	__asm__ volatile ("csrc " __ASM_STR(csr) ", %0" : : "r" (val) : "memory")
+#define csr_clear(csr, val)                  \
+	__asm__ volatile ("csrc " __ASM_STR( \
+				  csr) ", %0" : : "r" (val) : "memory")
 
 #endif /* KMI_CSR_H */
