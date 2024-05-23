@@ -255,13 +255,12 @@ static void *sys_req_sharedmem(long tid, unsigned long size, void **cbuf)
 static char *rw_buf = 0;
 static size_t rw_buf_size = 4096;
 
-void callback(long status, long tid, long d0, long d1, long d2, long d3)
+void callback(long pid, long tid, long d0, long d1, long d2, long d3)
 {
-	(void)status;
-
+	(void)tid;
 	if (d0 == 1) {
 		void *cbuf = 0;
-		rw_buf = sys_req_sharedmem(tid, rw_buf_size, &cbuf);
+		rw_buf = sys_req_sharedmem(pid, rw_buf_size, &cbuf);
 		sys_ipc_resp((long)cbuf, rw_buf_size, 0, 0);
 		__builtin_unreachable();
 

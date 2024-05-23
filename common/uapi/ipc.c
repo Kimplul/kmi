@@ -216,7 +216,7 @@ static void do_ipc(struct tcb *t,
 	if (unlikely(!enough_rpc_stack(t)))
 		return_args1(t, ERR_OOMEM);
 
-	vm_t s = enter_rpc(t, SYS_RET6(OK, t->eid, d0, d1, d2, d3), kind);
+	vm_t s = enter_rpc(t, SYS_RET6(t->eid, t->tid, d0, d1, d2, d3), kind);
 
 	struct tcb *r = get_tcb(pid);
 	if (unlikely(!r)) {

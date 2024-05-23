@@ -23,7 +23,7 @@
 
 /* arguably exessively many globals... */
 /** Thread ID to start looking from when allocating new ID. */
-static id_t start_tid;
+static id_t start_tid = 0;
 
 /** Total number of possible thread IDs. */
 static id_t num_tids;
@@ -46,6 +46,7 @@ void init_tcbs()
 	 * something smaller but this is fine for now. */
 	tcbs = (struct tcb **)alloc_page(MM_O1);
 	num_tids = order_size(MM_O1) / sizeof(struct tcb *);
+	catastrophic_assert(is_powerof2(num_tids));
 	memset(tcbs, 0, order_size(MM_O1));
 }
 
@@ -64,18 +65,18 @@ static id_t __alloc_tid(struct tcb *t)
 {
 	id_t stop_tid = start_tid - 1;
 	/** \todo this would need some locking or something... */
-	for (id_t i = start_tid; 1; ++i) {
-		if (i == ID_MAX)
-			i = 0;
+	for (id_t i = start_tid;; ++i) {
+		if (i <= 0)
+			i = 1;
 
 		/* we're completely full */
 		if (i == stop_tid)
 			return ERR_NF;
 
-		if (tcbs[i] || i == 0)
+		if (get_tcb(i) || i == 0)
 			continue;
 
-		tcbs[i] = t;
+		tcbs[i & (num_tids - 1)] = t;
 		start_tid = i + 1;
 		return i;
 	}
@@ -292,10 +293,10 @@ struct tcb *get_tcb(id_t tid)
 {
 	hard_assert(tcbs, 0);
 
-	if (tid <= 0 || tid >= num_tids)
+	if (tid <= 0)
 		return NULL;
 
-	return tcbs[tid];
+	return tcbs[tid & (num_tids - 1)];
 }
 
 void set_return(struct tcb *t, vm_t v)

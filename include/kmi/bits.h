@@ -379,4 +379,6 @@ uint64_t __bswap64(uint64_t u);
 
 #endif
 
+#define is_powerof2(x) (((x) & ((x) - 1)) == 0)
+
 #endif /* KMI_BITS_H */
