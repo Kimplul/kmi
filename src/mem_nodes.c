@@ -4,7 +4,7 @@
 /**
  * @file mem_nodes.c
  * Memory node wrapper around the node subsystem, used by \ref
- * common/mem_regions.c.
+ * src/mem_regions.c.
  *
  * Each region of memory is allocated through a \ref mem_region node, which is
  * allocated through the node subsystem.

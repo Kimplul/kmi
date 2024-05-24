@@ -25,10 +25,8 @@ setup:
 ARCH		?= riscv64
 ARCH_SOURCE	= arch/$(ARCH)
 
-# might consider renaming common, currently it refers to stuff common
-# to all arches but clearly there are bits that are common to init and kernel
-KERNEL_SOURCES	!= echo common/*.c common/uapi/*.c lib/*.c
-INIT_SOURCES	!= echo lib/fdt*.c common/fdt.c common/string.c
+KERNEL_SOURCES	!= echo src/*.c src/uapi/*.c lib/*.c
+INIT_SOURCES	!= echo lib/fdt*.c src/fdt.c src/string.c
 
 CLEANUP		:= build deps.mk kernel.* init.* kmi.bin
 CLEANUP_CMD	:=
@@ -37,17 +35,17 @@ include arch/$(ARCH)/source.mk
 
 .PHONY: format
 format:
-	find arch lib common include -iname '*.[ch]' |\
+	find arch lib src include -iname '*.[ch]' |\
 		xargs uncrustify -c uncrustify.conf --no-backup -F -
 
 .PHONY: license
 license:
-	find arch lib common include -iname '*.[ch]' |\
+	find arch lib src include -iname '*.[ch]' |\
 		xargs ./scripts/license
 
 .PHONY: docs
 docs:
-	find arch lib common include -iname '*.[ch]' -not -path */gen/* |\
+	find arch lib src include -iname '*.[ch]' -not -path */gen/* |\
 		xargs ./scripts/warn-undocumented
 	doxygen docs/doxygen.conf
 

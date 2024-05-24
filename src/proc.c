@@ -3,7 +3,7 @@
 
 /**
  * @file proc.c
- * Process handling, might be merged into \ref common/tcb.c.
+ * Process handling, might be merged into \ref src/tcb.c.
  */
 
 #include <kmi/elf.h>
