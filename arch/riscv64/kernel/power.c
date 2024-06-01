@@ -49,3 +49,9 @@ stat_t poweroff(enum poweroff_type type)
 
 	return ERR_INVAL;
 }
+
+stat_t sleep()
+{
+	sbi_hart_stop();
+	return ERR_MISC;
+}

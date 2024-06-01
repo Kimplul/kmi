@@ -108,8 +108,16 @@ SYSCALL_DEFINE1(poweroff)(struct tcb *t, sys_arg_t type)
 	case SHUTDOWN:
 	case COLD_REBOOT:
 	case WARM_REBOOT:
-		return_args2(t, OK, poweroff(type));
+		return_args1(t, poweroff(type));
 	};
 
 	return_args1(t, ERR_INVAL);
+}
+
+SYSCALL_DEFINE0(sleep)(struct tcb *t)
+{
+	if (!(has_cap(t->caps, CAP_POWER)))
+		return_args1(t, ERR_PERM);
+
+	return_args1(t, sleep());
 }

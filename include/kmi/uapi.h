@@ -764,6 +764,11 @@ SYSCALL_DECLARE3(clear_cap, tid, off, cap);
 SYSCALL_DECLARE1(poweroff, type);
 
 /**
+ * Sets the current core to sleep. Might take parameters in the future if there
+ * arises a need for different levels of sleep, but for now zero params. */
+SYSCALL_DECLARE0(sleep);
+
+/**
  * Request to handle IRQ.
  *
  * @param t Current tcb.

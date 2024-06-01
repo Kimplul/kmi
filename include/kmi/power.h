@@ -35,4 +35,12 @@ enum poweroff_type {
  */
 stat_t poweroff(enum poweroff_type type);
 
+/**
+ * Set the current core to sleep.
+ *
+ * @return Nothing on success (we should be sleeping),
+ * \ref ERR_MISC if sleep was not successful
+ */
+stat_t sleep();
+
 #endif

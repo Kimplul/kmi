@@ -149,6 +149,12 @@ static inline struct sbiret sbi_hart_start(unsigned long hartid,
 	                 0, 0, 0);
 }
 
+#define FID_HSM_STOP 1
+static inline struct sbiret sbi_hart_stop()
+{
+	return sbi_ecall(EID_HSM, FID_HSM_STOP, 0, 0, 0, 0, 0, 0);
+}
+
 /** Hart status function ID. */
 #define FID_HSM_STATUS 2
 

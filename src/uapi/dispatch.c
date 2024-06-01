@@ -76,6 +76,7 @@ void handle_syscall(sys_arg_t syscall, sys_arg_t a, sys_arg_t b,
 	case SYS_GET_CAP: sys_get_cap(t, a, b, c, d, e); break;
 	case SYS_CLEAR_CAP: sys_clear_cap(t, a, b, c, d, e); break;
 	case SYS_POWEROFF: sys_poweroff(t, a, b, c, d, e); break;
+	case SYS_SLEEP: sys_sleep(t, a, b, c, d, e); break;
 	case SYS_IRQ_REQ: sys_irq_req(t, a, b, c, d, e); break;
 	default:
 		error("Syscall %zu outside allowed range [0 - %i]\n", syscall,

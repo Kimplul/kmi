@@ -142,6 +142,9 @@ enum {
 	/** Shutdown, reboot, etc. */
 	SYS_POWEROFF,
 
+	/** Set this core to sleep. */
+	SYS_SLEEP,
+
 	/** Request to handle IRQ. */
 	SYS_IRQ_REQ,
 
