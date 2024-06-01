@@ -765,7 +765,17 @@ SYSCALL_DECLARE1(poweroff, type);
 
 /**
  * Sets the current core to sleep. Might take parameters in the future if there
- * arises a need for different levels of sleep, but for now zero params. */
+ * arises a need for different levels of sleep, but for now zero params.
+ *
+ * @param t Current tcb.
+ * @param a Unused.
+ * @param b Unused.
+ * @param c Unused.
+ * @param d Unused.
+ * @param e Unused.
+ *
+ * Shouldn't return at all.
+ */
 SYSCALL_DECLARE0(sleep);
 
 /**

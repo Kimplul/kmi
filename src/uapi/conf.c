@@ -114,6 +114,13 @@ SYSCALL_DEFINE1(poweroff)(struct tcb *t, sys_arg_t type)
 	return_args1(t, ERR_INVAL);
 }
 
+/**
+ * Sleep syscall handler.
+ *
+ * @param t Current tcb.
+ * @return Shouldn't, but \ref ERR_PERM if insufficient permissions,
+ * otherwise whatever \ref sleep() returns.
+ */
 SYSCALL_DEFINE0(sleep)(struct tcb *t)
 {
 	if (!(has_cap(t->caps, CAP_POWER)))

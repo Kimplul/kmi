@@ -379,6 +379,12 @@ uint64_t __bswap64(uint64_t u);
 
 #endif
 
+/**
+ * Check if value is power of 2.
+ *
+ * @param x Value to check.
+ * @return \ref true if power of 2, \ref false otherwise
+ */
 #define is_powerof2(x) (((x) & ((x) - 1)) == 0)
 
 #endif /* KMI_BITS_H */
