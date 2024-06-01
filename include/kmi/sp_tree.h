@@ -110,10 +110,10 @@ struct sp_root {
 /** Which side of the parent node a new node should be inserted to. */
 enum sp_dir {
 	/** Left side. */
-	LEFT,
+	SP_LEFT,
 
 	/** Right side. */
-	RIGHT
+	SP_RIGHT
 };
 
 /**

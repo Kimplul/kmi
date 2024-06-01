@@ -89,7 +89,7 @@ static id_t __insert_timer(struct timer_node *ti)
 {
 	struct sp_root *root = __cpu_timers();
 	struct sp_node *n = sp_root(root), *p = NULL;
-	enum sp_dir d = LEFT;
+	enum sp_dir d = SP_LEFT;
 	while (n) {
 		struct timer_node *t = container_of(n, struct timer_node, sp_n);
 		if (ti->timer.cid == t->timer.cid) {
@@ -100,7 +100,10 @@ static id_t __insert_timer(struct timer_node *ti)
 			 * to be handled after the one that's very close, but
 			 * the timescales that we're dealing with are probably
 			 * tiny enough that this won't matter, even if it
-			 * occurs. */
+			 * occurs.
+			 *
+			 * This is one thing we couldn't do without having the
+			 * internals of sptrees exposed. Pretty cool, huh? */
 			ti->timer.cid++;
 		}
 
@@ -108,18 +111,14 @@ static id_t __insert_timer(struct timer_node *ti)
 
 		if (ti->timer.cid < t->timer.cid) {
 			n = sp_left(n);
-			d = LEFT;
+			d = SP_LEFT;
 		} else {
 			n = sp_right(n);
-			d = RIGHT;
+			d = SP_RIGHT;
 		}
 	}
 
-	if (sp_root(root))
-		sp_insert(&sp_root(root), p, &ti->sp_n, d);
-	else
-		sp_root(root) = &ti->sp_n;
-
+	sp_insert(&sp_root(root), p, &ti->sp_n, d);
 	return ti->timer.cid;
 }
 

@@ -155,7 +155,7 @@ void sp_insert(struct sp_node **root, struct sp_node *p, struct sp_node *n,
 		return;
 	}
 
-	if (d == LEFT)
+	if (d == SP_LEFT)
 		sp_left(p) = n;
 	else
 		sp_right(p) = n;

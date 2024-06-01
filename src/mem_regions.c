@@ -54,10 +54,13 @@
 static struct mem_region *__insert_free_region(struct mem_region_root *r,
                                                struct mem_region *m)
 {
+	/* this could be simplified by using my gsptrees in kmx, but at least
+	 * this ensures 'inlining' of the condition checking so I'll let it stay
+	 * for now */
 	struct sp_node *n = sp_root(&r->free_regions), *p = NULL;
 	vm_t start = m->start;
 	size_t size = m->end - m->start;
-	enum sp_dir d = LEFT;
+	enum sp_dir d = SP_LEFT;
 
 	m->sp_n = (struct sp_node){ 0 };
 
@@ -68,30 +71,26 @@ static struct mem_region *__insert_free_region(struct mem_region_root *r,
 
 		if (size < nsize) {
 			n = sp_left(n);
-			d = LEFT;
+			d = SP_LEFT;
 		}
 
 		else if (size > nsize) {
 			n = sp_right(n);
-			d = RIGHT;
+			d = SP_RIGHT;
 		}
 
 		else if (start < t->start) {
 			n = sp_left(n);
-			d = LEFT;
+			d = SP_LEFT;
 		}
 
 		else {
 			n = sp_right(n);
-			d = RIGHT;
+			d = SP_RIGHT;
 		}
 	}
 
-	if (sp_root(&r->free_regions))
-		sp_insert(&sp_root(&r->free_regions), p, &m->sp_n, d);
-	else
-		sp_root(&r->free_regions) = &m->sp_n;
-
+	sp_insert(&sp_root(&r->free_regions), p, &m->sp_n, d);
 	return m;
 }
 
@@ -107,7 +106,7 @@ static struct mem_region *__insert_used_region(struct mem_region_root *r,
 {
 	struct sp_node *n = sp_root(&r->used_regions), *p = NULL;
 	vm_t start = m->start;
-	enum sp_dir d = LEFT;
+	enum sp_dir d = SP_LEFT;
 
 	m->sp_n = (struct sp_node){ 0 };
 
@@ -118,22 +117,18 @@ static struct mem_region *__insert_used_region(struct mem_region_root *r,
 
 		if (start < t->start) {
 			n = sp_left(n);
-			d = LEFT;
+			d = SP_LEFT;
 		}
 
 		else {
 			/* we should never encounter a situation where start =
 			 * t->start */
 			n = sp_right(n);
-			d = RIGHT;
+			d = SP_RIGHT;
 		}
 	}
 
-	if (sp_root(&r->used_regions))
-		sp_insert(&sp_root(&r->used_regions), p, &m->sp_n, d);
-	else
-		sp_root(&r->used_regions) = &m->sp_n;
-
+	sp_insert(&sp_root(&r->used_regions), p, &m->sp_n, d);
 	return m;
 }
 

@@ -315,7 +315,9 @@ SYSCALL_DEFINE4(ipc_resp)(struct tcb *t, sys_arg_t d0, sys_arg_t d1,
 	if (unlikely(!is_rpc(t)))
 		return_args1(t, ERR_MISC);
 
-	leave_rpc(t, SYS_RET6(OK, t->tid, d0, d1, d2, d3));
+	/* inform requester who answered (pid) in the case of the request being
+	 * kicked forward */
+	leave_rpc(t, SYS_RET6(OK, t->pid, d0, d1, d2, d3));
 }
 
 /**
