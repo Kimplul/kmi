@@ -25,7 +25,7 @@ typedef uint64_t ticks_t;
 /**
  * tunit_t typedef, whichever time unit we're dealing with.
  */
-typedef size_t tunit_t;
+typedef uint64_t tunit_t;
 
 /**
  * Timer structure.
