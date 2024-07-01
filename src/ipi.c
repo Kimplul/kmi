@@ -1,10 +1,11 @@
 /* SPDX-License-Identifier: copyleft-next-0.3.1 */
 /* Copyright 2023 Kim Kuparinen < kimi.h.kuparinen@gmail.com > */
 
+#include <kmi/notify.h>
 #include <kmi/ipi.h>
-#include <arch/cpu.h>
 
 #include <arch/proc.h>
+#include <arch/cpu.h>
 
 /**
  * @file ipi.c
@@ -30,6 +31,9 @@ void handle_ipi()
 	struct tcb *t = cur_tcb();
 	adjust_ipi(t);
 
-	/** @todo use rpc stack */
-	set_return(t, t->callback);
+	/** @todo how do we get the target thread? What if multiple threads send
+	 * ipis at the same time? */
+	struct tcb *r = NULL;
+	notify(r);
+	/* notify didn't take for whatever reason so return whence we came from */
 }

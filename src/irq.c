@@ -10,6 +10,7 @@
 #include <kmi/pmem.h>
 #include <kmi/debug.h>
 #include <kmi/assert.h>
+#include <kmi/notify.h>
 #include <kmi/string.h>
 #include <arch/irq.h>
 
@@ -59,9 +60,19 @@ void handle_irq()
 	id_t tid = irq_map[id];
 
 	if (!tid) {
-		bug("unregistered irq: %llu\n", (unsigned long long)id);
+		bug("unregistered irq %llu\n", (unsigned long long)id);
 		return;
 	}
 
-	/** @todo switch to thread */
+	struct tcb *t = get_tcb(tid);
+	if (!t) {
+		error("tcb %llu dead at irq %llu\n",
+				(unsigned long long)tid,
+				(unsigned long long)id);
+		return;
+	}
+
+	disable_irqs();
+	notify(t);
+	error("misc error when trying to notify irq");
 }

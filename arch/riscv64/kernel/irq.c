@@ -41,12 +41,13 @@ stat_t deactivate_irq(irq_t id)
 /* very simple for now */
 void enable_irqs()
 {
-	csr_set(CSR_SSTATUS, CSR_SIE);
+	/* should be supervisor external interrupt */
+	csr_set(CSR_SIE, 1 << 9);
 }
 
 void disable_irqs()
 {
-	csr_clear(CSR_SSTATUS, CSR_SIE);
+	csr_clear(CSR_SIE, 1 << 9);
 }
 
 irq_t get_irq()
@@ -71,9 +72,10 @@ static void riscv_unknown_interrupt(long id)
  *
  * @param id ID of interrupt, with interrupt bit still set.
  */
-void riscv_handle_interrupt(long id)
+void riscv_handle_interrupt(unsigned long id)
 {
-	id = -id;
+	/* clear leading one */
+	id = (id << 1) >> 1;
 
 	switch (id) {
 	/* I think */

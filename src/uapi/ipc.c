@@ -9,6 +9,7 @@
 #include <kmi/uapi.h>
 #include <kmi/tcb.h>
 #include <kmi/ipi.h>
+#include <kmi/irq.h>
 #include <kmi/conf.h>
 
 /** Structure for maintaining the required context data for an rpc call. */
@@ -120,7 +121,48 @@ static vm_t enter_rpc(struct tcb *t, struct sys_ret a,
 }
 
 /**
+ * Check that there's enough stack left for an rpc invocation.
+ *
+ * @param t Thread whose migration to check.
+ * @return \c true if there's enough stack left to safely do migration,
+ * \c false otherwise.
+ */
+static bool enough_rpc_stack(struct tcb *t)
+{
+	/* get top of call stack */
+	vm_t top = rpc_position(t);
+
+	/* if we can still fit an rpc stack into the call stack, we can safely
+	 * do the migration. */
+	return top - BASE_PAGE_SIZE - __rpc_stack_size >= RPC_STACK_BASE;
+}
+
+void notify(struct tcb *t)
+{
+	/* some duplication from do_ipc, but not too bad I guess */
+	struct tcb *notify = get_tcb(t->notify_id);
+	if (!notify || !notify->callback) {
+		t->notify_state = NOTIFY_WAITING;
+		return;
+	}
+
+	if (unlikely(!enough_rpc_stack(t))) {
+		t->notify_state = NOTIFY_WAITING;
+		return;
+	}
+
+	/* signal to whoever is receiving us that we're from the kernel
+	 * ("pid 0"), and we are notifying the current thread */
+	vm_t s = enter_rpc(t, SYS_RET4(0, SYS_USER_NOTIFY, t->eid, t->tid), IPC_REQ);
+	finalize_rpc(t, notify, s);
+	t->notify_state = NOTIFY_RUNNING;
+	ret_userspace_fast();
+	unreachable();
+}
+
+/**
  * Jump back to process where rpc came from, assuming such a thing exists.
+ * If we're queued for a notification, jump to it instead.
  *
  * @param t Thread to do return migration on.
  * @param a Arguments to pass along.
@@ -150,27 +192,23 @@ static void leave_rpc(struct tcb *t, struct sys_ret a)
 	t->pid = ctx->pid;
 	t->eid = ctx->eid;
 
-	if (is_rpc(t))
+	if (is_rpc(t)) {
 		use_vmem(t->rpc.vmem);
-	else
+		return;
+	}
+
+	if (t->notify_state != NOTIFY_QUEUED) {
+		/* turn a potential NOTIFY_RUNNING into NOTIFY_WAITING */
+		t->notify_state = NOTIFY_WAITING;
 		use_vmem(t->proc.vmem);
-}
+		return;
+	}
 
-/**
- * Check that there's enough stack left for an rpc invocation.
- *
- * @param t Thread whose migration to check.
- * @return \c true if there's enough stack left to safely do migration,
- * \c false otherwise.
- */
-static bool enough_rpc_stack(struct tcb *t)
-{
-	/* get top of call stack */
-	vm_t top = rpc_position(t);
+	notify(t);
 
-	/* if we can still fit an rpc stack into the call stack, we can safely
-	 * do the migration. */
-	return top - BASE_PAGE_SIZE - __rpc_stack_size >= RPC_STACK_BASE;
+	/* we failed in notifying the thread, so just return back to the
+	 * process normally */
+	use_vmem(t->proc.vmem);
 }
 
 /**
@@ -320,6 +358,16 @@ SYSCALL_DEFINE4(ipc_resp)(struct tcb *t, sys_arg_t d0, sys_arg_t d1,
 	leave_rpc(t, SYS_RET6(OK, t->pid, d0, d1, d2, d3));
 }
 
+SYSCALL_DEFINE0(ipc_ghost)(struct tcb *t)
+{
+	if (unlikely(!is_rpc(t)))
+		return_args1(t, ERR_MISC);
+
+	/** @todo this should also enable interrupts when leaving kernel */
+	enable_irqs();
+	leave_rpc(t, get_args(t));
+}
+
 /**
  * Notify syscall handler.
  *
@@ -330,6 +378,10 @@ SYSCALL_DEFINE4(ipc_resp)(struct tcb *t, sys_arg_t d0, sys_arg_t d1,
  * @return \ref OK and 0.
  */
 SYSCALL_DEFINE1(ipc_notify)(struct tcb *t, sys_arg_t tid){
+	if (t->tid == tid) {
+		/** @todo notify self */
+	}
+
 	if (!has_cap(t->caps, CAP_CALL))
 		return_args1(t, ERR_PERM);
 
@@ -343,7 +395,8 @@ SYSCALL_DEFINE1(ipc_notify)(struct tcb *t, sys_arg_t tid){
 	}
 
 	r->notify_state = NOTIFY_QUEUED;
-	if (running(r))
+	/* only interrupt if thread is in owning process */
+	if (running(r) && r->rid == r->pid)
 		send_ipi(r);
 
 	return_args1(t, OK);

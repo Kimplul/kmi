@@ -427,7 +427,8 @@ SYSCALL_DECLARE0(ticks);
  *
  * @param t Current tcb.
  * @param ticks Number of ticks from now.
- * @param mult Number of times to trigger.
+ * @param mult Multiplier for \p ticks if we're on 32bit systems to produce a
+ * combined 64 bit value. Ignored on 64bit systems.
  * @param c Unused.
  * @param d Unused.
  * @param e Unused.
@@ -554,6 +555,16 @@ SYSCALL_DECLARE5(ipc_kick, pid, d0, d1, d2, d3);
  * Returns \c d0 and \c d1.
  */
 SYSCALL_DECLARE4(ipc_resp, d0, d1, d2, d3);
+
+/**
+ * Returns to caller but without changing any visible state. Primarily used when
+ * returning from interrupt handlers, like notifications, timers or external
+ * devices.
+ *
+ * @param r Current tcb.
+ *
+ */
+SYSCALL_DECLARE0(ipc_ghost);
 
 /**
  * Notify thread syscall.
@@ -748,6 +759,22 @@ SYSCALL_DECLARE2(get_cap, tid, off);
 SYSCALL_DECLARE3(clear_cap, tid, off, cap);
 
 /**
+ * Set which process to move notifications to for thread.
+ * @todo Should converge on either calling everything irq or notification or
+ * whatever, but mixing both is a bit dumb.
+ *
+ * @param t Current tcb.
+ * @param tid Thread whose notifications should be moved.
+ * @param pid Process that is willing to handle the notifications.
+ * @param c Unused.
+ * @param d Unused.
+ * @param e Unused.
+ *
+ * Returns \ref OK.
+ */
+SYSCALL_DECLARE2(req_notification, tid, pid);
+
+/**
  * Power off syscall.
  *
  * Either shut down or reboot system.
@@ -792,6 +819,7 @@ SYSCALL_DECLARE0(sleep);
  * @todo document error codes better.
  */
 SYSCALL_DECLARE1(irq_req, id);
+
 /** @} */
 
 /**

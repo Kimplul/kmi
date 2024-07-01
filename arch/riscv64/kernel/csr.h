@@ -40,6 +40,8 @@
 /** Address of \c sstatus CSR. */
 #define CSR_SSTATUS 0x100
 
+#define SR_SPIE 0b10
+
 /** Address of \c sie CSR. */
 #define CSR_SIE 0x104
 

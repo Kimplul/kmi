@@ -24,10 +24,6 @@
 #include <stddef.h>
 #include "../../../include/kmi/syscalls.h"
 
-struct sys_ret {
-	long a0, a1, a2, a3, a4, a5;
-};
-
 char *strcpy(char * restrict dst, const char * restrict src)
 {
 	const char *s1 = src;
@@ -40,8 +36,8 @@ char *strcpy(char * restrict dst, const char * restrict src)
 }
 
 static inline struct sys_ret ecall(size_t n,
-                                   long arg0, long arg1, long arg2, long arg3,
-                                   long arg4, long arg5)
+                                   sys_arg_t arg0, sys_arg_t arg1, sys_arg_t arg2, sys_arg_t arg3,
+                                   sys_arg_t arg4, sys_arg_t arg5)
 {
 	/* here a static assert of n <= 6 && n >= 1 would be ideal */
 
@@ -103,11 +99,11 @@ static uint64_t sys_timebase()
 {
 	struct sys_ret r = ecall1(SYS_TIMEBASE);
 #if defined(_LP64)
-	return r.a1;
+	return r.ar0;
 #else
-	uint64_t t = r.a1;
+	uint64_t t = r.ar0;
 	t <<= 32;
-	return t + r.a2;
+	return t + r.ar1;
 #endif
 }
 
@@ -115,11 +111,11 @@ static uint64_t sys_ticks()
 {
 	struct sys_ret r = ecall1(SYS_TICKS);
 #if defined(_LP64)
-	return r.a1;
+	return r.ar0;
 #else
-	uint64_t t = r.a1;
+	uint64_t t = r.ar0;
 	t <<= 32;
-	return t + r.a2;
+	return t + r.ar1;
 #endif
 }
 
@@ -161,21 +157,21 @@ static uint64_t sys_fork()
 {
 	struct sys_ret r = ecall1(SYS_FORK);
 
-	if (r.a0 != 0) {
-		print_value("fork() failed with error ", r.a0);
-		return r.a0;
+	if (r.s != 0) {
+		print_value("fork() failed with error ", r.s);
+		return r.s;
 	}
 
-	return r.a1;
+	return r.ar0;
 }
 
 static uint64_t sys_swap(long tid)
 {
 	struct sys_ret r = ecall2(SYS_SWAP, tid);
 
-	if (r.a0 != 0) {
-		print_value("swap() failed with error ", r.a0);
-		return r.a0;
+	if (r.s != 0) {
+		print_value("swap() failed with error ", r.s);
+		return r.s;
 	}
 
 	return 0;
@@ -185,29 +181,23 @@ static void sys_ipc_server(void *f)
 {
 	struct sys_ret r = ecall2(SYS_IPC_SERVER, (long)f);
 
-	if (r.a0 != 0)
-		print_value("ipc_server() failed with error ", r.a0);
+	if (r.s != 0)
+		print_value("ipc_server() failed with error ", r.s);
 }
 
-/** Helper for ipc arguments/return values. */
-struct ipc_args {
-	long s; long a0, a1, a2, a3;
-};
-
-static inline struct ipc_args sys_ipc_req(long tid, long d0, long d1, long d2,
-                                          long d3)
+static inline struct sys_ret sys_ipc_req(sys_arg_t pid,
+		sys_arg_t d0, sys_arg_t d1, sys_arg_t d2,
+                                          sys_arg_t d3)
 {
-	struct sys_ret r = ecall6(SYS_IPC_REQ, tid, d0, d1, d2, d3);
+	struct sys_ret r = ecall6(SYS_IPC_REQ, pid, d0, d1, d2, d3);
 
-	if (r.a0) {
-		print_value("ipc_req() failed with error ", r.a0);
-		return (struct ipc_args){r.a0, 0, 0, 0, 0};
-	}
+	if (r.s)
+		print_value("ipc_req() failed with error ", r.s);
 
-	return (struct ipc_args){r.a0, r.a1, r.a2, r.a3, r.a4};
+	return r;
 }
 
-static void sys_ipc_resp(long d0, long d1, long d2, long d3)
+static void sys_ipc_resp(sys_arg_t d0, sys_arg_t d1, sys_arg_t d2, sys_arg_t d3)
 {
 	ecall5(SYS_IPC_RESP, d0, d1, d2, d3);
 }
@@ -221,20 +211,20 @@ static void *sys_req_mem(size_t count)
 {
 	struct sys_ret r = ecall3(SYS_REQ_MEM, count,
 	                          (1 << 0) | (1 << 1) | (1 << 2) | (1 << 4));
-	if (r.a0) {
-		print_value("sys_req_mem() failed with error ", r.a0);
+	if (r.s) {
+		print_value("sys_req_mem() failed with error ", r.s);
 		return NULL;
 	}
 
-	return (void *)r.a1;
+	return (void *)r.ar0;
 }
 
 static void sys_free_mem(void *p)
 {
 	struct sys_ret r = ecall2(SYS_FREE_MEM, (long)p);
 
-	if (r.a0)
-		print_value("sys_free_mem() failed with error ", r.a0);
+	if (r.s)
+		print_value("sys_free_mem() failed with error ", r.s);
 }
 
 static void *sys_req_sharedmem(long tid, unsigned long size, void **cbuf)
@@ -242,13 +232,13 @@ static void *sys_req_sharedmem(long tid, unsigned long size, void **cbuf)
 	struct sys_ret r = ecall5(SYS_REQ_SHAREDMEM, tid, size,
 	                          (1 << 0) | (1 << 1) | (1 << 2) | (1 << 4),
 	                          (1 << 0) | (1 << 1) | (1 << 2) | (1 << 4));
-	if (r.a0) {
-		print_value("sys_req_sharedmem() failed with error ", r.a0);
+	if (r.s) {
+		print_value("sys_req_sharedmem() failed with error ", r.s);
 		return NULL;
 	}
 
-	*cbuf = (void *)r.a2;
-	return (void *)r.a1;
+	*cbuf = (void *)r.ar1;
+	return (void *)r.ar0;
 }
 
 /* I'm guessing my elf parser doesn't handle data pages correctly yet... */
@@ -345,9 +335,10 @@ void _start()
 	}
 
 	puts("Checking shared memory\n");
-	struct ipc_args r = sys_ipc_req(1, 1, 0, 0, 0);
-	rw_buf = (char *)r.a1;
-	rw_buf_size = (size_t)r.a2;
+	struct sys_ret r = sys_ipc_req(1, 1, 0, 0, 0);
+	rw_buf = (char *)r.ar1;
+	rw_buf_size = (size_t)r.ar2;
+	print_value("Response from", r.ar0);
 	print_value("Shared memory ptr", (uintptr_t)rw_buf);
 	print_value("Shared memory size", rw_buf_size);
 

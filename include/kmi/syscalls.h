@@ -18,7 +18,7 @@
 
 /** enum for now, possibly macros in the future once I get an approximate idea of
  * which syscalls are necessary etc. */
-enum {
+enum sys_code {
 	/**
 	 * @name Misc.
 	 * Implementation in \ref dispatch.c instead of a separate file, as I
@@ -96,6 +96,9 @@ enum {
 	/** IPC response from server. */
 	SYS_IPC_RESP,
 
+	/** IPC return without visible side effects. */
+	SYS_IPC_GHOST,
+
 	/** IPC notify thread, essentially interrupt or signal. */
 	SYS_IPC_NOTIFY,
 	/** @} */
@@ -148,9 +151,16 @@ enum {
 	/** Request to handle IRQ. */
 	SYS_IRQ_REQ,
 
+	/** Request a notification handler. */
+	SYS_REQ_NOTIFICATION,
+
 	/** @} */
 
 	SYS_NUM,
+};
+
+enum sys_user {
+	SYS_USER_NOTIFY,
 };
 
 /* function declarations should be somewhere else, this file could be used in

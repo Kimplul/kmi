@@ -16,12 +16,13 @@
  */
 
 #include <kmi/sp_tree.h>
+#include <arch/timer.h>
 #include <kmi/string.h>
+#include <kmi/notify.h>
 #include <kmi/nodes.h>
 #include <kmi/utils.h>
 #include <kmi/timer.h>
 #include <kmi/debug.h>
-#include <arch/timer.h>
 #include <arch/cpu.h>
 
 /** Timer resolution. */
@@ -199,5 +200,9 @@ void handle_timer()
 	struct timer *t = newest_timer();
 	remove_timer(t);
 
-	/** \todo handle timer thread ID */
+	struct tcb *r = get_tcb(t->tid);
+	if (!r)
+		return;
+
+	notify(r);
 }

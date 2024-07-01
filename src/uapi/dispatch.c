@@ -56,6 +56,7 @@ void handle_syscall(sys_arg_t syscall, sys_arg_t a, sys_arg_t b,
 	case SYS_FREE_MEM: sys_free_mem(t, a, b, c, d, e); break;
 	case SYS_TIMEBASE: sys_timebase(t, a, b, c, d, e); break;
 	case SYS_TICKS: sys_ticks(t, a, b, c, d, e); break;
+	case SYS_REQ_NOTIFICATION: sys_req_notification(t, a, b, c, d, e); break;
 	case SYS_REQ_REL_TIMER: sys_req_rel_timer(t, a, b, c, d, e); break;
 	case SYS_REQ_ABS_TIMER: sys_req_abs_timer(t, a, b, c, d, e); break;
 	case SYS_IPC_SERVER: sys_ipc_server(t, a, b, c, d, e); break;
@@ -63,6 +64,7 @@ void handle_syscall(sys_arg_t syscall, sys_arg_t a, sys_arg_t b,
 	case SYS_IPC_FWD: sys_ipc_fwd(t, a, b, c, d, e); break;
 	case SYS_IPC_KICK: sys_ipc_kick(t, a, b, c, d, e); break;
 	case SYS_IPC_RESP: sys_ipc_resp(t, a, b, c, d, e); break;
+	case SYS_IPC_GHOST: sys_ipc_ghost(t, a, b, c, d, e); break;
 	case SYS_IPC_NOTIFY: sys_ipc_notify(t, a, b, c, d, e); break;
 	case SYS_CREATE: sys_create(t, a, b, c, d, e); break;
 	case SYS_FORK: sys_fork(t, a, b, c, d, e); break;

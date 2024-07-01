@@ -37,6 +37,7 @@ SYSCALL_DEFINE5(create)(struct tcb *t, sys_arg_t func,
 	set_args5(c, c->tid, d0, d1, d2, d3);
 	set_return(c, func);
 
+	c->notify_id = t->notify_id;
 	return_args2(t, OK, c->tid);
 }
 
@@ -70,6 +71,7 @@ SYSCALL_DEFINE0(fork)(struct tcb *t)
 	 * parent ID as third return value */
 	set_args3(n, OK, 0, get_eproc(t)->pid);
 
+	n->notify_id = c->notify_id;
 	return_args2(t, OK, n->pid);
 }
 
@@ -132,6 +134,7 @@ SYSCALL_DEFINE2(spawn)(struct tcb *t, sys_arg_t bin, sys_arg_t interp)
 	if (!n)
 		return_args1(t, ERR_OOMEM);
 
+	n->notify_id = c->notify_id;
 	return_args2(t, prepare_proc(n, bin, interp), n->pid);
 }
 

@@ -177,6 +177,11 @@ struct tcb {
 	/** Cpu currently executing this thread. */
 	id_t cpu_id;
 
+	/** In which process to run notifications. Note that this is currently
+	 * set in the syscall handlers due to the different rules for inheriting
+	 * this id, might change in the future. */
+	id_t notify_id;
+
 	/** Capabilities of thread. */
 	capflags_t caps;
 

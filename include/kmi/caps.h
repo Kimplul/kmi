@@ -26,7 +26,7 @@ enum {
 	/** Thread is allowed to modify process statuses, create/exec/fork/etc. */
 	CAP_PROC = (1 << 1),
 
-	/** Thread is allowed to force interrupt to callback in other thread. */
+	/** Thread is allowed to force notification in other thread. */
 	CAP_CALL = (1 << 2),
 
 	/** Thread is allowed to shut down system. */
@@ -37,6 +37,9 @@ enum {
 
 	/** Thread is allowed to request to handle IRQs. */
 	CAP_IRQ = (1 << 5),
+
+	/** Thread is allowed to request notification handler. */
+	CAP_NOTIFICATION = (1 << 6),
 };
 
 /**
