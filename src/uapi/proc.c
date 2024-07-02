@@ -181,6 +181,9 @@ SYSCALL_DEFINE1(swap)(struct tcb *t, sys_arg_t tid){
 	if (!s)
 		return_args1(t, ERR_INVAL);
 
+	if (running(s))
+		return_args1(t, ERR_EXT);
+
 	/* switch over to new thread */
 	use_tcb(s);
 
@@ -195,6 +198,9 @@ SYSCALL_DEFINE1(swap)(struct tcb *t, sys_arg_t tid){
 	if (s->notify_state == NOTIFY_QUEUED)
 		notify(s, 0);
 
+	/* if an irq handler is directly swapping to some other thread,
+	 * interpret it as the thread being finished with its critical section */
+	enable_irqs();
 	/* get register state for new thread */
 	return_args(s, get_args(s));
 }

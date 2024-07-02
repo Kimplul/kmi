@@ -126,5 +126,7 @@ SYSCALL_DEFINE0(sleep)(struct tcb *t)
 	if (!(has_cap(t->caps, CAP_POWER)))
 		return_args1(t, ERR_PERM);
 
+	/* presumably we want to wake up on an interrupt */
+	enable_irqs();
 	return_args1(t, sleep());
 }
