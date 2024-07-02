@@ -159,8 +159,24 @@ enum sys_code {
 	SYS_NUM,
 };
 
+/** Operation codes for reverse requests, i.e. where the kernel wants userspace
+ * to do something. */
 enum sys_user {
+	/** Thread has received one or several notifications, please handle
+	 * them. */
 	SYS_USER_NOTIFY,
+};
+
+/** Which notifications have arrived. */
+enum notify_flag {
+	/** A signal (\ref ipc_notify()). */
+	NOTIFY_SIGNAL = (1 << 0),
+
+	/** A timer has expired. */
+	NOTIFY_TIMER = (1 << 1),
+
+	/** An interrupt. */
+	NOTIFY_IRQ = (1 << 2),
 };
 
 /* function declarations should be somewhere else, this file could be used in

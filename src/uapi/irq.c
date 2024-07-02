@@ -13,6 +13,7 @@
  * Actual IRQ handling request syscall handler.
  *
  * @param t Current tcb.
+ * @param id Which IRQ number to register.
  *
  * @return OK on success, non-zero otherwise.
  */
@@ -27,9 +28,18 @@ SYSCALL_DEFINE1(irq_req)(struct tcb *t, sys_arg_t id)
 	return_args1(t, register_irq(t, id));
 }
 
+/**
+ * Actual notification handler setter.
+ *
+ * @param t Current tcb.
+ * @param tid Thread whose handler to set.
+ * @param pid Process that is willing to handle notifications for the thread.
+ *
+ * @return OK on success, non-zero otherwise.
+ */
 SYSCALL_DEFINE2(req_notification)(struct tcb *t, sys_arg_t tid, sys_arg_t pid)
 {
-	if (!has_cap(t->caps, CAP_NOTIFICATION))
+	if (!has_cap(t->caps, CAP_SIGNAL))
 		return_args1(t, ERR_PERM);
 
 	struct tcb *r = get_tcb(tid);

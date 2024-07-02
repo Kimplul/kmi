@@ -46,7 +46,8 @@ stat_t init_proc(void *fdt)
 	use_tcb(t);
 
 	/* init process has all capabilities */
-	set_caps(t->caps, 0, CAP_CAPS | CAP_PROC | CAP_CALL | CAP_POWER);
+	set_caps(t->caps, 0,
+	         CAP_CAPS | CAP_PROC | CAP_SIGNAL | CAP_POWER | CAP_NOTIFY);
 
 	t->notify_id = t->tid;
 

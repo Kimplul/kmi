@@ -27,7 +27,7 @@ enum {
 	CAP_PROC = (1 << 1),
 
 	/** Thread is allowed to force notification in other thread. */
-	CAP_CALL = (1 << 2),
+	CAP_NOTIFY = (1 << 2),
 
 	/** Thread is allowed to shut down system. */
 	CAP_POWER = (1 << 3),
@@ -39,7 +39,7 @@ enum {
 	CAP_IRQ = (1 << 5),
 
 	/** Thread is allowed to request notification handler. */
-	CAP_NOTIFICATION = (1 << 6),
+	CAP_SIGNAL = (1 << 6),
 };
 
 /**

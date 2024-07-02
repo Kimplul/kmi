@@ -204,5 +204,5 @@ void handle_timer()
 	if (!r)
 		return;
 
-	notify(r);
+	notify(r, NOTIFY_TIMER);
 }

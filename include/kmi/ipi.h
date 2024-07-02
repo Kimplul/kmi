@@ -15,14 +15,6 @@
 #include <kmi/tcb.h>
 
 /**
- * Clear potential IPI in \p t, and return its value.
- *
- * @param t \ref tcb to clear possible IPI status of.
- * @return \ref true if \p was interrupted by IPI, \ref false otherwise.
- */
-bool clear_ipi(struct tcb *t);
-
-/**
  * Send IPI to \p t. Assumes \c running(t).
  *
  * @param t \ref tcb to send IPI to.

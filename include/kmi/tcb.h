@@ -13,9 +13,11 @@
 struct tcb;
 
 #include <kmi/mem_regions.h>
+#include <kmi/syscalls.h>
 #include <kmi/atomic.h>
-#include <kmi/caps.h>
+#include <kmi/queue.h>
 #include <kmi/types.h>
+#include <kmi/caps.h>
 #include <arch/tcb.h> /* arch-specific data */
 
 /**
@@ -135,9 +137,6 @@ struct tcb {
 	 */
 	struct tcb_ctx server;
 
-	/** Notifcation state of thread. */
-	enum tcb_notify notify_state;
-
 	/**
 	 * Effective process ID.
 	 *
@@ -182,11 +181,17 @@ struct tcb {
 	 * this id, might change in the future. */
 	id_t notify_id;
 
+	/** Notifcation state of thread. */
+	enum tcb_notify notify_state;
+
+	/** Currently waiting notifications. */
+	enum notify_flag notify_flags;
+
 	/** Capabilities of thread. */
 	capflags_t caps;
 
-	/** Whether thread has gotten an IPI */
-	bool ipi;
+	/** Queue that connects together threads waiting for an ipi */
+	struct queue_head ipi_queue;
 
 	/** Whether thread is dead. If thread is process, then corresponds to
 	 * whole process. */

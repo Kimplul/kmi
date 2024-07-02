@@ -6,6 +6,7 @@
  * Interprocess communication syscall implementations.
  */
 
+#include <kmi/debug.h>
 #include <kmi/uapi.h>
 #include <kmi/tcb.h>
 #include <kmi/ipi.h>
@@ -127,7 +128,7 @@ static vm_t enter_rpc(struct tcb *t, struct sys_ret a,
  * @return \c true if there's enough stack left to safely do migration,
  * \c false otherwise.
  */
-static bool enough_rpc_stack(struct tcb *t)
+static bool __enough_rpc_stack(struct tcb *t)
 {
 	/* get top of call stack */
 	vm_t top = rpc_position(t);
@@ -137,27 +138,71 @@ static bool enough_rpc_stack(struct tcb *t)
 	return top - BASE_PAGE_SIZE - __rpc_stack_size >= RPC_STACK_BASE;
 }
 
-void notify(struct tcb *t)
+/**
+ * Actually run notification handler, no ifs or buts.
+ *
+ * @param t Previous thread.
+ * @param r Next thread.
+ *
+ * \p t and \p r may be the same thread.
+ */
+static __noreturn void __run_notify(struct tcb *t, struct tcb *r)
 {
-	/* some duplication from do_ipc, but not too bad I guess */
-	struct tcb *notify = get_tcb(t->notify_id);
-	if (!notify || !notify->callback) {
-		t->notify_state = NOTIFY_WAITING;
-		return;
-	}
-
-	if (unlikely(!enough_rpc_stack(t))) {
-		t->notify_state = NOTIFY_WAITING;
-		return;
-	}
-
 	/* signal to whoever is receiving us that we're from the kernel
 	 * ("pid 0"), and we are notifying the current thread */
-	vm_t s = enter_rpc(t, SYS_RET4(0, SYS_USER_NOTIFY, t->eid, t->tid), IPC_REQ);
-	finalize_rpc(t, notify, s);
+	vm_t s = enter_rpc(t,
+	                   SYS_RET5(0, SYS_USER_NOTIFY,
+	                            t->notify_flags, t->eid, t->tid),
+	                   IPC_REQ);
+
+	finalize_rpc(t, r, s);
 	t->notify_state = NOTIFY_RUNNING;
+	if (is_set(t->notify_flags, NOTIFY_IRQ | NOTIFY_TIMER))
+		disable_irqs();
+
+	t->notify_flags = 0;
 	ret_userspace_fast();
 	unreachable();
+}
+
+void notify(struct tcb *t, enum notify_flag flag)
+{
+	set_bits(t->notify_flags, flag);
+
+	if (t->notify_state == NOTIFY_RUNNING) {
+		t->notify_state = NOTIFY_QUEUED;
+		return;
+	}
+
+	if (t == cur_tcb())
+		__run_notify(t, t);
+
+	struct tcb *r = get_tcb(t->notify_id);
+	if (!r || !r->callback) {
+		error("notify callback dead\n");
+		t->notify_state = NOTIFY_WAITING;
+		t->notify_flags = 0;
+		return;
+	}
+
+	if (is_rpc(r)) {
+		t->notify_state = NOTIFY_QUEUED;
+		return;
+	}
+
+	if (unlikely(!__enough_rpc_stack(r))) {
+		bug("not enough rpc stack in root process?");
+		t->notify_state = NOTIFY_WAITING;
+		t->notify_flags = 0;
+		return;
+	}
+
+	if (running(r)) {
+		send_ipi(r);
+		return;
+	}
+
+	__run_notify(t, r);
 }
 
 /**
@@ -204,10 +249,12 @@ static void leave_rpc(struct tcb *t, struct sys_ret a)
 		return;
 	}
 
-	notify(t);
+	/* notification queued, try to run it */
+	notify(t, 0);
 
-	/* we failed in notifying the thread, so just return back to the
-	 * process normally */
+	/* we failed notifying the thread, shouldn't happen but just return
+	 * back to process normally */
+	bug("failed notifying from ipc_resp\n");
 	use_vmem(t->proc.vmem);
 }
 
@@ -251,7 +298,7 @@ static void do_ipc(struct tcb *t,
                    sys_arg_t d3,
                    enum ipc_kind kind)
 {
-	if (unlikely(!enough_rpc_stack(t)))
+	if (unlikely(!__enough_rpc_stack(t)))
 		return_args1(t, ERR_OOMEM);
 
 	vm_t s = enter_rpc(t, SYS_RET6(t->eid, t->tid, d0, d1, d2, d3), kind);
@@ -358,6 +405,12 @@ SYSCALL_DEFINE4(ipc_resp)(struct tcb *t, sys_arg_t d0, sys_arg_t d1,
 	leave_rpc(t, SYS_RET6(OK, t->pid, d0, d1, d2, d3));
 }
 
+/**
+ * Ghost return, resetting register state.
+ *
+ * @param t Current tcb.
+ * @return The previous registers of thread.
+ */
 SYSCALL_DEFINE0(ipc_ghost)(struct tcb *t)
 {
 	if (unlikely(!is_rpc(t)))
@@ -379,25 +432,22 @@ SYSCALL_DEFINE0(ipc_ghost)(struct tcb *t)
  */
 SYSCALL_DEFINE1(ipc_notify)(struct tcb *t, sys_arg_t tid){
 	if (t->tid == tid) {
-		/** @todo notify self */
+		set_args1(t, OK);
+		notify(t, NOTIFY_SIGNAL);
+		/* notify is guaranteed to run the current thread */
+		unreachable();
+		return;
 	}
 
-	if (!has_cap(t->caps, CAP_CALL))
+	if (!has_cap(t->caps, CAP_NOTIFY))
 		return_args1(t, ERR_PERM);
 
 	struct tcb *r = get_tcb(tid);
-	if (r->notify_state == NOTIFY_QUEUED)
-		return_args1(t, OK);
+	if (!r)
+		return_args1(t, ERR_INVAL);
 
-	if (r->notify_state == NOTIFY_RUNNING) {
-		t->notify_state = NOTIFY_QUEUED;
-		return_args1(t, OK);
-	}
-
-	r->notify_state = NOTIFY_QUEUED;
-	/* only interrupt if thread is in owning process */
-	if (running(r) && r->rid == r->pid)
-		send_ipi(r);
-
-	return_args1(t, OK);
+	/* set args, if notify swaps us out we pick them up the next time this
+	 * thread is scheduled */
+	set_args1(t, OK);
+	notify(r, NOTIFY_SIGNAL);
 }

@@ -2,10 +2,14 @@
 /* Copyright 2023 Kim Kuparinen < kimi.h.kuparinen@gmail.com > */
 
 #include <kmi/notify.h>
+#include <kmi/queue.h>
 #include <kmi/ipi.h>
 
 #include <arch/proc.h>
 #include <arch/cpu.h>
+
+/** List for keeping track of which threads have an ipi queued. */
+static struct queue_head fifo = INIT_QUEUE(fifo);
 
 /**
  * @file ipi.c
@@ -13,16 +17,12 @@
  * IPI function implementations.
  */
 
-bool clear_ipi(struct tcb *t)
-{
-	bool r = t->ipi;
-	t->ipi = false;
-	return r;
-}
-
 void send_ipi(struct tcb *t)
 {
-	t->ipi = true;
+	/** @todo this should probably have a spinlock guard */
+	/** @todo killing a thread should make sure it gets removed from ipi
+	 * queue */
+	queue_push(&fifo, &t->ipi_queue);
 	cpu_send_ipi(t->cpu_id);
 }
 
@@ -31,9 +31,11 @@ void handle_ipi()
 	struct tcb *t = cur_tcb();
 	adjust_ipi(t);
 
-	/** @todo how do we get the target thread? What if multiple threads send
-	 * ipis at the same time? */
-	struct tcb *r = NULL;
-	notify(r);
+	struct queue_head *q = queue_pop(&fifo);
+	if (!q)
+		return;
+
+	struct tcb *r = container_of(q, struct tcb, ipi_queue);
+	notify(r, 0);
 	/* notify didn't take for whatever reason so return whence we came from */
 }

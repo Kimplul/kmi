@@ -133,6 +133,7 @@ static inline ticks_t secs_to_ticks(tunit_t secs)
 	return msecs_to_ticks(secs * 1000);
 }
 
+/** Callback for timer IRQs. */
 void handle_timer();
 
 #endif /* KMI_TIMER_H */

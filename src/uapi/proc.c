@@ -10,6 +10,7 @@
 #include <kmi/uapi.h>
 #include <kmi/proc.h>
 #include <kmi/bits.h>
+#include <kmi/notify.h>
 #include <kmi/mem_regions.h>
 
 /**
@@ -185,6 +186,14 @@ SYSCALL_DEFINE1(swap)(struct tcb *t, sys_arg_t tid){
 
 	/* set return value for current thread */
 	set_args1(t, OK);
+
+	/* not running anymore lol */
+	if (t->notify_state == NOTIFY_RUNNING)
+		t->notify_state = NOTIFY_WAITING;
+
+	/* handle possible queued notification */
+	if (s->notify_state == NOTIFY_QUEUED)
+		notify(s, 0);
 
 	/* get register state for new thread */
 	return_args(s, get_args(s));

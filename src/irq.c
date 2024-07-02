@@ -67,12 +67,12 @@ void handle_irq()
 	struct tcb *t = get_tcb(tid);
 	if (!t) {
 		error("tcb %llu dead at irq %llu\n",
-				(unsigned long long)tid,
-				(unsigned long long)id);
+		      (unsigned long long)tid,
+		      (unsigned long long)id);
 		return;
 	}
 
 	disable_irqs();
-	notify(t);
+	notify(t, NOTIFY_IRQ);
 	error("misc error when trying to notify irq");
 }

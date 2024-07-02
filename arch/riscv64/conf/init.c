@@ -36,7 +36,8 @@ char *strcpy(char * restrict dst, const char * restrict src)
 }
 
 static inline struct sys_ret ecall(size_t n,
-                                   sys_arg_t arg0, sys_arg_t arg1, sys_arg_t arg2, sys_arg_t arg3,
+                                   sys_arg_t arg0, sys_arg_t arg1,
+                                   sys_arg_t arg2, sys_arg_t arg3,
                                    sys_arg_t arg4, sys_arg_t arg5)
 {
 	/* here a static assert of n <= 6 && n >= 1 would be ideal */
@@ -186,8 +187,9 @@ static void sys_ipc_server(void *f)
 }
 
 static inline struct sys_ret sys_ipc_req(sys_arg_t pid,
-		sys_arg_t d0, sys_arg_t d1, sys_arg_t d2,
-                                          sys_arg_t d3)
+                                         sys_arg_t d0, sys_arg_t d1,
+                                         sys_arg_t d2,
+                                         sys_arg_t d3)
 {
 	struct sys_ret r = ecall6(SYS_IPC_REQ, pid, d0, d1, d2, d3);
 

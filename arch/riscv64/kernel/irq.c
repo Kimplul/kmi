@@ -38,16 +38,18 @@ stat_t deactivate_irq(irq_t id)
 	return OK;
 }
 
+/** Bit pattern representing supervisor external, timer and software irqs. */
+#define SR_IRQS (1 << 9) | (1 << 5) | (1 << 3)
+
 /* very simple for now */
 void enable_irqs()
 {
-	/* should be supervisor external interrupt */
-	csr_set(CSR_SIE, 1 << 9);
+	csr_set(CSR_SIE, SR_IRQS);
 }
 
 void disable_irqs()
 {
-	csr_clear(CSR_SIE, 1 << 9);
+	csr_clear(CSR_SIE, SR_IRQS);
 }
 
 irq_t get_irq()

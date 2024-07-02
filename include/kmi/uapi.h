@@ -561,8 +561,14 @@ SYSCALL_DECLARE4(ipc_resp, d0, d1, d2, d3);
  * returning from interrupt handlers, like notifications, timers or external
  * devices.
  *
- * @param r Current tcb.
+ * @param t Current tcb.
+ * @param a Unused.
+ * @param b Unused.
+ * @param c Unused.
+ * @param d Unused.
+ * @param e Unused.
  *
+ * Return OK.
  */
 SYSCALL_DECLARE0(ipc_ghost);
 
