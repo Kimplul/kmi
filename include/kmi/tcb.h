@@ -181,9 +181,6 @@ struct tcb {
 	 * this id, might change in the future. */
 	id_t notify_id;
 
-	/** Notifcation state of thread. */
-	enum tcb_notify notify_state;
-
 	/** Currently waiting notifications. */
 	enum notify_flag notify_flags;
 

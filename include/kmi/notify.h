@@ -28,7 +28,8 @@
  * Implemented in uapi/ipc.c.
  *
  * @param t Thread to send notification to.
- * @param flag Which type of notification to send.
+ * @param flag Which type of notification to send. If 0, sends out queued
+ * notifications if there are any, otherwise just returns.
  */
 void notify(struct tcb *t, enum notify_flag flag);
 

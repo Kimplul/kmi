@@ -175,7 +175,7 @@ enum notify_flag {
 	/** A timer has expired. */
 	NOTIFY_TIMER = (1 << 1),
 
-	/** An interrupt. */
+	/** An interrupt request. */
 	NOTIFY_IRQ = (1 << 2),
 };
 

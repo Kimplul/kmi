@@ -148,19 +148,28 @@ static bool __enough_rpc_stack(struct tcb *t)
  */
 static __noreturn void __run_notify(struct tcb *t, struct tcb *r)
 {
+	use_tcb(r);
+
+	enum sys_user code = SYS_USER_NOTIFY;
+	/* if we're not in RPC, we can safely notify of a signal while we're at
+	 * it */
+	enum notify_flag flags = is_rpc(t) ? 0 : NOTIFY_SIGNAL;
+
+	/* handle critical notifications with special care */
+	if (is_set(flags, NOTIFY_IRQ | NOTIFY_TIMER)) {
+		set_bits(flags, t->notify_flags & (NOTIFY_IRQ | NOTIFY_TIMER));
+		disable_irqs();
+	}
+
 	/* signal to whoever is receiving us that we're from the kernel
 	 * ("pid 0"), and we are notifying the current thread */
 	vm_t s = enter_rpc(t,
-	                   SYS_RET5(0, SYS_USER_NOTIFY,
-	                            t->notify_flags, t->eid, t->tid),
+	                   SYS_RET5(0, code, flags, t->eid, t->tid),
 	                   IPC_REQ);
 
 	finalize_rpc(t, r, s);
-	t->notify_state = NOTIFY_RUNNING;
-	if (is_set(t->notify_flags, NOTIFY_IRQ | NOTIFY_TIMER))
-		disable_irqs();
 
-	t->notify_flags = 0;
+	clear_bits(t->notify_flags, flags);
 	ret_userspace_fast();
 	unreachable();
 }
@@ -169,35 +178,31 @@ void notify(struct tcb *t, enum notify_flag flag)
 {
 	set_bits(t->notify_flags, flag);
 
-	if (t->notify_state == NOTIFY_RUNNING) {
-		t->notify_state = NOTIFY_QUEUED;
+	if (!t->notify_flags)
 		return;
-	}
-
-	if (t == cur_tcb())
-		__run_notify(t, t);
 
 	struct tcb *r = get_tcb(t->notify_id);
 	if (!r || !r->callback) {
 		error("notify callback dead\n");
-		t->notify_state = NOTIFY_WAITING;
 		t->notify_flags = 0;
 		return;
 	}
 
-	if (is_rpc(r)) {
-		t->notify_state = NOTIFY_QUEUED;
+	/* signals are only run when thread is in root process, whereas
+	 * interrupts are always run (if the resources allow it, that its */
+	if (!is_set(t->notify_flags, NOTIFY_IRQ | NOTIFY_TIMER) && is_rpc(t))
 		return;
-	}
 
-	if (unlikely(!__enough_rpc_stack(r))) {
-		bug("not enough rpc stack in root process?");
-		t->notify_state = NOTIFY_WAITING;
-		t->notify_flags = 0;
+	/* we're either in the root process or we have a critical notification,
+	 * check that there's enough rpc stack, otherwise wait and try again
+	 * later */
+	if (unlikely(!__enough_rpc_stack(r)))
 		return;
-	}
 
-	if (running(r)) {
+	/* if someone else is running the thread we would like to send a
+	 * notification to, do an ipi. Otherwise, either we're currently running
+	 * it or the thread is idle, either is fine for __run_notify(). */
+	if (running(r) && r != cur_tcb()) {
 		send_ipi(r);
 		return;
 	}
@@ -237,24 +242,16 @@ static void leave_rpc(struct tcb *t, struct sys_ret a)
 	t->pid = ctx->pid;
 	t->eid = ctx->eid;
 
+	/* notification queued, try to run it */
+	if (t->notify_flags)
+		notify(t, 0);
+
 	if (is_rpc(t)) {
 		use_vmem(t->rpc.vmem);
 		return;
 	}
 
-	if (t->notify_state != NOTIFY_QUEUED) {
-		/* turn a potential NOTIFY_RUNNING into NOTIFY_WAITING */
-		t->notify_state = NOTIFY_WAITING;
-		use_vmem(t->proc.vmem);
-		return;
-	}
-
-	/* notification queued, try to run it */
-	notify(t, 0);
-
-	/* we failed notifying the thread, shouldn't happen but just return
-	 * back to process normally */
-	bug("failed notifying from ipc_resp\n");
+	/* notification didn't take, return back to process normally */
 	use_vmem(t->proc.vmem);
 }
 
@@ -343,6 +340,7 @@ static void do_ipc(struct tcb *t,
 SYSCALL_DEFINE5(ipc_req)(struct tcb *t, sys_arg_t pid,
                          sys_arg_t d0, sys_arg_t d1, sys_arg_t d2, sys_arg_t d3)
 {
+	enable_irqs();
 	do_ipc(t, pid, d0, d1, d2, d3, IPC_REQ);
 }
 
@@ -360,6 +358,7 @@ SYSCALL_DEFINE5(ipc_req)(struct tcb *t, sys_arg_t pid,
 SYSCALL_DEFINE5(ipc_fwd)(struct tcb *t, sys_arg_t pid,
                          sys_arg_t d0, sys_arg_t d1, sys_arg_t d2, sys_arg_t d3)
 {
+	enable_irqs();
 	do_ipc(t, pid, d0, d1, d2, d3, IPC_FWD);
 }
 
@@ -378,6 +377,7 @@ SYSCALL_DEFINE5(ipc_kick)(struct tcb *t, sys_arg_t pid,
                           sys_arg_t d0, sys_arg_t d1, sys_arg_t d2,
                           sys_arg_t d3)
 {
+	enable_irqs();
 	do_ipc(t, pid, d0, d1, d2, d3, IPC_KICK);
 }
 
@@ -402,6 +402,7 @@ SYSCALL_DEFINE4(ipc_resp)(struct tcb *t, sys_arg_t d0, sys_arg_t d1,
 
 	/* inform requester who answered (pid) in the case of the request being
 	 * kicked forward */
+	enable_irqs();
 	leave_rpc(t, SYS_RET6(OK, t->pid, d0, d1, d2, d3));
 }
 
@@ -416,7 +417,6 @@ SYSCALL_DEFINE0(ipc_ghost)(struct tcb *t)
 	if (unlikely(!is_rpc(t)))
 		return_args1(t, ERR_MISC);
 
-	/** @todo this should also enable interrupts when leaving kernel */
 	enable_irqs();
 	leave_rpc(t, get_args(t));
 }
@@ -431,15 +431,7 @@ SYSCALL_DEFINE0(ipc_ghost)(struct tcb *t)
  * @return \ref OK and 0.
  */
 SYSCALL_DEFINE1(ipc_notify)(struct tcb *t, sys_arg_t tid){
-	if (t->tid == tid) {
-		set_args1(t, OK);
-		notify(t, NOTIFY_SIGNAL);
-		/* notify is guaranteed to run the current thread */
-		unreachable();
-		return;
-	}
-
-	if (!has_cap(t->caps, CAP_NOTIFY))
+	if (t->tid != tid && !has_cap(t->caps, CAP_NOTIFY))
 		return_args1(t, ERR_PERM);
 
 	struct tcb *r = get_tcb(tid);
@@ -449,5 +441,6 @@ SYSCALL_DEFINE1(ipc_notify)(struct tcb *t, sys_arg_t tid){
 	/* set args, if notify swaps us out we pick them up the next time this
 	 * thread is scheduled */
 	set_args1(t, OK);
+	enable_irqs();
 	notify(r, NOTIFY_SIGNAL);
 }

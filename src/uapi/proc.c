@@ -13,6 +13,8 @@
 #include <kmi/notify.h>
 #include <kmi/mem_regions.h>
 
+#include <arch/irq.h>
+
 /**
  * Create syscall handler.
  *
@@ -190,17 +192,14 @@ SYSCALL_DEFINE1(swap)(struct tcb *t, sys_arg_t tid){
 	/* set return value for current thread */
 	set_args1(t, OK);
 
-	/* not running anymore lol */
-	if (t->notify_state == NOTIFY_RUNNING)
-		t->notify_state = NOTIFY_WAITING;
-
-	/* handle possible queued notification */
-	if (s->notify_state == NOTIFY_QUEUED)
-		notify(s, 0);
-
 	/* if an irq handler is directly swapping to some other thread,
 	 * interpret it as the thread being finished with its critical section */
 	enable_irqs();
-	/* get register state for new thread */
+
+	/* handle possible queued notification */
+	if (s->notify_flags)
+		notify(s, 0);
+
+	/* no notifications, so get register state for new thread */
 	return_args(s, get_args(s));
 }
