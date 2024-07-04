@@ -214,6 +214,7 @@ static stat_t __destroy_thread_data(struct tcb *t)
 
 	/* forcefully free last struggling bits of memory */
 	destroy_uvmem(t);
+	destroy_vmem(t->proc.vmem);
 
 	/* free associated kernel stack and the structure itself */
 	vm_t bottom = align_down((vm_t)t, order_size(MM_O0));
@@ -247,11 +248,20 @@ stat_t destroy_proc(struct tcb *p)
 	hard_assert(tcbs, ERR_NOINIT);
 	hard_assert(is_proc(p), ERR_INVAL);
 
+	/** @todo currently we don't care who else is in the address space when
+	 * we start freeing stuff, one fairly simple way to deal with this is to
+	 * just not care. A thread that tries to access some bit of freed memory
+	 * will cause a segfault (eventually at least), and we can just check in
+	 * the segfault handler if the thread has become orphaned.
+	 * Currently no segfault handler exists, though. */
+
 	p->dead = true;
 	/* unreference ourselves */
 	unreference_proc(p);
 
-	catastrophic_assert(destroy_uvmem(p));
+	/* clear all privately owned memory regions, keep shared ones alive for
+	 * now */
+	clear_uvmem(p);
 
 	/* don't destroy thread data just yet, let the thread destroy itself
 	 * later */
