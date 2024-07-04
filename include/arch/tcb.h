@@ -33,6 +33,13 @@ void tcb_assign(struct tcb *t);
 void setup_rpc_stack(struct tcb *t);
 
 /**
+ * Free memory backing rpc stack.
+ *
+ * @param t Thred whose RPC stack should be destroyed.
+ */
+void destroy_rpc_stack(struct tcb *t);
+
+/**
  * Maximum size of one individual RPC stack instance.
  *
  * @return Max size of one individual RPC stack instance.

@@ -53,4 +53,24 @@ static inline struct queue_head *queue_pop(struct queue_head *head)
 	return container_of(e, struct queue_head, l);
 }
 
+/**
+ * @param head Entry to check for queueing status.
+ * @return \ref true if in queue, \ref false otherwise.
+ */
+static inline bool in_queue(struct queue_head *head)
+{
+	return in_list(&head->l);
+}
+
+/**
+ * Remove entry from queue.
+ *
+ * @param head Entry to remove.
+ */
+static inline void queue_del(struct queue_head *head)
+{
+	if (in_queue(head))
+		list_del(&head->l);
+}
+
 #endif /* QUEUE_H */

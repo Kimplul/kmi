@@ -12,6 +12,7 @@
 #include <kmi/sizes.h>
 #include <kmi/uapi.h>
 #include <kmi/conf.h>
+#include <arch/irq.h>
 
 #include <arch/proc.h>
 

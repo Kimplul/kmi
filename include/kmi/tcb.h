@@ -98,7 +98,7 @@ struct tcb {
 	/** Arch-specific data. */
 	struct arch_tcbd arch;
 
-	/** Memory mapping data. */
+	/** Memory mapping data. Only relevant in root thread. */
 	struct mem_region_root sp_r;
 
 	/** Address of callback function in servers. */
@@ -126,16 +126,6 @@ struct tcb {
 
 	/** RPC context of thread. */
 	struct tcb_ctx rpc;
-
-	/**
-	 * RPC server context of thread. When a thread attaches itself to this
-	 * process, its \ref rpc member is added to the list maintained in this
-	 * variable. This allows the original thread to do rpc calls without
-	 * messing up other threads' rpc status.
-	 *
-	 * I think, more testing required.
-	 */
-	struct tcb_ctx server;
 
 	/**
 	 * Effective process ID.
@@ -333,6 +323,15 @@ void set_return(struct tcb *t, vm_t r);
  * @return \c true if it is running, \c false otherwise.
  */
 bool running(struct tcb *t);
+
+/**
+ * Check whether \p t is actually dead but just kept around for resource
+ * management.
+ *
+ * @param t \ref tcb to check.
+ * @return \c true if \p t is a zombie, \c false otherwise.
+ */
+bool zombie(struct tcb *t);
 
 /**
  * Add a reference to a process.

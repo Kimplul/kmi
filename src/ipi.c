@@ -26,6 +26,11 @@ void send_ipi(struct tcb *t)
 	cpu_send_ipi(t->cpu_id);
 }
 
+void unqueue_ipi(struct tcb *t)
+{
+	queue_del(&t->ipi_queue);
+}
+
 void handle_ipi()
 {
 	struct tcb *t = cur_tcb();

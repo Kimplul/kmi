@@ -512,6 +512,17 @@ void setup_rpc_stack(struct tcb *t)
 	t->arch.rpc_idx = 511;
 }
 
+void destroy_rpc_stack(struct tcb *t)
+{
+	size_t pages = order_size(MM_O1) / BASE_PAGE_SIZE;
+	for (size_t i = 0; i < pages; ++i) {
+		pm_t page; enum mm_order order;
+		stat_vpage(t->rpc.vmem, RPC_STACK_BASE + BASE_PAGE_SIZE * i,
+		           &page, &order, NULL);
+		free_page(page, order);
+	}
+}
+
 vm_t rpc_position(struct tcb *t)
 {
 	/** @todo we assume rpc_idx is updated on every segfault of the rpc stack */

@@ -584,7 +584,7 @@ SYSCALL_DECLARE0(ipc_ghost);
  *
  * Returns \ref OK and 0.
  */
-SYSCALL_DECLARE1(ipc_notify, tid);
+SYSCALL_DECLARE1(notify, tid);
 /** @} */
 
 /** @name Process handling syscalls. */
@@ -657,18 +657,17 @@ SYSCALL_DECLARE2(exec, bin, interp);
 SYSCALL_DECLARE2(spawn, bin, interp);
 
 /**
- * Kill syscall.
+ * Kill syscall. Requests that all memory in process \p pid is freed and all
+ * threads are orphaned. If \p pid is not a process, nothing is done.
  *
  * @param t Current tcb.
- * @param tid Thread ID to kill. 0 if self.
+ * @param pid Thread ID to kill. 0 if self.
  * @param b Unused.
  * @param c Unused.
  * @param d Unused.
  * @param e Unused.
- *
- * Returns \ref OK if not called on itself, otherwise doesn't return.
  */
-SYSCALL_DECLARE1(kill, tid);
+SYSCALL_DECLARE1(kill, pid);
 
 /**
  * Swap syscall.
@@ -825,6 +824,22 @@ SYSCALL_DECLARE0(sleep);
  * @todo document error codes better.
  */
 SYSCALL_DECLARE1(irq_req, id);
+
+/**
+ * Request that a thread exits, i.e. removes itself from the thread list and
+ * frees all kernel data associated with thread.
+ * Note that similarly to \ref kill(), some shared resources may cause the
+ * thread to stay around until their reference counts go to zero.
+ *
+ * @param t Current tcb.
+ * @param tid Thread to swap to once the current thread no longer exists. 0 for
+ * sleeping.
+ * @param b Unused.
+ * @param c Unused.
+ * @param d Unused.
+ * @param e Unused.
+ */
+SYSCALL_DECLARE1(exit, tid);
 
 /** @} */
 

@@ -7,6 +7,7 @@
  */
 
 #include <kmi/tcb.h>
+#include <kmi/ipi.h>
 #include <kmi/mem.h>
 #include <kmi/conf.h>
 #include <kmi/pmem.h>
@@ -200,15 +201,23 @@ struct tcb *create_proc(struct tcb *p)
  */
 static stat_t __destroy_thread_data(struct tcb *t)
 {
+	catastrophic_assert(t->refcount == 0);
+
+	/* free memory backing rpc stack */
+	destroy_rpc_stack(t);
+
 	/* free rpc vmem */
 	destroy_vmem(t->rpc.vmem);
+
+	/* remove ourselves from the thread pool */
+	tcbs[t->tid] = 0;
+
+	/* forcefully free last struggling bits of memory */
+	destroy_uvmem(t);
 
 	/* free associated kernel stack and the structure itself */
 	vm_t bottom = align_down((vm_t)t, order_size(MM_O0));
 	free_page(MM_O0, (pm_t)bottom);
-
-	/** \todo free stacks */
-
 	return OK;
 }
 
@@ -217,13 +226,18 @@ stat_t destroy_thread(struct tcb *t)
 	hard_assert(tcbs, ERR_NOINIT);
 	hard_assert(!is_proc(t), ERR_INVAL);
 
-	/* remove thread id from list */
-	/** @todo what about if thread is in rpc? should it rather just be
-	 * marked dead? */
-	tcbs[t->tid] = 0;
+	/* mark us as zombies */
+	t->rid = 0;
 
 	/* remove reference to root process */
 	unreference_proc(get_rproc(t));
+
+	unqueue_ipi(t);
+
+	/* someone still relies on us existing, don't actually free thread data
+	 * quite yet */
+	if (t->refcount)
+		return OK;
 
 	return __destroy_thread_data(t);
 }
@@ -238,22 +252,31 @@ stat_t destroy_proc(struct tcb *p)
 	unreference_proc(p);
 
 	catastrophic_assert(destroy_uvmem(p));
-	return __destroy_thread_data(p);
+
+	/* don't destroy thread data just yet, let the thread destroy itself
+	 * later */
+	return OK;
 }
 
 void reference_proc(struct tcb *p)
 {
+	if (!p)
+		return;
+
 	hard_assert(is_proc(p), RETURN_VOID);
 	p->refcount++;
 }
 
 void unreference_proc(struct tcb *p)
 {
+	if (!p)
+		return;
+
 	hard_assert(is_proc(p), RETURN_VOID);
 	p->refcount--;
 	if (p->dead && p->refcount == 0) {
 		dbg("thread %d is completely destroyed\n", p->tid);
-		/** @todo actually destroy */
+		__destroy_thread_data(p);
 	}
 }
 
@@ -307,4 +330,14 @@ void set_return(struct tcb *t, vm_t v)
 bool running(struct tcb *t)
 {
 	return cpu_tcb(t->cpu_id) == t;
+}
+
+bool zombie(struct tcb *t)
+{
+	/* we shouldn't see any NULLs but they're effectively the same thing */
+	if (!t)
+		return true;
+
+	/* thread doesn't belong to any process, a zombie */
+	return t->rid == 0;
 }

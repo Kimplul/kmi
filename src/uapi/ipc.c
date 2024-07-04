@@ -6,6 +6,7 @@
  * Interprocess communication syscall implementations.
  */
 
+#include <kmi/orphanage.h>
 #include <kmi/debug.h>
 #include <kmi/uapi.h>
 #include <kmi/tcb.h>
@@ -29,9 +30,6 @@ struct call_ctx {
 
 	/** Current process ID. */
 	id_t pid;
-
-	/** Whether this context should be skipped when responding. */
-	bool kick;
 };
 
 /**
@@ -83,7 +81,9 @@ static void finalize_rpc(struct tcb *t, struct tcb *r, vm_t s)
 static vm_t enter_rpc(struct tcb *t, struct sys_ret a,
                       enum ipc_kind kind)
 {
-	vm_t rpc_stack = rpc_position(t);
+	/* reuse current rpc stack location if we're being kicked */
+	vm_t rpc_stack = (kind == IPC_KICK &&
+	                  is_rpc(t)) ? t->rpc_stack :rpc_position(t);
 
 	struct call_ctx *ctx = (struct call_ctx *)(rpc_stack) - 1;
 	ctx->regs = t->regs;
@@ -97,9 +97,6 @@ static vm_t enter_rpc(struct tcb *t, struct sys_ret a,
 	ctx->pid = t->pid;
 	ctx->eid = t->eid;
 	ctx->rpc_stack = rpc_stack;
-
-	/* only rpcs can be kicked forward */
-	ctx->kick = kind == IPC_KICK && is_rpc(t);
 
 	/** @todo if we run out of rpc_stack space we should just stop, likely
 	 * return a status? except it shouldn't happen after we've run
@@ -223,16 +220,24 @@ static void leave_rpc(struct tcb *t, struct sys_ret a)
 	struct call_ctx *ctx = (struct call_ctx *)(rpc_stack) - 1;
 	vm_t top = ctx->rpc_stack;
 
-	/* find first instance of not kicked context */
-	while (ctx->kick) {
-		rpc_stack = ctx->rpc_stack + BASE_PAGE_SIZE;
-		ctx = (struct call_ctx *)(rpc_stack) - 1;
-		unreference_proc(get_tcb(ctx->pid));
-	}
-
 	t->regs = ctx->regs;
 	/* again, get rid of args as fast as possible */
 	set_args(t, 6, a);
+
+	struct tcb *r = get_tcb(ctx->pid);
+	while (!r || r->dead) {
+		/* we unwound back to our root process which is apparently dead,
+		 * we're orphaned :( */
+		if (ctx->pid == t->rid) {
+			orphanize(t);
+			return;
+		}
+
+		rpc_stack = ctx->rpc_stack + BASE_PAGE_SIZE;
+		ctx = (struct call_ctx *)(rpc_stack) - 1;
+
+		r = get_tcb(ctx->pid);
+	}
 
 	set_return(t, ctx->exec);
 	/* if we're returning from a failed rpc, this should essentially be a
@@ -301,13 +306,12 @@ static void do_ipc(struct tcb *t,
 	vm_t s = enter_rpc(t, SYS_RET6(t->eid, t->tid, d0, d1, d2, d3), kind);
 
 	struct tcb *r = get_tcb(pid);
-	if (unlikely(!r)) {
+	if (unlikely(!r || !is_proc(r))) {
 		leave_rpc(t, SYS_RET1(ERR_INVAL));
 		return;
 	}
 
-	r = get_rproc(r);
-	if (unlikely(r->dead)) {
+	if (unlikely(zombie(r))) {
 		leave_rpc(t, SYS_RET1(ERR_INVAL));
 		return;
 	}
@@ -430,7 +434,7 @@ SYSCALL_DEFINE0(ipc_ghost)(struct tcb *t)
  * @param tid Thread ID to notify.
  * @return \ref OK and 0.
  */
-SYSCALL_DEFINE1(ipc_notify)(struct tcb *t, sys_arg_t tid){
+SYSCALL_DEFINE1(notify)(struct tcb *t, sys_arg_t tid){
 	if (t->tid != tid && !has_cap(t->caps, CAP_NOTIFY))
 		return_args1(t, ERR_PERM);
 

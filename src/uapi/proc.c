@@ -10,7 +10,9 @@
 #include <kmi/uapi.h>
 #include <kmi/proc.h>
 #include <kmi/bits.h>
+#include <kmi/power.h>
 #include <kmi/notify.h>
+#include <kmi/orphanage.h>
 #include <kmi/mem_regions.h>
 
 #include <arch/irq.h>
@@ -145,21 +147,91 @@ SYSCALL_DEFINE2(spawn)(struct tcb *t, sys_arg_t bin, sys_arg_t interp)
  * Kill syscall handler.
  *
  * @param t Current tcb.
- * @param tid Thread to kill.
+ * @param pid Process to kill.
  * \todo Implement.
  *
  * @return ERR_PERM if not capable to kill, otherwise OK.
  */
-SYSCALL_DEFINE1(kill)(struct tcb *t, sys_arg_t tid)
+SYSCALL_DEFINE1(kill)(struct tcb *t, sys_arg_t pid)
 {
 	struct tcb *c = get_cproc(t);
 	if (!(has_cap(c->caps, CAP_PROC)))
 		return_args1(t, ERR_PERM);
 
-	/** @todo implement */
-	/** @todo remember to unregister IRQ handlers */
+	struct tcb *r = get_tcb(pid);
+	if (is_proc(r))
+		return_args1(t, ERR_INVAL);
 
+	destroy_proc(r);
 	return_args1(t, OK);
+}
+
+/**
+ * Actual worker of swapping between threads.
+ * Assumes that both \p t and \p s exist and that \p s isn't a zombie or
+ * currently running.
+ *
+ * @param t Current tcb.
+ * @param s Thread to swap to.
+ */
+static void swap(struct tcb *t, struct tcb *s)
+{
+	/* switch over to new thread */
+	use_tcb(s);
+
+	/* if an irq handler is directly swapping to some other thread,
+	 * interpret it as the thread being finished with its critical section */
+	enable_irqs();
+
+	if (!is_rpc(s) && orphan(s)) {
+		orphanize(s);
+		return;
+	}
+
+	/* set return value for current thread */
+	set_args1(t, OK);
+
+	/* handle possible queued notification */
+	if (s->notify_flags)
+		notify(s, 0);
+
+	/* no notifications, so get register state for new thread */
+	return_args(s, get_args(s));
+}
+
+/**
+ * Syscall handler for exit syscall.
+ *
+ * @param t Thread that is exiting.
+ * @param tid Thread to swap to.
+ *
+ * @return \ref OK or \ref ERR_INVAL is \p tid is not a thread
+ * or \ref ERR_NF if \p tid is a zombie
+ * or \ref ERR_EXT if \p tid is currently running.
+ */
+SYSCALL_DEFINE1(exit)(struct tcb *t, sys_arg_t tid)
+{
+	if (tid != 0) {
+		struct tcb *s = get_tcb(tid);
+		if (!s)
+			return_args1(t, ERR_INVAL);
+
+		if (zombie(s))
+			return_args1(t, ERR_NF);
+
+		if (running(s))
+			return_args1(t, ERR_EXT);
+
+
+		swap(t, s);
+	}
+
+	destroy_thread(t);
+
+	if (tid == 0) {
+		enable_irqs();
+		sleep();
+	}
 }
 
 /**
@@ -183,23 +255,11 @@ SYSCALL_DEFINE1(swap)(struct tcb *t, sys_arg_t tid){
 	if (!s)
 		return_args1(t, ERR_INVAL);
 
+	if (zombie(s))
+		return_args1(t, ERR_NF);
+
 	if (running(s))
 		return_args1(t, ERR_EXT);
 
-	/* switch over to new thread */
-	use_tcb(s);
-
-	/* set return value for current thread */
-	set_args1(t, OK);
-
-	/* if an irq handler is directly swapping to some other thread,
-	 * interpret it as the thread being finished with its critical section */
-	enable_irqs();
-
-	/* handle possible queued notification */
-	if (s->notify_flags)
-		notify(s, 0);
-
-	/* no notifications, so get register state for new thread */
-	return_args(s, get_args(s));
+	return swap(t, s);
 }

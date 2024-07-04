@@ -21,6 +21,12 @@
  */
 void send_ipi(struct tcb *t);
 
+/**
+ * Remove thread from IPI queue if it is on it.
+ * @param t Thread to unqueue.
+ */
+void unqueue_ipi(struct tcb *t);
+
 /** Handle IPI. */
 void handle_ipi();
 

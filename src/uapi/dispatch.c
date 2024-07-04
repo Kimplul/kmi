@@ -66,7 +66,7 @@ void handle_syscall(sys_arg_t syscall, sys_arg_t a, sys_arg_t b,
 	case SYS_IPC_KICK: sys_ipc_kick(t, a, b, c, d, e); break;
 	case SYS_IPC_RESP: sys_ipc_resp(t, a, b, c, d, e); break;
 	case SYS_IPC_GHOST: sys_ipc_ghost(t, a, b, c, d, e); break;
-	case SYS_IPC_NOTIFY: sys_ipc_notify(t, a, b, c, d, e); break;
+	case SYS_NOTIFY: sys_notify(t, a, b, c, d, e); break;
 	case SYS_CREATE: sys_create(t, a, b, c, d, e); break;
 	case SYS_FORK: sys_fork(t, a, b, c, d, e); break;
 	case SYS_EXEC: sys_exec(t, a, b, c, d, e); break;
@@ -81,6 +81,7 @@ void handle_syscall(sys_arg_t syscall, sys_arg_t a, sys_arg_t b,
 	case SYS_POWEROFF: sys_poweroff(t, a, b, c, d, e); break;
 	case SYS_SLEEP: sys_sleep(t, a, b, c, d, e); break;
 	case SYS_IRQ_REQ: sys_irq_req(t, a, b, c, d, e); break;
+	case SYS_EXIT: sys_exit(t, a, b, c, d, e); break;
 	default:
 		error("Syscall %zu outside allowed range [0 - %i]\n", syscall,
 		      SYS_NUM - 1);
