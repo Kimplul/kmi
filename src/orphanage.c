@@ -14,17 +14,17 @@
 
 bool orphan(struct tcb *t)
 {
-	struct tcb *r = get_rproc(t);
-	return !r || r->dead;
+	return is_set(t->state, TCB_ORPHAN);
 }
 
 void orphanize(struct tcb *t)
 {
-	catastrophic_assert(!is_rpc(t));
+	set_bit(t->state, TCB_ORPHAN);
+}
 
-	struct tcb *r = get_tcb(t->rid);
-	if (r)
-		unreference_proc(r);
+void unorphanize(struct tcb *t)
+{
+	catastrophic_assert(!is_rpc(t));
 
 	/* attach to init process */
 	struct tcb *init = get_tcb(1);
@@ -35,6 +35,7 @@ void orphanize(struct tcb *t)
 	t->eid = 1;
 
 	t->proc = init->proc;
+	t->rpc_stack = RPC_STACK_BASE;
 	use_vmem(t->proc.vmem);
 
 	catastrophic_assert(init->callback);

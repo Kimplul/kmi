@@ -157,6 +157,9 @@ enum sys_code {
 	/** Request a thread exits. */
 	SYS_EXIT,
 
+	/** Detach a thread from its root process, becoming an orphant. */
+	SYS_DETACH,
+
 	/** @} */
 
 	SYS_NUM,

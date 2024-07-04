@@ -23,6 +23,13 @@
 bool orphan(struct tcb *t);
 
 /**
+ * Mark \p t orphaned.
+ *
+ * @param t Thread to orphanize.
+ */
+void orphanize(struct tcb *t);
+
+/**
  * Assign \p t to the init process and jump to it.
  * \p t must be an orphan!
  * \p t must be in the process of swapping to its root process, either by
@@ -30,6 +37,6 @@ bool orphan(struct tcb *t);
  *
  * @param t Orphaned thread.
  */
-__noreturn void orphanize(struct tcb *t);
+__noreturn void unorphanize(struct tcb *t);
 
 #endif /* KMI_OPRHANAGE_H */

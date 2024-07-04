@@ -72,16 +72,13 @@ struct tcb_ctx {
 	struct vmem *vmem;
 };
 
-/** Enum for notification states. */
-enum tcb_notify {
-	/** Thread is free to be notified. */
-	NOTIFY_WAITING = 0,
+/** State of thread. */
+enum tcb_state {
+	/** Thread is a zombie. */
+	TCB_ZOMBIE = (1 << 0),
 
-	/** Thread has notifcations queued. */
-	NOTIFY_QUEUED,
-
-	/** Thread is running notification handler. */
-	NOTIFY_RUNNING,
+	/** Thread is an orphan. */
+	TCB_ORPHAN = (1 << 1),
 };
 
 /** Thread control block. Main way to handle threads. */
@@ -180,9 +177,8 @@ struct tcb {
 	/** Queue that connects together threads waiting for an ipi */
 	struct queue_head ipi_queue;
 
-	/** Whether thread is dead. If thread is process, then corresponds to
-	 * whole process. */
-	bool dead;
+	/** Current state of thread. */
+	enum tcb_state state;
 };
 
 /**

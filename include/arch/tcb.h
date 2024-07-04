@@ -40,11 +40,15 @@ void setup_rpc_stack(struct tcb *t);
 void destroy_rpc_stack(struct tcb *t);
 
 /**
- * Maximum size of one individual RPC stack instance.
- *
  * @return Max size of one individual RPC stack instance.
  */
 size_t max_rpc_size();
+
+/**
+ * @param addr Address of current top of stack, generally from `ctx->rpc_stack`.
+ * @return \ref true if next rpc return would be into the root process.
+ */
+bool rpc_stack_empty(pm_t addr);
 
 /**
  * Current highest address in RPC stack. Allowed to be inaccurate to one base page.

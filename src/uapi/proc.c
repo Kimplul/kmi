@@ -235,6 +235,35 @@ SYSCALL_DEFINE1(exit)(struct tcb *t, sys_arg_t tid)
 }
 
 /**
+ * Syscall handler for orphanizing a thread.
+ *
+ * @param t Thread that wants to make itself an orphant.
+ * @return \ref OK on success,
+ * \ref ERR_PERM if current process missing \ref CAP_PROC,
+ * \ref ERR_INVAL if already an orphant.
+ */
+SYSCALL_DEFINE0(detach)(struct tcb *t)
+{
+	struct tcb *c = get_cproc(t);
+	if (!(has_cap(c->caps, CAP_PROC)))
+		return_args1(t, ERR_PERM);
+
+	if (orphan(t))
+		return_args1(t, ERR_INVAL);
+
+	struct tcb *r = get_tcb(t->rid);
+	if (r)
+		unreference_proc(r);
+
+	orphanize(t);
+
+	if (!is_rpc(t))
+		unorphanize(t);
+
+	return_args1(t, OK);
+}
+
+/**
  * Swap syscall handler.
  *
  * \todo Implement.

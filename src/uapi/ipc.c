@@ -83,7 +83,7 @@ static vm_t enter_rpc(struct tcb *t, struct sys_ret a,
 {
 	/* reuse current rpc stack location if we're being kicked */
 	vm_t rpc_stack = (kind == IPC_KICK &&
-	                  is_rpc(t)) ? t->rpc_stack :rpc_position(t);
+	                  is_rpc(t)) ? t->rpc_stack : rpc_position(t);
 
 	struct call_ctx *ctx = (struct call_ctx *)(rpc_stack) - 1;
 	ctx->regs = t->regs;
@@ -179,8 +179,8 @@ void notify(struct tcb *t, enum notify_flag flag)
 		return;
 
 	struct tcb *r = get_tcb(t->notify_id);
-	if (!r || !r->callback) {
-		error("notify callback dead\n");
+	if (!r || r->state || !r->callback) {
+		error("notify callback unavailable\n");
 		t->notify_flags = 0;
 		return;
 	}
@@ -218,31 +218,34 @@ static void leave_rpc(struct tcb *t, struct sys_ret a)
 {
 	vm_t rpc_stack = t->rpc_stack + BASE_PAGE_SIZE;
 	struct call_ctx *ctx = (struct call_ctx *)(rpc_stack) - 1;
-	vm_t top = ctx->rpc_stack;
 
 	t->regs = ctx->regs;
 	/* again, get rid of args as fast as possible */
 	set_args(t, 6, a);
 
 	struct tcb *r = get_tcb(ctx->pid);
-	while (!r || r->dead) {
+	while (!r || !is_proc(r) || zombie(r)) {
 		/* we unwound back to our root process which is apparently dead,
 		 * we're orphaned :( */
-		if (ctx->pid == t->rid) {
+		if (rpc_stack_empty(ctx->rpc_stack)) {
 			orphanize(t);
-			return;
+			break;
 		}
 
 		rpc_stack = ctx->rpc_stack + BASE_PAGE_SIZE;
 		ctx = (struct call_ctx *)(rpc_stack) - 1;
 
 		r = get_tcb(ctx->pid);
+		set_args1(t, ERR_NF);
 	}
+
+	if (orphan(t) && !is_rpc(t))
+		unorphanize(t);
 
 	set_return(t, ctx->exec);
 	/* if we're returning from a failed rpc, this should essentially be a
 	 * no-op */
-	mark_rpc_valid(t, top);
+	mark_rpc_valid(t, ctx->rpc_stack);
 	t->rpc_stack = ctx->rpc_stack;
 	t->pid = ctx->pid;
 	t->eid = ctx->eid;

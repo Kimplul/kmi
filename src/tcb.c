@@ -127,7 +127,7 @@ struct tcb *create_thread(struct tcb *p)
 	id_t tid = __alloc_tid(t);
 	tcbs[tid] = t;
 	t->tid = tid;
-	t->dead = false;
+	t->state = 0;
 
 	if (likely(p)) {
 		t->pid = p->pid;
@@ -235,6 +235,10 @@ stat_t destroy_thread(struct tcb *t)
 
 	unqueue_ipi(t);
 
+	/** @todo timers, irqs? theoretically we could allow them to stay and
+	 * let the handler check if the thread is still interested in the
+	 * interrupt */
+
 	/* someone still relies on us existing, don't actually free thread data
 	 * quite yet */
 	if (t->refcount)
@@ -255,9 +259,7 @@ stat_t destroy_proc(struct tcb *p)
 	 * the segfault handler if the thread has become orphaned.
 	 * Currently no segfault handler exists, though. */
 
-	p->dead = true;
-	/* unreference ourselves */
-	unreference_proc(p);
+	set_bits(p->state, TCB_ZOMBIE);
 
 	/* clear all privately owned memory regions, keep shared ones alive for
 	 * now */
@@ -284,7 +286,7 @@ void unreference_proc(struct tcb *p)
 
 	hard_assert(is_proc(p), RETURN_VOID);
 	p->refcount--;
-	if (p->dead && p->refcount == 0) {
+	if (zombie(p) && p->refcount == 0) {
 		dbg("thread %d is completely destroyed\n", p->tid);
 		__destroy_thread_data(p);
 	}

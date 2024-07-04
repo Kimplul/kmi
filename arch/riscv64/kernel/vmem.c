@@ -396,11 +396,16 @@ static void __populate_dmap(struct vmem *branch)
 			(struct vmem *)to_pte(TOP_PAGE_SIZE * i, flags);
 }
 
+/** How many base pages we use for the rpc stack. Used fairly often so calculate
+ * it at the start and then reference it. */
+static size_t rpc_pages;
+
 struct vmem *init_vmem(void *fdt)
 {
 	UNUSED(fdt);
 	struct vmem *b = create_vmem();
 	__populate_dmap(b);
+	rpc_pages = order_size(MM_O1) / BASE_PAGE_SIZE;
 	/* update which memory branch to use */
 	use_vmem(b);
 	return b;
@@ -489,8 +494,7 @@ void setup_rpc_stack(struct tcb *t)
 	 * access so as to ease stack usage tracking */
 	vmflags_t flags = VM_V | VM_R | VM_W | VM_U;
 
-	size_t pages = order_size(MM_O1) / BASE_PAGE_SIZE;
-	for (size_t i = 0; i < pages; ++i) {
+	for (size_t i = 0; i < rpc_pages; ++i) {
 		pm_t page = alloc_page(BASE_PAGE);
 		map_vpage(t->rpc.vmem, page,
 		          RPC_STACK_BASE + BASE_PAGE_SIZE * i,
@@ -503,24 +507,29 @@ void setup_rpc_stack(struct tcb *t)
 
 	/* we allocated a second order page for rpc stack usage */
 	t->rpc_stack = RPC_STACK_BASE + order_size(MM_O1);
+
 	/* slightly hacky maybe but we know the first pte is at RPC_STACK_BASE,
 	 * which means that it must also be the leaf */
 	t->arch.rpc_leaf = (struct vmem *)__find_vmem(t->rpc.vmem,
 	                                              RPC_STACK_BASE,
 	                                              BASE_PAGE);
-	/* 'reserve' top page of stack for kernel use */
-	t->arch.rpc_idx = 511;
+	/* we count downward in base pages */
+	t->arch.rpc_idx = rpc_pages;
 }
 
 void destroy_rpc_stack(struct tcb *t)
 {
-	size_t pages = order_size(MM_O1) / BASE_PAGE_SIZE;
-	for (size_t i = 0; i < pages; ++i) {
+	for (size_t i = 0; i < rpc_pages; ++i) {
 		pm_t page; enum mm_order order;
 		stat_vpage(t->rpc.vmem, RPC_STACK_BASE + BASE_PAGE_SIZE * i,
 		           &page, &order, NULL);
 		free_page(page, order);
 	}
+}
+
+bool rpc_stack_empty(pm_t addr)
+{
+	return addr == RPC_STACK_BASE + (BASE_PAGE_SIZE * rpc_pages);
 }
 
 vm_t rpc_position(struct tcb *t)
