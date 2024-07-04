@@ -153,7 +153,8 @@ static __noreturn void __run_notify(struct tcb *t, struct tcb *r)
 	/* if we're in the root process, we can safely handle signals and
 	 * becoming orphaned */
 	if (!is_rpc(t))
-		set_bits(flags, t->notify_flags & (NOTIFY_SIGNAL | NOTIFY_ORPHANED));
+		set_bits(flags,
+		         t->notify_flags & (NOTIFY_SIGNAL | NOTIFY_ORPHANED));
 
 	/* handle critical notifications with special care */
 	if (is_set(t->notify_flags, NOTIFY_IRQ | NOTIFY_TIMER)) {

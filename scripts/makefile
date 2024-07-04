@@ -1,7 +1,7 @@
 # this could be done better
 RELEASE		?= 0
 OPTFLAGS	!= [ "$(RELEASE)" != "0" ] \
-			&& echo "-O3 -flto" \
+			&& echo "-O2 -flto=auto" \
 			|| echo "-O0"
 
 DEBUG		?= 1

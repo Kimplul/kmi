@@ -287,7 +287,8 @@ __weak void *memchr(const void *ptr, int val, size_t num)
 }
 
 #undef memcpy
-__weak void *memcpy(void * restrict dst, const void * restrict src, size_t num)
+__weak __used void *memcpy(void * restrict dst, const void * restrict src,
+                           size_t num)
 {
 	const char *m1 = (const char *)src;
 	char *m2 = (char *)dst;

@@ -97,7 +97,7 @@ SYSCALL_DEFINE2(exec)(struct tcb *t, sys_arg_t bin, sys_arg_t interp)
 
 	/* exec is only allowed if we own all our own resources */
 	if (t->refcount)
-		return_args1(t, ERR_INVAL)
+		return_args1(t, ERR_INVAL);
 
 	/* mark binary to be kept */
 	struct mem_region *b = find_used_region(&t->sp_r, bin);
@@ -267,7 +267,8 @@ SYSCALL_DEFINE1(detach)(struct tcb *t, sys_arg_t tid)
 	orphanize(o);
 
 	/* generally the thread shouldn't do anything with this information, but
-	 * it fits really nicely into the notification framework so just do it */
+	 * it fits really nicely into the notification framework so just do it
+	 */
 	notify(o, NOTIFY_ORPHANED);
 
 	return_args1(t, OK);

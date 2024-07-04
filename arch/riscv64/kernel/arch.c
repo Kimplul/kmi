@@ -19,7 +19,7 @@ id_t hartid_to_cpuid(id_t hart)
 		if (cpuid_to_hartid(i) == hart)
 			return i;
 
-	error("failed to match hart id %d to cpu id\n", hart);
+	error("failed to match hart id %ld to cpu id\n", hart);
 	/* default to zero, though this should maybe be a panic? */
 	return 0;
 }

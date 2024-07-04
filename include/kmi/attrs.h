@@ -59,6 +59,10 @@
 /** Weak linkage. */
 #define __weak __attribute__((weak))
 
+/** Tell optimizer something is used, even though it might not seem like it.
+ * Special functions like memcpy() may need it. */
+#define __used __attribute__((used))
+
 /** Main entry point of kernel proper. */
 #define __main __section(".kernel.start") __noinline
 
