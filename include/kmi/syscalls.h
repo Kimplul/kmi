@@ -186,6 +186,9 @@ enum notify_flag {
 
 	/** An interrupt request. */
 	NOTIFY_IRQ = (1 << 2),
+
+	/** Thread has become orphaned. */
+	NOTIFY_ORPHANED = (1 << 3),
 };
 
 /* function declarations should be somewhere else, this file could be used in

@@ -92,10 +92,17 @@ SYSCALL_DEFINE0(fork)(struct tcb *t)
 SYSCALL_DEFINE2(exec)(struct tcb *t, sys_arg_t bin, sys_arg_t interp)
 {
 	/** @todo probably make sure thread is root thread of process? */
+	if (!is_proc(t))
+		return_args1(t, ERR_PERM);
+
+	/* exec is only allowed if we own all our own resources */
+	if (t->refcount)
+		return_args1(t, ERR_INVAL)
+
 	/* mark binary to be kept */
 	struct mem_region *b = find_used_region(&t->sp_r, bin);
 	if (!b)
-		return_args1(t, ERR_INVAL);
+		return_args1(t, ERR_ADDR);
 
 	set_bit(b->flags, MR_KEEP);
 
@@ -237,28 +244,31 @@ SYSCALL_DEFINE1(exit)(struct tcb *t, sys_arg_t tid)
 /**
  * Syscall handler for orphanizing a thread.
  *
- * @param t Thread that wants to make itself an orphant.
+ * @param t Current thread.
+ * @param tid Thread we want to orphanize. May be ourselves.
  * @return \ref OK on success,
  * \ref ERR_PERM if current process missing \ref CAP_PROC,
  * \ref ERR_INVAL if already an orphant.
  */
-SYSCALL_DEFINE0(detach)(struct tcb *t)
+SYSCALL_DEFINE1(detach)(struct tcb *t, sys_arg_t tid)
 {
 	struct tcb *c = get_cproc(t);
 	if (!(has_cap(c->caps, CAP_PROC)))
 		return_args1(t, ERR_PERM);
 
-	if (orphan(t))
+	struct tcb *o = get_tcb(tid);
+	if (!o || orphan(o))
 		return_args1(t, ERR_INVAL);
 
-	struct tcb *r = get_tcb(t->rid);
+	struct tcb *r = get_tcb(o->rid);
 	if (r)
 		unreference_proc(r);
 
-	orphanize(t);
+	orphanize(o);
 
-	if (!is_rpc(t))
-		unorphanize(t);
+	/* generally the thread shouldn't do anything with this information, but
+	 * it fits really nicely into the notification framework so just do it */
+	notify(o, NOTIFY_ORPHANED);
 
 	return_args1(t, OK);
 }

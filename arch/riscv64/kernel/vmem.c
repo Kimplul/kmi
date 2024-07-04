@@ -520,7 +520,7 @@ void setup_rpc_stack(struct tcb *t)
 void destroy_rpc_stack(struct tcb *t)
 {
 	for (size_t i = 0; i < rpc_pages; ++i) {
-		pm_t page; enum mm_order order;
+		pm_t page = 0; enum mm_order order = BASE_PAGE;
 		stat_vpage(t->rpc.vmem, RPC_STACK_BASE + BASE_PAGE_SIZE * i,
 		           &page, &order, NULL);
 		free_page(page, order);

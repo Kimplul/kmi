@@ -843,18 +843,16 @@ SYSCALL_DECLARE1(exit, tid);
 
 /**
  * Request that a thread becomes orphant, i.e. eventually attached to the init
- * process. Can be used to stop threads within a process by sending an
- * appropriate signal to the troublesome thread which then detaches itself from
- * its root process.
+ * process. Can be used to stop threads within a process.
  *
  * @param t Current tcb.
- * @param a Unused.
+ * @param tid Which thread to orphanize.
  * @param b Unused.
  * @param c Unused.
  * @param d Unused.
  * @param e Unused.
  */
-SYSCALL_DECLARE0(detach);
+SYSCALL_DECLARE1(detach, tid);
 
 /** @} */
 

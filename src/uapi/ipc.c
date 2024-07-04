@@ -138,8 +138,8 @@ static bool __enough_rpc_stack(struct tcb *t)
 /**
  * Actually run notification handler, no ifs or buts.
  *
- * @param t Previous thread.
- * @param r Next thread.
+ * @param t Current thread.
+ * @param r Process where notification handler is.
  *
  * \p t and \p r may be the same thread.
  */
@@ -148,12 +148,15 @@ static __noreturn void __run_notify(struct tcb *t, struct tcb *r)
 	use_tcb(r);
 
 	enum sys_user code = SYS_USER_NOTIFY;
-	/* if we're not in RPC, we can safely notify of a signal while we're at
-	 * it */
-	enum notify_flag flags = is_rpc(t) ? 0 : NOTIFY_SIGNAL;
+	enum notify_flag flags = 0;
+
+	/* if we're in the root process, we can safely handle signals and
+	 * becoming orphaned */
+	if (!is_rpc(t))
+		set_bits(flags, t->notify_flags & (NOTIFY_SIGNAL | NOTIFY_ORPHANED));
 
 	/* handle critical notifications with special care */
-	if (is_set(flags, NOTIFY_IRQ | NOTIFY_TIMER)) {
+	if (is_set(t->notify_flags, NOTIFY_IRQ | NOTIFY_TIMER)) {
 		set_bits(flags, t->notify_flags & (NOTIFY_IRQ | NOTIFY_TIMER));
 		disable_irqs();
 	}
