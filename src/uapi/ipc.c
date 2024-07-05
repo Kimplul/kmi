@@ -9,6 +9,7 @@
 #include <kmi/orphanage.h>
 #include <kmi/debug.h>
 #include <kmi/uapi.h>
+#include <kmi/bkl.h>
 #include <kmi/tcb.h>
 #include <kmi/ipi.h>
 #include <kmi/irq.h>
@@ -171,6 +172,8 @@ static __noreturn void __run_notify(struct tcb *t, struct tcb *r)
 	finalize_rpc(t, r, s);
 
 	clear_bits(t->notify_flags, flags);
+
+	bkl_unlock();
 	ret_userspace_fast();
 	unreachable();
 }
@@ -335,6 +338,7 @@ static void do_ipc(struct tcb *t,
 	/* I tested out passing the return values as arguments to
 	 * ret_userspace_fast, but apparently that causes enough stack shuffling
 	 * to be slower overall. */
+	bkl_unlock();
 	ret_userspace_fast();
 }
 /**

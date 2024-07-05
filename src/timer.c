@@ -21,6 +21,7 @@
 #include <kmi/notify.h>
 #include <kmi/nodes.h>
 #include <kmi/utils.h>
+#include <kmi/bkl.h>
 #include <kmi/timer.h>
 #include <kmi/debug.h>
 #include <arch/cpu.h>
@@ -197,12 +198,16 @@ ticks_t nsecs_to_ticks(tunit_t nsecs)
 /* call to this function from exception handlers */
 void handle_timer()
 {
+	bkl_lock();
 	struct timer *t = newest_timer();
 	remove_timer(t);
 
 	struct tcb *r = get_tcb(t->tid);
-	if (!r)
+	if (!r) {
+		bkl_unlock();
 		return;
+	}
 
 	notify(r, NOTIFY_TIMER);
+	bkl_unlock();
 }

@@ -33,7 +33,6 @@ typedef atomic_int spinlock_t;
  */
 static inline void spin_lock(spinlock_t *lck)
 {
-	disable_irq();
 	do {
 		while (atomic_load_explicit(lck, memory_order_acquire))
 			optional_pause();
@@ -49,7 +48,6 @@ static inline void spin_lock(spinlock_t *lck)
 static inline void spin_unlock(spinlock_t *lck)
 {
 	atomic_store_explicit(lck, 0, memory_order_release);
-	enable_irq();
 }
 
 #endif /* KMI_LOCK_H */

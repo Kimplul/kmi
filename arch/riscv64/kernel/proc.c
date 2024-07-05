@@ -8,6 +8,7 @@
 
 #include <kmi/tcb.h>
 #include <kmi/elf.h>
+#include <kmi/bkl.h>
 #include <kmi/string.h>
 
 #include <arch/proc.h>
@@ -27,6 +28,7 @@ void run_init(struct tcb *t, vm_t fdt, vm_t initrd)
 	 * Could be fixed with a separate pure asm run_init, but I guess this
 	 * works for now.
 	 */
+	bkl_unlock();
 	__asm__ volatile ("mv sp, %0\n"
 	                  "mv a0, %1\n"
 	                  "mv a1, %2\n"

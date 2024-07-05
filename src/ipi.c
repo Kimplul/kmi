@@ -3,6 +3,7 @@
 
 #include <kmi/notify.h>
 #include <kmi/queue.h>
+#include <kmi/bkl.h>
 #include <kmi/ipi.h>
 
 #include <arch/proc.h>
@@ -33,14 +34,19 @@ void unqueue_ipi(struct tcb *t)
 
 void handle_ipi()
 {
+	bkl_lock();
+
 	struct tcb *t = cur_tcb();
 	adjust_ipi(t);
 
 	struct queue_head *q = queue_pop(&fifo);
-	if (!q)
+	if (!q) {
+		bkl_unlock();
 		return;
+	}
 
 	struct tcb *r = container_of(q, struct tcb, ipi_queue);
 	notify(r, 0);
 	/* notify didn't take for whatever reason so return whence we came from */
+	bkl_unlock();
 }

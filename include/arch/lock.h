@@ -11,7 +11,7 @@
 
 #if defined(riscv64)
 #include "../../arch/riscv64/include/lock.h"
-#if defined(riscv32)
+#elif defined(riscv32)
 #include "../../arch/riscv32/include/lock.h"
 #endif
 

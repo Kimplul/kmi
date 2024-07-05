@@ -90,7 +90,7 @@ continue_trap:
 	save_regs
 	save_args
 
-	mv t5, a0
+	mv a0, t5
 	call riscv_handle_interrupt
 
 	j _load_context

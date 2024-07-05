@@ -14,6 +14,7 @@
 #include <kmi/debug.h>
 #include <kmi/vmem.h>
 #include <kmi/irq.h>
+#include <kmi/bkl.h>
 #include <arch/arch.h>
 #include <arch/proc.h>
 #include <arch/smp.h>
@@ -60,6 +61,8 @@ __noreturn void kernel(void *fdt, uintptr_t load_addr, struct vmem *d)
 	/* we should be in kernelspace, so use the virtual address of our FDT. */
 	fdt = __va(fdt);
 
+	bkl_lock();
+
 	/* dbg uses direct mapping at this point */
 	init_dbg(fdt);
 	/* start up debugging in kernel IO */
@@ -100,6 +103,8 @@ __noreturn void main(unsigned long hart, void *fdt, uintptr_t load_addr)
 	/* we have our own ways to get the current hart when we need it, but we
 	 * have to get the function signature right */
 	(void)hart;
+
+	/** @todo some kind of lottery? */
 
 	pm_t ram_base = __fdt_ram_base(fdt);
 	pm_t ram_size = __fdt_ram_size(fdt);

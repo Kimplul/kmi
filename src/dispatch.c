@@ -2,6 +2,7 @@
 /* Copyright 2023 Kim Kuparinen < kimi.h.kuparinen@gmail.com > */
 
 #include <kmi/uapi.h>
+#include <kmi/bkl.h>
 #include <kmi/ipi.h>
 
 /**
@@ -31,5 +32,7 @@
 void dispatch(sys_arg_t a, sys_arg_t b, sys_arg_t c,
               sys_arg_t d, sys_arg_t e, sys_arg_t f)
 {
+        bkl_lock();
 	handle_syscall(a, b, c, d, e, f, cur_tcb());
+        bkl_unlock();
 }
