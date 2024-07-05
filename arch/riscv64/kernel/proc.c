@@ -15,7 +15,7 @@
 #include "regs.h"
 #include "csr.h"
 
-void run_init(struct tcb *t, void *fdt, void *initrd)
+void run_init(struct tcb *t, vm_t fdt, vm_t initrd)
 {
 	/** \todo actually map fdt and initrd into the target address space */
 	csr_write(CSR_SSCRATCH, t);

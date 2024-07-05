@@ -22,6 +22,7 @@ enum mm_order __mm_max_order;
  * like __mm_*.
  */
 pm_t ram_base;
+size_t ram_size;
 
 enum mm_order nearest_order(size_t size)
 {
@@ -32,12 +33,17 @@ enum mm_order nearest_order(size_t size)
 	return MM_O0;
 }
 
-void init_mem(size_t max_order, size_t bits[10], size_t page_shift)
+void init_mem(void *fdt)
 {
-	__mm_max_order = max_order;
-	__mm_page_shift = page_shift;
+	size_t max_order = 0;
+	size_t base_bits = 0;
+	size_t bits[NUM_ORDERS] = { 0 };
+	stat_pmem_conf(fdt, &max_order, &base_bits, bits);
 
-	__mm_shifts[0] = page_shift;
+	__mm_max_order = max_order;
+	__mm_page_shift = base_bits;
+
+	__mm_shifts[0] = __mm_page_shift;
 	__mm_widths[0] = 1 << bits[0];
 	__mm_sizes[0] = 1 << __mm_page_shift;
 
@@ -53,7 +59,17 @@ void set_ram_base(uintptr_t base)
 	ram_base = base;
 }
 
+void set_ram_size(size_t size)
+{
+	ram_size = size;
+}
+
 uintptr_t get_ram_base()
 {
 	return ram_base;
+}
+
+size_t get_ram_size()
+{
+	return ram_size;
 }

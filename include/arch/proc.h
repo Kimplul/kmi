@@ -114,7 +114,7 @@ void adjust_syscall(struct tcb *t);
  * @param fdt Pointer to FDT that is passed to \c init.
  * @param initrd Pointer to initrd that is passed to \c init.
  */
-__noreturn void run_init(struct tcb *t, void *fdt, void *initrd);
+__noreturn void run_init(struct tcb *t, vm_t fdt, vm_t initrd);
 
 /**
  * Return to userspace fast.

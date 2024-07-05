@@ -131,6 +131,8 @@ stat_t init_uvmem(struct tcb *r, vm_t base, vm_t top);
  */
 stat_t destroy_uvmem(struct tcb *r);
 
+vm_t map_fixed_mem(struct tcb *r, pm_t base, size_t size, vmflags_t flags);
+
 /**
  * Clone process memory.
  *

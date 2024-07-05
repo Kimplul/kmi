@@ -232,6 +232,34 @@ vm_t alloc_fixed_uvmem(struct tcb *t, vm_t start, size_t size, vmflags_t flags)
 	return w;
 }
 
+static vm_t map_fixed_region(struct vmem *b, vm_t v, pm_t p, size_t size,
+                             vmflags_t flags, stat_t *status)
+{
+
+	vm_t w = v;
+	stat_t stat = OK;
+	size_t pages = size / BASE_PAGE_SIZE;
+	for (size_t i = 0; i < pages; ++i) {
+		stat = map_vpage(b, p, v, flags, BASE_PAGE);
+		v += BASE_PAGE_SIZE;
+		p += BASE_PAGE_SIZE;
+	}
+
+	if (status)
+		*status = stat;
+
+	return w;
+}
+
+vm_t map_fixed_mem(struct tcb *t, pm_t start, size_t size, vmflags_t flags)
+{
+	stat_t status = OK;
+	const vm_t v = alloc_region(&t->sp_r, size, &size, flags);
+	const vm_t w = map_fixed_region(t->proc.vmem, v, start, size, flags,
+	                                &status);
+	return w + (start % BASE_PAGE_SIZE);
+}
+
 /* free_shared_uvmem shouldn't be needed, likely to work with free_uvmem */
 stat_t alloc_shared_uvmem(struct tcb *s, struct tcb *c,
                           size_t size, vmflags_t sflags, vmflags_t cflags,
@@ -341,8 +369,13 @@ stat_t copy_allocd_wrapper(struct vmem *b, pm_t *offset, vm_t vaddr,
 	if (!new_page)
 		return INFO_TRGN;
 
-	map_vpage(b, new_page, vaddr, flags, order);
+	/* set write flags temporarily */
+	vmflags_t wrflags = flags | VM_W;
+	map_vpage(b, new_page, vaddr, wrflags, order);
 	memcpy((void *)new_page, (void *)(paddr + *offset), order_size(order));
+
+	/* set actual flags */
+	map_vpage(b, new_page, vaddr, flags, order);
 
 	if (v_order > order)
 		*offset += order_size(order);

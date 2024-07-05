@@ -68,6 +68,6 @@ size_t probe_pmap(pm_t ram_base, size_t ram_size, pm_t cont);
  *
  * @param fdt Global FDT pointer.
  */
-void init_pmem(void *fdt);
+void init_pmem(void *fdt, uintptr_t load_addr);
 
 #endif /* KMI_PMEM_H */

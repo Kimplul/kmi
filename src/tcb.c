@@ -74,7 +74,7 @@ static id_t __alloc_tid(struct tcb *t)
 		if (i == stop_tid)
 			return ERR_NF;
 
-		if (get_tcb(i) || i == 0)
+		if (tcbs[i & (num_tids - 1)] || i == 0)
 			continue;
 
 		tcbs[i & (num_tids - 1)] = t;
@@ -210,6 +210,11 @@ static stat_t __destroy_thread_data(struct tcb *t)
 	destroy_vmem(t->rpc.vmem);
 
 	/* remove ourselves from the thread pool */
+	/** @todo this should be at the top of the function, and be wrapped in
+	 * some kind of lock that checks that nobody reads the value while we're
+	 * setting it to zero. get_tcb() should accordingly increment the
+	 * reference count atomically. Also, an unget_tcb() is needed to
+	 * decrement the reference count I guess? */
 	tcbs[t->tid] = 0;
 
 	/* forcefully free last struggling bits of memory */
@@ -228,6 +233,7 @@ stat_t destroy_thread(struct tcb *t)
 	hard_assert(!is_proc(t), ERR_INVAL);
 
 	/* mark us as zombies */
+	set_bits(t->state, TCB_ZOMBIE);
 	t->rid = 0;
 
 	/* remove reference to root process */

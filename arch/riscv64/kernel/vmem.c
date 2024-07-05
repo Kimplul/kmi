@@ -399,13 +399,26 @@ static void __populate_dmap(struct vmem *branch)
 /** How many base pages we use for the rpc stack. Used fairly often so calculate
  * it at the start and then reference it. */
 static size_t rpc_pages;
+long riscv_init_stack[4096 / sizeof(long)];
+__attribute__((aligned(4096))) struct vmem bootvmem;
+
+struct vmem *direct_mapping()
+{
+	rpc_pages = order_size(MM_O1) / BASE_PAGE_SIZE;
+
+	__populate_dmap(&bootvmem);
+	populate_kvmem(&bootvmem);
+	__use_vmem(&bootvmem, DEFAULT_Sv_MODE);
+
+	return &bootvmem;
+}
+
 
 struct vmem *init_vmem(void *fdt)
 {
 	UNUSED(fdt);
 	struct vmem *b = create_vmem();
 	__populate_dmap(b);
-	rpc_pages = order_size(MM_O1) / BASE_PAGE_SIZE;
 	/* update which memory branch to use */
 	use_vmem(b);
 	return b;
@@ -415,14 +428,13 @@ struct vmem *create_vmem()
 {
 	struct vmem *b = (struct vmem *)alloc_page(MM_KPAGE);
 	memset(b, 0, MM_KPAGE_SIZE);
-
 	populate_kvmem(b);
 	return b;
 }
 
 stat_t use_vmem(struct vmem *b)
 {
-	__use_vmem(b, DEFAULT_Sv_MODE);
+	__use_vmem(__pa(b), DEFAULT_Sv_MODE);
 	return OK;
 }
 
@@ -457,7 +469,7 @@ vm_t setup_kernel_io(struct vmem *b, vm_t paddr)
 	 * modifying, or during the startup stage where we don't have a tcb yet.
 	 * I don't think checking the rpc context is necessary? */
 	if (!cur_tcb() || cur_tcb()->proc.vmem == b)
-		flush_tlb((uintptr_t)pte_addr(b->leaf[IO_PAGE]));
+		flush_tlb_full();
 
 	return -TOP_PAGE_SIZE + paddr - addr;
 }

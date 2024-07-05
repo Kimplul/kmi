@@ -115,53 +115,39 @@ static size_t init_nlen = ARRAY_SIZE(init_n) - 1; /* ignore trailing NULL */
 pm_t get_initrdtop(const void *fdt)
 {
 	int chosen_offset = fdt_path_offset(fdt, "/chosen");
-	struct cell_info ci = get_cellinfo(fdt, chosen_offset);
 
+	int len = 0;
 	void *initrd_end_ptr = (void *)fdt_getprop(fdt, chosen_offset,
-	                                           "linux,initrd-end", NULL);
+	                                           "linux,initrd-end", &len);
 
-	/* fdt is only aware of physical memory pointers */
-	return (pm_t)__va(fdt_load_int_ptr(ci.addr_cells, initrd_end_ptr));
+	catastrophic_assert(initrd_end_ptr);
+	return (pm_t)fdt_load_int_ptr(len / 4, initrd_end_ptr);
 }
 
 pm_t get_initrdbase(const void *fdt)
 {
 	const int chosen_offset = fdt_path_offset(fdt, "/chosen");
-	const struct cell_info ci = get_cellinfo(fdt, chosen_offset);
 
+	int len = 0;
 	void *initrd_base_ptr = (void *)fdt_getprop(fdt, chosen_offset,
-	                                            "linux,initrd-start", NULL);
+	                                            "linux,initrd-start", &len);
 
-	return (pm_t)__va(fdt_load_int_ptr(ci.addr_cells, initrd_base_ptr));
+	catastrophic_assert(initrd_base_ptr);
+	return (pm_t)fdt_load_int_ptr(len / 4, initrd_base_ptr);
 }
 
-
-size_t get_init_size(const void *fdt)
+size_t get_initrdsize(const void *fdt)
 {
-	char *c = (char *)get_initrdbase(fdt);
-	struct cpio_header *cp = __find_file(c, init_n, init_nlen);
-	return convnum(cp->c_filesize, 8, 16);
+	pm_t start = get_initrdbase(fdt);
+	pm_t end = get_initrdtop(fdt);
+	return end - start;
 }
 
 vm_t get_init_base(const void *fdt)
 {
 	char *c = (char *)get_initrdbase(fdt);
+	c = __va(c);
 	struct cpio_header *cp = __find_file(c, init_n, init_nlen);
 	size_t name_len = convnum(cp->c_namesize, 8, 16);
 	return ((vm_t)cp) + align_up(sizeof(struct cpio_header) + name_len, 4);
-}
-
-stat_t move_init(const void *fdt, void *target)
-{
-	const char *c = (const char *)get_initrdbase(fdt);
-
-	const struct cpio_header *cp = __find_file(c, init_n, init_nlen);
-	size_t name_len = convnum(cp->c_namesize, 8, 16);
-	size_t file_len = convnum(cp->c_filesize, 8, 16);
-
-	char *fp = (char *)cp;
-	fp += align_up(sizeof(struct cpio_header) + name_len, 4);
-
-	memmove(target, fp, file_len);
-	return OK;
 }

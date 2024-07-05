@@ -26,6 +26,7 @@ SECTIONS {
 	}
 
 	__kernel_end = .;
+	__kernel_size = __kernel_end - __kernel_start;
 
 	.garbage : {
 		*(.note*)

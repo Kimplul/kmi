@@ -19,7 +19,7 @@ id_t hartid_to_cpuid(id_t hart)
 		if (cpuid_to_hartid(i) == hart)
 			return i;
 
-	error("failed to match hart id %ld to cpu id\n", hart);
+	error("failed to match hart id %ld to cpu id\n", (long)hart);
 	/* default to zero, though this should maybe be a panic? */
 	return 0;
 }
@@ -27,7 +27,6 @@ id_t hartid_to_cpuid(id_t hart)
 pm_t branch_to_satp(struct vmem *branch, enum mm_mode mode)
 {
 	/* Sv57 && Sv64 in the future? */
-	branch = (struct vmem *)__pa(branch);
 	pm_t pn = (pm_t)(branch) >> page_shift();
 
 	pm_t m = DEFAULT_Sv_MODE;

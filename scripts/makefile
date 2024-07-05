@@ -30,7 +30,6 @@ LDFLAGS		!= [ "$(LLVM)" = "0" ] \
 
 BUILD		= build
 ARCH_KERN_BUILD	= $(BUILD)/kernel/arch/$(ARCH)
-ARCH_INIT_BUILD = $(BUILD)/init/arch/$(ARCH)
 ARCH_SOURCE	= arch/$(ARCH)
 
 all: kmi.bin
@@ -80,17 +79,13 @@ KERN_SIZE	= wc -c kernel.bin | awk '{print $$1}'
 KERN_INFO	= sed "s/<KERNEL_SIZE>/$$($(KERN_SIZE))/"
 
 KERNEL_LINK	= arch/$(ARCH)/conf/kernel-link.S
-INIT_LINK	= arch/$(ARCH)/conf/init-link.S
 
 KERNEL_LD	= build/kernel-link.ld
-INIT_LD		= build/init-link.ld
 
 UBSAN		?= 0
 KERN_FLAGS	!= [ "$(UBSAN)" != "0" ] \
 			&& echo -fsanitize=undefined \
 			|| echo
-
-INIT_FLAGS	:= -fpic
 
 COMPILE_KERNEL	= $(COMPILE) $(KERN_FLAGS)
 COMPILE_INIT	= $(COMPILE) $(INIT_FLAGS)
@@ -98,29 +93,15 @@ COMPILE_INIT	= $(COMPILE) $(INIT_FLAGS)
 -include deps.mk
 
 -include $(KERNEL_LD).d
-$(INIT_LD): kernel.bin
-$(INIT_LD): $(INIT_LINK)
-	$(GENLINK) $(INIT_LINK) | $(STRIPLINK) | $(KERN_INFO) > $(INIT_LD)
-
--include $(KERNEL_LD).d
 $(KERNEL_LD): $(KERNEL_LINK)
 	$(GENLINK) $(KERNEL_LINK) | $(STRIPLINK) > $(KERNEL_LD)
 
-init.elf: $(INIT_OBJS) $(INIT_LD)
-	$(GENELF) $(INIT_FLAGS) -T $(INIT_LD) $(INIT_OBJS) -o init.elf $(LINK_FLAGS)
+kmi.elf: $(KERNEL_OBJS) $(KERNEL_LD)
+	$(GENELF) $(KERNEL_FLAGS) -T $(KERNEL_LD) $(KERNEL_OBJS) -o kmi.elf $(LINK_FLAGS)
 
-kernel.elf: $(KERNEL_OBJS) $(KERNEL_LD)
-	$(GENELF) $(KERNEL_FLAGS) -T $(KERNEL_LD) $(KERNEL_OBJS) -o kernel.elf $(LINK_FLAGS)
-
-init.bin: init.elf
-	$(OBJCOPY) $(OBJCOPY_FLAGS) init.elf init.bin
-
-kernel.bin: kernel.elf
-	$(OBJCOPY) $(OBJCOPY_FLAGS) kernel.elf kernel.bin
-
-kmi.bin: init.bin kernel.bin
-	cat init.bin kernel.bin > kmi.bin
+kmi.bin: kmi.elf
+	$(OBJCOPY) $(OBJCOPY_FLAGS) kmi.elf kmi.bin
 
 # might lint some common things twice
 .PHONY:
-lint: $(INIT_LINTS) $(KERNEL_LINTS)
+lint: $(KERNEL_LINTS)

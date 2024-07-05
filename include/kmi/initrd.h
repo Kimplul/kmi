@@ -45,6 +45,8 @@ pm_t get_initrdtop(const void *fdt);
  */
 pm_t get_initrdbase(const void *fdt);
 
+size_t get_initrdsize(const void *fdt);
+
 /**
  * Move \c init program to some other region in memory.
  *

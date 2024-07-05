@@ -9,11 +9,14 @@
 #include <kmi/elf.h>
 #include <kmi/proc.h>
 #include <kmi/conf.h>
+#include <kmi/debug.h>
 #include <kmi/string.h>
 #include <kmi/initrd.h>
 #include <arch/arch.h>
 #include <arch/proc.h>
 #include <arch/cpu.h>
+
+#include <libfdt.h>
 
 stat_t prepare_proc(struct tcb *t, vm_t bin, vm_t interp)
 {
@@ -27,7 +30,7 @@ stat_t prepare_proc(struct tcb *t, vm_t bin, vm_t interp)
 	return OK;
 }
 
-stat_t init_proc(void *fdt)
+stat_t init_proc(void *fdt, vm_t *proc_fdt, vm_t *proc_initrd)
 {
 	init_tcbs();
 
@@ -42,18 +45,32 @@ stat_t init_proc(void *fdt)
 	/* force tcb for core */
 	tcb_assign(t);
 
-	/* set current tcb */
-	use_tcb(t);
+	t->notify_id = t->tid;
 
 	/* init process has all capabilities */
 	set_caps(t->caps, 0,
 	         CAP_CAPS | CAP_PROC | CAP_SIGNAL | CAP_POWER | CAP_NOTIFY);
 
-	t->notify_id = t->tid;
+	/* we shall try to map the fdt and initrd into the new address space, so
+	 * save them here before we switch */
+	use_tcb(t);
 
-	/* allocate stacks after ELF file to make sure nothing of importance
+	/* allocate stacks etc after ELF file to make sure nothing of importance
 	 * clashes */
-	return prepare_proc(t, get_init_base(fdt), 0);
+	prepare_proc(t, get_init_base(fdt), 0);
 	/** \todo start one thread per core, with special handling for init in
 	 * that each thread starts at the entry point of init? */
+
+	*proc_fdt = map_fixed_mem(t,
+	                          (pm_t)fdt, fdt_totalsize(fdt),
+	                          VM_V | VM_R | VM_U);
+
+	pm_t initrd = (pm_t)__va(get_initrdbase(fdt));
+	*proc_initrd = map_fixed_mem(t,
+	                             initrd, get_initrdsize(fdt),
+	                             VM_V | VM_R | VM_U);
+
+	info("mapped fdt at %p\n", (void *)*proc_fdt);
+	info("mapped initrd at %p\n", (void *)*proc_initrd);
+	return OK;
 }

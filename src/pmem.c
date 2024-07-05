@@ -436,77 +436,89 @@ static void __mark_area_used(pm_t base, pm_t top)
 		mark_used(BASE_PAGE, runner);
 }
 
+struct avoid_region {
+	pm_t base;
+	pm_t size;
+};
+
+static bool overlaps(pm_t base1, pm_t size1, pm_t base2, pm_t size2)
+{
+	bool b = base1 >= base2 && base1 < base2 + size2;
+	bool t = base1 + size1 > base2 && base1 + size1 <= base2 + size2;
+	return b || t;
+}
+
 /**
  * Mark reserved memory region used, to avoid it getting accidentally allocated.
  *
  * @param fdt Global FDT pointer.
  */
-static void __mark_reserved_mem(void *fdt)
+static void __mark_reserved(pm_t ram_base, pm_t ram_size, size_t avoid_count,
+                            struct avoid_region avoid[64])
+{
+	for (size_t i = 0; i < avoid_count; ++i) {
+		pm_t base = avoid[i].base;
+		pm_t size = avoid[i].size;
+
+		if (!overlaps(base, size, ram_base, ram_size))
+			continue;
+
+		pm_t top = base + size;
+		__mark_area_used(base, top);
+		info("marked [%lx - %lx] reserved\n", base, top);
+	}
+}
+
+static size_t build_reserved_map(size_t exists, struct avoid_region avoid[64],
+                                 void *fdt)
 {
 	int rmem_offset = fdt_path_offset(fdt, "/reserved-memory");
 	struct cell_info ci = get_cellinfo(fdt, rmem_offset);
 
 	int node = 0;
 	fdt_for_each_subnode(node, fdt, rmem_offset) {
-		uint8_t *rmem_reg =
-			(uint8_t *)fdt_getprop(fdt, node, "reg", NULL);
+		uint8_t *rmem_reg = (uint8_t *)fdt_getprop(fdt, node, "reg",
+		                                           NULL);
 
 		pm_t base = (pm_t)fdt_load_reg_addr(ci, rmem_reg, 0);
+		pm_t size = (pm_t)fdt_load_reg_size(ci, rmem_reg, 0);
 
-		/** @todo make sure the top of a reserved memory area doesn't go
-		 * against our assumptions in FW_MAX_SIZE? */
-		pm_t top = (pm_t)fdt_load_reg_size(ci, rmem_reg, 0) + base;
-		__mark_area_used((pm_t)__va(base), (pm_t)__va(top));
-		info("marked [%lx - %lx] reserved\n",
-		     (pm_t)__va(base), (pm_t)__va(top));
+		avoid[exists++] = (struct avoid_region){(pm_t)__va(base), size};
+		catastrophic_assert(exists < 64);
 	}
+
+	return exists;
 }
 
-/**
- * Read top of RAM from FDT.
- *
- * @param fdt Global FDT pointer.
- * @return Physical address of top of RAM.
- */
-static pm_t __get_ramtop(void *fdt)
+static pm_t select_base(pm_t ram_base, pm_t ram_size, pm_t size,
+                        pm_t avoid_count,
+                        struct avoid_region avoid[64])
 {
-	int mem_offset = fdt_path_offset(fdt, "/memory");
-	const void *mem_reg = fdt_getprop(fdt, mem_offset, "reg", NULL);
+	for (size_t i = 0; i < avoid_count; ++i) {
+		/* try placing things just after each avoidance region */
+		pm_t base = avoid[i].base + avoid[i].size;
 
-	/* here we actually want the root offset because /memory itself doesn't
-	 * have children, I guess? */
-	struct cell_info ci = get_cellinfo(fdt, fdt_path_offset(fdt, "/"));
-	pm_t base = (pm_t)fdt_load_reg_addr(ci, mem_reg, 0);
-	return (pm_t)fdt_load_reg_size(ci, mem_reg, 0) + base;
+		/* any better alignment than this has to be manually handled
+		 * outside of this function */
+		base = align_up(base, sizeof(long));
+
+		if (!overlaps(base, size, ram_base, ram_size))
+			continue;
+
+		for (size_t a = 0; a < avoid_count; ++a) {
+			if (overlaps(base, size, avoid[a].base, avoid[a].size))
+				goto retry;
+
+		}
+
+		return base;
+retry:
+	}
+
+	return 0;
 }
 
-/**
- * Read top of FDT.
- *
- * @param fdt Global FDT pointer.
- * @return Physical address of top of FDT.
- */
-static pm_t __get_fdttop(void *fdt)
-{
-	const char *b = (const char *)fdt;
-	return (pm_t)(b + fdt_totalsize(fdt));
-}
-
-/**
- * Return base of FDT.
- *
- * Technically pretty useless, but here mainly for cohesion.
- *
- * @param fdt Global FDT pointer.
- * @return \c fdt.
- */
-static pm_t __get_fdtbase(void *fdt)
-{
-	/* lol */
-	return (pm_t)fdt;
-}
-
-void init_pmem(void *fdt)
+void init_pmem(void *fdt, uintptr_t load_addr)
 {
 	/** @todo should I keep the info outputs? I suppose it's nice to see
 	 * if any assumption is being broken in the serial log, but in that case
@@ -515,14 +527,10 @@ void init_pmem(void *fdt)
 	 */
 	info("initializing pmem\n");
 
-	size_t max_order = 0;
-	size_t base_bits = 0;
-	size_t bits[NUM_ORDERS] = { 0 };
-	stat_pmem_conf(fdt, &max_order, &base_bits, bits);
-	init_mem(max_order, bits, base_bits);
-
-	pm_t ram_size = __get_ramtop(fdt) - get_ram_base();
+	/* here it's a bit easier to work with virtual RAM addresses, but
+	 * physical ones could work just as well. */
 	pm_t ram_base = (pm_t)__va(get_ram_base());
+	pm_t ram_size = get_ram_size();
 
 	info("using ram range [%lx - %lx]\n",
 	     ram_base, ram_base + ram_size);
@@ -530,22 +538,37 @@ void init_pmem(void *fdt)
 	/** @todo could probably improve error messages on failing to get fdt
 	 * values */
 	pm_t initrd_base = get_initrdbase(fdt);
-	pm_t initrd_top = get_initrdtop(fdt);
-	info("found initrd at [%lx - %lx]\n", initrd_base, initrd_top);
+	pm_t initrd_size = get_initrdsize(fdt);
+	info("found initrd at [%lx - %lx]\n", initrd_base,
+	     initrd_base + initrd_size);
 
-	pm_t fdt_top = __get_fdttop(fdt);
-	pm_t fdt_base = __get_fdtbase(fdt);
-	info("found fdt at [%lx - %lx]\n", fdt_base, fdt_top);
+	pm_t fdt_base = (pm_t)fdt;
+	pm_t fdt_size = fdt_totalsize(fdt);
+	info("found fdt at [%lx - %lx]\n", fdt_base, fdt_base + fdt_size);
 
 	/* find probably most suitable contiguous region of ram for our physical
 	 * ram map  */
-	/** @todo this really should check that there's enough space in RAM
-	 * instead of just forcing the pmap to be populated */
-	pm_t pmap_base = align_up(MAX(initrd_top, fdt_top), BASE_PAGE_SIZE);
-	info("choosing to place pmem map at %lx\n", pmap_base);
 
-	size_t probe_size = probe_pmap(ram_base, ram_size, pmap_base);
+	size_t probe_size = probe_pmap(0, ram_size, 0);
 	info("pmem map probe size returned %lu\n", probe_size);
+
+	/* linker magicry */
+	extern char *__kernel_size;
+	/* avoidance regions, note that stack and so on is included in the
+	 * kernel. Addresses can be outside RAM, in which case they are just
+	 * ignored. */
+	struct avoid_region avoid[64] = {
+		{(pm_t)__va(load_addr), (pm_t)&__kernel_size},
+		{(pm_t)__va(initrd_base), initrd_size},
+		{(pm_t)__va(fdt_base), fdt_size}
+	};
+
+	size_t avoid_count = build_reserved_map(4, avoid, fdt);
+	pm_t pmap_base = select_base(ram_base, ram_size,
+	                             probe_size, avoid_count, avoid);
+
+	catastrophic_assert(pmap_base);
+	info("choosing to place pmem map at %lx\n", pmap_base);
 
 	size_t actual_size = populate_pmap(ram_base, ram_size, pmap_base);
 	info("pmem map actual size %lu\n", actual_size);
@@ -555,31 +578,10 @@ void init_pmem(void *fdt)
 		    actual_size);
 	}
 
-	/* mark init stack, this should be unmapped once we get to executing
-	 * processes */
-	__mark_area_used(VM_STACK_BASE, VM_STACK_TOP);
-	info("marked stack [%lx - %lx] used\n", VM_STACK_BASE, VM_STACK_TOP);
-
-	/* mark kernel */
-	/* this could be made more explicit, I suppose. */
-	__mark_area_used(VM_KERN, VM_KERN + PM_KERN_SIZE);
-	info("marked kernel [%lx - %lx] used\n", VM_KERN,
-	     VM_KERN + PM_KERN_SIZE);
-
-	/* mark fdt and initrd */
-	__mark_area_used(initrd_base, initrd_top);
-	info("marked initrd [%lx - %lx] used\n", initrd_base, initrd_top);
-
-	__mark_area_used(fdt_base, fdt_top);
-	info("marked fdt [%lx - %lx] used\n", fdt_base, fdt_top);
-
-	/* mark pmap */
-	__mark_area_used(pmap_base, pmap_base + actual_size);
-	info("marked pmap [%lx - %lx] used\n", pmap_base,
-	     pmap_base + actual_size);
+	avoid[avoid_count++] = (struct avoid_region){pmap_base, actual_size};
 
 	/* mark reserved mem */
-	__mark_reserved_mem(fdt);
+	__mark_reserved(ram_base, ram_size, avoid_count, avoid);
 
 	init_mem_nodes();
 

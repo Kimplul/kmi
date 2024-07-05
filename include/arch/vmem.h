@@ -140,6 +140,8 @@ struct vmem *init_vmem(void *fdt);
 vm_t setup_kernel_io(struct vmem *b, vm_t paddr);
 #endif
 
+struct vmem *direct_mapping();
+
 /**
  * Create new virtual memory space.
  *
@@ -171,4 +173,7 @@ stat_t destroy_vmem(struct vmem *b);
  */
 void clone_uvmem(struct vmem * restrict r, struct vmem * restrict b);
 
+__noreturn void to_kernelspace(void *fdt, uintptr_t load_addr,
+                               struct vmem *direct_mapping, pm_t ram_base,
+                               pm_t dmap);
 #endif /* KMI_ARCH_PAGES_H */

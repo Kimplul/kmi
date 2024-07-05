@@ -13,6 +13,7 @@
 struct tcb;
 
 #include <kmi/mem_regions.h>
+#include <kmi/orphanage.h>
 #include <kmi/syscalls.h>
 #include <kmi/atomic.h>
 #include <kmi/queue.h>
@@ -26,7 +27,7 @@ struct tcb;
  * @param t Thread to check.
  * @return \c true if thread is process thread, \c false otherwise.
  */
-#define is_proc(t) (t->rid == t->tid)
+#define is_proc(t) ((t->rid == t->tid) && !orphan(t))
 
 /**
  * Check if thread is in RPC.

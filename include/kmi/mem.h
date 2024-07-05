@@ -211,7 +211,7 @@ enum mm_order nearest_order(size_t size);
  * @param page_shift Width in bits of base page size.
  * \todo Should likely also be stat_t?
  */
-void init_mem(size_t max_order, size_t shifts[10], size_t page_shift);
+void init_mem(void *mem);
 
 /**
  * Set RAM base address for global access.
@@ -221,6 +221,8 @@ void init_mem(size_t max_order, size_t shifts[10], size_t page_shift);
  */
 void set_ram_base(pm_t base);
 
+void set_ram_size(size_t size);
+
 /**
  * Get RAM base address.
  * Very much assumes set_ram_base() has been called beforehand.
@@ -228,6 +230,8 @@ void set_ram_base(pm_t base);
  * @return RAM base address.
  */
 pm_t get_ram_base();
+
+size_t get_ram_size();
 
 
 /** Base page size. */

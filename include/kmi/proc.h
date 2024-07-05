@@ -32,6 +32,6 @@ stat_t prepare_proc(struct tcb *t, vm_t bin, vm_t interp);
  * @return \ref ERR_OOMEM when out of memory, \ref ERR_INVAL if loading \c init
  * failed, \ref OK otherwise.
  */
-stat_t init_proc(void *fdt);
+stat_t init_proc(void *fdt, vm_t *proc_fdt, vm_t *proc_initrd);
 
 #endif /* KMI_PROC_H */

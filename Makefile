@@ -19,16 +19,14 @@ all: setup
 setup:
 	@echo -n > deps.mk
 	@./scripts/gen-deps -p KERNEL -c COMPILE_KERNEL -b kernel "${KERNEL_SOURCES}"
-	@./scripts/gen-deps -p INIT -c COMPILE_INIT -b init "${INIT_SOURCES}"
 
 # default values, overwrite if/when needed
 ARCH		?= riscv64
 ARCH_SOURCE	= arch/$(ARCH)
 
 KERNEL_SOURCES	!= echo src/*.c src/uapi/*.c lib/*.c
-INIT_SOURCES	!= echo lib/fdt*.c src/fdt.c src/string.c
 
-CLEANUP		:= build deps.mk kernel.* init.* kmi.bin
+CLEANUP		:= build deps.mk kernel.* kmi.bin
 CLEANUP_CMD	:=
 
 include arch/$(ARCH)/source.mk
