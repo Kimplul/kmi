@@ -45,6 +45,12 @@ pm_t get_initrdtop(const void *fdt);
  */
 pm_t get_initrdbase(const void *fdt);
 
+/**
+ * Get size of initrd in bytes.
+ *
+ * @param fdt Global FDT pointer.
+ * @return Size of \c initrd.
+ */
 size_t get_initrdsize(const void *fdt);
 
 /**

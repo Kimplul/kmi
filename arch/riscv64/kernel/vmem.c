@@ -398,9 +398,15 @@ static void __populate_dmap(struct vmem *branch)
 
 /** How many base pages we use for the rpc stack. Used fairly often so calculate
  * it at the start and then reference it. */
-static size_t rpc_pages;
+size_t rpc_pages;
+
+/** Initial stack used when booting the kernel. Probably way overkill, but 4K is
+ * such a nice number. */
 long riscv_init_stack[4096 / sizeof(long)];
-__attribute__((aligned(4096))) struct vmem bootvmem;
+
+/** Initial page table used when booting the kernel. Has to be aligned properly,
+ * and so the kernel itself has to be on a 4K boundary. */
+__aligned(4096) struct vmem bootvmem;
 
 struct vmem *direct_mapping()
 {

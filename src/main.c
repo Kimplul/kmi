@@ -19,6 +19,10 @@
 #include <arch/smp.h>
 #include <libfdt.h>
 
+/**
+ * @param fdt Flattened devicetree.
+ * @return Base address of RAM. Does not take into account disjoint RAM.
+ */
 static pm_t __fdt_ram_base(void *fdt)
 {
 	int mem_offset = fdt_path_offset(fdt, "/memory");
@@ -28,6 +32,10 @@ static pm_t __fdt_ram_base(void *fdt)
 	return (pm_t)fdt_load_reg_addr(ci, mem_reg, 0);
 }
 
+/**
+ * @param fdt Flattened devicetree.
+ * @return RAM size. Does not take into account disjoint RAM.
+ */
 static pm_t __fdt_ram_size(void *fdt)
 {
 	int mem_offset = fdt_path_offset(fdt, "/memory");
@@ -39,8 +47,17 @@ static pm_t __fdt_ram_size(void *fdt)
 	return (pm_t)fdt_load_reg_size(ci, mem_reg, 0);
 }
 
-void kernel(void *fdt, uintptr_t load_addr, struct vmem *d)
+/**
+ * 'Actual' kernel, runs in kernelspace and does the heavy lifting during
+ * booting.
+ *
+ * @param fdt Flattened device tree.
+ * @param load_addr Where in memory the kernel blob was loaded to.
+ * @param d Direct mapping to use during booting.
+ */
+__noreturn void kernel(void *fdt, uintptr_t load_addr, struct vmem *d)
 {
+	/* we should be in kernelspace, so use the virtual address of our FDT. */
 	fdt = __va(fdt);
 
 	/* dbg uses direct mapping at this point */
@@ -73,11 +90,12 @@ void kernel(void *fdt, uintptr_t load_addr, struct vmem *d)
  * Sets up all kernel subsystems and jumps into \c init program, does not
  * return.
  *
+ * @param hart Hart ID. Technically unused, but makes the signature more fitting
+ * for booting with different systems, like OpenSBI and u-boot.
  * @param fdt Global FDT pointer in physical memory.
- * @param ram_base RAM base.
- * @return Should not.
+ * @param load_addr To which (physical) address in RAM kernel was loaded to.
  */
-void main(unsigned long hart, void *fdt, uintptr_t load_addr)
+__noreturn void main(unsigned long hart, void *fdt, uintptr_t load_addr)
 {
 	/* we have our own ways to get the current hart when we need it, but we
 	 * have to get the function signature right */

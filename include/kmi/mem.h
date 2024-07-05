@@ -204,14 +204,11 @@ extern enum mm_order __mm_max_order;
 enum mm_order nearest_order(size_t size);
 
 /**
- * Initialize memory subsystem data. Populates __mm_* with data given.
+ * Initialize memory subsystem data.
  *
- * @param max_order Maximum order the current system supports.
- * @param shifts Offsets to start of each memory order in address.
- * @param page_shift Width in bits of base page size.
- * \todo Should likely also be stat_t?
+ * @param fdt Pointer to flattened device tree.
  */
-void init_mem(void *mem);
+void init_mem(void *fdt);
 
 /**
  * Set RAM base address for global access.
@@ -221,6 +218,7 @@ void init_mem(void *mem);
  */
 void set_ram_base(pm_t base);
 
+/** @param size Set RAM size. */
 void set_ram_size(size_t size);
 
 /**
@@ -231,8 +229,14 @@ void set_ram_size(size_t size);
  */
 pm_t get_ram_base();
 
+/**
+ * Get RAM size.
+ * Assumes \ref set_ram_size() has been called beforehand.
+ * Does not take into account disjoint RAM regions.
+ *
+ * @return RAM size.
+ */
 size_t get_ram_size();
-
 
 /** Base page size. */
 #define BASE_PAGE_SIZE (order_size(BASE_PAGE))

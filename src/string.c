@@ -259,7 +259,7 @@ __weak size_t strnlen(const char *str, size_t num)
 }
 
 #undef memset
-__weak void *memset(void *ptr, int value, size_t num)
+__weak __used void *memset(void *ptr, int value, size_t num)
 {
 	char *p = ptr;
 	char c = value;

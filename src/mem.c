@@ -22,6 +22,8 @@ enum mm_order __mm_max_order;
  * like __mm_*.
  */
 pm_t ram_base;
+
+/** RAM size. */
 size_t ram_size;
 
 enum mm_order nearest_order(size_t size)

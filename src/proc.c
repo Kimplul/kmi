@@ -70,7 +70,7 @@ stat_t init_proc(void *fdt, vm_t *proc_fdt, vm_t *proc_initrd)
 	                             initrd, get_initrdsize(fdt),
 	                             VM_V | VM_R | VM_U);
 
-	info("mapped fdt at %p\n", (void *)*proc_fdt);
-	info("mapped initrd at %p\n", (void *)*proc_initrd);
+	info("mapped fdt at %lx\n", *proc_fdt);
+	info("mapped initrd at %lx\n", *proc_initrd);
 	return OK;
 }

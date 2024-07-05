@@ -436,11 +436,23 @@ static void __mark_area_used(pm_t base, pm_t top)
 		mark_used(BASE_PAGE, runner);
 }
 
+/** Helper for keeping track of which memory regions to avoid placing data into. */
 struct avoid_region {
+	/** Base address of region. */
 	pm_t base;
+
+	/** Size of region. */
 	pm_t size;
 };
 
+/**
+ * @param base1
+ * @param size1
+ * @param base2
+ * @param size2
+ * @return \ref true if the memory regions indicated have some overlap,
+ * \ref false otherwise.
+ */
 static bool overlaps(pm_t base1, pm_t size1, pm_t base2, pm_t size2)
 {
 	bool b = base1 >= base2 && base1 < base2 + size2;
@@ -451,7 +463,11 @@ static bool overlaps(pm_t base1, pm_t size1, pm_t base2, pm_t size2)
 /**
  * Mark reserved memory region used, to avoid it getting accidentally allocated.
  *
- * @param fdt Global FDT pointer.
+ * @param ram_base RAM base address in kernelspace.
+ * @param ram_size RAM size.
+ * @param avoid_count How many regions to avoid.
+ * @param avoid Regions to avoid. Should all be in kernelspace, everything
+ * outside RAM is ignored.
  */
 static void __mark_reserved(pm_t ram_base, pm_t ram_size, size_t avoid_count,
                             struct avoid_region avoid[64])
@@ -469,6 +485,15 @@ static void __mark_reserved(pm_t ram_base, pm_t ram_size, size_t avoid_count,
 	}
 }
 
+/**
+ * Figure out what if any regions of RAM are reserved and append them to \p
+ * avoid.
+ *
+ * @param exists How many elements are currently in \p avoid.
+ * @param avoid Array of regions to avoid, must not be sparse.
+ * @param fdt Flattened device tree.
+ * @return Total number of regions avoid.
+ */
 static size_t build_reserved_map(size_t exists, struct avoid_region avoid[64],
                                  void *fdt)
 {
@@ -490,6 +515,19 @@ static size_t build_reserved_map(size_t exists, struct avoid_region avoid[64],
 	return exists;
 }
 
+/**
+ * Selects a fitting base address for a block of memory of size \p size, while
+ * avoiding overwriting anything in \p avoid.
+ * Addresses to be avoided are allowed to be outside of RAM,
+ * for example in ROM, in which case they are just ignored.
+ *
+ * @param ram_base Base address of RAM.
+ * @param ram_size Size of RAM.
+ * @param size Size of block to find.
+ * @param avoid_count How many elements in the \p avoid array.
+ * @param avoid Which memory regions to avoid.
+ * @return A suitable base address, aligned on a word boundary.
+ */
 static pm_t select_base(pm_t ram_base, pm_t ram_size, pm_t size,
                         pm_t avoid_count,
                         struct avoid_region avoid[64])

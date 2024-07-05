@@ -29,6 +29,8 @@ stat_t prepare_proc(struct tcb *t, vm_t bin, vm_t interp);
  * Initialize process handling subsystem and setup \c init program.
  *
  * @param fdt Global FDT pointer.
+ * @param proc_fdt Where in memory the FDT was mapped.
+ * @param proc_initrd Where in memory the initrd was mapped.
  * @return \ref ERR_OOMEM when out of memory, \ref ERR_INVAL if loading \c init
  * failed, \ref OK otherwise.
  */

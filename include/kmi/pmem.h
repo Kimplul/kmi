@@ -67,6 +67,8 @@ size_t probe_pmap(pm_t ram_base, size_t ram_size, pm_t cont);
  * Initialize physical memory subsystem.
  *
  * @param fdt Global FDT pointer.
+ * @param load_addr Where kernel was loaded to. Important for making sure that
+ * nothing gets accidentally overwritten.
  */
 void init_pmem(void *fdt, uintptr_t load_addr);
 

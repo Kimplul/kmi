@@ -232,6 +232,18 @@ vm_t alloc_fixed_uvmem(struct tcb *t, vm_t start, size_t size, vmflags_t flags)
 	return w;
 }
 
+/**
+ * Helper for \ref map_fixed_mem().
+ * Maps some contiguous bit of physical memory to an allocated virtual memory region.
+ *
+ * @param b Virtual memory to work in.
+ * @param v Start of virtual memory region.
+ * @param p Start of physical memory region.
+ * @param size Size of virtual memory region.
+ * @param flags Flags to use for mappings.
+ * @param status Is written to with the status of this function.
+ * @return The start of the virtual address mapping.
+ */
 static vm_t map_fixed_region(struct vmem *b, vm_t v, pm_t p, size_t size,
                              vmflags_t flags, stat_t *status)
 {

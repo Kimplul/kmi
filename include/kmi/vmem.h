@@ -131,6 +131,18 @@ stat_t init_uvmem(struct tcb *r, vm_t base, vm_t top);
  */
 stat_t destroy_uvmem(struct tcb *r);
 
+/**
+ * Map a fixed physical region (within kernelspace) to somewhere in virtual
+ * memory.
+ *
+ * @param r Thread where memory should be mapped.
+ * @param base Physical base address to map.
+ * @param size Size of region to map.
+ * @param flags Flags to use for mapping.
+ * @return Address of mapping in virtual memory. Though note that it points to
+ * the start of \p base, not necessarily the start of the allocation.
+ * If this should be freed, remember to align down to the base page size.
+ */
 vm_t map_fixed_mem(struct tcb *r, pm_t base, size_t size, vmflags_t flags);
 
 /**

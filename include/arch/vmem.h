@@ -140,6 +140,14 @@ struct vmem *init_vmem(void *fdt);
 vm_t setup_kernel_io(struct vmem *b, vm_t paddr);
 #endif
 
+/**
+ * Create a direct mapping, with 1:1 physical addresses in one half of the
+ * address space and the kernel address space in the other.
+ * Called at boot, not allowed to allocate memory.
+ *
+ * @return The vmem node used to build the address space. Probably statically
+ * allocated.
+ */
 struct vmem *direct_mapping();
 
 /**
@@ -173,7 +181,19 @@ stat_t destroy_vmem(struct vmem *b);
  */
 void clone_uvmem(struct vmem * restrict r, struct vmem * restrict b);
 
-__noreturn void to_kernelspace(void *fdt, uintptr_t load_addr,
-                               struct vmem *direct_mapping, pm_t ram_base,
+/**
+ * Jump into kernelspace from a physical address space.
+ * Really only called by main() during boot so the parameters are kind of weird.
+ *
+ * @param fdt Flattened devicetree.
+ * @param load_addr Address where kernel was loaded to.
+ * @param direct_mapping Direct mapping vmem.
+ * @param ram_base Physical base address of ram.
+ * @param dmap \ref VM_DMAP.
+ */
+__noreturn void to_kernelspace(void *fdt,
+                               uintptr_t load_addr,
+                               struct vmem *direct_mapping,
+                               pm_t ram_base,
                                pm_t dmap);
 #endif /* KMI_ARCH_PAGES_H */
