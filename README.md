@@ -51,6 +51,15 @@ This command might eventually be moved out of this repo.
 artefacts, clean run artefacts and clean all artefacts, respectively.
 Note that `clean_run` and `clean_all` may need root privileges.
 
+The kernel should now also support Qemu's `-kernel` flag, meaning something like
+```
+qemu-system-riscv64 -machine virt -m 2G \
+    -kernel kmi.bin -initrd arch/riscv64/conf/initrd \
+    -serial stdio
+```
+
+should just work.
+
 # Top-level view
 
 This should eventually be moved into documentation with more details, but in short, `kmi`
