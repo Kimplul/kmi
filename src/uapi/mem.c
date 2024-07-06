@@ -65,15 +65,14 @@ SYSCALL_DEFINE3(req_fixmem)(struct tcb *t, sys_arg_t fixed, sys_arg_t size,
 SYSCALL_DEFINE1(free_mem)(struct tcb *t, sys_arg_t start)
 {
 	struct tcb *r = get_cproc(t);
-	vm_t vm_start = (vm_t)start;
 
 	stat_t status = OK;
 	/* try freeing normal user memory first, if that fails, try device
 	 * memory, otherwise just assume the address is borked. */
-	if (!(status = free_uvmem(r, vm_start)))
+	if (!(status = free_uvmem(r, start)))
 		return_args1(t, OK);
 
-	if (!(status = free_devmem(r, vm_start)))
+	if (!(status = free_devmem(r, start)))
 		return_args1(t, OK);
 
 	return_args1(t, status);

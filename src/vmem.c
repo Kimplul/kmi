@@ -22,7 +22,7 @@ stat_t init_uvmem(struct tcb *t, vm_t base, vm_t top)
 }
 
 /**
- * Clone process memory region.
+ * Copy process memory region.
  *
  * @param d Destination tcb.
  * @param s Source tcb.
@@ -34,20 +34,58 @@ stat_t init_uvmem(struct tcb *t, vm_t base, vm_t top)
 static stat_t __copy_mapped_region(struct tcb *d, struct tcb *s,
                                    struct mem_region *m)
 {
-	vm_t start = m->start * order_size(BASE_PAGE);
-	vm_t end = m->end * order_size(BASE_PAGE);
+	vm_t start = m->start * BASE_PAGE_SIZE;
+	vm_t end = m->end * BASE_PAGE_SIZE;
 
 	size_t size = end - start;
 	vm_t v = alloc_fixed_region(&d->uvmem.region, start, size, &size,
 	                            m->flags);
 	catastrophic_assert(v == start);
-	stat_t res = copy_region(d->proc.vmem, s->proc.vmem, v, v, size);
+
+	/* note that we use uvmem.vmem instead of proc.vmem, this is just to
+	 * make sure that zombies don't eat our brains */
+	stat_t res = copy_region(d->uvmem.vmem, s->uvmem.vmem, v, v, size);
 	if (res == OK)
 		return OK;
 
 	/* cleanup on error */
 	free_region(&d->uvmem.region, v);
-	unmap_region(d->proc.vmem, v, size);
+	unmap_region(d->uvmem.vmem, v, size);
+	return res;
+}
+
+/**
+ * Copy shared regions to new process. In these cases, we want to both allocate
+ * a fixed region and map some fixed physical memory.
+ *
+ * @param d 'Destination'
+ * @param m Shared memory region.
+ * @return \ref OK on success, some error code otherwise.
+ */
+static stat_t __copy_shared_region(struct tcb *d, struct mem_region *m)
+{
+	struct tcb *s = get_tcb(m->pid);
+	if (!s)
+		return ERR_NF;
+
+	vm_t start = m->start * BASE_PAGE_SIZE;
+	vm_t end = m->end * BASE_PAGE_SIZE;
+
+	reference_proc(s);
+
+	size_t size = end - start;
+	vm_t v = alloc_fixed_region(&d->uvmem.region, start, size, &size,
+	                            m->flags);
+
+	catastrophic_assert(v == start);
+	stat_t res = clone_region(d->uvmem.vmem, s->uvmem.vmem, start, v, size,
+	                          m->flags);
+	if (res == OK)
+		return OK;
+
+	/* cleanup on error */
+	free_region(&d->uvmem.region, v);
+	unmap_fixed_region(d->uvmem.vmem, v, size);
 	return res;
 }
 
@@ -71,7 +109,7 @@ static vm_t __clone_shared_region(struct tcb *d, struct tcb *s,
 	size_t size = end - start;
 	vm_t v = alloc_shared_region(&d->uvmem.region, size, &size, m->flags,
 	                             s->rid);
-	stat_t res = clone_region(d->proc.vmem, s->proc.vmem, start, v, size,
+	stat_t res = clone_region(d->uvmem.vmem, s->uvmem.vmem, start, v, size,
 	                          flags);
 	if (res == OK)
 		return v;
@@ -79,7 +117,7 @@ static vm_t __clone_shared_region(struct tcb *d, struct tcb *s,
 	/* cleanup on error */
 	unreference_proc(s);
 	free_region(&d->uvmem.region, v);
-	unmap_fixed_region(d->proc.vmem, v, size);
+	unmap_fixed_region(d->uvmem.vmem, v, size);
 	return NULL;
 }
 
@@ -89,11 +127,12 @@ static vm_t __clone_shared_region(struct tcb *d, struct tcb *s,
  * @param t Current thread.
  * @param m Memory region to free.
  */
-static void __free_mapped_private_region(struct tcb *t, struct mem_region *m)
+static void __free_private_mapping(struct tcb *t, struct mem_region *m)
 {
 	pm_t start = __addr(m->start);
 	pm_t end = __addr(m->end);
 	size_t size = end - start;
+
 	unmap_region(t->proc.vmem, start, size);
 }
 
@@ -104,7 +143,7 @@ static void __free_mapped_private_region(struct tcb *t, struct mem_region *m)
  * @param t Current thread.
  * @param m Memory region to free.
  */
-static void __free_mapped_shared_region(struct tcb *t, struct mem_region *m)
+static void __free_shared_mapping(struct tcb *t, struct mem_region *m)
 {
 	vm_t start = __addr(m->start);
 	vm_t end = __addr(m->end);
@@ -120,12 +159,12 @@ static void __free_mapped_shared_region(struct tcb *t, struct mem_region *m)
  * @param t Thread to work in.
  * @param m Memory region to free.
  */
-static void __free_mapped_region(struct tcb *t, struct mem_region *m)
+static void __free_mapping(struct tcb *t, struct mem_region *m)
 {
 	if (m->pid != 0)
-		return __free_mapped_shared_region(t, m);
+		return __free_shared_mapping(t, m);
 
-	return __free_mapped_private_region(t, m);
+	return __free_private_mapping(t, m);
 }
 
 void clear_uvmem(struct tcb *t)
@@ -143,7 +182,7 @@ void clear_uvmem(struct tcb *t)
 			continue;
 		}
 
-		__free_mapped_region(t, m);
+		__free_mapping(t, m);
 		free_known_region(&t->uvmem.region, m);
 	}
 }
@@ -158,8 +197,7 @@ void purge_uvmem(struct tcb *t)
 		if (!is_set(m->flags, MR_USED))
 			continue;
 
-		/* free memory associated with region */
-		__free_mapped_region(t, m);
+		__free_mapping(t, m);
 	}
 
 	/* actually destroy region, will clear out all nodes automatically */
@@ -183,14 +221,17 @@ stat_t copy_uvmem(struct tcb *d, struct tcb *s)
 	 * through all regions which is likely a slight bit slower. */
 	stat_t ret = OK;
 	struct mem_region *m = find_first_region(&s->uvmem.region);
-	while (m) {
-		if (is_region_used(m))
+	for (; m; m = m->next) {
+		if (!is_region_used(m))
+			continue;
+
+		if (m->pid == 0)
 			ret = __copy_mapped_region(d, s, m);
+		else
+			ret = __copy_shared_region(d, m);
 
 		if (ret)
 			return ret;
-
-		m = m->next;
 	}
 
 	return ret;
@@ -273,7 +314,7 @@ stat_t free_uvmem(struct tcb *r, vm_t va)
 	if (!m)
 		return ERR_NF;
 
-	__free_mapped_region(r, m);
+	__free_mapping(r, m);
 	free_known_region(&r->uvmem.region, m);
 	return OK;
 }
