@@ -26,7 +26,7 @@ ARCH_SOURCE	= arch/$(ARCH)
 
 KERNEL_SOURCES	!= echo src/*.c src/uapi/*.c lib/*.c
 
-CLEANUP		:= build deps.mk kernel.* kmi.bin
+CLEANUP		:= build deps.mk kmi.elf kmi.bin
 CLEANUP_CMD	:=
 
 include arch/$(ARCH)/source.mk
