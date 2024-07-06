@@ -107,9 +107,15 @@ stat_t alloc_stack(struct tcb *t)
 		return ERR_OOMEM;
 
 	/** \todo this only allows for a global stack size, what if a user wants
-	 * per thread stack sizes? */
-	t->thread_stack_top = t->thread_stack + __thread_stack_size;
+	 * per thread stack sizes? I guess allocate them yourself in userspace
+	 * or something? */
+	t->thread_stack_size = __thread_stack_size;
 	return OK;
+}
+
+void free_stack(struct tcb *t)
+{
+	free_uvmem(t, t->thread_stack);
 }
 
 struct tcb *create_thread(struct tcb *p)
@@ -171,7 +177,7 @@ static stat_t __copy_proc(struct tcb *p, struct tcb *n)
 	n->exec = p->exec;
 	n->callback = p->callback;
 	n->thread_stack = p->thread_stack;
-	n->thread_stack_top = p->thread_stack_top;
+	n->thread_stack_size = p->thread_stack_size;
 
 	copy_regs(n, p);
 	copy_caps(n->caps, p->caps);
@@ -188,7 +194,7 @@ struct tcb *create_proc(struct tcb *p)
 		return 0;
 
 	if (p)
-		__copy_proc(p, n); /* we have a parent thread */
+		__copy_proc(p, n); /* we have a parent process i.e. fork */
 
 	return n;
 }
@@ -202,12 +208,6 @@ struct tcb *create_proc(struct tcb *p)
 static stat_t __destroy_thread_data(struct tcb *t)
 {
 	catastrophic_assert(t->refcount == 0);
-
-	/* free memory backing rpc stack */
-	destroy_rpc_stack(t);
-
-	/* free rpc vmem */
-	destroy_vmem(t->rpc.vmem);
 
 	/* remove ourselves from the thread pool */
 	/** @todo this should be at the top of the function, and be wrapped in
@@ -240,6 +240,14 @@ stat_t destroy_thread(struct tcb *t)
 
 	/* remove reference to root process */
 	unreference_proc(get_rproc(t));
+
+	free_stack(t);
+
+	/* free memory backing rpc stack */
+	destroy_rpc_stack(t);
+
+	/* free rpc vmem */
+	destroy_vmem(t->rpc.vmem);
 
 	unqueue_ipi(t);
 

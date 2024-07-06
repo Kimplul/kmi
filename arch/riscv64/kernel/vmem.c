@@ -551,10 +551,17 @@ void destroy_rpc_stack(struct tcb *t)
 	}
 }
 
+void reset_rpc_stack(struct tcb *t)
+{
+	t->rpc_stack = RPC_STACK_BASE + (BASE_PAGE_SIZE * rpc_pages);
+	t->arch.rpc_idx = rpc_pages;
+}
+
 bool rpc_stack_empty(pm_t addr)
 {
 	return addr == RPC_STACK_BASE + (BASE_PAGE_SIZE * rpc_pages);
 }
+
 
 vm_t rpc_position(struct tcb *t)
 {

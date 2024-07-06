@@ -34,9 +34,14 @@ void unorphanize(struct tcb *t)
 	t->pid = 1;
 	t->eid = 1;
 
+	free_stack(t);
+	reset_rpc_stack(t);
+
 	t->proc = init->proc;
-	t->rpc_stack = RPC_STACK_BASE;
 	use_vmem(t->proc.vmem);
+	alloc_stack(t);
+
+	clear_bits(t->state, TCB_ORPHAN);
 
 	catastrophic_assert(init->callback);
 	set_args3(t, 0, SYS_USER_ORPHANED, t->tid);

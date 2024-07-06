@@ -42,6 +42,13 @@ void setup_rpc_stack(struct tcb *t);
 void destroy_rpc_stack(struct tcb *t);
 
 /**
+ * Reset RPC stack to top.
+ *
+ * @param t Thread whose RPC stack should be reset.
+ */
+void reset_rpc_stack(struct tcb *t);
+
+/**
  * @return Max size of one individual RPC stack instance.
  */
 size_t max_rpc_size();

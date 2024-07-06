@@ -28,6 +28,7 @@ void run_init(struct tcb *t, vm_t fdt, vm_t initrd)
 	 * Could be fixed with a separate pure asm run_init, but I guess this
 	 * works for now.
 	 */
+	vm_t stack_top = t->thread_stack + t->thread_stack_size;
 	bkl_unlock();
 	__asm__ volatile ("mv sp, %0\n"
 	                  "mv a0, %1\n"
@@ -35,7 +36,7 @@ void run_init(struct tcb *t, vm_t fdt, vm_t initrd)
 	                  "mv a2, %3\n"
 	                  "sret\n"
 	                  :
-	                  : "r" (t->thread_stack_top), "r" (t->tid), "r" (fdt),
+	                  : "r" (stack_top), "r" (t->tid), "r" (fdt),
 	                  "r" (initrd)
 	                  : "memory");
 	/* we should never reach this */
@@ -66,8 +67,7 @@ void set_thread(struct tcb *t)
 	struct riscv_regs *r = (struct riscv_regs *)(t->regs) - 1;
 
 	/* insert important values into register slots */
-	r->sp = (long)t->thread_stack_top;
-	r->tp = (long)t->thread_storage;
+	r->sp = (long)t->thread_stack + t->thread_stack_size;
 }
 
 void set_stack(struct tcb *t, vm_t s)

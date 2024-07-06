@@ -122,18 +122,13 @@ struct tcb {
 	vm_t thread_stack;
 
 	/** Address of this thread's stack top. */
-	vm_t thread_stack_top;
+	vm_t thread_stack_size;
 
 	/** Current address of usable rpc stack. */
 	vm_t rpc_stack;
 
-	/** \todo Check if each thread should be allowed more than just one
-	 * region of thread local storage. */
-	/** Possible thread local storage. */
-	vm_t thread_storage;
-
 	/** Reference count to process. */
-	atomic_int_fast32_t refcount;
+	long refcount;
 
 	/** Process context of thread. */
 	struct tcb_ctx proc;
@@ -320,6 +315,13 @@ struct tcb *get_tcb(id_t tid);
  * @return \ref OK on success, \ref ERR_OOMEM if out of memory.
  */
 stat_t alloc_stack(struct tcb *t);
+
+/**
+ * Free thread stack.
+ *
+ * @param t Thread whose stack to free.
+ */
+void free_stack(struct tcb *t);
 
 /**
  * Set address to jump to when returning to userspace.
