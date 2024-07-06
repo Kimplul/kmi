@@ -26,33 +26,11 @@
 
 /* don't touch >:( */
 
-/**
- * How much space to reserve for possible firmware region.
- * Assumed to be at start of RAM.
- */
-#define FW_MAX_SIZE (SZ_2M)
-
-/** Maximum size of the kernel proper. Largely arbitrary. */
-/** \todo UBSAN is getting pretty close to this limit, should it be raised? */
-#define PM_KERN_SIZE (SZ_256K)
-
-/** Virtual memory stack base. In this case, right after the kernel. */
-#define VM_STACK_BASE (VM_KERN + PM_KERN_SIZE)
-
-/** Size of virtual memory stack. */
-#define VM_STACK_SIZE (SZ_4K)
-
-/** Top of virtual memory stack. */
-#define VM_STACK_TOP (VM_STACK_BASE + VM_STACK_SIZE)
-
 #if __riscv_xlen == 64
 /* 64bit */
 
 /** Direct map offset. */
 #define VM_DMAP (0xffffffc000000000)         /* testing for now */
-
-/** Virtual address of kernel proper inside direct mapping. */
-#define VM_KERN (VM_DMAP + FW_MAX_SIZE)
 
 /** Page reserved for kernel I/O. */
 #define IO_PAGE 511UL
@@ -92,7 +70,6 @@
 
 /** \todo figure this stuff out */
 #define VM_DMAP 0x80000000 /* works on qemu at least */
-#define VM_KERN (VM_DMAP + FW_MAX_SIZE)
 
 #define IO_PAGE 1023UL
 #define KSTART_PAGE 512UL

@@ -1,7 +1,6 @@
 #if GENERIC_UBOOT
 # define MAIN main_go
 #else
-# define LOAD_REG a1
 # define MAIN main
 #endif
 
