@@ -11,7 +11,7 @@ SECTIONS {
 	 * hack.
 	 * @todo look into this further.
 	 */
-	. = ABSOLUTE(VM_DMAP);
+	. = VM_DMAP;
 	__kernel_start = .;
 	.text ALIGN(4K) : AT(0) {
 		*(.kernel.start);
@@ -24,6 +24,7 @@ SECTIONS {
 
 	.data : {
 		*(.data*)
+		*(.sdata*)
 	}
 
 	.bss : {

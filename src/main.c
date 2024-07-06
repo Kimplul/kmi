@@ -66,7 +66,7 @@ __noreturn void kernel(void *fdt, uintptr_t load_addr, struct vmem *d)
 	/* start up debugging in kernel IO */
 	setup_io_dbg(d);
 
-	//dbg_fdt(fdt);
+	dbg_fdt(fdt);
 
 	setup_arch(fdt);
 
@@ -106,7 +106,6 @@ __noreturn void main(unsigned long hart, void *fdt, uintptr_t load_addr)
 	(void)hart;
 
 	/** @todo some kind of lottery? */
-
 	pm_t ram_base = __fdt_ram_base(fdt);
 	pm_t ram_size = __fdt_ram_size(fdt);
 	set_ram_base(ram_base);

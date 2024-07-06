@@ -364,6 +364,16 @@ static size_t __integral_val(ssize_t value, size_t base, size_t flags,
 	return ret + 1;
 }
 
+static size_t __puts(const char *s)
+{
+	size_t i = 0;
+	while (s[i]) {
+		__putchar(s[i++]);
+	}
+
+	return i;
+}
+
 /**
  * Print prefix corresponding to \c base.
  *
@@ -372,28 +382,14 @@ static size_t __integral_val(ssize_t value, size_t base, size_t flags,
  */
 static size_t __print_prefix(size_t base)
 {
-	size_t i = 0;
+	switch (base) {
+	case 16: return __puts("0x");
+	case 8: return __puts("0");
+	case 2: return __puts("0b");
+	default:
+	}
 
-	const char *hex = "0x";
-	const char *oct = "0";
-	const char *bin = "0b";
-	const char *empty = "";
-
-	const char *prefix;
-
-	if (base == 16)
-		prefix = hex;
-	else if (base == 8)
-		prefix = oct;
-	else if (base == 2)
-		prefix = bin;
-	else
-		prefix = empty;
-
-	for (; *prefix; ++i)
-		__putchar(*prefix++);
-
-	return i;
+	return 0;
 }
 
 /**
