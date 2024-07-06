@@ -9,10 +9,12 @@
  * Arch-specific tcb stuff.
  */
 
-#if defined(riscv64)
+#if defined(__riscv)
+# if __riscv_xlen == 64
 #include "../../arch/riscv64/include/tcb.h"
-#elif defined(riscv32)
+# else
 #include "../../arch/riscv32/include/tcb.h"
+# endif
 #endif
 
 /**

@@ -13,10 +13,12 @@
 #include <kmi/types.h>
 #include <kmi/tcb.h>
 
-#if defined(riscv64)
+#if defined(__riscv)
+# if __riscv_xlen == 64
 #include "../../arch/riscv64/include/cpu.h"
-#elif defined(riscv32)
+# else
 #include "../../arch/riscv32/include/cpu.h"
+# endif
 #endif
 
 /**

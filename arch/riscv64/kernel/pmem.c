@@ -16,7 +16,7 @@ stat_t stat_pmem_conf(void *fdt, size_t *max_order, size_t *base_bits,
 
 	size_t nbits = 9;
 
-#if defined(riscv64)
+#if __riscv_xlen == 64
 	*max_order = 2;
 	nbits = 9;
 #else

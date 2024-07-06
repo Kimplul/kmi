@@ -14,10 +14,12 @@
  * \todo Fix incorrect include file reference in doxygen.
  */
 
-#if defined(riscv64)
+#if defined(__riscv)
+# if __riscv_xlen == 64
 #include "../../arch/riscv64/include/types.h"
-#elif defined(riscv32)
+# elif
 #include "../../arch/riscv32/include/types.h"
+# endif
 #endif
 
 #endif /* KMI_ARCH_TYPES_H */

@@ -10,10 +10,12 @@
  */
 
 /* pass VM_X etc. to userspace */
-#if defined(riscv64)
+#if defined(__riscv)
+# if __riscv_xlen == 64
 #include "../../arch/riscv64/include/uapi.h"
-#elif defined(riscv32)
+# else
 #include "../../arch/riscv32/include/uapi.h"
+# endif
 #endif
 
 /** enum for now, possibly macros in the future once I get an approximate idea of

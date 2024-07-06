@@ -10,10 +10,12 @@
  * arch/whatever/kernel/vmem.c
  */
 
-#if defined(riscv64)
+#if defined(__riscv)
+# if __riscv_xlen == 64
 #include "../../arch/riscv64/include/vmem.h"
-#elif defined(riscv32)
+# else
 #include "../../arch/riscv32/include/vmem.h"
+# endif
 #endif
 
 #include <kmi/types.h>

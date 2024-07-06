@@ -45,7 +45,7 @@
 /** Top of virtual memory stack. */
 #define VM_STACK_TOP (VM_STACK_BASE + VM_STACK_SIZE)
 
-#if defined(riscv64)
+#if __riscv_xlen == 64
 /* 64bit */
 
 /** Direct map offset. */

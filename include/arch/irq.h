@@ -15,10 +15,12 @@ typedef uint_fast32_t irq_t;
  * \todo These should probably also be stat_t...
  */
 
-#if defined(riscv64)
+#if defined(__riscv)
+# if __riscv_xlen == 64
 #include "../../arch/riscv64/include/irq.h"
-#elif defined(riscv32)
+# else
 #include "../../arch/riscv32/include/irq.h"
+# endif
 #endif
 
 /**

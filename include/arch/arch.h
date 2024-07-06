@@ -12,10 +12,12 @@
 
 #include <kmi/types.h>
 
-#if defined(riscv64)
+#if defined(riscv)
+# if __riscv_xlen == 64
 #include "../../arch/riscv64/include/arch.h"
-#elif defined(riscv32)
+# else
 #include "../../arch/riscv32/include/arch.h"
+# endif
 #endif
 
 /**
