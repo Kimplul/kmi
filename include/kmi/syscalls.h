@@ -204,6 +204,35 @@ enum notify_flag {
  */
 typedef long sys_arg_t;
 
+/** IDs for configuration parameters. */
+enum conf_param {
+	/**
+	 * How large a regular thread stack is.
+	 * \c R/W
+	 */
+	CONF_THREAD_STACK,
+
+	/**
+	 * How large an RPC stack element is. R/W. Note that this is not how
+	 * large the RPC stack is in total, as that is hardcoded by the
+	 * architecture, but how much of that stack one RPC call can take.
+	 * \c R/W
+	 */
+	CONF_RPC_STACK,
+
+	/**
+	 * Current RAM usage.
+	 * \c R
+	 */
+	CONF_RAM_USAGE,
+
+	/**
+	 * Total RAM size.
+	 * \c R.
+	 */
+	CONF_RAM_SIZE,
+};
+
 /**
  * Return structure of syscall.
  * \note Field names are generic, and can be used for whatever,

@@ -208,11 +208,21 @@ static void __get_bit(struct mm_bucket *bucket, pm_t a, size_t *s, size_t *b)
 	*b = p % bucket->bits;
 }
 
-void free_page(enum mm_order order, pm_t addr)
+/** Counter for how many bytes are currently in use. */
+static size_t used = 0;
+
+/**
+ * Non-usage counting worker for \ref free_page().
+ *
+ * @param order Order of page to free.
+ * @param addr Address of page to free.
+ * @return \ref true if usage count should be updated, \ref false otherwise.
+ */
+static bool __free_page(enum mm_order order, pm_t addr)
 {
 	struct mm_bucket *bucket = pmap->buckets[order];
 	if (!bucket)
-		return;
+		return false;
 
 	size_t set = 0, bit = 0;
 	__get_bit(bucket, addr, &set, &bit);
@@ -227,11 +237,25 @@ void free_page(enum mm_order order, pm_t addr)
 		__detach_set(bucket, bmap);
 
 		if (bmap->size == order_width(order + 1))
-			free_page(order + 1, __page_addr(bucket, set, bit));
+			__free_page(order + 1, __page_addr(bucket, set, bit));
 	}
+
+	return true;
 }
 
-pm_t alloc_page(enum mm_order order)
+void free_page(enum mm_order order, pm_t addr)
+{
+	if (__free_page(order, addr))
+		used -= order_size(order);
+}
+
+/**
+ * Non-usage counting worker for \ref alloc_page().
+ *
+ * @param order Order of page to allocate.
+ * @return Address of allocated page, NULL of no page available.
+ */
+static pm_t __alloc_page(enum mm_order order)
 {
 	struct mm_bucket *bucket = pmap->buckets[order];
 	if (!bucket)
@@ -239,7 +263,7 @@ pm_t alloc_page(enum mm_order order)
 
 	struct mm_bmap *bmap = bucket->head;
 	if (!bmap) {
-		pm_t a = alloc_page(order + 1);
+		pm_t a = __alloc_page(order + 1);
 		if (!a)
 			return 0;
 
@@ -250,7 +274,7 @@ pm_t alloc_page(enum mm_order order)
 		bmap->used = 0;
 		bitmap_clear_all(bmap->bits, bmap->size);
 		__attach_set(bucket, bmap);
-		return alloc_page(order);
+		return __alloc_page(order);
 	}
 
 	bmap->used++;
@@ -265,11 +289,27 @@ pm_t alloc_page(enum mm_order order)
 	return __page_addr(bucket, set, bit);
 }
 
-void mark_used(enum mm_order order, pm_t addr)
+pm_t alloc_page(enum mm_order order)
+{
+	pm_t page = __alloc_page(order);
+	if (page)
+		used += order_size(order);
+
+	return page;
+}
+
+/**
+ * Non-usage counting worker for \ref __mark_used().
+ *
+ * @param order Order of page to mark used.
+ * @param addr Address of page to mark used.
+ * @return \ref true if usage count should be updated, \ref false otherwise.
+ */
+static bool __mark_used(enum mm_order order, pm_t addr)
 {
 	struct mm_bucket *bucket = pmap->buckets[order];
 	if (!bucket)
-		return;
+		return false;
 
 	size_t set = 0, bit = 0;
 	__get_bit(bucket, addr, &set, &bit);
@@ -278,7 +318,7 @@ void mark_used(enum mm_order order, pm_t addr)
 	if (bmap->used == 0) {
 		bitmap_clear_all(bmap->bits, bmap->size);
 		__attach_set(bucket, bmap);
-		mark_used(order + 1, addr);
+		__mark_used(order + 1, addr);
 	}
 
 	/* a page already in use can just be left alone. This MIGHT hide some
@@ -286,13 +326,26 @@ void mark_used(enum mm_order order, pm_t addr)
 	 * initialization, but that scenario should probably be handled outside
 	 * of this function anyway. */
 	if (bitmap_is_set(bmap->bits, bit))
-		return;
+		return false;
 
 	bmap->used++;
 	bitmap_set(bmap->bits, bit);
 
 	if (bmap->used == bmap->size)
 		__detach_set(bucket, bmap);
+
+	return true;
+}
+
+void mark_used(enum mm_order order, pm_t addr)
+{
+	if (__mark_used(order, addr))
+		used += order_size(order);
+}
+
+size_t query_used()
+{
+	return used;
 }
 
 /**

@@ -220,6 +220,28 @@ static void *sys_req_mem(size_t count)
 	return (void *)r.ar0;
 }
 
+static size_t get_ram_usage()
+{
+	struct sys_ret r = ecall2(SYS_CONF_GET, CONF_RAM_USAGE);
+	if (r.s) {
+		print_value("getting RAM usage failed with error ", r.s);
+		return 0;
+	}
+
+	return r.ar0;
+}
+
+static size_t get_ram_size()
+{
+	struct sys_ret r = ecall2(SYS_CONF_GET, CONF_RAM_SIZE);
+	if (r.s) {
+		print_value("getting RAM size failed with error ", r.s);
+		return 0;
+	}
+
+	return r.ar0;
+}
+
 static void sys_free_mem(void *p)
 {
 	struct sys_ret r = ecall2(SYS_FREE_MEM, (long)p);
@@ -336,11 +358,19 @@ void _start()
 	print_value("IPC requests per second", n);
 
 	puts("Doing memory allocations...\n");
+
+	size_t ram = get_ram_usage();
+	size_t size = get_ram_size();
+	print_value("Memory usage before allocations: ", ram);
+	print_value("Memory size in total: ", size);
 	for (i = 0; i < 1000000; ++i) {
 		char *p = sys_req_mem(10);
 		*p = 'c';
 		sys_free_mem(p);
 	}
+
+	ram = get_ram_usage();
+	print_value("Memory usage after allocations: ", ram);
 
 	puts("Checking shared memory\n");
 	struct sys_ret r = sys_ipc_req(1, 1, 0, 0, 0);

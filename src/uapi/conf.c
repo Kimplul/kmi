@@ -21,12 +21,6 @@
 size_t __thread_stack_size = SZ_2M;
 size_t __rpc_stack_size = SZ_512K;
 
-/** IDs for configuration parameters. */
-/** @todo should probably be moved somewhere so it can be shared with userspace */
-enum conf_param {
-	CONF_THREAD_STACK = 0,
-	CONF_RPC_STACK,
-};
 
 /**
  * Configuration parameter read syscall handler.
@@ -39,9 +33,8 @@ enum conf_param {
  */
 SYSCALL_DEFINE1(conf_get)(struct tcb *t, sys_arg_t param)
 {
-	if (!has_cap(t->caps, CAP_CONF))
-		return_args1(t, ERR_PERM);
-
+	/* anyone can read any current parameter, I don't think they should be
+	 * hidden. */
 	long val = 0;
 	switch (param) {
 	case CONF_THREAD_STACK:
@@ -50,6 +43,14 @@ SYSCALL_DEFINE1(conf_get)(struct tcb *t, sys_arg_t param)
 
 	case CONF_RPC_STACK:
 		val = __rpc_stack_size;
+		break;
+
+	case CONF_RAM_USAGE:
+		val = query_used();
+		break;
+
+	case CONF_RAM_SIZE:
+		val = get_ram_size();
 		break;
 
 	default:
@@ -87,6 +88,9 @@ SYSCALL_DEFINE2(conf_set)(struct tcb *t, sys_arg_t param, sys_arg_t val)
 
 		__rpc_stack_size = size;
 		break;
+
+	default:
+		return_args1(t, ERR_INVAL);
 	}
 
 	return_args1(t, OK);

@@ -39,6 +39,9 @@ void mark_used(enum mm_order order, pm_t addr);
  */
 pm_t alloc_page(enum mm_order order);
 
+/** @return How many bytes of memory are currently in use. */
+size_t query_used();
+
 /**
  * Populate physical RAM usage map.
  * In theory we could easily implement NUMA nodes by just using different orders
