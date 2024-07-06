@@ -45,7 +45,7 @@ vm_t alloc_devmem(struct tcb *t, pm_t dev_start, size_t bytes, vmflags_t flags)
 {
 	hard_assert(t && is_proc(t), ERR_INVAL);
 
-	struct mem_region *region = NULL;
+	struct mem_region_root *region = NULL;
 	if (dev_start < __pre_top)
 		region = &pre_ram;
 
