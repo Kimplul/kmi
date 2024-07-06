@@ -93,8 +93,9 @@ void smp_bringup(struct vmem *b, void *fdt)
 		/** @todo try to remember to free these as well */
 		smp_init_stacks[hartid] = (void *)alloc_page(BASE_PAGE) +
 		                          BASE_PAGE_SIZE;
-		r = sbi_hart_start(hartid,
-		                   (unsigned long)__pa(riscv_bringup), satp);
+
+		pm_t bringup = (pm_t)__pa(riscv_bringup);
+		r = sbi_hart_start(hartid, bringup, satp);
 
 		if (r.error) {
 			warn("failed bringing up hart %ld: %ld\n",

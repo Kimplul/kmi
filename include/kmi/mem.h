@@ -224,6 +224,8 @@ void set_ram_base(pm_t base);
 /** @param size Set RAM size. */
 void set_ram_size(size_t size);
 
+void set_load_addr(pm_t addr);
+
 /**
  * Get RAM base address.
  * Very much assumes set_ram_base() has been called beforehand.
@@ -240,6 +242,8 @@ pm_t get_ram_base();
  * @return RAM size.
  */
 size_t get_ram_size();
+
+pm_t get_load_addr();
 
 /** Base page size. */
 #define BASE_PAGE_SIZE (order_size(BASE_PAGE))

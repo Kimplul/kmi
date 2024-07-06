@@ -61,14 +61,12 @@ __noreturn void kernel(void *fdt, uintptr_t load_addr, struct vmem *d)
 	/* we should be in kernelspace, so use the virtual address of our FDT. */
 	fdt = __va(fdt);
 
-	bkl_lock();
-
 	/* dbg uses direct mapping at this point */
 	init_dbg(fdt);
 	/* start up debugging in kernel IO */
 	setup_io_dbg(d);
 
-	dbg_fdt(fdt);
+	//dbg_fdt(fdt);
 
 	setup_arch(fdt);
 
@@ -80,11 +78,14 @@ __noreturn void kernel(void *fdt, uintptr_t load_addr, struct vmem *d)
 	vm_t proc_fdt = 0, proc_initrd = 0;
 	init_proc(fdt, &proc_fdt, &proc_initrd);
 
+	/* lock kernel since we're about to start other threads as well */
+	bkl_lock();
 	/* try to bring up other cores on system */
 	smp_bringup(d, fdt);
 
 	/* start running init program */
 	run_init(cur_tcb(), proc_fdt, proc_initrd);
+	unreachable();
 }
 
 /**
@@ -110,6 +111,7 @@ __noreturn void main(unsigned long hart, void *fdt, uintptr_t load_addr)
 	pm_t ram_size = __fdt_ram_size(fdt);
 	set_ram_base(ram_base);
 	set_ram_size(ram_size);
+	set_load_addr(load_addr);
 
 	init_mem(fdt);
 

@@ -604,6 +604,7 @@ static pm_t select_base(pm_t ram_base, pm_t ram_size, pm_t size,
 
 		return base;
 retry:
+		continue;
 	}
 
 	return 0;

@@ -536,7 +536,7 @@ void setup_rpc_stack(struct tcb *t)
 	 * which means that it must also be the leaf */
 	t->arch.rpc_leaf = (struct vmem *)__find_vmem(t->rpc.vmem,
 	                                              RPC_STACK_BASE,
-	                                              BASE_PAGE);
+	                                              NULL);
 	/* we count downward in base pages */
 	t->arch.rpc_idx = rpc_pages;
 }

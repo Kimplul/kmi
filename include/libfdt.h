@@ -99,7 +99,7 @@ void __dbg_fdt(const void *fdt, int node_offset, int depth);
 static inline fdt64_t fdt_load_reg_addr(struct cell_info ci, const void *p,
                                         size_t i)
 {
-	hard_assert(ci.addr_cells == 2 || ci.addr_cells == 1, 0);
+	catastrophic_assert(ci.addr_cells == 2 || ci.addr_cells == 1);
 	size_t offset = i * (ci.addr_cells + ci.size_cells) * sizeof(fdt32_t);
 	char *addr = ((char *)p) + 0;
 	return fdt_load_int_ptr(ci.addr_cells, addr + offset);

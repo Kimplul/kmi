@@ -69,6 +69,8 @@ static void __map_exec(struct tcb *t, vm_t bin, uint8_t ei_c, vm_t phstart,
 		if (!start)
 			return; /* out of memory or something */
 
+		info("mapped ELF section to %x\n", start);
+
 		uint8_t elf_flags = program_header_prop(ei_c, runner, p_flags);
 		uint8_t uvflags = __elf_to_uvflags(elf_flags);
 
@@ -108,6 +110,7 @@ static vm_t __map_dyn(struct tcb *t, vm_t bin, uint8_t ei_c, vm_t phstart,
 	/** \todo this path should only be taken when no PT_INTERP is defined, as
 	 * making sure ld is loaded should be done in userspace. Maybe a bit
 	 * hacky, I know.*/
+	return 0;
 }
 
 /**

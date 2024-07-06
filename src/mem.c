@@ -26,6 +26,9 @@ pm_t ram_base;
 /** RAM size. */
 size_t ram_size;
 
+/** Load address. */
+pm_t load_addr;
+
 enum mm_order nearest_order(size_t size)
 {
 	for (enum mm_order order = max_order(); order >= MM_MIN; --order)
@@ -56,7 +59,7 @@ void init_mem(void *fdt)
 	}
 }
 
-void set_ram_base(uintptr_t base)
+void set_ram_base(pm_t base)
 {
 	ram_base = base;
 }
@@ -66,7 +69,12 @@ void set_ram_size(size_t size)
 	ram_size = size;
 }
 
-uintptr_t get_ram_base()
+void set_load_addr(pm_t addr)
+{
+	load_addr = addr;
+}
+
+pm_t get_ram_base()
 {
 	return ram_base;
 }
@@ -74,4 +82,9 @@ uintptr_t get_ram_base()
 size_t get_ram_size()
 {
 	return ram_size;
+}
+
+uintptr_t get_load_addr()
+{
+	return load_addr;
 }

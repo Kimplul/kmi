@@ -12,12 +12,12 @@ riscv_bringup:
 	sfence.vma
 
 	/* fetch the stack allocated to us at our hart index in smp_init_stacks */
-	la t0, smp_init_stacks
+	lla t0, smp_init_stacks
 	slli t1, a0, RW_SHIFT
 	add t0, t0, t1
 	lr sp, 0(t0)
 	mv tp, sp
 
 	/* jump to C to handle rest of bringup */
-	la t0, core_bringup
+	lla t0, core_bringup
 	jr t0

@@ -303,7 +303,7 @@ void unreference_proc(struct tcb *p)
 	hard_assert(is_proc(p), RETURN_VOID);
 	p->refcount--;
 	if (zombie(p) && p->refcount == 0) {
-		dbg("thread %d is completely destroyed\n", p->tid);
+		dbg("thread %ld is completely destroyed\n", (long)p->tid);
 		__destroy_thread_data(p);
 	}
 }

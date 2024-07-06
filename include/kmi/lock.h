@@ -22,7 +22,7 @@
  *
  * \todo irq contexts?
  */
-typedef atomic_int spinlock_t;
+typedef int spinlock_t;
 
 #include <arch/lock.h>
 

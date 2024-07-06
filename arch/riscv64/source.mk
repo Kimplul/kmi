@@ -3,7 +3,7 @@ KERNEL_SOURCES	+= $(KERNEL_LOCAL)
 INIT_SOURCES	+= $(ARCH_SOURCE)/init/*.[cS]
 
 # this doesn't work for rv32, but fine for now */
-ARCH_CFLAGS	+= -mcmodel=medany
+ARCH_CFLAGS	:= $(ARCH_CFLAGS) -mcmodel=medany
 
 # oof, LLVM's riscv support has become better since I last looked into
 # it, but for some reason LTO still causes a crash. Meaning it has to be

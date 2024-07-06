@@ -2,7 +2,7 @@
 /* Copyright 2024, Kim Kuparinen < kimi.h.kuparinen@gmail.com > */
 
 #ifndef KMI_ORPHANAGE_H
-#define KMI_OPRHANAGE_H
+#define KMI_ORPHANAGE_H
 
 /**
  * @file orphanage.h
