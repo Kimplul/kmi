@@ -40,6 +40,9 @@ enum {
 
 	/** Thread is allowed to request notification handler. */
 	CAP_SIGNAL = (1 << 6),
+
+	/** Thread is allowed to request shared memory */
+	CAP_SHARED = (1 << 7)
 };
 
 /**

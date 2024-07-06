@@ -136,8 +136,8 @@ struct tcb *create_thread(struct tcb *p)
 		 * systems don't we can easily turn this into a clone_uvmem. */
 		t->proc.vmem = p->proc.vmem;
 	} else {
-		init_uvmem(t, UVMEM_START, UVMEM_END);
 		t->proc.vmem = create_vmem();
+		init_uvmem(t, UVMEM_START, UVMEM_END);
 		t->pid = t->tid;
 		t->rid = t->tid;
 		p = t;
@@ -173,9 +173,9 @@ static stat_t __copy_proc(struct tcb *p, struct tcb *n)
 	n->thread_stack = p->thread_stack;
 	n->thread_stack_top = p->thread_stack_top;
 
-	clone_regs(n, p);
+	copy_regs(n, p);
 	copy_caps(n->caps, p->caps);
-	return clone_mem_regions(n, p);
+	return copy_uvmem(n, p);
 }
 
 struct tcb *create_proc(struct tcb *p)
@@ -214,12 +214,14 @@ static stat_t __destroy_thread_data(struct tcb *t)
 	 * some kind of lock that checks that nobody reads the value while we're
 	 * setting it to zero. get_tcb() should accordingly increment the
 	 * reference count atomically. Also, an unget_tcb() is needed to
-	 * decrement the reference count I guess? */
+	 * decrement the reference count I guess? if we didn't have the BKL that
+	 * is
+	 */
 	tcbs[t->tid] = 0;
 
-	/* forcefully free last struggling bits of memory */
+	/* forcefully free last struggling bits of memory, assuming we own the
+	 * uvmem */
 	destroy_uvmem(t);
-	destroy_vmem(t->proc.vmem);
 
 	/* free associated kernel stack and the structure itself */
 	vm_t bottom = align_down((vm_t)t, order_size(MM_O0));

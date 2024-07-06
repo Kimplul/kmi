@@ -12,14 +12,15 @@
 /* forward declaration */
 struct tcb;
 
-#include <kmi/mem_regions.h>
 #include <kmi/orphanage.h>
 #include <kmi/syscalls.h>
+#include <kmi/regions.h>
 #include <kmi/atomic.h>
 #include <kmi/queue.h>
 #include <kmi/types.h>
 #include <kmi/caps.h>
-#include <arch/tcb.h> /* arch-specific data */
+
+#include <arch/tcb.h>
 
 /**
  * Check if thread is process thread.
@@ -82,6 +83,21 @@ enum tcb_state {
 	TCB_ORPHAN = (1 << 1),
 };
 
+/** Wrapper around data for managing userspace virtual memory, defined here to
+ * avoid loops */
+struct uvmem {
+	/** ID of owning thread. Zombie threads or orhaned threads may be moved
+	 * to other virtual memories, but they still hold a 'backwards'
+	 * reference to their original virtual memory. */
+	id_t owner;
+
+	/** Actual userspace virtual memory address space. */
+	struct vmem *vmem;
+
+	/** Region data for allocations within this address space. */
+	struct mem_region_root region;
+};
+
 /** Thread control block. Main way to handle threads. */
 struct tcb {
 	/** Execution continuation point. Important that it is first. */
@@ -97,7 +113,7 @@ struct tcb {
 	struct arch_tcbd arch;
 
 	/** Memory mapping data. Only relevant in root thread. */
-	struct mem_region_root sp_r;
+	struct uvmem uvmem;
 
 	/** Address of callback function in servers. */
 	vm_t callback;

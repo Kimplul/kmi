@@ -15,11 +15,11 @@
  * now.
  */
 
-#include <kmi/mem_nodes.h>
 #include <kmi/pmem.h>
 #include <kmi/dmem.h>
 #include <kmi/debug.h>
 #include <kmi/initrd.h>
+#include <kmi/regions.h>
 #include <kmi/string.h> /* memset */
 #include <kmi/bits.h> /* is_nset etc */
 #include <libfdt.h>

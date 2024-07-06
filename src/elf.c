@@ -65,15 +65,15 @@ static void __map_exec(struct tcb *t, vm_t bin, uint8_t ei_c, vm_t phstart,
 		vm_t va = program_header_prop(ei_c, runner, p_vaddr);
 		size_t vsz = program_header_prop(ei_c, runner, p_memsz);
 
-		vm_t start = alloc_fixed_region(&t->sp_r, va, vsz, &vsz,
-		                                default_flags);
+		vm_t start = alloc_fixed_uvmem(t, va, vsz, default_flags);
 		if (!start)
 			return; /* out of memory or something */
 
 		uint8_t elf_flags = program_header_prop(ei_c, runner, p_flags);
 		uint8_t uvflags = __elf_to_uvflags(elf_flags);
 
-		map_allocd_region(t->proc.vmem, start, vsz, default_flags, 0);
+		map_region(t->proc.vmem, start, vsz, max_order(),
+		           default_flags);
 		memset((void *)start, 0, vsz);
 
 		vm_t vo = bin + program_header_prop(ei_c, runner, p_offset);

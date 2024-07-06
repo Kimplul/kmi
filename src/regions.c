@@ -2,16 +2,49 @@
 /* Copyright 2021 - 2022, Kim Kuparinen < kimi.h.kuparinen@gmail.com > */
 
 /**
- * @file mem_regions.c
+ * @file regions.c
  * Memory region handling, used by both device memory and user virtual memory
  * subsystems.
  */
 
-#include <kmi/mem_regions.h>
-#include <kmi/mem_nodes.h>
+#include <kmi/regions.h>
+#include <kmi/assert.h>
 #include <kmi/pmem.h>
 #include <kmi/bits.h>
 #include <kmi/mem.h>
+
+/** Memory node "subsystem" instance. */
+static struct node_root root;
+
+void init_mem_nodes()
+{
+	init_nodes(&root, sizeof(struct mem_region));
+}
+
+void destroy_mem_nodes()
+{
+	destroy_nodes(&root);
+}
+
+/**
+ * Allocate a new memory region node and return it.
+ *
+ * @return New memory region node.
+ */
+static struct mem_region *get_mem_node()
+{
+	return (struct mem_region *)get_node(&root);
+}
+
+/**
+ * Free a memory region node.
+ *
+ * @param m Memory region node to free.
+ */
+static void free_mem_node(struct mem_region *m)
+{
+	free_node(&root, (void *)m);
+}
 
 /**
  * Readability wrapper for marking region used.
@@ -367,10 +400,6 @@ static vm_t __partition_region(struct mem_region_root *r, struct mem_region *m,
 	return __addr(start);
 }
 
-/* apparently Linux doesn't necessarily give a shit about mmap hints, so I'll
- * just ignore them for now. Note that alloc_region should only be used when
- * mmap is called with MAP_ANON, all other situations should be handled in some
- * fs server */
 vm_t alloc_shared_region(struct mem_region_root *r, size_t size,
                          size_t *actual_size,
                          vmflags_t flags, id_t pid)
@@ -497,6 +526,7 @@ static void __try_coalesce_next(struct mem_region_root *r, struct mem_region *m)
 static void __try_coalesce_regions(struct mem_region_root *r,
                                    struct mem_region *m)
 {
+	/** @todo might free mem and then reuse it, not good */
 	__try_coalesce_prev(r, m);
 	__try_coalesce_next(r, m);
 }
@@ -511,30 +541,47 @@ stat_t free_region(struct mem_region_root *r, vm_t start)
 	if (!m)
 		return ERR_NF;
 
-	return free_known_region(r, m);
+	free_known_region(r, m);
+	return OK;
 }
 
-stat_t free_known_region(struct mem_region_root *r, struct mem_region *m)
+void free_known_region(struct mem_region_root *r, struct mem_region *m)
 {
 	sp_remove(&sp_root(&r->used_regions), &m->sp_n);
 	mark_region_unused(m->flags);
 
 	__try_coalesce_regions(r, m);
 	__insert_free_region(r, m);
-	return OK;
 }
 
-void set_alt_region_addr(struct mem_region_root *r, vm_t va, vm_t alt_va)
+/**
+ * Align region starting at \p start of size \p bytes to start and end on
+ * BASE_PAGE boundaries. Place new start and size into \p startp and \p bytesp.
+ *
+ * @param start Start of region.
+ * @param bytes Size of region.
+ * @param startp Where to place new start.
+ * @param bytesp Where to place new size.
+ */
+static void align_region(vm_t start, size_t bytes, vm_t *startp, size_t *bytesp)
 {
-	struct mem_region *m = find_used_region(r, va);
-	if (!m)
-		return;
+	size_t shift = order_shift(BASE_PAGE);
+	vm_t top = start + bytes;
+	/* reasonably fast align down */
+	vm_t new_start = (start >> shift) << shift;
 
-	/* not shared region */
-	if (m->pid == 0)
-		return;
+	/* to align up, we must first align down */
+	vm_t new_top = ((top >> shift) << shift);
 
-	m->alt_va = alt_va;
+	/* if alignment did something, add a base page size to align up */
+	if (new_top != top)
+		new_top += BASE_PAGE_SIZE;
+
+	/* difference between top and start */
+	size_t new_bytes = new_top - new_start;
+
+	*startp = new_start;
+	*bytesp = new_bytes;
 }
 
 /* assuming start is chosen to start on an aligned border, this should choose
@@ -543,40 +590,172 @@ void set_alt_region_addr(struct mem_region_root *r, vm_t va, vm_t alt_va)
  * NOTE: not actually optimal, this doesn't bother to go through possible
  * permutations etc. which would be slow and I don't want to implement it.
  */
-vm_t map_fill_region(struct vmem *b, region_callback_t *mem_handler,
-                     pm_t offset, vm_t start, size_t bytes, vmflags_t flags,
-                     void *data)
+stat_t map_region(struct vmem *b, vm_t start, size_t bytes, enum mm_order order,
+                  vmflags_t flags)
 {
-	pm_t runner = __page(start);
-	size_t pages = __pages(bytes);
-	enum mm_order top = __mm_max_order;
+	/* adjust to nearest page sizes */
+	align_region(start, bytes, &start, &bytes);
 
-	/* actual start might not be the same as the user specified start */
-	start = __addr(runner);
-
-	for (; pages; top--) {
-		size_t o_size = order_size(top);
-		size_t o_pages = __pages(o_size);
+	size_t size = order_size(order);
+	while (bytes) {
+		if (size > bytes)
+			goto next_order;
 
 		/* NULL does pass this check, so technically all NULL pages are
 		 * aligned, but they're caught in the while expr so this should
 		 * work even if someone tries to map NULL */
-		if (!is_aligned(runner, o_pages))
-			continue;
+		if (!is_aligned(start, size))
+			goto next_order;
 
-		while (pages >= o_pages) {
-			stat_t res = mem_handler(b, &offset, __addr(runner),
-			                         flags, top, data);
-			if (res > 0)
-				break;
+		pm_t page = alloc_page(order);
+		if (!page)
+			goto next_order;
 
-			if (res < 0)
-				return 0;
+		stat_t res = map_vpage(b, page, start, flags, order);
+		if (res)
+			goto next_order;
 
-			pages -= o_pages;
-			runner += o_pages;
-		}
+
+		start += size;
+		bytes -= size;
+		continue;
+
+next_order:
+		/* ran out of orders, stop */
+		if (order == 0)
+			return ERR_MISC;
+
+		order--;
+		size = order_size(order);
 	}
 
-	return start;
+	return OK;
+}
+
+stat_t map_fixed_region(struct vmem *b, vm_t v, pm_t start, size_t bytes,
+                        vmflags_t flags)
+{
+	/* adjust to nearest page sizes, generally the region should be on a
+	 * BASE_PAGE boundary but just to be safe */
+	v = align_down(v, BASE_PAGE_SIZE);
+	align_region(start, bytes, &start, &bytes);
+
+	size_t size = BASE_PAGE_SIZE;
+	while (bytes) {
+		stat_t ret = map_vpage(b, start, v, flags, BASE_PAGE);
+		if (ret)
+			return ret;
+
+		start += size;
+		bytes -= size;
+		v += size;
+	}
+
+	return OK;
+}
+
+stat_t clone_region(struct vmem *b, struct vmem *g, vm_t from, vm_t to,
+                    size_t bytes, vmflags_t flags)
+{
+	size_t from_size = 0; size_t to_size = 0;
+	align_region(from, bytes, &from, &from_size);
+	align_region(to, bytes, &to, &to_size);
+
+	catastrophic_assert(from_size == to_size);
+	bytes = from_size;
+
+	while (bytes) {
+		pm_t addr = 0;
+		enum mm_order order = BASE_PAGE;
+		stat_t res = stat_vpage(g, from, &addr, &order, NULL);
+		if (res)
+			return res;
+
+		res = map_vpage(b, addr, to, flags, order);
+		if (res)
+			return res;
+
+		size_t size = order_size(order);
+		bytes -= size;
+		from += size;
+		to += size;
+	}
+
+	return OK;
+}
+
+stat_t copy_region(struct vmem *b, struct vmem *g, vm_t from, vm_t to,
+                   size_t bytes)
+{
+	size_t from_size = 0; size_t to_size = 0;
+	align_region(from, bytes, &from, &from_size);
+	align_region(to, bytes, &to, &to_size);
+
+	catastrophic_assert(from_size == to_size);
+	bytes = from_size;
+
+	while (bytes) {
+		pm_t addr = 0;
+		vmflags_t flags = 0;
+		enum mm_order order = BASE_PAGE;
+		stat_t res = stat_vpage(g, from, &addr, &order, &flags);
+		if (res)
+			return res;
+
+		pm_t page = alloc_page(order);
+		if (!page)
+			return ERR_OOMEM;
+
+		/* temporarily give us write permissions */
+		res = map_vpage(b, page, to, flags, order);
+		if (res) {
+			free_page(order, page);
+			return res;
+		}
+
+		size_t size = order_size(order);
+		memcpy((void *)page, (void *)addr, size);
+		bytes -= size;
+		from += size;
+		to += size;
+	}
+
+	return OK;
+}
+
+void unmap_region(struct vmem *b, vm_t v, size_t bytes)
+{
+	v = align_down(v, BASE_PAGE_SIZE);
+	bytes = align_up(v + bytes, BASE_PAGE_SIZE) - v;
+	while (bytes) {
+		pm_t addr = 0;
+		enum mm_order order = BASE_PAGE;
+		stat_t res = stat_vpage(b, v, &addr, &order, NULL);
+		if (res)
+			return;
+
+		unmap_vpage(b, v);
+		free_page(order, addr);
+		size_t size = order_size(order);
+		bytes -= size;
+		v += size;
+	}
+}
+
+void unmap_fixed_region(struct vmem *b, vm_t v, size_t bytes)
+{
+	v = align_down(v, BASE_PAGE_SIZE);
+	bytes = align_up(v + bytes, BASE_PAGE_SIZE) - v;
+	while (bytes) {
+		pm_t addr = 0;
+		enum mm_order order = BASE_PAGE;
+		stat_t res = stat_vpage(b, v, &addr, &order, NULL);
+		if (res)
+			return;
+
+		unmap_vpage(b, v);
+		size_t size = order_size(order);
+		bytes -= size;
+		v += size;
+	}
 }

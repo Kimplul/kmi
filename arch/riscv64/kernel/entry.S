@@ -104,6 +104,13 @@ handle_exception:
 	save_regs
 	save_args
 
+	csrr a0, CSR_SEPC
+	csrr a1, CSR_STVAL
+	/* not really a kernel panic but used for now to signify that something
+	 * happened in userspace that we can't deal with */
+	csrr a2, CSR_SCAUSE
+	call kernel_panic
+
 	j	_load_context
 
 handle_dispatch:

@@ -1,19 +1,32 @@
 /* SPDX-License-Identifier: copyleft-next-0.3.1 */
 /* Copyright 2021 - 2022, Kim Kuparinen < kimi.h.kuparinen@gmail.com > */
 
-#ifndef KMI_MEM_REGIONS_H
-#define KMI_MEM_REGIONS_H
+#ifndef KMI_REGIONS_H
+#define KMI_REGIONS_H
 
 /**
- * @file mem_regions.h
+ * @file regions.h
  * Memory region subsytem. Mainly used by the virtual memory subsytems, i.e. device and
  * user memory.
  */
 
 #include <kmi/mem.h>
-#include <arch/vmem.h>
 #include <kmi/types.h>
+#include <kmi/nodes.h>
 #include <kmi/sp_tree.h>
+
+#include <arch/vmem.h>
+
+/**
+ * Initialize memory region nodes. Must be done after physical memory has been
+ * initialized.
+ */
+void init_mem_nodes();
+
+/**
+ * Destroy all nodes allocated by the memory region subsystem.
+ */
+void destroy_mem_nodes();
 
 /**
  * Get \ref mem_region container of \c ptr.
@@ -70,10 +83,6 @@ struct mem_region {
 
 	/** Start address of memory region. */
 	vm_t start;
-
-	/** In shared regions, this is the address associated with region in the
-	 * other process. */
-	vm_t alt_va;
 
 	/** In shared regions, mark the other pid that shared the region. */
 	id_t pid;
@@ -165,10 +174,8 @@ stat_t free_region(struct mem_region_root *r, vm_t start);
  *
  * @param r Memory region root.
  * @param m Memory region to free.
- * @return \ref OK.
- * \todo Improve error checking.
  */
-stat_t free_known_region(struct mem_region_root *r, struct mem_region *m);
+void free_known_region(struct mem_region_root *r, struct mem_region *m);
 
 /**
  * Find the memory region with lowest starting address.
@@ -216,89 +223,89 @@ struct mem_region *find_free_region(struct mem_region_root *r, size_t size,
                                     size_t *align);
 
 /**
- * Helper functions for converting between memory regions and page
- * mappings. Called by \ref map_fill_region().
- * \see map_fill_region() for further explanation.
+ * Map a region starting at virtual address \p start, that is \p bytes bytes in size
+ * to physical memory. Will allocate pages itself. If it fails midway through,
+ * doesn't clean up after itself, so remember to call \ref unmap_region() in
+ * such a case.
  *
- * @param vmem Virtual memory space in which the operation is to be done.
- * @param offset Offset from where to start looking for next physical page. \see
- * alloc_page().
- * @param vaddr Current virtual address.
- * @param flags Virtual memory allocation flags.
- * @param order Order of physical page.
- * @param data Custom data.
- * @return \ref OK if succesful, \c INFO_TRGN if page order should be decreased,
- * anything else means error.
+ * @param vmem Virtual memory to do allocation in.
+ * @param start Start of region.
+ * @param bytes How large the allocation is in bytes.
+ * @param order What is the maximum order of page the function is allowed to
+ * use. This is mainly useful for shared memory regions that may want to always
+ * use base pages to maximize the chance of a clone succeeding.
+ * @param flags What flags to assign the page.
+ * @return \ref OK on success, some other error code otherwise.
  */
-typedef stat_t region_callback_t(struct vmem *vmem, pm_t *offset, vm_t vaddr,
-                                 vmflags_t flags, enum mm_order order,
-                                 void *data);
+stat_t map_region(struct vmem *vmem, vm_t start, size_t bytes,
+                  enum mm_order order, vmflags_t flags);
 
 /**
- * Query flags of region that contains \c va.
+ * Map a virtual memory region starting at \p v to the physical memory region
+ * starting at \p start, \p bytes long. Same as \ref map_region(), clean up
+ * after this function if it fails.
  *
- * @param r Memory region root.
- * @param va Address that is within memory region.
- * @param flags Memory region flags.
- * @return \ref OK when succesful.
- * \todo Implement.
+ * @param vmem Virtual memory to do mapping in.
+ * @param v Start of virtual region.
+ * @param start Start of physical region.
+ * @param bytes Size of region in bytes.
+ * @param flags Flags to use for mapping.
+ * @return \ref OK on success, some other error code otherwise.
  */
-stat_t stat_region(struct mem_region_root *r, vm_t va, vmflags_t *flags);
+stat_t map_fixed_region(struct vmem *vmem, vm_t v, pm_t start, size_t bytes,
+                        vmflags_t flags);
 
 /**
- * Modify flags of region that contains \c va.
+ * Clone a region starting at \p from in \p g of size \p bytes into \p to in \p
+ * b. Does not allocate new pages, just makes the virtual region point to the
+ * same physical pages. Used to implement shared memory, primarily.
  *
- * @param r Memory region root.
- * @param va Address that is within memory region.
- * @param flags New flags of region.
- * @return \ref OK when succesful.
- * \todo Implement.
+ * @param b Where to create mapping.
+ * @param g Where current mapping exists.
+ * @param from Start of region in \p g.
+ * @param to Start of region in \p b.
+ * @param bytes Size of region. Must be identical for both \p b and \p g.
+ * @param flags Flags for the new mapping. The original mapping can be RW while
+ * the new one just R, for example.
+ *
+ * @return \ref OK on success, some other error code otherwise.
  */
-stat_t mod_region(struct mem_region_root *r, vm_t va, vmflags_t flags);
+stat_t clone_region(struct vmem *b, struct vmem *g, vm_t from, vm_t to,
+                    size_t bytes, vmflags_t flags);
 
 /**
- * Set alternate virtual address associated with shared memory region in other process.
+ * Copy region starting at \p from in \p g of size \p bytes to \p to in \p b.
+ * Allocates new pages, so the regions get copied as well. Used to implement
+ * \ref fork().
  *
- * @param r Memory region root.
- * @param va Virtual address in \p r.
- * @param alt_va Virtual address in other process.
+ * @param b Where to create mapping.
+ * @param g Where current mapping exists.
+ * @param from Start of region in \p g.
+ * @param to Start of region in \p b.
+ * @param bytes Size of region. Must be identical for both \p b and \p g.
+ *
+ * @return \ref OK on success, some other error code otherwise.
  */
-void set_alt_region_addr(struct mem_region_root *r, vm_t va, vm_t alt_va);
+stat_t copy_region(struct vmem *b, struct vmem *g, vm_t from, vm_t to,
+                   size_t bytes);
 
 /**
- * Conversion function between abstract memory region and actual page mappings.
- * Assumes that pages of some order are mappable at multiples of their size, and
- * tries to fit as many and as high order pages as it can into the region.
- * Heavily utilizes \c mem_handler, to which it gives a suggestion for how to
- * map a page. If this suggestion is accepted and succesfully executed, \c mem_handler
- * returns \ref OK. If the suggestion is not possible, for example no higher
- * order pages are available, \c mem_handler returns \ref INFO_TRGN to tell \c
- * map_fill_region() to give it some other suggestion. Any error value stops the
- * conversion.
+ * Unmap a region, while at the same time freeing backing pages.
  *
- * This 'algorithm' also works quite nicely for freeing a region, but in
- * reverse, i.e. it is given a suggestion and checks if that suggestion was
- * executed when the region was mapped. If the suggestion was executed, then the
- * same suggestion is freed, else \ref INFO_TRGN is returned and a new
- * suggestion is requested until all pages have been freed.
- *
- * There are some more technicalities, for example currently \c
- * map_fill_region() gives up trying to map higher order pages as soon as its
- * first suggestion is rejected, which gives us quick conversion times but
- * probably less than ideal mappings.
- *
- * @param vmem Virtual memory inside which to map the region.
- * @param mem_handler Worker handler callback.
- * @param offset Offset at which the physical memory availability map should
- * start searching.
- * @param start Start address of memory region.
- * @param bytes Size of memory region.
- * @param flags Memory flags.
- * @param data User-specified data.
- * @return \c start when succesful, \c 0 otherwise.
+ * @param b Where to unmap region.
+ * @param v Start of region to unmap.
+ * @param bytes Size of region to unmap.
  */
-vm_t map_fill_region(struct vmem *vmem, region_callback_t *mem_handler,
-                     pm_t offset, vm_t start, size_t bytes, vmflags_t flags,
-                     void *data);
+void unmap_region(struct vmem *b, vm_t v, size_t bytes);
 
-#endif /* KMI_MEM_REGIONS_H */
+/**
+ * Unmap a region, without freeing any pages.
+ * Useful for freeing shared memory or mappings outside RAM.
+ *
+ * @param b Where to unmap region.
+ * @param v Start of region to unmap.
+ * @param bytes Size of region to unmap.
+ */
+void unmap_fixed_region(struct vmem *b, vm_t v, size_t bytes);
+
+#endif /* KMI_REGIONS_H */

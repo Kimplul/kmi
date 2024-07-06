@@ -14,6 +14,8 @@
  * them whenever it gets a chance.
  */
 
+#include <kmi/attrs.h>
+#include <kmi/types.h>
 #include <kmi/tcb.h>
 
 /**

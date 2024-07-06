@@ -49,7 +49,8 @@ stat_t init_proc(void *fdt, vm_t *proc_fdt, vm_t *proc_initrd)
 
 	/* init process has all capabilities */
 	set_caps(t->caps, 0,
-	         CAP_CAPS | CAP_PROC | CAP_SIGNAL | CAP_POWER | CAP_NOTIFY);
+	         CAP_CAPS | CAP_PROC | CAP_SIGNAL | CAP_POWER | CAP_NOTIFY |
+	         CAP_SHARED);
 
 	/* we shall try to map the fdt and initrd into the new address space, so
 	 * save them here before we switch */
@@ -61,14 +62,14 @@ stat_t init_proc(void *fdt, vm_t *proc_fdt, vm_t *proc_initrd)
 	/** \todo start one thread per core, with special handling for init in
 	 * that each thread starts at the entry point of init? */
 
-	*proc_fdt = map_fixed_mem(t,
-	                          (pm_t)fdt, fdt_totalsize(fdt),
-	                          VM_V | VM_R | VM_U);
+	*proc_fdt = map_fixed_uvmem(t,
+	                            (pm_t)fdt, fdt_totalsize(fdt),
+	                            VM_V | VM_R | VM_U);
 
 	pm_t initrd = (pm_t)__va(get_initrdbase(fdt));
-	*proc_initrd = map_fixed_mem(t,
-	                             initrd, get_initrdsize(fdt),
-	                             VM_V | VM_R | VM_U);
+	*proc_initrd = map_fixed_uvmem(t,
+	                               initrd, get_initrdsize(fdt),
+	                               VM_V | VM_R | VM_U);
 
 	info("mapped fdt at %lx\n", *proc_fdt);
 	info("mapped initrd at %lx\n", *proc_initrd);

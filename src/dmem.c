@@ -41,82 +41,30 @@ stat_t init_devmem(pm_t ram_base, pm_t ram_top)
 	return OK;
 }
 
-/**
- * Device virtual memory worker callback for \ref map_fill_region().
- *
- * @param b Virtual memory to work in.
- * @param offset Hint for \ref alloc_page().
- * @param vaddr Current virtual address.
- * @param flags Flags of region.
- * @param order Suggested page order.
- * @param data Pointer to \ref stat_t.
- * @return \see alloc_uvmem_wrapper().
- *
- * \see alloc_uvmem_wrapper().
- */
-static stat_t dev_alloc_wrapper(struct vmem *b, pm_t *offset, vm_t vaddr,
-                                vmflags_t flags, enum mm_order order,
-                                void *data)
-{
-	stat_t *status = (stat_t *)data;
-	/** \todo remember to do something with this status info */
-	*status = map_vpage(b, *offset, vaddr, flags, order);
-	*offset += order_size(order);
-	return OK;
-}
-
-/**
- * Device virtual memory freeing worker callback for \ref map_fill_region().
- *
- * @param b Virtual memory to work in.
- * @param offset Hint for \ref alloc_page().
- * @param vaddr Current virtual address.
- * @param flags Flags of region.
- * @param order Suggested page order.
- * @param data Pointer to \ref stat_t.
- * @return \see alloc_uvmem_wrapper().
- *
- * \see alloc_uvmem_wrapper().
- */
-static stat_t dev_free_wrapper(struct vmem *b, pm_t *offset, vm_t vaddr,
-                               vmflags_t flags, enum mm_order order, void *data)
-{
-	UNUSED(offset);
-	UNUSED(flags);
-	pm_t paddr = 0;
-	enum mm_order v_order = 0;
-	stat_vpage(b, vaddr, &paddr, &v_order, 0);
-	if (order != v_order)
-		return INFO_TRGN;
-
-	stat_t *status = (stat_t *)data;
-	*status = unmap_vpage(b, vaddr);
-	return OK;
-}
-
 vm_t alloc_devmem(struct tcb *t, pm_t dev_start, size_t bytes, vmflags_t flags)
 {
 	hard_assert(t && is_proc(t), ERR_INVAL);
 
-	vm_t region = 0;
+	struct mem_region *region = NULL;
 	if (dev_start < __pre_top)
-		region = alloc_region(&pre_ram, bytes, 0, flags);
+		region = &pre_ram;
 
-	if (dev_start > __post_base)
-		region = alloc_region(&post_ram, bytes, 0, flags);
-
-	if (!region)
+	else if (dev_start > __post_base)
+		region = &post_ram;
+	else
 		return NULL;
 
-	stat_t status = OK;
-	const vm_t w = map_fill_region(t->proc.vmem, &dev_alloc_wrapper,
-	                               dev_start, region,
-	                               bytes, flags, &status);
-
-	if (status)
+	vm_t v = alloc_region(region, bytes, &bytes, flags);
+	if (!v)
 		return NULL;
 
-	return w;
+	if (map_fixed_region(t->proc.vmem, v, dev_start, bytes, flags)) {
+		unmap_region(t->proc.vmem, v, bytes);
+		free_region(region, v);
+		return NULL;
+	}
+
+	return v;
 }
 
 stat_t free_devmem(struct tcb *t, vm_t dev_start)
@@ -131,24 +79,24 @@ stat_t free_devmem(struct tcb *t, vm_t dev_start)
 
 	struct mem_region *m = 0;
 	if (dev_paddr < __pre_top)
-		m = find_used_region(&pre_ram, dev_paddr);
+		m = find_used_region(&pre_ram, dev_start);
 
-	if (dev_paddr > __post_base)
-		m = find_used_region(&post_ram, dev_paddr);
+	else if (dev_paddr > __post_base)
+		m = find_used_region(&post_ram, dev_start);
 
 	if (!m)
 		return ERR_NF;
 
-	size_t region_size = __addr(m->end - m->start);
-	stat_t status = OK;
-	map_fill_region(t->proc.vmem, &dev_free_wrapper, dev_paddr, dev_start,
-	                region_size, 0, &status);
+	vm_t start = __addr(m->start);
+	vm_t end = __addr(m->end);
+	size_t size = end - start;
+	unmap_fixed_region(t->proc.vmem, start, size);
 
 	if (dev_paddr < __pre_top)
-		free_region(&pre_ram, dev_paddr);
+		free_region(&pre_ram, dev_start);
 
-	if (dev_paddr > __post_base)
-		free_region(&post_ram, dev_paddr);
+	else if (dev_paddr > __post_base)
+		free_region(&post_ram, dev_start);
 
-	return status;
+	return OK;
 }

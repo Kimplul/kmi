@@ -4,15 +4,14 @@
 #ifndef KMI_RISCV_VMAP_H
 #define KMI_RISCV_VMAP_H
 
+#include "uapi.h"
+
 /**
  * @file vmem.h
  * riscv64 definitions of arch-specific virtual memory data types and macros.
  * Very likely VM_* should be moved to \ref include/kmi/vmem.h and made
  * architecture-nonspecific, but works for now.
  */
-
-#include <kmi/types.h>
-#include <kmi/attrs.h>
 
 /**
  * Number of entries in one page table, depends on if we're running riscv32 or
@@ -25,30 +24,6 @@
 /** When running riscv32, each page table has 1024 4byte entries. */
 #define RISCV_NUM_LEAVES 1024
 #endif
-
-/** Page is active. */
-#define VM_V (1 << 0)
-
-/** Page is readable. */
-#define VM_R (1 << 1)
-
-/** Page is writable. */
-#define VM_W (1 << 2)
-
-/** Page is executable. */
-#define VM_X (1 << 3)
-
-/** Page is user-accessible. */
-#define VM_U (1 << 4)
-
-/** Page is global. */
-#define VM_G (1 << 5)
-
-/** Page has been accessed. */
-#define VM_A (1 << 6)
-
-/** Page is dirty. */
-#define VM_D (1 << 7)
 
 /** Memory mode of cpu. Currently only Sv39 is supported. */
 enum mm_mode {
@@ -70,5 +45,24 @@ struct vmem {
 	/** RISCV_NUM_LEAVES pointers to other page tables. */
 	struct vmem *leaf[RISCV_NUM_LEAVES];
 };
+
+/**
+ * Extract virtual memory flags (MR_XXX).
+ *
+ * @param x Flags to extract virtual memory region flags from.
+ * @return Virtual memory region flags.
+ */
+#define vm_flags(x) ((x) & ~0xff)
+
+/**
+ * Extract physical memory page flags (VM_XXX).
+ *
+ * @param x Flags to extract physical memory page flags from.
+ * @return Physical memory page flags.
+ */
+#define vp_flags(x) ((x) & 0xff)
+
+/** How many VM_XXX flags architecture has. MR_XXX are applied after them. */
+#define ARCH_VP_FLAGS 8
 
 #endif /* KMI_RISCV_VMAP_H */

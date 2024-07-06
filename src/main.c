@@ -6,7 +6,7 @@
  * Entry point for actual kernel setup.
  */
 
-#include <kmi/mem_nodes.h>
+#include <kmi/regions.h>
 #include <kmi/initrd.h>
 #include <kmi/timer.h>
 #include <kmi/attrs.h>

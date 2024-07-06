@@ -12,6 +12,7 @@
 #include <kmi/tcb.h>
 #include <kmi/mem.h>
 #include <kmi/pmem.h>
+#include <kmi/regions.h>
 #include <kmi/sp_tree.h>
 
 /**
@@ -58,48 +59,30 @@ vm_t alloc_fixed_uvmem(struct tcb *r, vm_t start, size_t size, vmflags_t flags);
 
 /**
  * Allocate shared user virtual memory.
+ * Initially this region is only visible to whoever allocated it, but calling
+ * \ref ref_shared_uvmem() with the address of this allocation
+ * will add mappings to this region into other processes' address spaces.
  *
  * @param s First process to allocate memory in.
- * @param c Second process to allocate memory in.
  * @param size Minimum size of allocation.
- * @param sflags Flags of allocation for \p s.
- * @param cflags Flags of allocation for \p c.
- * @param sstart Start of allocation for \p s.
- * @param cstart Start of allocation for \p c.
- * @return Status of allocation.
+ * @param flags Flags of allocation.
+ * @return Address of allocation.
  */
-stat_t alloc_shared_uvmem(struct tcb *s, struct tcb *c, size_t size,
-                          vmflags_t sflags, vmflags_t cflags,
-                          vm_t *sstart, vm_t *cstart);
-
-/**
- * Reference shared user virtual memory.
- *
- * Only callable by clients.
- *
- * @param r1 Process in which shared memory resides.
- * @param r2 Process to reference shared memory in.
- * @param va Virtual address of shared memory in \c r1.
- * @param flags Flags of reference in \c r2.
- * @return Start of reference in \c r2 when succesful, \c NULL otherwise.
- */
-vm_t ref_shared_uvmem(struct tcb *r1, struct tcb *r2, vm_t va, vmflags_t flags);
+vm_t alloc_shared_uvmem(struct tcb *s, size_t size, vmflags_t flags);
 
 /**
  * Free all user virtual memory allocations not marked with \ref MR_KEEP.
  *
  * @param r Process in which to clear user virtual memory.
- * @return \ref OK.
  */
-stat_t clear_uvmem(struct tcb *r);
+void clear_uvmem(struct tcb *r);
 
 /**
  * Free all user virtual memory allocations, even if marked with \ref MR_KEEP.
  *
  * @param r Process in which to clear user virtual memory.
- * @return \ref OK.
  */
-stat_t purge_uvmem(struct tcb *r);
+void purge_uvmem(struct tcb *r);
 
 /**
  * Free one user virtual memory allocation.
@@ -116,6 +99,8 @@ stat_t free_uvmem(struct tcb *r, vm_t va);
  * This assumes the user virtual memory is contiguous, with no holes between \c
  * base and \c top.
  *
+ * Requires that \p t already has a vmem allocated.
+ *
  * @param r Process in which to initialize user virtual memory.
  * @param base Start of user virtual memory.
  * @param top Top of user virtual memory.
@@ -127,9 +112,8 @@ stat_t init_uvmem(struct tcb *r, vm_t base, vm_t top);
  * Destroy user virtual memory instance.
  *
  * @param r Process in which to destroy user virtual memory.
- * @return \see destroy_region().
  */
-stat_t destroy_uvmem(struct tcb *r);
+void destroy_uvmem(struct tcb *r);
 
 /**
  * Map a fixed physical region (within kernelspace) to somewhere in virtual
@@ -143,7 +127,7 @@ stat_t destroy_uvmem(struct tcb *r);
  * the start of \p base, not necessarily the start of the allocation.
  * If this should be freed, remember to align down to the base page size.
  */
-vm_t map_fixed_mem(struct tcb *r, pm_t base, size_t size, vmflags_t flags);
+vm_t map_fixed_uvmem(struct tcb *r, pm_t base, size_t size, vmflags_t flags);
 
 /**
  * Clone process memory.
@@ -158,144 +142,33 @@ vm_t map_fixed_mem(struct tcb *r, pm_t base, size_t size, vmflags_t flags);
 stat_t clone_mem_regions(struct tcb *d, struct tcb *s);
 
 /**
- * User virtual memory worker callback for \ref map_fill_region().
+ * Reference a shared memory region.
+ * Adds a mapping in \p d of region \p v in \p s.
  *
- * \c data is a pointer to \ref stat_t, which is set to \ref INFO_SEFF if all
- * threads in process should sync their memory mappings. This occurs when the
- * top level page table is modified.
- *
- * @param b Virtual memory to work in.
- * @param offset Hint for \ref alloc_page().
- * @param vaddr Current virtual address.
- * @param flags Flags of region.
- * @param order Suggested page order.
- * @param data Pointer to \ref stat_t.
- * @return \c OK when suggested order if acceptable, \c INFO_TRGN if suggested
- * order not acceptable. Error otherwise.
- * again
+ * @param d For which thread to create a new mapping.
+ * @param s Owner of shared region.
+ * @param v Address of shared region in \p s.
+ * @param flags Flags for mapping in \p d.
+ * @return Address of mapping in \p d.
  */
-stat_t alloc_uvmem_wrapper(struct vmem *b, pm_t *offset, vm_t vaddr,
-                           vmflags_t flags, enum mm_order order, void *data);
+vm_t ref_shared_uvmem(struct tcb *d, struct tcb *s, vm_t v, vmflags_t flags);
 
 /**
- * Shared user virtual memory worker callback for \ref map_fill_region().
+ * Create a copy of \p s in \p d. Used for implementing \ref fork().
  *
- * @param b Virtual memory to work in.
- * @param offset Hint for \ref alloc_page().
- * @param vaddr Current virtual address.
- * @param flags Flags of region.
- * @param order Suggested page order.
- * @param data Pointer to \ref stat_t.
- * @return \see alloc_uvmem_wrapper().
- *
- * \see alloc_uvmem_wrapper().
+ * @param d Destination of copy.
+ * @param s Source of copy.
+ * @return \ref OK on success, some error otherwise.
  */
-stat_t alloc_shared_wrapper(struct vmem *b, pm_t *offset, vm_t vaddr,
-                            vmflags_t flags, enum mm_order order, void *data);
+stat_t copy_uvmem(struct tcb *d, struct tcb *s);
 
 /**
- * User virtual memory copying worker callback for \ref map_fill_region().
+ * Clears out all other flags besides VM_W/VM_R/VM_X from user-provided flags
+ * and adds VM_U and VM_V to make mapping accessible from userspace.
  *
- * Currently unused, but intention is to set up copy of some other virtual
- * memory region, likely passed through \c data?
- *
- * @param b Virtual memory to work in.
- * @param offset Hint for \ref alloc_page().
- * @param vaddr Current virtual address.
- * @param flags Flags of region.
- * @param order Suggested page order.
- * @param data Pointer to \ref vmem to clone from.
- * @return \see alloc_uvmem_wrapper().
- *
- * \see alloc_uvmem_wraper().
- * \todo Implement.
+ * @param flags Flags to sanitize.
+ * @return Sanitized flags.
  */
-stat_t copy_allocd_wrapper(struct vmem *b, pm_t *offset, vm_t vaddr,
-                           vmflags_t flags, enum mm_order order, void *data);
-
-/**
- * User virtual memory freeing worker callback for \ref map_fill_region().
- *
- * @param b Virtual memory to work in.
- * @param offset Hint for \ref alloc_page().
- * @param vaddr Current virtual address.
- * @param flags Flags of region.
- * @param order Suggested page order.
- * @param data Pointer to \ref stat_t.
- * @return \see alloc_uvmem_wrapper().
- *
- * \see alloc_uvmem_wrapper().
- */
-stat_t free_uvmem_wrapper(struct vmem *b, pm_t *offset, vm_t vaddr,
-                          vmflags_t flags, enum mm_order order, void *data);
-
-/**
- * Convenience wrapper for \ref map_fill_region() when mapping an allocated
- * region.
- *
- * @param b Virtual memory to work in.
- * @param start Start of virtual memory region to map.
- * @param bytes Size of virtual memory region.
- * @param flags Flags of virtual memory region.
- * @param data Pointer to \c stat_t.
- * @return \see map_fill_region().
- */
-#define map_allocd_region(b, start, bytes, flags, data) \
-	map_fill_region(b, &alloc_uvmem_wrapper, 0, start, bytes, flags, data)
-
-/**
- * Convenience wrapper for \ref map_fill_region() when mapping a shared region.
- *
- * @param b Virtual memory to work in.
- * @param start Start of virtual memory region to map.
- * @param bytes Size of virtual memory region.
- * @param flags Flags of virtual memory region.
- * @param data Pointer to \c stat_t.
- * @return \see map_fill_region().
- */
-#define map_shared_region(b, start, bytes, flags, data) \
-	map_fill_region(b, &alloc_shared_wrapper, 0, start, bytes, flags, data)
-
-/**
- * Convenience wrapper for \ref map_fill_region() when copying a region.
- *
- * @param b Virtual memory to work in.
- * @param start Start of virtual memory region to map.
- * @param bytes Size of virtual memory region.
- * @param flags Flags of virtual memory region.
- * @param data Pointer to \c vmem to clone.
- * @return \see map_fill_region().
- */
-#define copy_allocd_region(b, start, bytes, flags, data) \
-	map_fill_region(b, &copy_allocd_wrapper, 0, start, bytes, flags, data)
-
-/**
- * Convenience wrapper for \ref map_fill_region() when freeing region.
- *
- * @param b Virtual memory to work in.
- * @param start Start of virtual memory region to unmap.
- * @param bytes Size of virtual memory region.
- * @param flags Flags of virtual memory region. Technically unused?
- * @param data Pointer to \c stat_t.
- * @return \see map_fill_region().
- */
-#define unmap_freed_region(b, start, bytes, flags, data) \
-	map_fill_region(b, &free_uvmem_wrapper, 0, start, bytes, flags, data)
-
-/**
- * Extract virtual memory flags (MR_XXX).
- *
- * @param x Flags to extract virtual memory region flags from.
- * @return Virtual memory region flags.
- */
-#define vm_flags(x) ((x) & ~0xff)
-
-/**
- * Extract physical memory page flags (VM_XXX).
- *
- * @param x Flags to extract physical memory page flags from.
- * @return Physical memory page flags.
- */
-#define vp_flags(x) ((x) & 0xff)
+vmflags_t sanitize_uvflags(vmflags_t flags);
 
 #endif /* KMI_VMEM_H */

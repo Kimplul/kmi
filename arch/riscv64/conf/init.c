@@ -14,7 +14,7 @@
  * things easier for myself. For now though, this is good enough.
  *
  * Compile with
- *	riscv64-unknown-elf-gcc -ffreestanding -nostdlib
+ *	riscv64-unknown-elf-gcc -Driscv64 -ffreestanding -nostdlib
  *
  * Create initrd with
  *	echo init | cpio -H newc -o > initrd
@@ -211,8 +211,7 @@ static void sys_poweroff(long type)
 
 static void *sys_req_mem(size_t count)
 {
-	struct sys_ret r = ecall3(SYS_REQ_MEM, count,
-	                          (1 << 0) | (1 << 1) | (1 << 2) | (1 << 4));
+	struct sys_ret r = ecall3(SYS_REQ_MEM, count, VM_R | VM_W);
 	if (r.s) {
 		print_value("sys_req_mem() failed with error ", r.s);
 		return NULL;
@@ -231,16 +230,22 @@ static void sys_free_mem(void *p)
 
 static void *sys_req_sharedmem(long tid, unsigned long size, void **cbuf)
 {
-	struct sys_ret r = ecall5(SYS_REQ_SHAREDMEM, tid, size,
-	                          (1 << 0) | (1 << 1) | (1 << 2) | (1 << 4),
-	                          (1 << 0) | (1 << 1) | (1 << 2) | (1 << 4));
+	struct sys_ret r = ecall3(SYS_REQ_SHAREDMEM, size, VM_R | VM_W);
 	if (r.s) {
 		print_value("sys_req_sharedmem() failed with error ", r.s);
 		return NULL;
 	}
 
-	*cbuf = (void *)r.ar1;
-	return (void *)r.ar0;
+	void *rw_buf = (void *)r.ar0;
+
+	r = ecall4(SYS_REF_SHAREDMEM, tid, (sys_arg_t)rw_buf, VM_R | VM_W);
+	if (r.s) {
+		print_value("sys_ref_sharedmem() failed with error ", r.s);
+		return NULL;
+	}
+
+	*cbuf = (void *)r.ar0;
+	return rw_buf;
 }
 
 /* I'm guessing my elf parser doesn't handle data pages correctly yet... */
@@ -257,6 +262,7 @@ void callback(long pid, long tid, long d0, long d1, long d2, long d3)
 		__builtin_unreachable();
 
 	} else if (d0 == 2) {
+		puts("Received string: ");
 		puts(rw_buf);
 		sys_ipc_resp(0, 0, 0, 0);
 		__builtin_unreachable();
@@ -345,6 +351,7 @@ void _start()
 	print_value("Shared memory size", rw_buf_size);
 
 	rw_buf[0] = 0;
+	puts("Sending string...\n");
 	strcpy(rw_buf, "Hello from the other side!\n");
 	sys_ipc_req(1, 2, 0, 0, 0);
 

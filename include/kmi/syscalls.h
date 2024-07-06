@@ -11,9 +11,9 @@
 
 /* pass VM_X etc. to userspace */
 #if defined(riscv64)
-#include "../../arch/riscv64/include/vmem.h"
+#include "../../arch/riscv64/include/uapi.h"
 #elif defined(riscv32)
-#include "../../arch/riscv32/include/vmem.h"
+#include "../../arch/riscv32/include/uapi.h"
 #endif
 
 /** enum for now, possibly macros in the future once I get an approximate idea of
@@ -46,7 +46,7 @@ enum sys_code {
 	SYS_REQ_MEM,
 
 	/** Request physical page from ram. */
-	SYS_REQ_PAGE,
+	SYS_REF_SHAREDMEM,
 
 	/** Request memory with physical address. */
 	SYS_REQ_PMEM,

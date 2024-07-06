@@ -13,7 +13,7 @@
 #include <kmi/power.h>
 #include <kmi/notify.h>
 #include <kmi/orphanage.h>
-#include <kmi/mem_regions.h>
+#include <kmi/regions.h>
 
 #include <arch/irq.h>
 
@@ -100,7 +100,7 @@ SYSCALL_DEFINE2(exec)(struct tcb *t, sys_arg_t bin, sys_arg_t interp)
 		return_args1(t, ERR_INVAL);
 
 	/* mark binary to be kept */
-	struct mem_region *b = find_used_region(&t->sp_r, bin);
+	struct mem_region *b = find_used_region(&t->uvmem.region, bin);
 	if (!b)
 		return_args1(t, ERR_ADDR);
 
@@ -109,7 +109,7 @@ SYSCALL_DEFINE2(exec)(struct tcb *t, sys_arg_t bin, sys_arg_t interp)
 	struct mem_region *i = 0;
 	if (interp) {
 		/* mark interpreter to be kept */
-		i = find_used_region(&t->sp_r, interp);
+		i = find_used_region(&t->uvmem.region, interp);
 		if (!i)
 			return_args1(t, ERR_INVAL);
 

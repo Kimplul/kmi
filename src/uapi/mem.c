@@ -25,31 +25,13 @@ SYSCALL_DEFINE2(req_mem)(struct tcb *t, sys_arg_t size, sys_arg_t flags)
 {
 	struct tcb *r = get_cproc(t);
 	vm_t start = 0;
-	/** @todo expose flags to users */
+	flags = sanitize_uvflags(flags);
 	if (!(start = alloc_uvmem(r, size, flags)))
 		return_args1(t, ERR_OOMEM);
 
 	return_args2(t, OK, start);
 }
 
-/**
- * Allocate single page to program.
- *
- * @param t Current tcb.
- * @param size Size of the allocation.
- * @param flags Flags of allocation.
- * @return \ref ERR_OOMEM if unsucessful, otherwise \ref OK, virtual address,
- * actual size, physical address, in that order.
- */
-SYSCALL_DEFINE2(req_page)(struct tcb *t, sys_arg_t size, sys_arg_t flags)
-{
-	struct tcb *r = get_cproc(t);
-	vm_t start = 0; pm_t paddr = 0; size_t asize = size;
-	if (!(start = alloc_uvpage(r, asize, flags, &asize, &paddr)))
-		return_args1(t, ERR_OOMEM);
-
-	return_args4(t, OK, start, asize, paddr);
-}
 
 /**
  * Fixed memory request syscall handler.
@@ -66,6 +48,7 @@ SYSCALL_DEFINE3(req_fixmem)(struct tcb *t, sys_arg_t fixed, sys_arg_t size,
 {
 	struct tcb *r = get_cproc(t);
 	vm_t start = 0;
+	flags = sanitize_uvflags(flags);
 	if (!(start = alloc_fixed_uvmem(r, fixed, size, flags)))
 		return_args1(t, ERR_OOMEM);
 
@@ -116,6 +99,7 @@ SYSCALL_DEFINE3(req_pmem)(struct tcb *t, sys_arg_t paddr, sys_arg_t size,
 	 */
 	struct tcb *r = get_cproc(t);
 	vm_t start = 0;
+	flags = sanitize_uvflags(flags);
 	if (!(start = alloc_devmem(r, paddr, size, flags)))
 		return_args1(t, ERR_OOMEM);
 
@@ -126,33 +110,51 @@ SYSCALL_DEFINE3(req_pmem)(struct tcb *t, sys_arg_t paddr, sys_arg_t size,
  * Request shared memory syscall handler.
  *
  * @param t Current tcb.
- * @param tid Thread to share memory with.
  * @param size Minimum size of allocation.
- * @param sflags Flags of allocation for \p t.
- * @param cflags Flags of allocation for \p tid.
- * @return \ref OK and start of \p t allocation and start of \p tid allocation,
+ * @param flags Flags of allocation.
+ * @return \ref OK, start and size
  * in that order, \ref ERR_OOMEM otherwise.
- *
- * @todo should we also take the thread who should get the other end of the
- * memory?
  */
-SYSCALL_DEFINE4(req_sharedmem)(struct tcb *t, sys_arg_t tid,
-                               sys_arg_t size, sys_arg_t sflags,
-                               sys_arg_t cflags)
+SYSCALL_DEFINE2(req_sharedmem)(struct tcb *t, sys_arg_t size, sys_arg_t flags)
 {
-	/** @todo check capability for shared memory */
-	struct tcb *u = get_tcb(tid);
-	if (!u)
-		return_args1(t, ERR_INVAL);
+	struct tcb *c = get_cproc(t);
+	if (!has_cap(c->caps, CAP_SHARED))
+		return_args1(t, ERR_PERM);
 
-	struct tcb *s = get_cproc(t);
-	struct tcb *c = get_rproc(u);
-
-	vm_t sstart, cstart;
-	if (alloc_shared_uvmem(s, c, size, sflags, cflags, &sstart, &cstart))
+	vm_t start = 0;
+	flags = sanitize_uvflags(flags);
+	if (!(start = alloc_shared_uvmem(c, size, flags)))
 		return_args1(t, ERR_OOMEM);
 
-	return_args3(t, OK, sstart, cstart);
+	return_args3(t, OK, start, size);
 }
 
-/** \todo add some way to specify who gets to access the shared memory? */
+/**
+ * Reference shared memory.
+ *
+ * @param t Current tcb.
+ * @param tid In which thread's address space to create mapping.
+ * @param addr Address of shared region in \p t.
+ * @param flags Flags of allocation.
+ * @return \ref ERR_OOMEM if unsucessful, otherwise \ref OK, virtual address,
+ * actual size, in that order. Generally the actual size should match with the
+ * original shared region, but I wouldn't count on it.
+ */
+SYSCALL_DEFINE3(ref_sharedmem)(struct tcb *t, sys_arg_t tid, sys_arg_t addr,
+                               sys_arg_t flags)
+{
+	struct tcb *c = get_cproc(t);
+	if (!has_cap(c->caps, CAP_SHARED))
+		return_args1(t, ERR_PERM);
+
+	struct tcb *r = get_tcb(tid);
+	if (!r || zombie(r))
+		return_args1(t, ERR_INVAL);
+
+	vm_t start = 0; size_t size = 0;
+	flags = sanitize_uvflags(flags);
+	if (!(start = ref_shared_uvmem(r, c, addr, flags)))
+		return_args1(t, ERR_OOMEM);
+
+	return_args3(t, OK, start, size);
+}

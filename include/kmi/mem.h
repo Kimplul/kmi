@@ -132,9 +132,12 @@
 /** @{ */
 
 /** Memory region is used. */
-#define MR_USED (1 << 8)
+#define MR_USED (1 << (ARCH_VP_FLAGS + 0))
 /** Don't free memory on clear. */
-#define MR_KEEP (1 << 9)
+#define MR_KEEP (1 << (ARCH_VP_FLAGS + 1))
+/** Memory region in shared, but owned. Note: regions that are shared but no
+ * owned don't use this flag, they just set the tid field for the region. */
+#define MR_SHARED (1 << (ARCH_VP_FLAGS + 2))
 
 /** @} */
 

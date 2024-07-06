@@ -236,6 +236,9 @@ stat_t stat_vpage(struct vmem *branch, vm_t vaddr, pm_t *paddr,
 static struct vmem *__create_leaf()
 {
 	pm_t new_leaf = alloc_page(MM_KPAGE);
+	if (!new_leaf)
+		return NULL;
+
 	memset((void *)new_leaf, 0, sizeof(struct vmem));
 	return (struct vmem *)to_pte((pm_t)__pa(new_leaf), VM_V);
 }
@@ -293,8 +296,13 @@ stat_t map_vpage(struct vmem *branch, pm_t paddr, vm_t vaddr, vmflags_t flags,
 	while (top != order) {
 		size_t idx = vm_to_index(vaddr, top);
 
-		if (__unused((pm_t)branch->leaf[idx]))
-			branch->leaf[idx] = __create_leaf();
+		if (__unused((pm_t)branch->leaf[idx])) {
+			struct vmem *leaf = __create_leaf();
+			if (!leaf)
+				return ERR_OOMEM;
+
+			branch->leaf[idx] = leaf;
+		}
 
 		branch = (struct vmem *)pte_addr(branch->leaf[idx]);
 		top--;
@@ -438,16 +446,14 @@ struct vmem *create_vmem()
 	return b;
 }
 
-stat_t use_vmem(struct vmem *b)
+void use_vmem(struct vmem *b)
 {
 	__use_vmem(__pa(b), DEFAULT_Sv_MODE);
-	return OK;
 }
 
-stat_t destroy_vmem(struct vmem *b)
+void destroy_vmem(struct vmem *b)
 {
 	__destroy_branch(b);
-	return OK;
 }
 
 stat_t populate_kvmem(struct vmem *b)
@@ -541,7 +547,7 @@ void destroy_rpc_stack(struct tcb *t)
 		pm_t page = 0; enum mm_order order = BASE_PAGE;
 		stat_vpage(t->rpc.vmem, RPC_STACK_BASE + BASE_PAGE_SIZE * i,
 		           &page, &order, NULL);
-		free_page(page, order);
+		free_page(order, page);
 	}
 }
 

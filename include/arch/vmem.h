@@ -17,6 +17,7 @@
 #endif
 
 #include <kmi/types.h>
+#include <kmi/attrs.h>
 
 /**
  * Map one virtual page to physical page.
@@ -161,17 +162,15 @@ struct vmem *create_vmem();
  * Jump into virtual memory context.
  *
  * @param b Virtual memory to jump into.
- * @return \ref OK.
  */
-stat_t use_vmem(struct vmem *b);
+void use_vmem(struct vmem *b);
 
 /**
  * Destroy virtual memory space.
  *
  * @param b Virtual memory to destroy.
- * @return \ref OK.
  */
-stat_t destroy_vmem(struct vmem *b);
+void destroy_vmem(struct vmem *b);
 
 /**
  * Raw clone user virtual memory.

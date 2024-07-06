@@ -91,7 +91,7 @@ void load_regs(void *p, struct tcb *t);
  * @param d Destination.
  * @param s Source.
  */
-void clone_regs(struct tcb *d, struct tcb *s);
+void copy_regs(struct tcb *d, struct tcb *s);
 
 /**
  * Do modifications to \ref tcb state if necessary for ipis to work.
