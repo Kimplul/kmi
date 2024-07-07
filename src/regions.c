@@ -448,6 +448,8 @@ vm_t alloc_fixed_region(struct mem_region_root *r, vm_t start, size_t size,
 			m = m->next;
 		else
 			m = m->prev;
+
+		assert(m);
 	}
 
 	/* if region is already in use, forget it */

@@ -18,8 +18,6 @@
 
 #include <libfdt.h>
 
-static vm_t entry;
-
 stat_t prepare_proc(struct tcb *t, vm_t bin, vm_t interp)
 {
 	vm_t entry = load_elf(t, bin, interp);
@@ -60,7 +58,8 @@ stat_t init_proc(void *fdt, vm_t *proc_fdt, vm_t *proc_initrd)
 
 	/* allocate stacks etc after ELF file to make sure nothing of importance
 	 * clashes */
-	prepare_proc(t, get_init_base(fdt), 0);
+	stat_t ret = prepare_proc(t, get_init_base(fdt), 0);
+	assert(ret == OK);
 
 	/** In the init process, can the entry be the callback? Is that too
 	 * unergonomic? */

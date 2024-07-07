@@ -11,6 +11,7 @@
 
 #include <kmi/utils.h>
 #include <kmi/types.h>
+#include <arch/mem.h>
 
 /**
  * Convert physical memory address \c paddr to index of page order \c order.
@@ -224,6 +225,7 @@ void set_ram_base(pm_t base);
 /** @param size Set RAM size. */
 void set_ram_size(size_t size);
 
+/** @param addr Set load address. */
 void set_load_addr(pm_t addr);
 
 /**
@@ -243,10 +245,14 @@ pm_t get_ram_base();
  */
 size_t get_ram_size();
 
+/** @return Load address. */
 pm_t get_load_addr();
 
-/** Base page size. */
+/** Base page size. Can be overridden by arch if we know it to be some constant
+ * value. */
+#ifndef BASE_PAGE_SIZE
 #define BASE_PAGE_SIZE (order_size(BASE_PAGE))
+#endif
 
 /** Base page order. */
 #define BASE_PAGE (MM_O0)

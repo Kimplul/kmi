@@ -69,7 +69,7 @@ static void __map_exec(struct tcb *t, vm_t bin, uint8_t ei_c, vm_t phstart,
 		if (!start)
 			return; /* out of memory or something */
 
-		info("mapped ELF section to %x\n", start);
+		info("mapped ELF section to %lx\n", (long)start);
 
 		uint8_t elf_flags = program_header_prop(ei_c, runner, p_flags);
 		uint8_t uvflags = __elf_to_uvflags(elf_flags);

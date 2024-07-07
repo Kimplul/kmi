@@ -4,6 +4,8 @@
 #ifndef KMI_UTILS_H
 #define KMI_UTILS_H
 
+#include <kmi/bits.h>
+
 /**
  * @file utils.h
  * Misc utils and helpers.
@@ -238,6 +240,141 @@
 
 /* clang-format doesn't like _Generic, but I guess that's fine.
  * Uncrustify just ignores it, as far as I can tell. */
+
+/**
+ * Align value downwards.
+ * Type is deduced from \c x.
+ *
+ * @param x Value to align.
+ * @param y Value to align to.
+ * @return \c x aligned to down \c y.
+ */
+#define align_down(x, y)                             \
+	_Generic((x), signed char                    \
+		 : align_down_c, signed short        \
+		 : align_down_s, signed int          \
+		 : align_down_i, signed long         \
+		 : align_down_l, signed long long    \
+		 : align_down_ll,                    \
+                                                     \
+		 unsigned char                       \
+		 : align_down_uc, unsigned short     \
+		 : align_down_us, unsigned int       \
+		 : align_down_ui, unsigned long      \
+		 : align_down_ul, unsigned long long \
+		 : align_down_ull)((x), (y))
+
+/**
+ * Helper macro for defining type specific aligning.
+ * Treats 0 as if it was 1, i.e. returns the value as it is.
+ *
+ * @param name Name of type in function name.
+ * @param type Actual type.
+ */
+#define DEFINE_ALIGN_DOWN(name, type)                            \
+	static inline type align_down_##name(type val, type a)   \
+	{                                                        \
+		if (a == 0) {                                    \
+			return val;                              \
+		}                                                \
+                                                                 \
+		/* a branch is likely a bit faster than a rem */ \
+		if (likely(is_powerof2(a))) {                    \
+			return val & ~(a - 1);                   \
+		}                                                \
+                                                                 \
+		return val - (val % a);                          \
+	}
+
+/**
+ * Align signed char down.
+ *
+ * @param val Value to align.
+ * @param a Value to align to.
+ * @return \c val aligned down to nearest multiple of \c a.
+ */
+DEFINE_ALIGN_DOWN(c, signed char);
+
+/**
+ * Align signed short down.
+ *
+ * @param val Value to align.
+ * @param a Value to align to.
+ * @return \c val aligned down to nearest multiple of \c a.
+ */
+DEFINE_ALIGN_DOWN(s, signed short);
+
+/**
+ * Align signed int down.
+ *
+ * @param val Value to align.
+ * @param a Value to align to.
+ * @return \c val aligned down to nearest multiple of \c a.
+ */
+DEFINE_ALIGN_DOWN(i, signed int);
+
+/**
+ * Align signed long down.
+ *
+ * @param val Value to align.
+ * @param a Value to align to.
+ * @return \c val aligned down to nearest multiple of \c a.
+ */
+DEFINE_ALIGN_DOWN(l, signed long);
+
+/**
+ * Align signed long long down.
+ *
+ * @param val Value to align.
+ * @param a Value to align to.
+ * @return \c val aligned down to nearest multiple of \c a.
+ */
+DEFINE_ALIGN_DOWN(ll, signed long long);
+
+/**
+ * Align unsigned char down.
+ *
+ * @param val Value to align.
+ * @param a Value to align to.
+ * @return \c val aligned down to nearest multiple of \c a.
+ */
+DEFINE_ALIGN_DOWN(uc, unsigned char);
+
+/**
+ * Align unsigned short down.
+ *
+ * @param val Value to align.
+ * @param a Value to align to.
+ * @return \c val aligned down to nearest multiple of \c a.
+ */
+DEFINE_ALIGN_DOWN(us, unsigned short);
+
+/**
+ * Align unsigned int down.
+ *
+ * @param val Value to align.
+ * @param a Value to align to.
+ * @return \c val aligned down to nearest multiple of \c a.
+ */
+DEFINE_ALIGN_DOWN(ui, unsigned int);
+
+/**
+ * Align unsigned long down.
+ *
+ * @param val Value to align.
+ * @param a Value to align to.
+ * @return \c val aligned down to nearest multiple of \c a.
+ */
+DEFINE_ALIGN_DOWN(ul, unsigned long);
+
+/**
+ * Align unsigned long long down.
+ *
+ * @param val Value to align.
+ * @param a Value to align to.
+ * @return \c val aligned down to nearest multiple of \c a.
+ */
+DEFINE_ALIGN_DOWN(ull, unsigned long long);
 /**
  * Align value upwards.
  * Type is deduced from \c x.
@@ -263,6 +400,7 @@
 
 /**
  * Helper macro for defining type specific aligning.
+ * Treats 0 as 1, i.e. lowest possible alignment.
  *
  * @param name Name of type in function name.
  * @param type Actual type.
@@ -270,17 +408,12 @@
 #define DEFINE_ALIGN_UP(name, type)                          \
 	static inline type align_up_##name(type val, type a) \
 	{                                                    \
-		if (!a) {                                    \
+		type new = align_down(val, a);               \
+		if (new == val) {                            \
 			return val;                          \
 		}                                            \
                                                              \
-		type rem = val % a;                          \
-                                                             \
-		if (rem == 0) {                              \
-			return val;                          \
-		}                                            \
-                                                             \
-		return val + a - rem;                        \
+		return new + a;                              \
 	}
 
 /**
@@ -374,135 +507,6 @@ DEFINE_ALIGN_UP(ul, unsigned long);
 DEFINE_ALIGN_UP(ull, unsigned long long);
 
 /**
- * Align value downwards.
- * Type is deduced from \c x.
- *
- * @param x Value to align.
- * @param y Value to align to.
- * @return \c x aligned to down \c y.
- */
-#define align_down(x, y)                             \
-	_Generic((x), signed char                    \
-		 : align_down_c, signed short        \
-		 : align_down_s, signed int          \
-		 : align_down_i, signed long         \
-		 : align_down_l, signed long long    \
-		 : align_down_ll,                    \
-                                                     \
-		 unsigned char                       \
-		 : align_down_uc, unsigned short     \
-		 : align_down_us, unsigned int       \
-		 : align_down_ui, unsigned long      \
-		 : align_down_ul, unsigned long long \
-		 : align_down_ull)((x), (y))
-
-/**
- * Helper macro for defining type specific aligning.
- *
- * @param name Name of type in function name.
- * @param type Actual type.
- */
-#define DEFINE_ALIGN_DOWN(name, type)                          \
-	static inline type align_down_##name(type val, type a) \
-	{                                                      \
-		if (!a) {                                      \
-			return val;                            \
-		}                                              \
-                                                               \
-		return val - (val % a);                        \
-	}
-
-/**
- * Align signed char down.
- *
- * @param val Value to align.
- * @param a Value to align to.
- * @return \c val aligned down to nearest multiple of \c a.
- */
-DEFINE_ALIGN_DOWN(c, signed char);
-
-/**
- * Align signed short down.
- *
- * @param val Value to align.
- * @param a Value to align to.
- * @return \c val aligned down to nearest multiple of \c a.
- */
-DEFINE_ALIGN_DOWN(s, signed short);
-
-/**
- * Align signed int down.
- *
- * @param val Value to align.
- * @param a Value to align to.
- * @return \c val aligned down to nearest multiple of \c a.
- */
-DEFINE_ALIGN_DOWN(i, signed int);
-
-/**
- * Align signed long down.
- *
- * @param val Value to align.
- * @param a Value to align to.
- * @return \c val aligned down to nearest multiple of \c a.
- */
-DEFINE_ALIGN_DOWN(l, signed long);
-
-/**
- * Align signed long long down.
- *
- * @param val Value to align.
- * @param a Value to align to.
- * @return \c val aligned down to nearest multiple of \c a.
- */
-DEFINE_ALIGN_DOWN(ll, signed long long);
-
-/**
- * Align unsigned char down.
- *
- * @param val Value to align.
- * @param a Value to align to.
- * @return \c val aligned down to nearest multiple of \c a.
- */
-DEFINE_ALIGN_DOWN(uc, unsigned char);
-
-/**
- * Align unsigned short down.
- *
- * @param val Value to align.
- * @param a Value to align to.
- * @return \c val aligned down to nearest multiple of \c a.
- */
-DEFINE_ALIGN_DOWN(us, unsigned short);
-
-/**
- * Align unsigned int down.
- *
- * @param val Value to align.
- * @param a Value to align to.
- * @return \c val aligned down to nearest multiple of \c a.
- */
-DEFINE_ALIGN_DOWN(ui, unsigned int);
-
-/**
- * Align unsigned long down.
- *
- * @param val Value to align.
- * @param a Value to align to.
- * @return \c val aligned down to nearest multiple of \c a.
- */
-DEFINE_ALIGN_DOWN(ul, unsigned long);
-
-/**
- * Align unsigned long long down.
- *
- * @param val Value to align.
- * @param a Value to align to.
- * @return \c val aligned down to nearest multiple of \c a.
- */
-DEFINE_ALIGN_DOWN(ull, unsigned long long);
-
-/**
  * Check if value is aligned.
  *
  * @param x Value to check.
@@ -533,11 +537,8 @@ DEFINE_ALIGN_DOWN(ull, unsigned long long);
 #define DEFINE_ALIGNED(name, type)                             \
 	static inline bool is_aligned_##name(type val, type a) \
 	{                                                      \
-		if (!a) {                                      \
-			return true;                           \
-		}                                              \
-                                                               \
-		return val % a == 0;                           \
+		type new = align_down(val, a);                 \
+		return new == val;                             \
 	}
 
 /**

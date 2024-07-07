@@ -420,11 +420,15 @@ __aligned(4096) struct vmem bootvmem;
  * it. */
 __aligned(4096) struct vmem kvmem;
 
+/* adding a third page entry would let us map the kernel at any 4KiB boundary
+ * but eh, Linux seems fine with 2MiB so I guess I shall be as well. */
+
 struct vmem *init_mapping()
 {
 	rpc_pages = order_size(MM_O1) / BASE_PAGE_SIZE;
 	kvmem.leaf[0] = (struct vmem *)to_pte(get_load_addr(),
-			VM_A | VM_G | VM_D | VM_R | VM_W | VM_X | VM_V);
+	                                      VM_A | VM_G | VM_D | VM_R | VM_W |
+	                                      VM_X | VM_V);
 
 	__populate_dmap(&bootvmem);
 	populate_kvmem(&bootvmem);
@@ -462,6 +466,13 @@ void destroy_vmem(struct vmem *b)
 	__destroy_branch(b);
 }
 
+/**
+ * Helper for mapping in the kernel virtual page.
+ * Remember that the kernel lives on its own in a 2MiB (riscv64) region at
+ * VM_KERNEL, and \ref __va() and \ref __pa() won't directly work on it.
+ *
+ * @param b Branch to map kernel into.
+ */
 static void map_kernel(struct vmem *b)
 {
 	/* slightly worried about this not being guaranteed to be pc relative,

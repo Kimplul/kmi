@@ -33,13 +33,13 @@ void run_init(struct tcb *t, vm_t fdt, vm_t initrd)
 	                  "li a0, %1\n"
 	                  "li a1, %2\n"
 	                  "mv a2, %3\n"
-			  "mv a3, %4\n"
-			  "mv a4, %5\n"
+	                  "mv a3, %4\n"
+	                  "mv a4, %5\n"
 	                  "sret\n"
 	                  :
 	                  : "r" (stack_top),
-				"K"(0), "K"(SYS_USER_BOOTED),
-				"r" (t->tid), "r" (fdt), "r" (initrd)
+	                  "K" (0), "K" (SYS_USER_BOOTED),
+	                  "r" (t->tid), "r" (fdt), "r" (initrd)
 	                  : "memory");
 	/* we should never reach this */
 	unreachable();

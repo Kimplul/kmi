@@ -30,13 +30,13 @@
  *
  * @param x Condition to check for.
  */
-#define assert(x)                                                  \
-	do {                                                                    \
-		if (unlikely(!(x))) {                                           \
-			error("assertion failed: " QUOTE(x) "\n"); \
-			while (1) {                                             \
-			}                                                       \
-		}                                                               \
+#define assert(x)                                            \
+	do {                                                 \
+		if (unlikely(!(x))) {                        \
+			error("assertion failed: " #x "\n"); \
+			while (1) {                          \
+			}                                    \
+		}                                            \
 	} while (0);
 
 #else

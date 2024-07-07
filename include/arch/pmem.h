@@ -10,8 +10,8 @@
  * arch/whatever/kernel/pmem.c
  */
 
-#include <kmi/mem.h> /* NUM_ORDERS */
 #include <kmi/types.h>
+#include <kmi/mem.h> /* NUM_ORDERS */
 
 #if defined(__riscv)
 # if __riscv_xlen == 64
@@ -20,6 +20,7 @@
 #include "../../arch/riscv32/include/pmem.h"
 # endif
 #endif
+
 
 /**
  * Get physical memory parameters.

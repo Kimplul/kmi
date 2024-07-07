@@ -364,6 +364,12 @@ static size_t __integral_val(ssize_t value, size_t base, size_t flags,
 	return ret + 1;
 }
 
+/**
+ * Print out a string.
+ *
+ * @param s String to print out.
+ * @return Bytes printed.
+ */
 static size_t __puts(const char *s)
 {
 	size_t i = 0;
@@ -747,10 +753,7 @@ void dbg(const char *fmt, ...)
 			if (is_set(flags, PRECS_FLAG))
 				i = precision;
 
-			for (; *s && i--;) {
-				__putchar(*s++);
-				chars_written++;
-			}
+			chars_written += __puts(s);
 			fmt++;
 			break;
 

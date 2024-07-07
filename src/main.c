@@ -61,8 +61,6 @@ __noreturn void kernel(void *fdt, uintptr_t load_addr, struct vmem *d)
 	/* we should be in kernelspace, so use the virtual address of our FDT. */
 	fdt = __va(fdt);
 
-	/* dbg uses direct mapping at this point */
-	init_dbg(fdt);
 	/* start up debugging in kernel IO */
 	setup_io_dbg(d);
 
@@ -105,6 +103,10 @@ __noreturn void main(unsigned long hart, void *fdt, uintptr_t load_addr)
 	 * have to get the function signature right */
 	(void)hart;
 
+	/* dbg uses direct mapping at this point, useful for early init asserts
+	 * and so on */
+	init_dbg(fdt);
+
 	/** @todo some kind of lottery? */
 	pm_t ram_base = __fdt_ram_base(fdt);
 	pm_t ram_size = __fdt_ram_size(fdt);
@@ -113,6 +115,11 @@ __noreturn void main(unsigned long hart, void *fdt, uintptr_t load_addr)
 	set_load_addr(load_addr);
 
 	init_mem(fdt);
+
+	/* we don't have any debug output just yet but still */
+	/* also this is I guess more of an architecture limitation, should the
+	 * whole of main() just be moved to arch? */
+	assert(is_aligned(load_addr, order_size(MM_O1)));
 
 	struct vmem *d = init_mapping();
 	to_kernelspace(fdt, load_addr, d, ram_base);

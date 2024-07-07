@@ -5,7 +5,7 @@
 #define KMI_RISCV_PMEM_H
 /**
  * @file pmem.h
- * riscv64-specific physical memory, currently empty but kept around for
- * forwards compatibility.
+ * riscv64-specific physical memory stuff.
  */
+
 #endif /* KMI_RISCV_PMEM_H */

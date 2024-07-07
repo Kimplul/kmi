@@ -8,6 +8,8 @@
 
 #include <kmi/assert.h>
 #include <kmi/debug.h>
+#include <kmi/power.h>
+#include <kmi/bkl.h>
 #include "csr.h"
 #include "arch.h"
 
@@ -19,8 +21,11 @@ id_t hartid_to_cpuid(id_t hart)
 		if (cpuid_to_hartid(i) == hart)
 			return i;
 
+	/* put extra cores to sleep so they don't do anything bad */
 	error("failed to match hart id %ld to cpu id\n", (long)hart);
-	/* default to zero, though this should maybe be a panic? */
+	bkl_unlock();
+	sleep();
+	/* should never really be reached but eh */
 	return 0;
 }
 
