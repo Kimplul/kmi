@@ -464,10 +464,12 @@ void destroy_vmem(struct vmem *b)
 
 static void map_kernel(struct vmem *b)
 {
+	/* slightly worried about this not being guaranteed to be pc relative,
+	 * but seems to work at the moment at least. */
 	intptr_t addr = (pm_t)&kvmem;
 
-	/* virtual memory is negative, unsure if this applies everywhere but I
-	 * guess it's good enough for us */
+	/* virtual memory is negative, unsure if this is really portable but I
+	 * guess it's good enough for us for now */
 	if (addr < 0)
 		addr = addr - VM_KERNEL + get_load_addr();
 
