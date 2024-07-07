@@ -24,6 +24,7 @@ stat_t prepare_proc(struct tcb *t, vm_t bin, vm_t interp)
 	if (!entry)
 		return ERR_INVAL;
 
+	t->callback = entry;
 	alloc_stack(t);
 	set_thread(t);
 	set_return(t, entry);
@@ -60,10 +61,6 @@ stat_t init_proc(void *fdt, vm_t *proc_fdt, vm_t *proc_initrd)
 	 * clashes */
 	stat_t ret = prepare_proc(t, get_init_base(fdt), 0);
 	assert(ret == OK);
-
-	/** In the init process, can the entry be the callback? Is that too
-	 * unergonomic? */
-	t->callback = t->exec;
 
 	/** \todo start one thread per core, with special handling for init in
 	 * that each thread starts at the entry point of init? */

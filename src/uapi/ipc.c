@@ -166,7 +166,7 @@ static __noreturn void __run_notify(struct tcb *t, struct tcb *r)
 	/* signal to whoever is receiving us that we're from the kernel
 	 * ("pid 0"), and we are notifying the current thread */
 	vm_t s = enter_rpc(t,
-	                   SYS_RET5(0, code, flags, t->eid, t->tid),
+	                   SYS_RET5(0, t->tid, code, flags, t->eid),
 	                   IPC_REQ);
 
 	finalize_rpc(t, r, s);
@@ -268,19 +268,6 @@ static void leave_rpc(struct tcb *t, struct sys_ret a)
 
 	/* notification didn't take, return back to process normally */
 	use_vmem(t->proc.vmem);
-}
-
-/**
- * IPC server notification syscall handler.
- *
- * @param t Current tcb.
- * @param callback Address of server callback.
- * @return \ref OK and \c 0.
- */
-SYSCALL_DEFINE1(ipc_server)(struct tcb *t, sys_arg_t callback)
-{
-	get_cproc(t)->callback = callback;
-	return_args1(t, OK);
 }
 
 /**

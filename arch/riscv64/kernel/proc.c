@@ -31,15 +31,16 @@ void run_init(struct tcb *t, vm_t fdt, vm_t initrd)
 	bkl_unlock();
 	__asm__ volatile ("mv sp, %0\n"
 	                  "li a0, %1\n"
-	                  "li a1, %2\n"
-	                  "mv a2, %3\n"
+	                  "mv a1, %2\n"
+	                  "li a2, %3\n"
 	                  "mv a3, %4\n"
 	                  "mv a4, %5\n"
+			  "li a5, %6\n"
 	                  "sret\n"
 	                  :
 	                  : "r" (stack_top),
-	                  "K" (0), "K" (SYS_USER_BOOTED),
-	                  "r" (t->tid), "r" (fdt), "r" (initrd)
+	                  "K" (0), "r" (t->tid), "K" (SYS_USER_BOOTED),
+	                  "r" (fdt), "r" (initrd), "K" (1)
 	                  : "memory");
 	/* we should never reach this */
 	unreachable();

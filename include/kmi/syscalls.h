@@ -83,9 +83,6 @@ enum sys_code {
 
 	/** @name IPC. */
 	/** @{ */
-	/** Inform kernel that process should be treated as server. */
-	SYS_IPC_SERVER,
-
 	/** Send IPC request as client. */
 	SYS_IPC_REQ,   /* IPC request to server */
 

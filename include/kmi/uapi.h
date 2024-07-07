@@ -460,20 +460,6 @@ SYSCALL_DECLARE1(free_timer, cid);
 /** @name IPC syscalls. */
 /** @{ */
 /**
- * Report process status as server syscall.
- *
- * @param t Current tcb.
- * @param callback Callback to request handler.
- * @param b Unused.
- * @param c Unused.
- * @param d Unused.
- * @param e Unused.
- *
- * Returns \ref OK.
- */
-SYSCALL_DECLARE1(ipc_server, callback);
-
-/**
  * Request syscall.
  *
  * @param t Current tcb.

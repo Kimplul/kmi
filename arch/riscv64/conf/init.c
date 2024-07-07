@@ -178,14 +178,6 @@ static uint64_t sys_swap(long tid)
 	return 0;
 }
 
-static void sys_ipc_server(void *f)
-{
-	struct sys_ret r = ecall2(SYS_IPC_SERVER, (long)f);
-
-	if (r.s != 0)
-		print_value("ipc_server() failed with error ", r.s);
-}
-
 static inline struct sys_ret sys_ipc_req(sys_arg_t pid,
                                          sys_arg_t d0, sys_arg_t d1,
                                          sys_arg_t d2,
@@ -381,14 +373,12 @@ static void handle_kernel(long a0, long a1, long d0, long d1, long d2, long d3)
 	sys_poweroff(0);
 }
 
-void _start(long a0, long a1, long d0, long d1, long d2, long d3)
+void _start(long pid, long tid, long d0, long d1, long d2, long d3)
 {
-	if (a0 == 0)
-		handle_kernel(a0, a1, d0, d1, d2, d3);
+	if (pid == 0)
+		handle_kernel(pid, tid, d0, d1, d2, d3);
 
 	/* otherwise, implement test functionality */
-	long pid = a0;
-	long tid = a1;
 	if (d0 == 1) {
 		void *cbuf = 0;
 		rw_buf = sys_req_sharedmem(pid, rw_buf_size, &cbuf);
