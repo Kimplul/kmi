@@ -40,7 +40,7 @@ static stat_t __copy_mapped_region(struct tcb *d, struct tcb *s,
 	size_t size = end - start;
 	vm_t v = alloc_fixed_region(&d->uvmem.region, start, size, &size,
 	                            m->flags);
-	catastrophic_assert(v == start);
+	assert(v == start);
 
 	/* note that we use uvmem.vmem instead of proc.vmem, this is just to
 	 * make sure that zombies don't eat our brains */
@@ -77,7 +77,7 @@ static stat_t __copy_shared_region(struct tcb *d, struct mem_region *m)
 	vm_t v = alloc_fixed_region(&d->uvmem.region, start, size, &size,
 	                            m->flags);
 
-	catastrophic_assert(v == start);
+	assert(v == start);
 	stat_t res = clone_region(d->uvmem.vmem, s->uvmem.vmem, start, v, size,
 	                          m->flags);
 	if (res == OK)
@@ -240,7 +240,7 @@ stat_t copy_uvmem(struct tcb *d, struct tcb *s)
 vm_t alloc_uvmem(struct tcb *t, size_t size, vmflags_t flags)
 {
 	/* t exists and is the process tcb of the current process */
-	hard_assert(t && is_proc(t), ERR_INVAL);
+	assert(t && is_proc(t));
 
 	const vm_t v = alloc_region(&t->uvmem.region, size, &size, flags);
 	if (map_region(t->proc.vmem, v, size, max_order(), flags)) {
@@ -254,7 +254,7 @@ vm_t alloc_uvmem(struct tcb *t, size_t size, vmflags_t flags)
 
 vm_t alloc_fixed_uvmem(struct tcb *t, vm_t start, size_t size, vmflags_t flags)
 {
-	hard_assert(t && is_proc(t), ERR_INVAL);
+	assert(t && is_proc(t));
 
 	const vm_t v = alloc_fixed_region(&t->uvmem.region, start, size, &size,
 	                                  flags);
@@ -282,7 +282,7 @@ vm_t map_fixed_uvmem(struct tcb *t, pm_t start, size_t size, vmflags_t flags)
 /* free_shared_uvmem shouldn't be needed, likely to work with free_uvmem */
 vm_t alloc_shared_uvmem(struct tcb *s, size_t size, vmflags_t flags)
 {
-	hard_assert(s && is_proc(s), ERR_INVAL);
+	assert(s && is_proc(s));
 	const vm_t v = alloc_region(&s->uvmem.region, size, &size,
 	                            MR_SHARED | flags);
 	/* use base pages to make clone more likely to succeed */

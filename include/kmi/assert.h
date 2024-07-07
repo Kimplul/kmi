@@ -30,57 +30,17 @@
  *
  * @param x Condition to check for.
  */
-#define catastrophic_assert(x)                                                  \
+#define assert(x)                                                  \
 	do {                                                                    \
 		if (unlikely(!(x))) {                                           \
-			error("catastrophic assertion failed: " QUOTE(x) "\n"); \
+			error("assertion failed: " QUOTE(x) "\n"); \
 			while (1) {                                             \
 			}                                                       \
 		}                                                               \
 	} while (0);
 
-/**
- * The function cannot continue without this assertion, but doesn't necessarily
- * mean that the kernel is borked.
- *
- * @warning Implicit return.
- *
- * @param x Condition to check for.
- * @param r Return value on failed check.
- */
-#define hard_assert(x, r)                                              \
-	{                                                              \
-		if (unlikely(!(x))) {                                  \
-			warn("hard assertion failed: " QUOTE(x) "\n"); \
-			return r;                                      \
-		}                                                      \
-	}
-
-/**
- * Unexpected case, but not likely to cause problems, likely a bug.
- *
- * @param x Condition to check for.
- */
-#define soft_assert(x)                                                  \
-	do {                                                            \
-		if (unlikely(!(x))) {                                   \
-			info("soft assertion failed: "  QUOTE(x) "\n"); \
-		}                                                       \
-	} while (0);
 #else
-#define catastrophic_assert(x)
-#define hard_assert(x, r)
-#define soft_assert(x)
+#define assert(x)
 #endif
-
-/**
- * Use when return value doesn't exist.
- *
- * Example:
- * @code{.c}
- * void func() { hard_assert(x, RETURN_VOID); }
- * @endcode
- */
-#define RETURN_VOID
 
 #endif /* KMI_ASSERT_H */

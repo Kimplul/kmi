@@ -48,7 +48,7 @@ static struct mem_region_root *__select_region(pm_t addr)
 
 vm_t alloc_devmem(struct tcb *t, pm_t start, size_t bytes, vmflags_t flags)
 {
-	hard_assert(t && is_proc(t), ERR_INVAL);
+	assert(t && is_proc(t));
 
 	struct mem_region_root *region = __select_region(start);
 	if (!region)
@@ -69,7 +69,7 @@ vm_t alloc_devmem(struct tcb *t, pm_t start, size_t bytes, vmflags_t flags)
 
 stat_t free_devmem(struct tcb *t, vm_t start)
 {
-	hard_assert(t && is_proc(t), ERR_INVAL);
+	assert(t && is_proc(t));
 	pm_t addr = 0;
 	stat_vpage(t->proc.vmem, start, &addr, NULL, NULL);
 

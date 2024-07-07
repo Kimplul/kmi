@@ -46,7 +46,7 @@ static uint8_t __elf_to_uvflags(uint8_t elf_flags)
 static void __map_exec(struct tcb *t, vm_t bin, uint8_t ei_c, vm_t phstart,
                        size_t phnum, size_t phsize)
 {
-	hard_assert(t && is_proc(t), RETURN_VOID);
+	assert(t && is_proc(t));
 
 	/** \todo take alignment into consideration? */
 	/** \todo take overlapping memory regions into account, probably mostly

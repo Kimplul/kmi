@@ -664,7 +664,7 @@ stat_t clone_region(struct vmem *b, struct vmem *g, vm_t from, vm_t to,
 	align_region(from, bytes, &from, &from_size);
 	align_region(to, bytes, &to, &to_size);
 
-	catastrophic_assert(from_size == to_size);
+	assert(from_size == to_size);
 	bytes = from_size;
 
 	while (bytes) {
@@ -694,7 +694,7 @@ stat_t copy_region(struct vmem *b, struct vmem *g, vm_t from, vm_t to,
 	align_region(from, bytes, &from, &from_size);
 	align_region(to, bytes, &to, &to_size);
 
-	catastrophic_assert(from_size == to_size);
+	assert(from_size == to_size);
 	bytes = from_size;
 
 	while (bytes) {

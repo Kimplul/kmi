@@ -18,6 +18,8 @@
 
 #include <libfdt.h>
 
+static vm_t entry;
+
 stat_t prepare_proc(struct tcb *t, vm_t bin, vm_t interp)
 {
 	vm_t entry = load_elf(t, bin, interp);

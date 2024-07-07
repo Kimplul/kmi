@@ -86,7 +86,7 @@ void smp_bringup(struct vmem *b, void *fdt)
 
 		if (r.value == SBI_HART_STARTED) {
 			/* there should ever only be one started hart */
-			catastrophic_assert(cpuid_to_hartid(0) == -1);
+			assert(cpuid_to_hartid(0) == -1);
 			cpuid_to_hartid(0) = hartid;
 			continue;
 		}

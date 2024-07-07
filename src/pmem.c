@@ -564,7 +564,7 @@ static size_t build_reserved_map(size_t exists, struct avoid_region avoid[64],
 		pm_t size = (pm_t)fdt_load_reg_size(ci, rmem_reg, 0);
 
 		avoid[exists++] = (struct avoid_region){(pm_t)__va(base), size};
-		catastrophic_assert(exists < 64);
+		assert(exists < 64);
 	}
 
 	return exists;
@@ -636,9 +636,13 @@ void init_pmem(void *fdt, uintptr_t load_addr)
 	info("found initrd at [%lx - %lx]\n", initrd_base,
 	     initrd_base + initrd_size);
 
+	assert(is_aligned(initrd_base, BASE_PAGE_SIZE));
+
 	pm_t fdt_base = (pm_t)fdt;
 	pm_t fdt_size = fdt_totalsize(fdt);
 	info("found fdt at [%lx - %lx]\n", fdt_base, fdt_base + fdt_size);
+
+	assert(is_aligned(fdt_base, BASE_PAGE_SIZE));
 
 	/* find probably most suitable contiguous region of ram for our physical
 	 * ram map  */
@@ -661,7 +665,7 @@ void init_pmem(void *fdt, uintptr_t load_addr)
 	pm_t pmap_base = select_base(ram_base, ram_size,
 	                             probe_size, avoid_count, avoid);
 
-	catastrophic_assert(pmap_base);
+	assert(pmap_base);
 	info("choosing to place pmem map at %lx\n", pmap_base);
 
 	size_t actual_size = populate_pmap(ram_base, ram_size, pmap_base);

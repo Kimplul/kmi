@@ -120,7 +120,7 @@ pm_t get_initrdtop(const void *fdt)
 	void *initrd_end_ptr = (void *)fdt_getprop(fdt, chosen_offset,
 	                                           "linux,initrd-end", &len);
 
-	catastrophic_assert(initrd_end_ptr);
+	assert(initrd_end_ptr);
 	return (pm_t)fdt_load_int_ptr(len / 4, initrd_end_ptr);
 }
 
@@ -132,7 +132,7 @@ pm_t get_initrdbase(const void *fdt)
 	void *initrd_base_ptr = (void *)fdt_getprop(fdt, chosen_offset,
 	                                            "linux,initrd-start", &len);
 
-	catastrophic_assert(initrd_base_ptr);
+	assert(initrd_base_ptr);
 	return (pm_t)fdt_load_int_ptr(len / 4, initrd_base_ptr);
 }
 

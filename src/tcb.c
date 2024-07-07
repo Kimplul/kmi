@@ -47,7 +47,7 @@ void init_tcbs()
 	 * something smaller but this is fine for now. */
 	tcbs = (struct tcb **)alloc_page(MM_O1);
 	num_tids = order_size(MM_O1) / sizeof(struct tcb *);
-	catastrophic_assert(is_powerof2(num_tids));
+	assert(is_powerof2(num_tids));
 	memset(tcbs, 0, order_size(MM_O1));
 }
 
@@ -186,7 +186,7 @@ static stat_t __copy_proc(struct tcb *p, struct tcb *n)
 
 struct tcb *create_proc(struct tcb *p)
 {
-	hard_assert(tcbs, 0);
+	assert(tcbs);
 
 	/* create a new thread outside the current process */
 	struct tcb *n = create_thread(NULL);
@@ -207,7 +207,7 @@ struct tcb *create_proc(struct tcb *p)
  */
 static stat_t __destroy_thread_data(struct tcb *t)
 {
-	catastrophic_assert(t->refcount == 0);
+	assert(t->refcount == 0);
 
 	/* remove ourselves from the thread pool */
 	/** @todo this should be at the top of the function, and be wrapped in
@@ -231,8 +231,8 @@ static stat_t __destroy_thread_data(struct tcb *t)
 
 stat_t destroy_thread(struct tcb *t)
 {
-	hard_assert(tcbs, ERR_NOINIT);
-	hard_assert(!is_proc(t), ERR_INVAL);
+	assert(tcbs);
+	assert(!is_proc(t));
 
 	/* mark us as zombies */
 	set_bits(t->state, TCB_ZOMBIE);
@@ -265,8 +265,8 @@ stat_t destroy_thread(struct tcb *t)
 
 stat_t destroy_proc(struct tcb *p)
 {
-	hard_assert(tcbs, ERR_NOINIT);
-	hard_assert(is_proc(p), ERR_INVAL);
+	assert(tcbs);
+	assert(is_proc(p));
 
 	/** @todo currently we don't care who else is in the address space when
 	 * we start freeing stuff, one fairly simple way to deal with this is to
@@ -291,7 +291,7 @@ void reference_proc(struct tcb *p)
 	if (!p)
 		return;
 
-	hard_assert(is_proc(p), RETURN_VOID);
+	assert(is_proc(p));
 	p->refcount++;
 }
 
@@ -300,7 +300,7 @@ void unreference_proc(struct tcb *p)
 	if (!p)
 		return;
 
-	hard_assert(is_proc(p), RETURN_VOID);
+	assert(is_proc(p));
 	p->refcount--;
 	if (zombie(p) && p->refcount == 0) {
 		dbg("thread %ld is completely destroyed\n", (long)p->tid);
@@ -342,7 +342,7 @@ void use_tcb(struct tcb *t)
 
 struct tcb *get_tcb(id_t tid)
 {
-	hard_assert(tcbs, 0);
+	assert(tcbs);
 
 	if (tid <= 0)
 		return NULL;

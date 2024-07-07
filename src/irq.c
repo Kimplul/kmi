@@ -55,7 +55,7 @@ stat_t unregister_irq(struct tcb *t, irq_t id)
 void handle_irq()
 {
 	irq_t id = get_irq();
-	hard_assert(id < max_irq, RETURN_VOID);
+	assert(id < max_irq);
 
 	id_t tid = irq_map[id];
 

@@ -24,7 +24,7 @@ void orphanize(struct tcb *t)
 
 void unorphanize(struct tcb *t)
 {
-	catastrophic_assert(!is_rpc(t));
+	assert(!is_rpc(t));
 
 	/* attach to init process */
 	struct tcb *init = get_tcb(1);
@@ -43,7 +43,7 @@ void unorphanize(struct tcb *t)
 
 	clear_bits(t->state, TCB_ORPHAN);
 
-	catastrophic_assert(init->callback);
+	assert(init->callback);
 	set_args3(t, 0, SYS_USER_ORPHANED, t->tid);
 	set_return(t, init->callback);
 	t->callback = init->callback;
