@@ -92,7 +92,7 @@
  * @param x Physical address.
  * @return Corresponding virtual address.
  */
-#define __va(x) (void *)(((uintptr_t)(x)) + VM_DMAP - get_ram_base())
+#define __va(x) (void *)(((uintptr_t)(x)) + VM_DMAP)
 
 /**
  * Convert virtual address to physical address in direct mapping.
@@ -100,7 +100,7 @@
  * @param x Virtual address.
  * @return Corresponding physical address.
  */
-#define __pa(x) (void *)(((uintptr_t)(x)) - VM_DMAP + get_ram_base())
+#define __pa(x) (void *)(((uintptr_t)(x)) - VM_DMAP)
 
 /**
  * Get page number of physical address.

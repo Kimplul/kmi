@@ -151,7 +151,7 @@ vm_t setup_kernel_io(struct vmem *b, vm_t paddr);
  * @return The vmem node used to build the address space. Probably statically
  * allocated.
  */
-struct vmem *direct_mapping();
+struct vmem *init_mapping();
 
 /**
  * Create new virtual memory space.
@@ -190,11 +190,9 @@ void clone_uvmem(struct vmem * restrict r, struct vmem * restrict b);
  * @param load_addr Address where kernel was loaded to.
  * @param direct_mapping Direct mapping vmem.
  * @param ram_base Physical base address of ram.
- * @param dmap \ref VM_DMAP.
  */
 __noreturn void to_kernelspace(void *fdt,
                                uintptr_t load_addr,
                                struct vmem *direct_mapping,
-                               pm_t ram_base,
-                               pm_t dmap);
+                               pm_t ram_base);
 #endif /* KMI_ARCH_PAGES_H */

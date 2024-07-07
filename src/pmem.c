@@ -397,8 +397,10 @@ static pm_t __maybe_populate_bucket(size_t n, pm_t cont, enum mm_order order,
 
 	if (n) {
 		struct mm_bmap *bmap = (struct mm_bmap *)cont;
-		if (populate)
+		if (populate) {
+			memset(bmap, 0, set_size);
 			bmap->size = n;
+		}
 
 		if (first && populate)
 			__attach_set(bucket, bmap);

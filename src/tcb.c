@@ -120,14 +120,14 @@ void free_stack(struct tcb *t)
 
 struct tcb *create_thread(struct tcb *p)
 {
-	hard_assert(tcbs, 0);
+	assert(tcbs);
 
 	vm_t bottom = alloc_page(KERNEL_STACK_PAGE_ORDER);
 	/* move tcb to top of kernel stack, keeping alignment in check
 	 * (hopefully) */
 	/** \todo check alignment */
-	struct tcb *t = (struct tcb *)align_down(
-		bottom + order_size(MM_O0) - sizeof(struct tcb), sizeof(long));
+	bottom = bottom + order_size(MM_O0) - sizeof(struct tcb);
+	struct tcb *t = (struct tcb *)align_down(bottom, sizeof(long));
 	memset(t, 0, sizeof(struct tcb));
 
 	id_t tid = __alloc_tid(t);

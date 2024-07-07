@@ -18,9 +18,8 @@
 
 void run_init(struct tcb *t, vm_t fdt, vm_t initrd)
 {
-	/** \todo actually map fdt and initrd into the target address space */
 	csr_write(CSR_SSCRATCH, t);
-	csr_write(CSR_SEPC, t->exec);
+	csr_write(CSR_SEPC, t->callback);
 	/* gcc gives a warning 'the value of the stack pointer after an asm
 	 * statement must be the same as it was before the statement', so this
 	 * is technically speaking undefined behavior, I think.
@@ -31,13 +30,16 @@ void run_init(struct tcb *t, vm_t fdt, vm_t initrd)
 	vm_t stack_top = t->thread_stack + t->thread_stack_size;
 	bkl_unlock();
 	__asm__ volatile ("mv sp, %0\n"
-	                  "mv a0, %1\n"
-	                  "mv a1, %2\n"
+	                  "li a0, %1\n"
+	                  "li a1, %2\n"
 	                  "mv a2, %3\n"
+			  "mv a3, %4\n"
+			  "mv a4, %5\n"
 	                  "sret\n"
 	                  :
-	                  : "r" (stack_top), "r" (t->tid), "r" (fdt),
-	                  "r" (initrd)
+	                  : "r" (stack_top),
+				"K"(0), "K"(SYS_USER_BOOTED),
+				"r" (t->tid), "r" (fdt), "r" (initrd)
 	                  : "memory");
 	/* we should never reach this */
 	unreachable();

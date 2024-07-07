@@ -7,9 +7,13 @@
  */
 
 #include <kmi/debug.h>
-#include <arch/smp.h>
+#include <kmi/bkl.h>
 #include <kmi/tcb.h>
 #include <libfdt.h>
+
+#include <arch/proc.h>
+#include <arch/arch.h>
+#include <arch/smp.h>
 #include "arch.h"
 #include "sbi.h"
 
@@ -94,7 +98,10 @@ void smp_bringup(struct vmem *b, void *fdt)
 		smp_init_stacks[hartid] = (void *)alloc_page(BASE_PAGE) +
 		                          BASE_PAGE_SIZE;
 
-		pm_t bringup = (pm_t)__pa(riscv_bringup);
+		/* fixup physical address of bringup */
+		pm_t bringup = (pm_t)riscv_bringup;
+		bringup = bringup - VM_KERNEL + get_load_addr();
+
 		r = sbi_hart_start(hartid, bringup, satp);
 
 		if (r.error) {
@@ -111,8 +118,9 @@ void smp_bringup(struct vmem *b, void *fdt)
  *
  * @param hartid Hart that's being brought up.
  */
-void core_bringup(long hartid)
+__noreturn void core_bringup(long hartid)
 {
+	bkl_lock();
 	/* assume smp_bringup assigned our cpuid correctly */
 	id_t cpuid = hartid_to_cpuid(hartid);
 
@@ -125,12 +133,25 @@ void core_bringup(long hartid)
 
 	/* add us as a thread to init program that cpu 0 is hopefully running by
 	 * now */
-	struct tcb *t = create_thread(cpu_tcb(0));
+	struct tcb *init = get_tcb(1);
+	assert(init);
+
+	struct tcb *t = create_thread(init);
+	assert(t);
+
+	alloc_stack(t);
+	/* init is special in that all threads jump to the entrypoint of the
+	 * program */
+	t->callback = init->callback;
+	t->exec = init->exec;
 	t->cpu_id = cpuid;
+	/** @todo this is pretty hacky, should really be a separate function? */
+	setup_irq(NULL);
+	setup_arch(NULL);
 	tcb_assign(t);
 	use_tcb(t);
 
-	/* eventually we should jump to init and start running stuff, but for
-	 * now take it easy */
-	while (1);
+	info("core %ld releasing BKL\n", (long)cpuid);
+	run_init(t, NULL, NULL);
+	unreachable();
 }

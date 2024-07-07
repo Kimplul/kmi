@@ -316,7 +316,10 @@ struct mem_region *find_free_region(struct mem_region_root *r, size_t size,
 		vm_t start = align_up(t->start, offset);
 
 		size_t qsize = t->end - t->start;
-		size_t bsize = t->end - start;
+
+		size_t bsize = 0;
+		if (t->end >= start)
+			bsize = t->end - start;
 
 		if (!quick_best && size <= qsize)
 			quick_best = t;

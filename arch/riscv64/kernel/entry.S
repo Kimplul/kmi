@@ -130,7 +130,7 @@ fast_dispatch:
 	csrr    t5, CSR_SEPC
 	sr	t5, offsetof_exec(tp)
 	/* jump to C */
-	jal	dispatch
+	call	dispatch
 	/* if we had a thread switch, load kernel stack of current thread and
 	 * restore its context */
 	/* get associated kernel stack */

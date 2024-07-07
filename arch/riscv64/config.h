@@ -32,6 +32,12 @@
 /** Direct map offset. */
 #define VM_DMAP (0xffffffc000000000)         /* testing for now */
 
+/** Page reserved for kernel mapping in O1 */
+#define KERNEL_PAGE 510UL
+
+/** Kernel virtual address */
+#define VM_KERNEL (0xffffffff80000000)
+
 /** Page reserved for kernel I/O. */
 #define IO_PAGE 511UL
 

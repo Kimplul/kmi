@@ -59,17 +59,22 @@ stat_t init_proc(void *fdt, vm_t *proc_fdt, vm_t *proc_initrd)
 	/* allocate stacks etc after ELF file to make sure nothing of importance
 	 * clashes */
 	prepare_proc(t, get_init_base(fdt), 0);
+
+	/** In the init process, can the entry be the callback? Is that too
+	 * unergonomic? */
+	t->callback = t->exec;
+
 	/** \todo start one thread per core, with special handling for init in
 	 * that each thread starts at the entry point of init? */
 
 	*proc_fdt = map_fixed_uvmem(t,
 	                            (pm_t)fdt, fdt_totalsize(fdt),
-	                            VM_V | VM_R | VM_U);
+	                            MR_SHARED | VM_V | VM_R | VM_U);
 
 	pm_t initrd = (pm_t)__va(get_initrdbase(fdt));
 	*proc_initrd = map_fixed_uvmem(t,
 	                               initrd, get_initrdsize(fdt),
-	                               VM_V | VM_R | VM_U);
+	                               MR_SHARED | VM_V | VM_R | VM_U);
 
 	info("mapped fdt at %lx\n", *proc_fdt);
 	info("mapped initrd at %lx\n", *proc_initrd);

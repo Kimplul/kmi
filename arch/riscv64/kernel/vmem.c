@@ -416,14 +416,19 @@ long riscv_init_stack[4096 / sizeof(long)];
  * and so the kernel itself has to be on a 4K boundary. */
 __aligned(4096) struct vmem bootvmem;
 
-struct vmem *direct_mapping()
+/** Page entry for mapping kernel on a O1 page level, similar to how Linux does
+ * it. */
+__aligned(4096) struct vmem kvmem;
+
+struct vmem *init_mapping()
 {
 	rpc_pages = order_size(MM_O1) / BASE_PAGE_SIZE;
+	kvmem.leaf[0] = (struct vmem *)to_pte(get_load_addr(),
+			VM_A | VM_G | VM_D | VM_R | VM_W | VM_X | VM_V);
 
 	__populate_dmap(&bootvmem);
 	populate_kvmem(&bootvmem);
 	__use_vmem(&bootvmem, DEFAULT_Sv_MODE);
-
 	return &bootvmem;
 }
 
@@ -456,16 +461,31 @@ void destroy_vmem(struct vmem *b)
 	__destroy_branch(b);
 }
 
+static void map_kernel(struct vmem *b)
+{
+	intptr_t addr = (pm_t)&kvmem;
+
+	/* virtual memory is negative, unsure if this applies everywhere but I
+	 * guess it's good enough for us */
+	if (addr < 0)
+		addr = addr - VM_KERNEL + get_load_addr();
+
+	b->leaf[KERNEL_PAGE] = (struct vmem *)to_pte((pm_t)addr, VM_V);
+}
+
 stat_t populate_kvmem(struct vmem *b)
 {
 	size_t flags = VM_V | VM_R | VM_W | VM_X | VM_G | VM_D | VM_A;
-	for (size_t i = KSTART_PAGE; i < IO_PAGE; ++i)
+	for (size_t i = KSTART_PAGE; i < KERNEL_PAGE; ++i)
 		b->leaf[i] = (struct vmem *)to_pte(
-			get_ram_base() + TOP_PAGE_SIZE * (i - KSTART_PAGE),
+			TOP_PAGE_SIZE * (i - KSTART_PAGE),
 			flags);
 
-	/* map in IO region */
+	/* map in IO region if debugging is specified */
 	map_io_dbg(b);
+
+	/* map actual kernel */
+	map_kernel(b);
 	return OK;
 }
 

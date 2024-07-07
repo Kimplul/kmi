@@ -24,12 +24,11 @@ ret
 
 .section .text
 
-/* a0 is fdt, a1 is load_addr, a2 is d, a3 is ram_base, a4 is DMAP */
+/* a0 is fdt, a1 is load_addr, a2 is d, a3 is ram_base */
 .global to_kernelspace
 to_kernelspace:
-lla t0, kernel
-add t0, t0, a4
-sub t0, t0, a3
-add sp, sp, a4
-sub sp, sp, a3
+li t1, VM_DMAP
+add sp, sp, t1
+lui t0, %hi(kernel)
+addi t0, t0, %lo(kernel)
 jr t0

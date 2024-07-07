@@ -176,6 +176,10 @@ enum sys_user {
 
 	/** Thread has been orphaned. */
 	SYS_USER_ORPHANED,
+
+	/** Core has booted an init thread. Only used during booting, should be
+	 * handled specially. */
+	SYS_USER_BOOTED,
 };
 
 /** Which notifications have arrived. */

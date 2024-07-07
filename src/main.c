@@ -114,9 +114,8 @@ __noreturn void main(unsigned long hart, void *fdt, uintptr_t load_addr)
 
 	init_mem(fdt);
 
-	struct vmem *d = direct_mapping();
-
-	to_kernelspace(fdt, load_addr, d, ram_base, VM_DMAP);
+	struct vmem *d = init_mapping();
+	to_kernelspace(fdt, load_addr, d, ram_base);
 	unreachable();
 }
 
