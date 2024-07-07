@@ -753,7 +753,10 @@ void dbg(const char *fmt, ...)
 			if (is_set(flags, PRECS_FLAG))
 				i = precision;
 
-			chars_written += __puts(s);
+			for (; *s && i--;) {
+				__putchar(*s++);
+				chars_written++;
+			}
 			fmt++;
 			break;
 

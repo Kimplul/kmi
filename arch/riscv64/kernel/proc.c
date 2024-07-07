@@ -35,7 +35,7 @@ void run_init(struct tcb *t, vm_t fdt, vm_t initrd)
 	                  "li a2, %3\n"
 	                  "mv a3, %4\n"
 	                  "mv a4, %5\n"
-			  "li a5, %6\n"
+	                  "li a5, %6\n"
 	                  "sret\n"
 	                  :
 	                  : "r" (stack_top),

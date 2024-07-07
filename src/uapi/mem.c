@@ -106,6 +106,34 @@ SYSCALL_DEFINE3(req_pmem)(struct tcb *t, sys_arg_t paddr, sys_arg_t size,
 }
 
 /**
+ * Allocate some contiguous region in memory.
+ * Due to page allocation constraints, this is generally just one page that's
+ * larger than the \p size parameter. Should work fine for 4K - 2M allocations,
+ * which I assume is generally what is used, but we'll see if I have to
+ * implement an actually good page allocator at some point.
+ *
+ * @param t Current tcb.
+ * @param size Minimum size of mapping.
+ * @param flags Flags of mapping. Unsure why you'd want anything besides VM_W |
+ * VM_R, but eh.
+ *
+ * @return \see sys_req_page().
+ */
+SYSCALL_DEFINE2(req_page)(struct tcb *t, sys_arg_t size, sys_arg_t flags)
+{
+	struct tcb *r = get_cproc(t);
+
+	pm_t addr = 0;
+	vm_t start = 0;
+	size_t asize = 0;
+	flags = sanitize_uvflags(flags);
+	if (!(start = alloc_uvpage(r, size, flags, &addr, &asize)))
+		return_args1(t, ERR_OOMEM);
+
+	return_args4(t, OK, start, addr, asize);
+}
+
+/**
  * Request shared memory syscall handler.
  *
  * @param t Current tcb.

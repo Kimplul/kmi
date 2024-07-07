@@ -324,6 +324,26 @@ SYSCALL_DECLARE3(ref_sharedmem, tid, addr, flags);
 SYSCALL_DECLARE3(req_pmem, paddr, size, flags);
 
 /**
+ * Get physically contiguous region of memory, useful for stuff like virtio
+ * buffers.
+ *
+ * @param t Current tcb.
+ * @param size Minimum size of region.
+ * @param flags Flags of allocation.
+ * @param c Unused.
+ * @param d Unused.
+ * @param e Unused.
+ *
+ * Return\ref OK and start of virtual address, start of physical address and
+ * size, in that order.
+ *
+ * @note Users are encouraged to check the return size, as it may be
+ * significantly larger than requested, in which case it is recommended to place
+ * multiple buffers in the region if required by the application.
+ */
+SYSCALL_DECLARE2(req_page, size, flags);
+
+/**
  * Request fixed memory syscall.
  *
  * Allocates at least the specified size of allocation which includes the start

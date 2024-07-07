@@ -277,12 +277,12 @@ static void sys_sleep()
 
 #define CSR_CYCLE "0xc00"
 
-static void handle_kernel(long a0, long a1, long d0, long d1, long d2, long d3)
+static void handle_kernel(long pid, long tid, long d0, long d1, long d2,
+                          long d3)
 {
-	if (a1 != SYS_USER_BOOTED)
+	if (d0 != SYS_USER_BOOTED)
 		return;
 
-	long tid = d0;
 	if (tid != 1) {
 		puts("Woo, more cores!\n");
 		while (1)
@@ -311,11 +311,11 @@ static void handle_kernel(long a0, long a1, long d0, long d1, long d2, long d3)
 	print_value("Executed cycles per second", cend - cstart);
 
 	puts("Starting fork():\n");
-	long pid = sys_fork();
-	if (pid != 0) {
-		print_value("Child pid", pid);
+	long cid = sys_fork();
+	if (cid != 0) {
+		print_value("Child pid", cid);
 		puts("Swapping to child...\n");
-		while(1) sys_swap(pid);
+		while(1) sys_swap(cid);
 	}
 
 	puts("Hello from child!\n");

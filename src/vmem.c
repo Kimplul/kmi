@@ -279,6 +279,34 @@ vm_t map_fixed_uvmem(struct tcb *t, pm_t start, size_t size, vmflags_t flags)
 	return v + (start % BASE_PAGE_SIZE);
 }
 
+vm_t alloc_uvpage(struct tcb *t, size_t size, vmflags_t flags, pm_t *startp,
+                  size_t *sizep)
+{
+	enum mm_order order = nearest_order(size);
+	size = order_size(order);
+
+	const vm_t v = alloc_region(&t->uvmem.region, size, &size, flags);
+	if (!v)
+		return 0;
+
+	pm_t start = alloc_page(order);
+	if (!start) {
+		free_region(&t->uvmem.region, size);
+		return 0;
+	}
+
+	if (map_fixed_region(t->proc.vmem, v, start, size, flags)) {
+		unmap_region(t->proc.vmem, v, size);
+		free_region(&t->uvmem.region, v);
+		return NULL;
+	}
+
+	*startp = (pm_t)__pa(start);
+	*sizep = size;
+	return v;
+}
+
+
 /* free_shared_uvmem shouldn't be needed, likely to work with free_uvmem */
 vm_t alloc_shared_uvmem(struct tcb *s, size_t size, vmflags_t flags)
 {

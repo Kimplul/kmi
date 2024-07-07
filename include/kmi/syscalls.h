@@ -47,17 +47,20 @@ enum sys_code {
 	/** Request memory from anywhere. */
 	SYS_REQ_MEM,
 
-	/** Request physical page from ram. */
-	SYS_REF_SHAREDMEM,
-
 	/** Request memory with physical address. */
 	SYS_REQ_PMEM,
 
 	/** Request memory at fixed virtual address. */
 	SYS_REQ_FIXMEM,
 
+	/** Request one page of memory, useful for stuff like virtio buffers */
+	SYS_REQ_PAGE,
+
 	/** Request shared memory. */
 	SYS_REQ_SHAREDMEM,
+
+	/** Request physical page from ram. */
+	SYS_REF_SHAREDMEM,
 
 	/** Free memory. */
 	SYS_FREE_MEM,
