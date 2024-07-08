@@ -259,7 +259,7 @@ static struct mem_region *__create_region(vm_t start, vm_t end,
  */
 static size_t po_align(size_t s)
 {
-	for (size_t o = __mm_max_order; o > 0; --o) {
+	for (size_t o = max_order(); o > 0; --o) {
 		if (s >= order_size(o))
 			return order_size(o);
 	}

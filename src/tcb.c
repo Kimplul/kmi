@@ -102,14 +102,14 @@ stat_t alloc_stack(struct tcb *t)
 	/* get parent process */
 	struct tcb *p = get_tcb(t->eid);
 
-	t->thread_stack = __setup_thread_stack(p, __thread_stack_size);
+	t->thread_stack = __setup_thread_stack(p, thread_stack_size());
 	if (!t->thread_stack)
 		return ERR_OOMEM;
 
 	/** \todo this only allows for a global stack size, what if a user wants
 	 * per thread stack sizes? I guess allocate them yourself in userspace
 	 * or something? */
-	t->thread_stack_size = __thread_stack_size;
+	t->thread_stack_size = thread_stack_size();
 	return OK;
 }
 

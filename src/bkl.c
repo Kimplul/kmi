@@ -9,4 +9,15 @@
  * Instanciation of the big kernel lock.
  */
 
-spinlock_t bkl = 0;
+/** The Big Kernel Lock. */
+static spinlock_t bkl = 0;
+
+void bkl_lock()
+{
+	spin_lock(&bkl);
+}
+
+void bkl_unlock()
+{
+	spin_unlock(&bkl);
+}

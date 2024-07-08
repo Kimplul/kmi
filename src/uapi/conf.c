@@ -16,11 +16,24 @@
 
 #include <arch/proc.h>
 
-/** \todo stack size should really be set on a per-thread basis, and are the
- * conf*-syscalls even necessary? */
-size_t __thread_stack_size = SZ_2M;
-size_t __rpc_stack_size = SZ_512K;
+/** \todo stack size should probably be set on a per-thread basis */
 
+/** Current global thread stack size. */
+static size_t __thread_stack_size = SZ_2M;
+
+/** Current global RPC stack entry size. */
+static size_t __rpc_stack_size = SZ_512K;
+
+
+size_t thread_stack_size()
+{
+	return __thread_stack_size;
+}
+
+size_t rpc_stack_size()
+{
+	return __rpc_stack_size;
+}
 
 /**
  * Configuration parameter read syscall handler.

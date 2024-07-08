@@ -392,7 +392,7 @@ static size_t __print_prefix(size_t base)
 	case 16: return __puts("0x");
 	case 8: return __puts("0");
 	case 2: return __puts("0b");
-	default:
+	default: break;
 	}
 
 	return 0;

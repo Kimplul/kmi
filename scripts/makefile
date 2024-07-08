@@ -47,7 +47,7 @@ COMPILER	!= [ "$(LLVM)" != "0" ] \
 			|| echo $(CROSS_COMPILE)gcc
 
 
-OBFLAGS		= -ffreestanding -nostdlib -static -fno-pie -std=c17 -g
+OBFLAGS		= -ffreestanding -nostdlib -static -fpic -fno-pie -std=c17 -g
 WARNFLAGS	= -Wall -Wextra -Wvla
 ARCH_CFLAGS	= -D$(ARCH)
 
@@ -61,8 +61,7 @@ LINK_FLAGS	= $(LDFLAGS) $(ARCH_LDFLAGS)
 INCLUDE_FLAGS	= -I include -include config.h -include arch/$(ARCH)/config.h
 
 # This makes sure .bss is loaded into the binary
-OBJCOPY_FLAGS	?= -Obinary -R .garbage \
-		   --set-section-flags .bss=alloc,load,contents
+OBJCOPY_FLAGS	?= -Obinary -R .garbage
 
 COMPILE		= $(COMPILER) \
 		  $(COMPILE_FLAGS) $(DEPFLAGS) $(INCLUDE_FLAGS)

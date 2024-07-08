@@ -148,7 +148,7 @@ static bool __unused(pm_t b)
  */
 static pm_t *__find_vmem(struct vmem *b, vm_t v, enum mm_order *o)
 {
-	enum mm_order top = __mm_max_order;
+	enum mm_order top = max_order();
 	if (o)
 		*o = MM_O0;
 	do {
@@ -287,7 +287,7 @@ stat_t map_vpage(struct vmem *branch, pm_t paddr, vm_t vaddr, vmflags_t flags,
                  enum mm_order order)
 {
 	struct vmem *root = branch;
-	enum mm_order top = __mm_max_order;
+	enum mm_order top = max_order();
 
 	/* eventually we may want to keep track of page accesses,
 	 * but for now they're mainly a nuisance. */
@@ -316,7 +316,7 @@ stat_t map_vpage(struct vmem *branch, pm_t paddr, vm_t vaddr, vmflags_t flags,
 	branch->leaf[idx] =
 		(struct vmem *)to_pte((pm_t)__pa(paddr), vp_flags(flags));
 
-	__add_graves(root, vm_to_index(vaddr, __mm_max_order));
+	__add_graves(root, vm_to_index(vaddr, max_order()));
 	return OK;
 }
 
@@ -351,7 +351,7 @@ stat_t unmap_vpage(struct vmem *branch, vm_t vaddr)
 	pm_t *pte = __find_vmem(branch, vaddr, 0);
 	if (pte) {
 		*pte = GRAVESTONE;
-		__remove_graves(branch, vm_to_index(vaddr, __mm_max_order));
+		__remove_graves(branch, vm_to_index(vaddr, max_order()));
 		return OK;
 	}
 
@@ -423,10 +423,10 @@ __aligned(4096) struct vmem kvmem;
 /* adding a third page entry would let us map the kernel at any 4KiB boundary
  * but eh, Linux seems fine with 2MiB so I guess I shall be as well. */
 
-struct vmem *init_mapping()
+struct vmem *init_mapping(uintptr_t load_addr)
 {
 	rpc_pages = order_size(MM_O1) / BASE_PAGE_SIZE;
-	kvmem.leaf[0] = (struct vmem *)to_pte(get_load_addr(),
+	kvmem.leaf[0] = (struct vmem *)to_pte(load_addr,
 	                                      VM_A | VM_G | VM_D | VM_R | VM_W |
 	                                      VM_X | VM_V);
 

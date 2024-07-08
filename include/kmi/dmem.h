@@ -13,18 +13,6 @@
 #include <kmi/types.h>
 #include <kmi/vmem.h>
 
-/** Provides access to the global parameter. \global */
-extern pm_t __pre_base;
-
-/** Provides access to the global parameter. \global */
-extern pm_t __pre_top;
-
-/** Provides access to the global parameter. \global */
-extern pm_t __post_base;
-
-/** Provides access to the global parameter. \global */
-extern pm_t __post_top;
-
 /**
  * Initialize device memory.
  * @note Currently I assume there is only one RAM region. This may not be the

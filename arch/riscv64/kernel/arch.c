@@ -13,7 +13,18 @@
 #include "csr.h"
 #include "arch.h"
 
-id_t __cpuid_to_hartid[MAX_CPUS];
+/** Array where indexing is done with CPU IDs, giving the corresponding hart ID. */
+static id_t __cpuid_to_hartid[MAX_CPUS];
+
+id_t cpuid_to_hartid(id_t cpu)
+{
+	return __cpuid_to_hartid[cpu];
+}
+
+void set_hartid(id_t cpu, id_t hartid)
+{
+	__cpuid_to_hartid[cpu] = hartid;
+}
 
 id_t hartid_to_cpuid(id_t hart)
 {

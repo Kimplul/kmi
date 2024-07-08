@@ -59,7 +59,7 @@ void smp_bringup(struct vmem *b, void *fdt)
 	extern void riscv_bringup(void);
 
 	/* mark first hart available */
-	cpuid_to_hartid(0) = -1;
+	set_hartid(0, -1);
 
 	/* assume we're in default Sv mode, in the future this will have to be
 	 * fixed if we start implementing Sv48 etc. */
@@ -87,12 +87,12 @@ void smp_bringup(struct vmem *b, void *fdt)
 		if (r.value == SBI_HART_STARTED) {
 			/* there should ever only be one started hart */
 			assert(cpuid_to_hartid(0) == -1);
-			cpuid_to_hartid(0) = hartid;
+			set_hartid(0, hartid);
 			continue;
 		}
 
 		/** @todo should check that cpus doesn't go over MAX_CPUS */
-		cpuid_to_hartid(cpus++) = hartid;
+		set_hartid(cpus++, hartid);
 
 		/** @todo try to remember to free these as well */
 		smp_init_stacks[hartid] = (void *)alloc_page(BASE_PAGE) +

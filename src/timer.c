@@ -208,7 +208,7 @@ void handle_timer()
 	struct tcb *r = get_tcb(tid);
 	if (!r || orphan(r)) {
 		info("tcb %llu dead at timer\n",
-				(unsigned long long)tid);
+		     (unsigned long long)tid);
 		bkl_unlock();
 		return;
 	}

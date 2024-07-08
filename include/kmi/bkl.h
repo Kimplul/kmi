@@ -12,19 +12,10 @@
 
 #include <kmi/lock.h>
 
-/** Big Kenrel Lock. */
-extern spinlock_t bkl;
-
 /** Lock the Big Kernel Lock. */
-static inline void bkl_lock()
-{
-	spin_lock(&bkl);
-}
+void bkl_lock();
 
 /** Unlock the Big Kernel Lock. */
-static inline void bkl_unlock()
-{
-	spin_unlock(&bkl);
-}
+void bkl_unlock();
 
 #endif /* KMI_BKL_H */

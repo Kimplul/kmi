@@ -612,6 +612,11 @@ retry:
 	return 0;
 }
 
+/** Actual kernel size in bytes. Populated by `_start`, as I don't think we
+ * have enough control from C to get both LLVM and GCC to output correct code
+ * if this was just a virtual symbol defined in a linker file. */
+size_t kernel_size = 0;
+
 void init_pmem(void *fdt, uintptr_t load_addr)
 {
 	/** @todo should I keep the info outputs? I suppose it's nice to see
@@ -650,13 +655,11 @@ void init_pmem(void *fdt, uintptr_t load_addr)
 	size_t probe_size = probe_pmap(0, ram_size, 0);
 	info("pmem map probe size returned %lu\n", probe_size);
 
-	/* linker magicry */
-	extern char *__kernel_size;
 	/* avoidance regions, note that stack and so on is included in the
 	 * kernel. Addresses can be outside RAM, in which case they are just
 	 * ignored. */
 	struct avoid_region avoid[64] = {
-		{(pm_t)__va(load_addr), (pm_t)&__kernel_size},
+		{(pm_t)__va(load_addr), kernel_size},
 		{(pm_t)__va(initrd_base), initrd_size},
 		{(pm_t)__va(fdt_base), fdt_size}
 	};

@@ -11,23 +11,57 @@
 #include <kmi/vmem.h>
 #include <libfdt.h>
 
-size_t __mm_shifts[10];
-size_t __mm_widths[10];
-size_t __mm_sizes[10];
-size_t __mm_page_shift;
-enum mm_order __mm_max_order;
+/** Page order shifts. */
+static size_t mm_shifts[10];
+
+/** Page order widths. */
+static size_t mm_widths[10];
+
+/** Page order sizes. */
+static size_t mm_sizes[10];
+
+/** Base page shift, i.e. how many bits are just offsets within a page. */
+static size_t mm_page_shift;
+
+/** Maximum order supported by the current cpu. */
+static enum mm_order mm_max_order;
+
+size_t order_shift(enum mm_order order)
+{
+	return mm_shifts[order];
+}
+
+size_t order_size(enum mm_order order)
+{
+	return mm_sizes[order];
+}
+
+enum mm_order max_order()
+{
+	return mm_max_order;
+}
+
+size_t order_width(enum mm_order order)
+{
+	return mm_widths[order];
+}
+
+size_t page_shift()
+{
+	return mm_page_shift;
+}
 
 /**
  * RAM base address. Not sure if it should be provided through a macro
  * like __mm_*.
  */
-pm_t ram_base;
+static pm_t ram_base;
 
 /** RAM size. */
-size_t ram_size;
+static size_t ram_size;
 
 /** Load address. */
-pm_t load_addr;
+static pm_t load_addr;
 
 enum mm_order nearest_order(size_t size)
 {
@@ -40,22 +74,22 @@ enum mm_order nearest_order(size_t size)
 
 void init_mem(void *fdt)
 {
-	size_t max_order = 0;
+	size_t top_order = 0;
 	size_t base_bits = 0;
 	size_t bits[NUM_ORDERS] = { 0 };
-	stat_pmem_conf(fdt, &max_order, &base_bits, bits);
+	stat_pmem_conf(fdt, &top_order, &base_bits, bits);
 
-	__mm_max_order = max_order;
-	__mm_page_shift = base_bits;
+	mm_max_order = top_order;
+	mm_page_shift = base_bits;
 
-	__mm_shifts[0] = __mm_page_shift;
-	__mm_widths[0] = 1 << bits[0];
-	__mm_sizes[0] = 1 << __mm_page_shift;
+	mm_shifts[0] = mm_page_shift;
+	mm_widths[0] = 1 << bits[0];
+	mm_sizes[0] = 1 << mm_page_shift;
 
 	for (enum mm_order i = MM_O1; i <= max_order(); ++i) {
-		__mm_widths[i] = 1 << bits[i];
-		__mm_shifts[i] = __mm_shifts[i - 1] + bits[i - 1];
-		__mm_sizes[i] = 1UL << __mm_shifts[i];
+		mm_widths[i] = 1 << bits[i];
+		mm_shifts[i] = mm_shifts[i - 1] + bits[i - 1];
+		mm_sizes[i] = 1UL << mm_shifts[i];
 	}
 }
 

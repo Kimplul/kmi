@@ -13,6 +13,49 @@
 #include <kmi/types.h>
 #include <arch/mem.h>
 
+/** Maximum number of page orders allowed. Likely massively overkill. */
+#define NUM_ORDERS 10
+
+/** Give names to page orders. */
+enum mm_order {
+	/** NULL marker. */
+	MM_MIN = -1,
+
+	/** Base order. */
+	MM_O0 = 0,
+
+	/** Order 1. */
+	MM_O1 = 1,
+
+	/** Order 2. */
+	MM_O2 = 2,
+
+	/** Order 3. */
+	MM_O3 = 3,
+
+	/** Order 4. */
+	MM_O4 = 4,
+
+	/** Order 5. */
+	MM_O5 = 5,
+
+	/** Order 6. */
+	MM_O6 = 6,
+
+	/** Order 7. */
+	MM_O7 = 7,
+
+	/** Order 8. */
+	MM_O8 = 8,
+
+	/** Order 9. */
+	MM_O9 = 9,
+
+	/** Number of orders */
+	MM_NUM,
+};
+
+
 /**
  * Convert physical memory address \c paddr to index of page order \c order.
  *
@@ -37,7 +80,7 @@
  * @param order Order to query.
  * @return Starting offset of order bits.
  */
-#define order_shift(order) (__mm_shifts[order])
+size_t order_shift(enum mm_order order);
 
 /**
  * Get number of order bits in an address.
@@ -45,7 +88,7 @@
  * @param order Order to query.
  * @return Width in bits of order bits.
  */
-#define order_width(order) (__mm_widths[order])
+size_t order_width(enum mm_order order);
 
 /**
  * Get size of order, as in how many pages of one order lower it can contain.
@@ -53,21 +96,21 @@
  * @param order Order to query.
  * @return Number of pages of one order lower this order can contain.
  */
-#define order_size(order) (__mm_sizes[order])
+size_t order_size(enum mm_order order);
 
 /**
  * Get highest order supported by the current configuration.
  *
  * @return Max supported order.
  */
-#define max_order() (__mm_max_order)
+enum mm_order max_order();
 
 /**
  * Get base page shift.
  *
  * @return Page shift.
  */
-#define page_shift() (__mm_page_shift)
+size_t page_shift();
 
 /**
  * Get number of elements needed to represent this order.
@@ -141,63 +184,6 @@
 #define MR_SHARED (1 << (ARCH_VP_FLAGS + 2))
 
 /** @} */
-
-/** Maximum number of page orders allowed. Likely massively overkill. */
-#define NUM_ORDERS 10
-
-/** Give names to page orders. */
-enum mm_order {
-	/** NULL marker. */
-	MM_MIN = -1,
-
-	/** Base order. */
-	MM_O0 = 0,
-
-	/** Order 1. */
-	MM_O1 = 1,
-
-	/** Order 2. */
-	MM_O2 = 2,
-
-	/** Order 3. */
-	MM_O3 = 3,
-
-	/** Order 4. */
-	MM_O4 = 4,
-
-	/** Order 5. */
-	MM_O5 = 5,
-
-	/** Order 6. */
-	MM_O6 = 6,
-
-	/** Order 7. */
-	MM_O7 = 7,
-
-	/** Order 8. */
-	MM_O8 = 8,
-
-	/** Order 9. */
-	MM_O9 = 9,
-
-	/** Number of orders */
-	MM_NUM,
-};
-
-/** Gives access to global page order shift information. \global */
-extern size_t __mm_shifts[NUM_ORDERS];
-
-/** Gives access to global page order width information. \global */
-extern size_t __mm_widths[NUM_ORDERS];
-
-/** Gives access to global page order size information. \global */
-extern size_t __mm_sizes[NUM_ORDERS];
-
-/** Gives access to global base page shift. \global */
-extern size_t __mm_page_shift;
-
-/** Gives access to global maximum order size. \global */
-extern enum mm_order __mm_max_order;
 
 /**
  * Find nearest order to size.

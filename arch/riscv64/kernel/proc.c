@@ -9,12 +9,34 @@
 #include <kmi/tcb.h>
 #include <kmi/elf.h>
 #include <kmi/bkl.h>
+#include <kmi/debug.h>
 #include <kmi/string.h>
 
 #include <arch/proc.h>
 
 #include "regs.h"
 #include "csr.h"
+
+/** Assembly implementation for actually jumping to the init process, defined in
+ * start.S. Quite a few constants that could be implemented in assembly as well
+ * but this is maybe a bit more convenient.
+ *
+ * @param pid Should always be 0 to indicate that the kernel is the originator.
+ * @param tid Thread ID of the current thread.
+ * @param code Should always be SYS_USER_SPAWNED to indicate that a new core has
+ * come online.
+ * @param fdt Address of flattened device tree within userspace memory.
+ * @param initrd Ditto for initial ramdisk.
+ * @param proc Process ID, should be constant 1.
+ * @param stack_top Stack address.
+ */
+__noreturn void riscv_run_init(sys_arg_t pid,
+                               sys_arg_t tid,
+                               sys_arg_t code,
+                               sys_arg_t fdt,
+                               sys_arg_t initrd,
+                               sys_arg_t proc, /* not strictly speaking necessary but eh */
+                               sys_arg_t stack_top);
 
 void run_init(struct tcb *t, vm_t fdt, vm_t initrd)
 {
@@ -28,20 +50,10 @@ void run_init(struct tcb *t, vm_t fdt, vm_t initrd)
 	 * works for now.
 	 */
 	vm_t stack_top = t->thread_stack + t->thread_stack_size;
+	info("jumping to %lx\n", (long)t->callback);
+
 	bkl_unlock();
-	__asm__ volatile ("mv sp, %0\n"
-	                  "li a0, %1\n"
-	                  "mv a1, %2\n"
-	                  "li a2, %3\n"
-	                  "mv a3, %4\n"
-	                  "mv a4, %5\n"
-	                  "li a5, %6\n"
-	                  "sret\n"
-	                  :
-	                  : "r" (stack_top),
-	                  "K" (0), "r" (t->tid), "K" (SYS_USER_SPAWNED),
-	                  "r" (fdt), "r" (initrd), "K" (1)
-	                  : "memory");
+	riscv_run_init(0, t->tid, SYS_USER_SPAWNED, fdt, initrd, 1, stack_top);
 	/* we should never reach this */
 	unreachable();
 }

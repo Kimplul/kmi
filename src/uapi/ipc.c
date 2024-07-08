@@ -133,7 +133,7 @@ static bool __enough_rpc_stack(struct tcb *t)
 
 	/* if we can still fit an rpc stack into the call stack, we can safely
 	 * do the migration. */
-	return top - BASE_PAGE_SIZE - __rpc_stack_size >= RPC_STACK_BASE;
+	return top - BASE_PAGE_SIZE - rpc_stack_size() >= RPC_STACK_BASE;
 }
 
 /**

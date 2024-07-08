@@ -14,36 +14,25 @@
 
 /**
  * Provides access to the runtime global parameter.
- * \remark Note that runtime parameter passing is not yet implemented, and I might
- * implement per-thread stack sizes as well.
- * \global
- * \todo This should probably be a function instead.
- */
-extern size_t __thread_stack_size;
-
-/**
- * Provides access to the runtime global parameter.
- * Must be at most RPC_STACK_TOP - RPC_STACK_BASE.
- * Essentially, each thread gets allocated this many bytes of total stack space
- * that will be used during thread migrations. Each migration instance may at
- * most take up __rpc_stack_size bytes, and during a thread migration the
- * currently available free stack space is checked.
+ * @remark I might implement per-thread stack sizes at some point.
  *
- * Previous instances are unmapped, making them unaccessible to the current
- * instance.
- *
- * \see __thread_stack_size.
- * \global
- * \todo This should probably also be a function instead.
+ * @return Size of a regular thread stack, primarily just used to pass to \ref
+ * alloc_stack().
  */
-extern size_t __call_stack_size;
+size_t thread_stack_size();
 
 /**
  * Provides access to the runtime global parameter. This sets the maximum size
  * a single rpc stack instance can be.
  *
- * \global
+ * @return Size of one RPC stack entry, generally a single RPC shouldn't take
+ * up all of the available RPC stack space so we limit how much each call is
+ * allowed at a maximum, effectively enforcing a minimum number of RPC calls
+ * that a thread must be allowed to execute.
+ *
+ * I feel like this description is overly complicated but I can't think of a way
+ * to say it more clearly at the moment.
  */
-extern size_t __rpc_stack_size;
+size_t rpc_stack_size();
 
 #endif /* KMI_CONF_H */

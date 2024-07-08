@@ -12,9 +12,6 @@
 
 #include <kmi/vmem.h>
 
-/** Actual map of cpu id to hart id. */
-extern id_t __cpuid_to_hartid[MAX_CPUS];
-
 /**
  * Map cpu id to hart id.
  * Defined as a macro to allow for stuff like
@@ -23,15 +20,24 @@ extern id_t __cpuid_to_hartid[MAX_CPUS];
  * @endcode
  *
  * @param x Hart ID.
+ * @return Corresponding CPU ID.
  */
-#define cpuid_to_hartid(x) __cpuid_to_hartid[x]
+id_t cpuid_to_hartid(id_t x);
+
+/**
+ * Create mapping between \p cpuid and \p hartid.
+ *
+ * @param cpuid CPU ID to map to \p hartid.
+ * @param hartid Hart ID to map to \p CPU ID.
+ */
+void set_hartid(id_t cpuid, id_t hartid);
 
 /**
  * Find the cpu id that corresponds to hart id.
  *
  * @param hart Hart to find corresponding cpu id for.
  * @return Corresponding cpu id. 0 if not found, though this should maybe be a
- * panic situation.
+ * panic situation. Currently just sets the core to sleep.
  */
 id_t hartid_to_cpuid(id_t hart);
 

@@ -70,8 +70,8 @@ void handle_irq()
 	struct tcb *t = get_tcb(tid);
 	if (!t || orphan(t)) {
 		info("tcb %llu dead at irq %llu\n",
-		      (unsigned long long)tid,
-		      (unsigned long long)id);
+		     (unsigned long long)tid,
+		     (unsigned long long)id);
 
 		/* unregister irq handler */
 		irq_map[id] = 0;

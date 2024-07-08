@@ -148,10 +148,14 @@ vm_t setup_kernel_io(struct vmem *b, vm_t paddr);
  * address space and the kernel address space in the other.
  * Called at boot, not allowed to allocate memory.
  *
+ * @param load_addr Where in physical memory kernel was loaded to. Could in
+ * theory be fetched from \ref get_load_addr(), but the fewer globals are
+ * touched during initialization the better.
+ *
  * @return The vmem node used to build the address space. Probably statically
  * allocated.
  */
-struct vmem *init_mapping();
+struct vmem *init_mapping(uintptr_t load_addr);
 
 /**
  * Create new virtual memory space.
