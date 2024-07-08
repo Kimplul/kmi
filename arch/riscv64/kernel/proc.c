@@ -39,7 +39,7 @@ void run_init(struct tcb *t, vm_t fdt, vm_t initrd)
 	                  "sret\n"
 	                  :
 	                  : "r" (stack_top),
-	                  "K" (0), "r" (t->tid), "K" (SYS_USER_BOOTED),
+	                  "K" (0), "r" (t->tid), "K" (SYS_USER_SPAWNED),
 	                  "r" (fdt), "r" (initrd), "K" (1)
 	                  : "memory");
 	/* we should never reach this */

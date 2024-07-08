@@ -177,9 +177,9 @@ enum sys_user {
 	/** Thread has been orphaned. */
 	SYS_USER_ORPHANED,
 
-	/** Core has booted an init thread. Only used during booting, should be
-	 * handled specially. */
-	SYS_USER_BOOTED,
+	/** A new process has been spawned. Special case for init where each
+	 * core starts with this, usually it is reserved for exec. */
+	SYS_USER_SPAWNED,
 };
 
 /** Which notifications have arrived. */

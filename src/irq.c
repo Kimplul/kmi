@@ -7,6 +7,7 @@
  */
 
 #include <kmi/irq.h>
+#include <kmi/bkl.h>
 #include <kmi/pmem.h>
 #include <kmi/debug.h>
 #include <kmi/assert.h>
@@ -54,6 +55,8 @@ stat_t unregister_irq(struct tcb *t, irq_t id)
 
 void handle_irq()
 {
+	bkl_lock();
+
 	irq_t id = get_irq();
 	assert(id < max_irq);
 
@@ -65,14 +68,18 @@ void handle_irq()
 	}
 
 	struct tcb *t = get_tcb(tid);
-	if (!t) {
-		error("tcb %llu dead at irq %llu\n",
+	if (!t || orphan(t)) {
+		info("tcb %llu dead at irq %llu\n",
 		      (unsigned long long)tid,
 		      (unsigned long long)id);
+
+		/* unregister irq handler */
+		irq_map[id] = 0;
+		bkl_unlock();
 		return;
 	}
 
 	disable_irqs();
 	notify(t, NOTIFY_IRQ);
-	error("misc error when trying to notify irq");
+	bkl_unlock();
 }

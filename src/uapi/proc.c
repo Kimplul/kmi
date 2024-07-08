@@ -11,6 +11,7 @@
 #include <kmi/proc.h>
 #include <kmi/bits.h>
 #include <kmi/power.h>
+#include <kmi/assert.h>
 #include <kmi/notify.h>
 #include <kmi/orphanage.h>
 #include <kmi/regions.h>
@@ -127,7 +128,18 @@ SYSCALL_DEFINE2(exec)(struct tcb *t, sys_arg_t bin, sys_arg_t interp)
 	if (interp)
 		clear_bit(b->flags, MR_KEEP);
 
-	return_args1(t, prepare_proc(t, bin, interp));
+	/* should hopefully never actually fail, but if it does, we don't really
+	 * have any choice but to kill the thread. */
+	if (prepare_proc(t, bin, interp)) {
+		/* this kills the thread */
+		orphanize(t);
+		unorphanize(t);
+		/* should never be reached as we control the thread so we should
+		 * be able to directly jump to pid 1 */
+		assert(false);
+	}
+
+	return_args4(t, 0, t->tid, SYS_USER_SPAWNED, t->pid);
 }
 
 /**

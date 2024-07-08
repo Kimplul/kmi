@@ -16,14 +16,15 @@
  */
 
 #include <kmi/sp_tree.h>
-#include <arch/timer.h>
 #include <kmi/string.h>
 #include <kmi/notify.h>
 #include <kmi/nodes.h>
 #include <kmi/utils.h>
-#include <kmi/bkl.h>
 #include <kmi/timer.h>
 #include <kmi/debug.h>
+#include <kmi/bkl.h>
+
+#include <arch/timer.h>
 #include <arch/cpu.h>
 
 /** Timer resolution. */
@@ -185,7 +186,7 @@ stat_t remove_timer(struct timer *t)
 
 	struct sp_node *n = &timer_node_container(t)->sp_n;
 	sp_remove(&sp_root(__cpu_timers()), n);
-
+	free_node(&node_root, t);
 	return OK;
 }
 
@@ -198,12 +199,16 @@ ticks_t nsecs_to_ticks(tunit_t nsecs)
 /* call to this function from exception handlers */
 void handle_timer()
 {
+	/** @todo should this also disable irqs? */
 	bkl_lock();
 	struct timer *t = newest_timer();
+	id_t tid = t->tid;
 	remove_timer(t);
 
-	struct tcb *r = get_tcb(t->tid);
-	if (!r) {
+	struct tcb *r = get_tcb(tid);
+	if (!r || orphan(r)) {
+		info("tcb %llu dead at timer\n",
+				(unsigned long long)tid);
 		bkl_unlock();
 		return;
 	}

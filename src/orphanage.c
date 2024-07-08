@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: copyleft-next-0.3.1 */
 /* Copyright 2024, Kim Kuparinen < kimi.h.kuparinen@gmail.com > */
 
+#include <kmi/bkl.h>
 #include <kmi/assert.h>
 #include <kmi/orphanage.h>
 
@@ -30,6 +31,7 @@ void unorphanize(struct tcb *t)
 	struct tcb *init = get_tcb(1);
 	reference_proc(init);
 
+	id_t old_rid = t->rid;
 	t->rid = 1;
 	t->pid = 1;
 	t->eid = 1;
@@ -41,15 +43,18 @@ void unorphanize(struct tcb *t)
 	use_vmem(t->proc.vmem);
 	alloc_stack(t);
 
-	clear_bits(t->state, TCB_ORPHAN);
-
 	assert(init->callback);
-	set_args3(t, 0, SYS_USER_ORPHANED, t->tid);
+	set_args4(t, 0, t->tid, SYS_USER_ORPHANED, old_rid);
 	set_return(t, init->callback);
 	t->callback = init->callback;
 
-	/** @todo release irqs, here or later? */
+	/** @todo release irqs, here or later? Currently leaning towards later
+	 * as they don't really take up any resources and the implementation
+	 * doesn't make it too easy to search for a specific owner, we can just
+	 * discard the IRQ if it turns out that the owner has been orphaned by
+	 * that point. */
 
+	bkl_unlock();
 	ret_userspace_fast();
 	unreachable();
 }

@@ -26,6 +26,13 @@ bool orphan(struct tcb *t);
 
 /**
  * Mark \p t orphaned.
+ * Once a thread has been orphaned, it can't 'truly' be adopted by anyone again,
+ * and the init process will generally just make sure all the thread's resources
+ * are freed in a controlled manner.
+ *
+ * I did think about maybe allowing threads to be reused, I guess to save a bit
+ * of build/teardown time but I don't think it's worth it for the extra
+ * complexity.
  *
  * @param t Thread to orphanize.
  */

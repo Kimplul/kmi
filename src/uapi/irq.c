@@ -22,7 +22,7 @@ SYSCALL_DEFINE1(irq_req)(struct tcb *t, sys_arg_t id)
 	if (!has_cap(t->caps, CAP_IRQ))
 		return_args1(t, ERR_PERM);
 
-	if (!t->callback)
+	if (!t->callback || !t->notify_id)
 		return_args1(t, ERR_NF);
 
 	return_args1(t, register_irq(t, id));
