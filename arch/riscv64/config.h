@@ -51,8 +51,9 @@
  */
 #define CSTACK_PAGE 248UL
 
-/** User virtual memory space start. */
-#define UVMEM_START (SZ_4K)
+/** User virtual memory space start. Should essentially always be the start of
+ * the NULL page, which is marked reserved in the address space by \ref init_uvmem().*/
+#define UVMEM_START (0)
 
 /**  User virtual memory space end. */
 #define UVMEM_END (SZ_256G - SZ_8G)

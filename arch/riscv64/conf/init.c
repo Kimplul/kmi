@@ -273,7 +273,7 @@ static void sys_sleep()
 
 #define CSR_TIME "0xc01"
 #define csr_read(csr, \
-		 res) __asm__ volatile ("csrr %0, " csr : "=r" (res) :: "memory")
+	         res) __asm__ volatile ("csrr %0, " csr : "=r" (res) :: "memory")
 
 #define CSR_CYCLE "0xc00"
 

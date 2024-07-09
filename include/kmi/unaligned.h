@@ -20,15 +20,15 @@
  */
 #define get_unaligned(ptr)                         \
 	_Generic(*(ptr),                           \
-		 uint8_t: get_unaligned_uint8_t,   \
-		 uint16_t: get_unaligned_uint16_t, \
-		 uint32_t: get_unaligned_uint32_t, \
-		 uint64_t: get_unaligned_uint64_t, \
+	         uint8_t: get_unaligned_uint8_t,   \
+	         uint16_t: get_unaligned_uint16_t, \
+	         uint32_t: get_unaligned_uint32_t, \
+	         uint64_t: get_unaligned_uint64_t, \
                                                    \
-		 int8_t: get_unaligned_int8_t,     \
-		 int16_t: get_unaligned_int16_t,   \
-		 int32_t: get_unaligned_int32_t,   \
-		 int64_t: get_unaligned_int64_t)((void *)ptr)
+	         int8_t: get_unaligned_int8_t,     \
+	         int16_t: get_unaligned_int16_t,   \
+	         int32_t: get_unaligned_int32_t,   \
+	         int64_t: get_unaligned_int64_t)((void *)ptr)
 
 /**
  * Put unaligned value. Type of value is deduced from pointer type.
@@ -38,15 +38,15 @@
  */
 #define put_unaligned(val, ptr)                    \
 	_Generic(*(ptr),                           \
-		 uint8_t: put_unaligned_uint8_t,   \
-		 uint16_t: put_unaligned_uint16_t, \
-		 uint32_t: put_unaligned_uint32_t, \
-		 uint64_t: put_unaligned_uint64_t, \
+	         uint8_t: put_unaligned_uint8_t,   \
+	         uint16_t: put_unaligned_uint16_t, \
+	         uint32_t: put_unaligned_uint32_t, \
+	         uint64_t: put_unaligned_uint64_t, \
                                                    \
-		 int8_t: put_unaligned_int8_t,     \
-		 int16_t: put_unaligned_int16_t,   \
-		 int32_t: put_unaligned_int32_t,   \
-		 int64_t: put_unaligned_int64_t)(val, (void *)ptr)
+	         int8_t: put_unaligned_int8_t,     \
+	         int16_t: put_unaligned_int16_t,   \
+	         int32_t: put_unaligned_int32_t,   \
+	         int64_t: put_unaligned_int64_t)(val, (void *)ptr)
 
 /**
  * Helper macro for defining an unaligned value reader.

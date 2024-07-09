@@ -24,9 +24,6 @@
 /**
  * Map one virtual page to physical page.
  *
- * If \ref INFO_SEFF is returned, the caller is responsible for synchronizing
- * all other threads that are in the same virtual address space.
- *
  * The caller is responsible for checking that both virtual and physical page of
  * the correct order are available.
  *
@@ -35,7 +32,8 @@
  * @param vaddr Virtual address to map page to.
  * @param flags Page flags.
  * @param order Order of page.
- * @return \ref INFO_SEFF when top level table modified, \ref OK otherwise.
+ * @return \ref OK when succesful, possibly \ref ERR_OOMEM if we don't have
+ * enough pages to create the mapping.
  */
 stat_t map_vpage(struct vmem *branch, pm_t paddr, vm_t vaddr, vmflags_t flags,
                  enum mm_order order);
@@ -56,8 +54,7 @@ stat_t unmap_vpage(struct vmem *branch, vm_t vaddr);
  * @param branch Branch in which to work.
  * @param vaddr Virtual address of page.
  * @param flags Flags to set.
- * @return \ref ERR_NF if no page could be found at \p vaddr,
- *	\ref INFO_SEFF if modification has side effects, otherwise \ref OK.
+ * @return \ref ERR_NF if no page could be found at \p vaddr, otherwise \ref OK.
  */
 stat_t set_vpage_flags(struct vmem *branch, vm_t vaddr, vmflags_t flags);
 
@@ -68,7 +65,7 @@ stat_t set_vpage_flags(struct vmem *branch, vm_t vaddr, vmflags_t flags);
  * @param vaddr Virtual address of page.
  * @param flags Flags to clear.
  * @return \ref ERR_NF if no page could be found at \p vaddr,
- *	\ref INFO_SEFF if modification has side effects, otherwise \ref OK.
+ *	otherwise \ref OK.
  */
 stat_t clear_vpage_flags(struct vmem *branch, vm_t vaddr, vmflags_t flags);
 
@@ -82,9 +79,7 @@ stat_t clear_vpage_flags(struct vmem *branch, vm_t vaddr, vmflags_t flags);
  * @param vaddr Virtual address of map to modify.
  * @param paddr Physical address to map to.
  * @param flags Flags to set.
- * @return \ref ERR_NF if no virtual page is found at \c vaddr.
- * \ref INFO_SEFF if modding takes place in top page table but otherwise
- * succesful, \ref OK otherwise.
+ * @return \ref ERR_NF if no virtual page is found at \c vaddr, \ref OK otherwise.
  */
 stat_t mod_vpage(struct vmem *branch, vm_t vaddr, pm_t paddr, vmflags_t flags);
 

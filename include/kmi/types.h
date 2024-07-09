@@ -489,12 +489,6 @@ enum status_codes {
 	ERR_NF = -1,
 	/** OK. */
 	OK = 0,
-	/** Try again. */
-	INFO_TRGN = 1,
-	/** Side effects. */
-	INFO_SEFF = 2,
-	/** Continue. */
-	INFO_CONT = 3,
 };
 
 #include <arch/types.h> /* arch-specific type definitions (pm_t/vm_t etc) */

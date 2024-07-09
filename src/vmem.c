@@ -14,11 +14,23 @@
 #include <kmi/vmem.h>
 #include <arch/vmem.h>
 
-stat_t init_uvmem(struct tcb *t, vm_t base, vm_t top)
+stat_t init_uvmem(struct tcb *t)
 {
 	t->uvmem.owner = t->tid;
 	t->uvmem.vmem = t->proc.vmem;
-	return init_region(&t->uvmem.region, base, top);
+
+	stat_t ret = OK;
+	if ((ret = init_region(&t->uvmem.region, UVMEM_START, UVMEM_END)))
+		return ret;
+
+	/* if a user really wants to use the first page for something, they'll
+	 * have to free it first, 'accepting' that no null-page is dangerous. */
+	size_t size = 0;
+	vm_t v = alloc_fixed_region(&t->uvmem.region,
+	                            UVMEM_START, BASE_PAGE_SIZE, &size,
+	                            MR_NONBACKED);
+	assert(v == UVMEM_START && size == BASE_PAGE_SIZE);
+	return OK;
 }
 
 /**
@@ -40,6 +52,12 @@ static stat_t __copy_mapped_region(struct tcb *d, struct tcb *s,
 	size_t size = end - start;
 	vm_t v = alloc_fixed_region(&d->uvmem.region, start, size, &size,
 	                            m->flags);
+	if (ERR_CODE(v))
+		return v;
+
+	if (is_set(m->flags, MR_NONBACKED))
+		return v;
+
 	assert(v == start);
 
 	/* note that we use uvmem.vmem instead of proc.vmem, this is just to
@@ -76,6 +94,8 @@ static stat_t __copy_shared_region(struct tcb *d, struct mem_region *m)
 	size_t size = end - start;
 	vm_t v = alloc_fixed_region(&d->uvmem.region, start, size, &size,
 	                            m->flags);
+	if (ERR_CODE(v))
+		return v;
 
 	assert(v == start);
 	stat_t res = clone_region(d->uvmem.vmem, s->uvmem.vmem, start, v, size,
@@ -107,8 +127,11 @@ static vm_t __clone_shared_region(struct tcb *d, struct tcb *s,
 	reference_proc(s);
 
 	size_t size = end - start;
-	vm_t v = alloc_shared_region(&d->uvmem.region, size, &size, m->flags,
-	                             s->rid);
+	vm_t v = alloc_shared_region(&d->uvmem.region, size, &size,
+	                             MR_NONBACKED | m->flags, s->rid);
+	if (ERR_CODE(v))
+		return v;
+
 	stat_t res = clone_region(d->uvmem.vmem, s->uvmem.vmem, start, v, size,
 	                          flags);
 	if (res == OK)
@@ -118,7 +141,7 @@ static vm_t __clone_shared_region(struct tcb *d, struct tcb *s,
 	unreference_proc(s);
 	free_region(&d->uvmem.region, v);
 	unmap_fixed_region(d->uvmem.vmem, v, size);
-	return NULL;
+	return res;
 }
 
 /**
@@ -127,44 +150,23 @@ static vm_t __clone_shared_region(struct tcb *d, struct tcb *s,
  * @param t Current thread.
  * @param m Memory region to free.
  */
-static void __free_private_mapping(struct tcb *t, struct mem_region *m)
+static void __free_mapping(struct tcb *t, struct mem_region *m)
 {
+	struct tcb *owner = get_tcb(m->pid);
+	if (owner)
+		unreference_proc(owner);
+
+	if (is_set(m->flags, MR_NONBACKED))
+		return;
+
 	pm_t start = __addr(m->start);
 	pm_t end = __addr(m->end);
 	size_t size = end - start;
 
-	unmap_region(t->proc.vmem, start, size);
-}
-
-/**
- * Unmap shared region and free associated physical pages if they're not being
- * used by the other process.
- *
- * @param t Current thread.
- * @param m Memory region to free.
- */
-static void __free_shared_mapping(struct tcb *t, struct mem_region *m)
-{
-	vm_t start = __addr(m->start);
-	vm_t end = __addr(m->end);
-	unreference_proc(get_tcb(m->pid));
-
-	size_t bytes = end - start;
-	unmap_fixed_region(t->proc.vmem, start, bytes);
-}
-
-/**
- * Convenience function for freeing mapped regions.
- *
- * @param t Thread to work in.
- * @param m Memory region to free.
- */
-static void __free_mapping(struct tcb *t, struct mem_region *m)
-{
-	if (m->pid != 0)
-		return __free_shared_mapping(t, m);
-
-	return __free_private_mapping(t, m);
+	if (m->pid)
+		unmap_fixed_region(t->proc.vmem, start, size);
+	else
+		unmap_region(t->proc.vmem, start, size);
 }
 
 void clear_uvmem(struct tcb *t)
@@ -174,13 +176,11 @@ void clear_uvmem(struct tcb *t)
 
 	struct mem_region *m = find_closest_used_region(&t->uvmem.region, 0);
 	for (; m; m = m->next) {
-		if (is_region_kept(m)) {
+		if (is_region_kept(m))
 			continue;
-		}
 
-		if (!is_set(m->flags, MR_USED)) {
+		if (!is_set(m->flags, MR_USED))
 			continue;
-		}
 
 		__free_mapping(t, m);
 		free_known_region(&t->uvmem.region, m);
@@ -243,10 +243,14 @@ vm_t alloc_uvmem(struct tcb *t, size_t size, vmflags_t flags)
 	assert(t && is_proc(t));
 
 	const vm_t v = alloc_region(&t->uvmem.region, size, &size, flags);
-	if (map_region(t->proc.vmem, v, size, max_order(), flags)) {
+	if (ERR_CODE(v))
+		return v;
+
+	stat_t ret = OK;
+	if ((ret = map_region(t->proc.vmem, v, size, max_order(), flags))) {
 		unmap_region(t->proc.vmem, v, size);
 		free_region(&t->uvmem.region, v);
-		return NULL;
+		return ret;
 	}
 
 	return v;
@@ -258,10 +262,14 @@ vm_t alloc_fixed_uvmem(struct tcb *t, vm_t start, size_t size, vmflags_t flags)
 
 	const vm_t v = alloc_fixed_region(&t->uvmem.region, start, size, &size,
 	                                  flags);
-	if (map_region(t->proc.vmem, v, size, max_order(), flags)) {
+	if (ERR_CODE(v))
+		return v;
+
+	stat_t ret = OK;
+	if ((ret = map_region(t->proc.vmem, v, size, max_order(), flags))) {
 		unmap_region(t->proc.vmem, v, size);
 		free_region(&t->uvmem.region, v);
-		return NULL;
+		return ret;
 	}
 
 	return v;
@@ -269,14 +277,20 @@ vm_t alloc_fixed_uvmem(struct tcb *t, vm_t start, size_t size, vmflags_t flags)
 
 vm_t map_fixed_uvmem(struct tcb *t, pm_t start, size_t size, vmflags_t flags)
 {
+	assert(is_aligned(start, BASE_PAGE_SIZE));
+
 	const vm_t v = alloc_region(&t->uvmem.region, size, &size, flags);
-	if (map_fixed_region(t->proc.vmem, v, start, size, flags)) {
+	if (ERR_CODE(v))
+		return v;
+
+	stat_t ret = OK;
+	if ((ret = map_fixed_region(t->proc.vmem, v, start, size, flags))) {
 		unmap_region(t->proc.vmem, v, size);
 		free_region(&t->uvmem.region, v);
-		return NULL;
+		return ret;
 	}
 
-	return v + (start % BASE_PAGE_SIZE);
+	return v;
 }
 
 vm_t alloc_uvpage(struct tcb *t, size_t size, vmflags_t flags, pm_t *startp,
@@ -286,19 +300,20 @@ vm_t alloc_uvpage(struct tcb *t, size_t size, vmflags_t flags, pm_t *startp,
 	size = order_size(order);
 
 	const vm_t v = alloc_region(&t->uvmem.region, size, &size, flags);
-	if (!v)
-		return 0;
+	if (ERR_CODE(v))
+		return v;
 
 	pm_t start = alloc_page(order);
 	if (!start) {
 		free_region(&t->uvmem.region, size);
-		return 0;
+		return ERR_OOMEM;
 	}
 
-	if (map_fixed_region(t->proc.vmem, v, start, size, flags)) {
+	stat_t ret = OK;
+	if ((ret = map_fixed_region(t->proc.vmem, v, start, size, flags))) {
 		unmap_region(t->proc.vmem, v, size);
 		free_region(&t->uvmem.region, v);
-		return NULL;
+		return ret;
 	}
 
 	*startp = (pm_t)__pa(start);
@@ -313,11 +328,15 @@ vm_t alloc_shared_uvmem(struct tcb *s, size_t size, vmflags_t flags)
 	assert(s && is_proc(s));
 	const vm_t v = alloc_region(&s->uvmem.region, size, &size,
 	                            MR_SHARED | flags);
+	if (ERR_CODE(v))
+		return v;
+
 	/* use base pages to make clone more likely to succeed */
-	if (map_region(s->proc.vmem, v, size, BASE_PAGE, flags)) {
+	stat_t ret = OK;
+	if ((ret = map_region(s->proc.vmem, v, size, BASE_PAGE, flags))) {
 		unmap_region(s->proc.vmem, v, size);
 		free_region(&s->uvmem.region, v);
-		return NULL;
+		return ret;
 	}
 
 	return v;

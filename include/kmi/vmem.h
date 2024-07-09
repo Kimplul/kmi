@@ -98,17 +98,17 @@ stat_t free_uvmem(struct tcb *r, vm_t va);
 /**
  * Initialize user virtual memory instance.
  *
- * This assumes the user virtual memory is contiguous, with no holes between \c
- * base and \c top.
+ * This assumes the user virtual memory is contiguous, with no holes between
+ * \ref UVMEM_START and \ref UVMEM_END. One base page at the start of the region
+ * is reserved for use as a NULL page, which can be freed by the user to
+ * 'accept' that it's dangerous to not have a NULL page.
  *
  * Requires that \p t already has a vmem allocated.
  *
  * @param r Process in which to initialize user virtual memory.
- * @param base Start of user virtual memory.
- * @param top Top of user virtual memory.
  * @return \see init_region().
  */
-stat_t init_uvmem(struct tcb *r, vm_t base, vm_t top);
+stat_t init_uvmem(struct tcb *r);
 
 /**
  * Destroy user virtual memory instance.

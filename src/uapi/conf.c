@@ -42,9 +42,10 @@ size_t rpc_stack_size()
  *
  * @param t Current tcb.
  * @param param Parameter to read.
+ * @param d0 Optional data argument for parameter.
  * @return \ref OK and parameter value.
  */
-SYSCALL_DEFINE1(conf_get)(struct tcb *t, sys_arg_t param)
+SYSCALL_DEFINE2(conf_get)(struct tcb *t, sys_arg_t param, sys_arg_t d0)
 {
 	/* anyone can read any current parameter, I don't think they should be
 	 * hidden. */
@@ -64,6 +65,15 @@ SYSCALL_DEFINE1(conf_get)(struct tcb *t, sys_arg_t param)
 
 	case CONF_RAM_SIZE:
 		val = get_ram_size();
+		break;
+
+	case CONF_PAGE_SIZE:
+		if (d0 < 0 || d0 > max_order()) {
+			val = 0;
+			break;
+		}
+
+		val = order_size(d0);
 		break;
 
 	default:

@@ -24,10 +24,10 @@
 SYSCALL_DEFINE2(req_mem)(struct tcb *t, sys_arg_t size, sys_arg_t flags)
 {
 	struct tcb *r = get_cproc(t);
-	vm_t start = 0;
 	flags = sanitize_uvflags(flags);
-	if (!(start = alloc_uvmem(r, size, flags)))
-		return_args1(t, ERR_OOMEM);
+	vm_t start = alloc_uvmem(r, size, flags);
+	if (ERR_CODE(start))
+		return_args1(t, start);
 
 	return_args2(t, OK, start);
 }
@@ -47,10 +47,10 @@ SYSCALL_DEFINE3(req_fixmem)(struct tcb *t, sys_arg_t fixed, sys_arg_t size,
                             sys_arg_t flags)
 {
 	struct tcb *r = get_cproc(t);
-	vm_t start = 0;
 	flags = sanitize_uvflags(flags);
-	if (!(start = alloc_fixed_uvmem(r, fixed, size, flags)))
-		return_args1(t, ERR_OOMEM);
+	vm_t start = alloc_fixed_uvmem(r, fixed, size, flags);
+	if (ERR_CODE(start))
+		return_args1(t, start);
 
 	return_args2(t, OK, start);
 }
@@ -97,10 +97,10 @@ SYSCALL_DEFINE3(req_pmem)(struct tcb *t, sys_arg_t paddr, sys_arg_t size,
 	 * that keeps track of used regions outside of RAM. We'll see.
 	 */
 	struct tcb *r = get_cproc(t);
-	vm_t start = 0;
 	flags = sanitize_uvflags(flags);
-	if (!(start = alloc_devmem(r, paddr, size, flags)))
-		return_args1(t, ERR_OOMEM);
+	vm_t start = alloc_devmem(r, paddr, size, flags);
+	if (ERR_CODE(start))
+		return_args1(t, start);
 
 	return_args2(t, OK, start);
 }
@@ -127,8 +127,9 @@ SYSCALL_DEFINE2(req_page)(struct tcb *t, sys_arg_t size, sys_arg_t flags)
 	vm_t start = 0;
 	size_t asize = 0;
 	flags = sanitize_uvflags(flags);
-	if (!(start = alloc_uvpage(r, size, flags, &addr, &asize)))
-		return_args1(t, ERR_OOMEM);
+	start = alloc_uvpage(r, size, flags, &addr, &asize);
+	if (ERR_CODE(start))
+		return_args1(t, start);
 
 	return_args4(t, OK, start, addr, asize);
 }
@@ -148,10 +149,10 @@ SYSCALL_DEFINE2(req_sharedmem)(struct tcb *t, sys_arg_t size, sys_arg_t flags)
 	if (!has_cap(c->caps, CAP_SHARED))
 		return_args1(t, ERR_PERM);
 
-	vm_t start = 0;
 	flags = sanitize_uvflags(flags);
-	if (!(start = alloc_shared_uvmem(c, size, flags)))
-		return_args1(t, ERR_OOMEM);
+	vm_t start = alloc_shared_uvmem(c, size, flags);
+	if (ERR_CODE(start))
+		return_args1(t, start);
 
 	return_args3(t, OK, start, size);
 }
@@ -178,10 +179,11 @@ SYSCALL_DEFINE3(ref_sharedmem)(struct tcb *t, sys_arg_t tid, sys_arg_t addr,
 	if (!r || zombie(r))
 		return_args1(t, ERR_INVAL);
 
-	vm_t start = 0; size_t size = 0;
+	size_t size = 0;
 	flags = sanitize_uvflags(flags);
-	if (!(start = ref_shared_uvmem(r, c, addr, flags)))
-		return_args1(t, ERR_OOMEM);
+	vm_t start = ref_shared_uvmem(r, c, addr, flags);
+	if (ERR_CODE(start))
+		return_args1(t, start);
 
 	return_args3(t, OK, start, size);
 }

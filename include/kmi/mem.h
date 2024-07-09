@@ -177,11 +177,16 @@ size_t page_shift();
 
 /** Memory region is used. */
 #define MR_USED (1 << (ARCH_VP_FLAGS + 0))
+
 /** Don't free memory on clear. */
 #define MR_KEEP (1 << (ARCH_VP_FLAGS + 1))
+
 /** Memory region in shared, but owned. Note: regions that are shared but no
  * owned don't use this flag, they just set the tid field for the region. */
 #define MR_SHARED (1 << (ARCH_VP_FLAGS + 2))
+
+/** Memory region is private but not backed by memory. */
+#define MR_NONBACKED (1 << (ARCH_VP_FLAGS + 3))
 
 /** @} */
 
@@ -242,5 +247,17 @@ pm_t get_load_addr();
 
 /** Base page order. */
 #define BASE_PAGE (MM_O0)
+
+/**
+ * Check if value is in range of error codes.
+ * The absolute top page of a virtual address space is -BASE_PAGE_SIZE, which
+ * will NEVER be used, so we can use it as a baseline. This allows quite a few
+ * error codes to be added in the future if need be.
+ * Although I guess the errors could be defined as positive and then just add a
+ * minus sign to every use to turn them negative? Dunno.
+ *
+ * @param x Value to check.
+ */
+#define ERR_CODE(x) ((vm_t)(x) > (vm_t)-BASE_PAGE_SIZE)
 
 #endif /* KMI_MEM_H */

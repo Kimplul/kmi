@@ -123,11 +123,14 @@ struct tcb *create_thread(struct tcb *p)
 	assert(tcbs);
 
 	vm_t bottom = alloc_page(KERNEL_STACK_PAGE_ORDER);
+	if (!bottom)
+		return NULL;
+
 	/* move tcb to top of kernel stack, keeping alignment in check
 	 * (hopefully) */
 	/** \todo check alignment */
-	bottom = bottom + order_size(MM_O0) - sizeof(struct tcb);
-	struct tcb *t = (struct tcb *)align_down(bottom, sizeof(long));
+	vm_t top = bottom + order_size(MM_O0) - sizeof(struct tcb);
+	struct tcb *t = (struct tcb *)align_down(top, sizeof(long));
 	memset(t, 0, sizeof(struct tcb));
 
 	id_t tid = __alloc_tid(t);
@@ -141,9 +144,19 @@ struct tcb *create_thread(struct tcb *p)
 		 * structure, this works on riscv but in the event that other
 		 * systems don't we can easily turn this into a clone_uvmem. */
 		t->proc.vmem = p->proc.vmem;
-	} else {
-		t->proc.vmem = create_vmem();
-		init_uvmem(t, UVMEM_START, UVMEM_END);
+	}
+	else {
+		if (!(t->proc.vmem = create_vmem())) {
+			free_page(MM_O0, bottom);
+			return NULL;
+		}
+
+		if (init_uvmem(t)) {
+			destroy_vmem(t->proc.vmem);
+			free_page(MM_O0, bottom);
+			return NULL;
+		}
+
 		t->pid = t->tid;
 		t->rid = t->tid;
 		p = t;
@@ -151,7 +164,16 @@ struct tcb *create_thread(struct tcb *p)
 
 	t->eid = t->pid;
 	t->rid = p->rid;
-	t->rpc.vmem = create_vmem();
+
+	if (!(t->rpc.vmem = create_vmem())) {
+		if (likely(p))
+			return NULL;
+
+		destroy_vmem(t->proc.vmem);
+		free_page(MM_O0, bottom);
+		return NULL;
+	}
+
 	setup_rpc_stack(t);
 	reference_proc(p);
 
@@ -191,7 +213,7 @@ struct tcb *create_proc(struct tcb *p)
 	/* create a new thread outside the current process */
 	struct tcb *n = create_thread(NULL);
 	if (!n)
-		return 0;
+		return NULL;
 
 	if (p)
 		__copy_proc(p, n); /* we have a parent process i.e. fork */

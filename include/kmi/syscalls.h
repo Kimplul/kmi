@@ -235,6 +235,13 @@ enum conf_param {
 	 * \c R.
 	 */
 	CONF_RAM_SIZE,
+
+	/**
+	 * Size of page of some order.
+	 * Uses `d0` to signify which order to request.
+	 * \c R
+	 */
+	CONF_PAGE_SIZE,
 };
 
 /**

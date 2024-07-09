@@ -50,11 +50,11 @@ typedef void (*sys_t)(struct tcb *t, long, long, long, long, long);
  */
 #define SYSCALL_DECLARE0(name)         \
 	void sys_##name(struct tcb *t, \
-			sys_arg_t a,   \
-			sys_arg_t b,   \
-			sys_arg_t c,   \
-			sys_arg_t d,   \
-			sys_arg_t e);
+	                sys_arg_t a,   \
+	                sys_arg_t b,   \
+	                sys_arg_t c,   \
+	                sys_arg_t d,   \
+	                sys_arg_t e);
 
 /**
  * Helper macro for declaring syscalls with one argument.
@@ -64,8 +64,8 @@ typedef void (*sys_t)(struct tcb *t, long, long, long, long, long);
  */
 #define SYSCALL_DECLARE1(name, a)                                \
 	void sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
-			sys_arg_t c,                             \
-			sys_arg_t d, sys_arg_t e);
+	                sys_arg_t c,                             \
+	                sys_arg_t d, sys_arg_t e);
 
 /**
  * Helper macro for declaring syscalls with two arguments.
@@ -76,8 +76,8 @@ typedef void (*sys_t)(struct tcb *t, long, long, long, long, long);
  */
 #define SYSCALL_DECLARE2(name, a, b)                             \
 	void sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
-			sys_arg_t c,                             \
-			sys_arg_t d, sys_arg_t e);
+	                sys_arg_t c,                             \
+	                sys_arg_t d, sys_arg_t e);
 
 /**
  * Helper macro for declaring syscalls with three arguments.
@@ -89,8 +89,8 @@ typedef void (*sys_t)(struct tcb *t, long, long, long, long, long);
  */
 #define SYSCALL_DECLARE3(name, a, b, c)                          \
 	void sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
-			sys_arg_t c,                             \
-			sys_arg_t d, sys_arg_t e);
+	                sys_arg_t c,                             \
+	                sys_arg_t d, sys_arg_t e);
 
 /**
  * Helper macro for declaring syscalls with four arguments.
@@ -103,8 +103,8 @@ typedef void (*sys_t)(struct tcb *t, long, long, long, long, long);
  */
 #define SYSCALL_DECLARE4(name, a, b, c, d)                       \
 	void sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
-			sys_arg_t c,                             \
-			sys_arg_t d, sys_arg_t e);
+	                sys_arg_t c,                             \
+	                sys_arg_t d, sys_arg_t e);
 
 /**
  * Helper macro for declaring syscalls with five arguments.
@@ -118,8 +118,8 @@ typedef void (*sys_t)(struct tcb *t, long, long, long, long, long);
  */
 #define SYSCALL_DECLARE5(name, a, b, c, d, e)                    \
 	void sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
-			sys_arg_t c,                             \
-			sys_arg_t d, sys_arg_t e);
+	                sys_arg_t c,                             \
+	                sys_arg_t d, sys_arg_t e);
 
 /**
  * Helper macro for defining syscall with zero arguments.
@@ -135,8 +135,8 @@ typedef void (*sys_t)(struct tcb *t, long, long, long, long, long);
 #define SYSCALL_DEFINE0(name)                                               \
 	static inline void __##name(struct tcb *t);                         \
 	void __noinline sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
-				   sys_arg_t c,                             \
-				   sys_arg_t d, sys_arg_t e)                \
+	                           sys_arg_t c,                             \
+	                           sys_arg_t d, sys_arg_t e)                \
 	{                                                                   \
 		UNUSED(a);                                                  \
 		UNUSED(b);                                                  \
@@ -155,8 +155,8 @@ typedef void (*sys_t)(struct tcb *t, long, long, long, long, long);
 #define SYSCALL_DEFINE1(name)                                               \
 	static inline void __##name(struct tcb *, sys_arg_t);               \
 	void __noinline sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
-				   sys_arg_t c,                             \
-				   sys_arg_t d, sys_arg_t e)                \
+	                           sys_arg_t c,                             \
+	                           sys_arg_t d, sys_arg_t e)                \
 	{                                                                   \
 		UNUSED(b);                                                  \
 		UNUSED(c);                                                  \
@@ -173,10 +173,10 @@ typedef void (*sys_t)(struct tcb *t, long, long, long, long, long);
  */
 #define SYSCALL_DEFINE2(name)                                               \
 	static inline void __##name(struct tcb *, sys_arg_t,                \
-				    sys_arg_t);                             \
+	                            sys_arg_t);                             \
 	void __noinline sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
-				   sys_arg_t c,                             \
-				   sys_arg_t d, sys_arg_t e)                \
+	                           sys_arg_t c,                             \
+	                           sys_arg_t d, sys_arg_t e)                \
 	{                                                                   \
 		UNUSED(c);                                                  \
 		UNUSED(d);                                                  \
@@ -192,11 +192,11 @@ typedef void (*sys_t)(struct tcb *t, long, long, long, long, long);
  */
 #define SYSCALL_DEFINE3(name)                                               \
 	static inline void __##name(struct tcb *, sys_arg_t,                \
-				    sys_arg_t,                              \
-				    sys_arg_t);                             \
+	                            sys_arg_t,                              \
+	                            sys_arg_t);                             \
 	void __noinline sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
-				   sys_arg_t c,                             \
-				   sys_arg_t d, sys_arg_t e)                \
+	                           sys_arg_t c,                             \
+	                           sys_arg_t d, sys_arg_t e)                \
 	{                                                                   \
 		UNUSED(d);                                                  \
 		UNUSED(e);                                                  \
@@ -211,11 +211,11 @@ typedef void (*sys_t)(struct tcb *t, long, long, long, long, long);
  */
 #define SYSCALL_DEFINE4(name)                                               \
 	static inline void __##name(struct tcb *, sys_arg_t,                \
-				    sys_arg_t, sys_arg_t,                   \
-				    sys_arg_t);                             \
+	                            sys_arg_t, sys_arg_t,                   \
+	                            sys_arg_t);                             \
 	void __noinline sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
-				   sys_arg_t c,                             \
-				   sys_arg_t d, sys_arg_t e)                \
+	                           sys_arg_t c,                             \
+	                           sys_arg_t d, sys_arg_t e)                \
 	{                                                                   \
 		UNUSED(e);                                                  \
 		__##name(t, a, b, c, d);                                    \
@@ -229,11 +229,11 @@ typedef void (*sys_t)(struct tcb *t, long, long, long, long, long);
  */
 #define SYSCALL_DEFINE5(name)                                               \
 	static inline void __##name(struct tcb *, sys_arg_t,                \
-				    sys_arg_t, sys_arg_t,                   \
-				    sys_arg_t, sys_arg_t);                  \
+	                            sys_arg_t, sys_arg_t,                   \
+	                            sys_arg_t, sys_arg_t);                  \
 	void __noinline sys_##name(struct tcb *t, sys_arg_t a, sys_arg_t b, \
-				   sys_arg_t c,                             \
-				   sys_arg_t d, sys_arg_t e)                \
+	                           sys_arg_t c,                             \
+	                           sys_arg_t d, sys_arg_t e)                \
 	{                                                                   \
 		__##name(t, a, b, c, d, e);                                 \
 	}                                                                   \
@@ -706,14 +706,14 @@ SYSCALL_DECLARE2(conf_set, param, val);
  *
  * @param t Current tcb.
  * @param param Parameter to get.
- * @param b Unused.
+ * @param d0 Optional data argument to parameter.
  * @param c Unused.
  * @param d Unused.
  * @param e Unused.
  *
  * Returns \ref OK.
  */
-SYSCALL_DECLARE1(conf_get, param);
+SYSCALL_DECLARE2(conf_get, param, d0);
 
 /**
  * Set capabilities.
