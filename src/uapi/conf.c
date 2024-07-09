@@ -45,7 +45,7 @@ size_t rpc_stack_size()
  * @param d0 Optional data argument for parameter.
  * @return \ref OK and parameter value.
  */
-SYSCALL_DEFINE2(conf_get)(struct tcb *t, sys_arg_t param, sys_arg_t d0)
+SYSCALL_DEFINE2(get_conf)(struct tcb *t, sys_arg_t param, sys_arg_t d0)
 {
 	/* anyone can read any current parameter, I don't think they should be
 	 * hidden. */
@@ -93,7 +93,7 @@ SYSCALL_DEFINE2(conf_get)(struct tcb *t, sys_arg_t param, sys_arg_t d0)
  * @param val Value to set \c param to.
  * @return \ref OK and \c 0.
  */
-SYSCALL_DEFINE2(conf_set)(struct tcb *t, sys_arg_t param, sys_arg_t val)
+SYSCALL_DEFINE2(set_conf)(struct tcb *t, sys_arg_t param, sys_arg_t val)
 {
 	if (!has_cap(t->caps, CAP_CONF))
 		return_args1(t, ERR_PERM);
@@ -133,9 +133,9 @@ SYSCALL_DEFINE1(poweroff)(struct tcb *t, sys_arg_t type)
 		return_args1(t, ERR_PERM);
 
 	switch (type) {
-	case SHUTDOWN:
-	case COLD_REBOOT:
-	case WARM_REBOOT:
+	case SYS_SHUTDOWN:
+	case SYS_COLD_REBOOT:
+	case SYS_WARM_REBOOT:
 		return_args1(t, poweroff(type));
 	};
 

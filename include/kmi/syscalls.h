@@ -130,10 +130,10 @@ enum sys_code {
 	/** @name Kernel management. */
 	/** @{ */
 	/** Configure system parameters (stack size etc.). */
-	SYS_CONF_SET,
+	SYS_SET_CONF,
 
 	/** Get system parameters. */
-	SYS_CONF_GET,
+	SYS_GET_CONF,
 
 	/** Set capability of thread. */
 	SYS_SET_CAP,
@@ -153,8 +153,11 @@ enum sys_code {
 	/** Request to handle IRQ. */
 	SYS_IRQ_REQ,
 
+	/** Retract IRQ. */
+	SYS_FREE_IRQ,
+
 	/** Request a notification handler. */
-	SYS_REQ_NOTIFICATION,
+	SYS_SET_HANDLER,
 
 	/** Request a thread exits. */
 	SYS_EXIT,
@@ -195,6 +198,19 @@ enum notify_flag {
 
 	/** Thread has become orphaned. */
 	NOTIFY_ORPHANED = (1 << 3),
+};
+
+/** Types of powering off. Still unclear what difference there is between warm
+ * and cold reboot. */
+enum poweroff_type {
+	/** Shut down. */
+	SYS_SHUTDOWN,
+
+	/** Cold or complete reboot. */
+	SYS_COLD_REBOOT,
+
+	/** Warm or partial reboot. */
+	SYS_WARM_REBOOT
 };
 
 /* function declarations should be somewhere else, this file could be used in
@@ -244,6 +260,63 @@ enum conf_param {
 	CONF_PAGE_SIZE,
 };
 
+enum sys_cap {
+	/** Thread is allowed to set capabilities of other threads. */
+	CAP_CAPS = (1 << 0),
+
+	/** Thread is allowed to modify process statuses, create/exec/fork/etc. */
+	CAP_PROC = (1 << 1),
+
+	/** Thread is allowed to force notification in other thread. */
+	CAP_NOTIFY = (1 << 2),
+
+	/** Thread is allowed to shut down system. */
+	CAP_POWER = (1 << 3),
+
+	/** Thread is allowed to access configuration parameters. */
+	CAP_CONF = (1 << 4),
+
+	/** Thread is allowed to request to handle IRQs. */
+	CAP_IRQ = (1 << 5),
+
+	/** Thread is allowed to request notification handler. */
+	CAP_SIGNAL = (1 << 6),
+
+	/** Thread is allowed to request shared memory */
+	CAP_SHARED = (1 << 7)
+};
+
+/**
+ * Status codes.
+ * Negative error codes are reserved for general usage, positive error codes are
+ * allowed to be function-specific, although that's sort of difficult to keep
+ * track of.
+ */
+enum sys_status {
+	/** Permission error. */
+	ERR_PERM = -10,
+	/** Internal error, should probably halt */
+	ERR_INT = -9,
+	/** Something went wrong :/ */
+	ERR_MISC = -8,
+	/** Not initialized. */
+	ERR_NOINIT = -7,
+	/** Invalid value. */
+	ERR_INVAL = -6,
+	/** Already exists. */
+	ERR_EXT = -5,
+	/** Out of memory. */
+	ERR_OOMEM = -4,
+	/** Illegal address. */
+	ERR_ADDR = -3,
+	/** Wrong alignment. */
+	ERR_ALIGN = -2,
+	/** Not found. */
+	ERR_NF = -1,
+	/** OK. */
+	OK = 0,
+};
+
 /**
  * Return structure of syscall.
  * \note Field names are generic, and can be used for whatever,
@@ -255,19 +328,19 @@ struct sys_ret {
 	sys_arg_t s;
 
 	/** First argument. */
-	sys_arg_t ar0;
+	sys_arg_t a0;
 
 	/** Second argument. */
-	sys_arg_t ar1;
+	sys_arg_t a1;
 
 	/** Third argument. */
-	sys_arg_t ar2;
+	sys_arg_t a2;
 
 	/** Fourth argument. */
-	sys_arg_t ar3;
+	sys_arg_t a3;
 
 	/** Fifth argument. */
-	sys_arg_t ar4;
+	sys_arg_t a4;
 };
 
 #endif /* KMI_SYSCALLS_H */

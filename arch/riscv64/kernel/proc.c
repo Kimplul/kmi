@@ -62,11 +62,11 @@ void set_args(struct tcb *t, size_t n, struct sys_ret a)
 {
 	struct riscv_regs *r = (struct riscv_regs *)(t->regs) - 1;
 	if (n >= 1) r->a0 = a.s;
-	if (n >= 2) r->a1 = a.ar0;
-	if (n >= 3) r->a2 = a.ar1;
-	if (n >= 4) r->a3 = a.ar2;
-	if (n >= 5) r->a4 = a.ar3;
-	if (n >= 6) r->a5 = a.ar4;
+	if (n >= 2) r->a1 = a.a0;
+	if (n >= 3) r->a2 = a.a1;
+	if (n >= 4) r->a3 = a.a2;
+	if (n >= 5) r->a4 = a.a3;
+	if (n >= 6) r->a5 = a.a4;
 }
 
 struct sys_ret get_args(struct tcb *t)

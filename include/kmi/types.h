@@ -459,38 +459,6 @@ typedef int_fast32_t id_t;
 /** Memory region flags. */
 typedef uint_fast16_t vmflags_t;
 
-/**
- * Status codes.
- * Negative error codes are reserved for general usage, positive error codes are
- * allowed to be function-specific, although that's sort of difficult to keep
- * track of.
- */
-/* should this enum be somewhere else? */
-enum status_codes {
-	/** Permission error. */
-	ERR_PERM = -10,
-	/** Internal error, should probably halt */
-	ERR_INT = -9,
-	/** Something went wrong :/ */
-	ERR_MISC = -8,
-	/** Not initialized. */
-	ERR_NOINIT = -7,
-	/** Invalid value. */
-	ERR_INVAL = -6,
-	/** Already exists. */
-	ERR_EXT = -5,
-	/** Out of memory. */
-	ERR_OOMEM = -4,
-	/** Illegal address. */
-	ERR_ADDR = -3,
-	/** Wrong alignment. */
-	ERR_ALIGN = -2,
-	/** Not found. */
-	ERR_NF = -1,
-	/** OK. */
-	OK = 0,
-};
-
 #include <arch/types.h> /* arch-specific type definitions (pm_t/vm_t etc) */
 
 #endif /* KMI_TYPES_H */

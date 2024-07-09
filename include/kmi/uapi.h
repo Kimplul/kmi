@@ -697,7 +697,7 @@ SYSCALL_DECLARE1(swap, tid);
  *
  * Returns \ref OK and 0.
  */
-SYSCALL_DECLARE2(conf_set, param, val);
+SYSCALL_DECLARE2(set_conf, param, val);
 
 /**
  * Get configuration syscall.
@@ -713,49 +713,49 @@ SYSCALL_DECLARE2(conf_set, param, val);
  *
  * Returns \ref OK.
  */
-SYSCALL_DECLARE2(conf_get, param, d0);
+SYSCALL_DECLARE2(get_conf, param, d0);
 
 /**
  * Set capabilities.
  *
  * @param t Current tcb.
  * @param tid Thread ID whose capabilities to set.
- * @param off Offset of capability, multiple of \c bits(cap).
  * @param caps Mask of capabilities to set.
+ * @param c Unused.
  * @param d Unused.
  * @param e Unused.
  *
  * Returns \ref OK on success, \ref ERR_INVAL on invalid input.
  */
-SYSCALL_DECLARE3(set_cap, tid, off, caps);
+SYSCALL_DECLARE2(set_cap, tid, caps);
 
 /**
  * Get capabilities.
  *
  * @param t Current tcb.
  * @param tid Thread ID whose capabilities to get.
- * @param off Offset of capability, multiple of \c bits(cap).
+ * @param b Unused.
  * @param c Unused.
  * @param d Unused.
  * @param e Unused.
  *
  * Returns \ref OK, capabilities.
  */
-SYSCALL_DECLARE2(get_cap, tid, off);
+SYSCALL_DECLARE1(cap_get, tid);
 
 /**
  * Clear capabilities.
  *
  * @param t Current tcb.
  * @param tid Thread ID whose capabilities to clear.
- * @param off Offset of capability, multiple of \c bits(cap).
  * @param cap Mask of capabilities to clear.
+ * @param c Unused.
  * @param d Unused.
  * @param e Unused.
  *
  * Returns \ref OK.
  */
-SYSCALL_DECLARE3(clear_cap, tid, off, cap);
+SYSCALL_DECLARE2(clear_cap, tid, cap);
 
 /**
  * Set which process to move notifications to for thread.
@@ -771,7 +771,7 @@ SYSCALL_DECLARE3(clear_cap, tid, off, cap);
  *
  * Returns \ref OK.
  */
-SYSCALL_DECLARE2(req_notification, tid, pid);
+SYSCALL_DECLARE2(set_handler, tid, pid);
 
 /**
  * Power off syscall.

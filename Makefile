@@ -2,6 +2,10 @@
 all: setup
 	$(MAKE) -f scripts/makefile
 
+.PHONY: check
+check: all
+	$(MAKE) -C tests check
+
 # this kicks all unrecognised targets to the client script.
 # note that trying to compile individual files, e.g.
 #

@@ -6,6 +6,7 @@
  * riscv64 implementation of arch-specific physical memory handling
  */
 
+#include <kmi/syscalls.h>
 #include <arch/pmem.h>
 
 stat_t stat_pmem_conf(void *fdt, size_t *max_order, size_t *base_bits,

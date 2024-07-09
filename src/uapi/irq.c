@@ -28,16 +28,25 @@ SYSCALL_DEFINE1(irq_req)(struct tcb *t, sys_arg_t id)
 	return_args1(t, register_irq(t, id));
 }
 
+SYSCALL_DEFINE1(free_irq)(struct tcb *t, sys_arg_t id)
+{
+	if (!has_cap(t->caps, CAP_IRQ))
+		return_args1(t, ERR_PERM);
+
+	return_args1(t, unregister_irq(t, id));
+}
+
 /**
  * Actual notification handler setter.
  *
  * @param t Current tcb.
- * @param tid Thread whose handler to set.
+ * @param tid Thread whose handler to set. Still not sure if this should just be
+ * the current thread, but I guess this might be a bit easier?
  * @param pid Process that is willing to handle notifications for the thread.
  *
  * @return OK on success, non-zero otherwise.
  */
-SYSCALL_DEFINE2(req_notification)(struct tcb *t, sys_arg_t tid, sys_arg_t pid)
+SYSCALL_DEFINE2(set_handler)(struct tcb *t, sys_arg_t tid, sys_arg_t pid)
 {
 	if (!has_cap(t->caps, CAP_SIGNAL))
 		return_args1(t, ERR_PERM);

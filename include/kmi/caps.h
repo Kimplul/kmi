@@ -16,51 +16,13 @@
 
 #include <kmi/bits.h>
 
-/** Helper typedef for capabilities. */
-typedef unsigned char capflags_t;
-
-enum {
-	/** Thread is allowed to set capabilities of other threads. */
-	CAP_CAPS = (1 << 0),
-
-	/** Thread is allowed to modify process statuses, create/exec/fork/etc. */
-	CAP_PROC = (1 << 1),
-
-	/** Thread is allowed to force notification in other thread. */
-	CAP_NOTIFY = (1 << 2),
-
-	/** Thread is allowed to shut down system. */
-	CAP_POWER = (1 << 3),
-
-	/** Thread is allowed to access configuration parameters. */
-	CAP_CONF = (1 << 4),
-
-	/** Thread is allowed to request to handle IRQs. */
-	CAP_IRQ = (1 << 5),
-
-	/** Thread is allowed to request notification handler. */
-	CAP_SIGNAL = (1 << 6),
-
-	/** Thread is allowed to request shared memory */
-	CAP_SHARED = (1 << 7)
-};
-
-/**
- * Check that offset is OK.
- *
- * @param o Offset to check.
- * @return \ref true is OK, \ref false otherwise.
- */
-#define cap_off_ok(o) (o == 0)
-
 /**
  * Set capabilities.
  *
  * @param x Capabilities to modify.
- * @param o Offset.
  * @param c Capabilities to set.
  */
-#define set_caps(x, o, c) set_bits(x, c)
+#define set_caps(x, c) set_bits(x, c)
 
 /**
  * Clear capabilities.
@@ -69,7 +31,7 @@ enum {
  * @param o Offset.
  * @param c Capabilities to set.
  */
-#define clear_caps(x, o, c) clear_bits(x, c)
+#define clear_caps(x, c) clear_bits(x, c)
 
 /**
  * Copy capabilities.
@@ -78,15 +40,6 @@ enum {
  * @param y Capabilities to copy from.
  */
 #define copy_caps(x, y) (x = y)
-
-/**
- * Get capabilities at offset \p o.
- *
- * @param x Capabilities to get from.
- * @param o Offset to get capabilities from.
- * @return Capabilities at offset \p o.
- */
-#define get_caps(x, o) (x)
 
 /**
  * Check if something has capability.

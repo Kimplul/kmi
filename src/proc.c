@@ -49,7 +49,7 @@ stat_t init_proc(void *fdt, vm_t *proc_fdt, vm_t *proc_initrd)
 	t->notify_id = t->tid;
 
 	/* init process has all capabilities */
-	set_caps(t->caps, 0,
+	set_caps(t->caps,
 	         CAP_CAPS | CAP_PROC | CAP_SIGNAL | CAP_POWER | CAP_NOTIFY |
 	         CAP_SHARED);
 

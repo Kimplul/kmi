@@ -184,7 +184,7 @@ struct tcb {
 	enum notify_flag notify_flags;
 
 	/** Capabilities of thread. */
-	capflags_t caps;
+	enum sys_cap caps;
 
 	/** Queue that connects together threads waiting for an ipi */
 	struct queue_head ipi_queue;

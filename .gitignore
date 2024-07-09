@@ -7,6 +7,9 @@
 docs/output
 deps.mk
 *.img
+initrd
+init
+build
 
 # keep gitkeep files wherever they are
 !.gitkeep

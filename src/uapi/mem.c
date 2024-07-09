@@ -140,7 +140,7 @@ SYSCALL_DEFINE2(req_page)(struct tcb *t, sys_arg_t size, sys_arg_t flags)
  * @param t Current tcb.
  * @param size Minimum size of allocation.
  * @param flags Flags of allocation.
- * @return \ref OK, start and size
+ * @return \ref OK, start
  * in that order, \ref ERR_OOMEM otherwise.
  */
 SYSCALL_DEFINE2(req_sharedmem)(struct tcb *t, sys_arg_t size, sys_arg_t flags)
@@ -154,7 +154,7 @@ SYSCALL_DEFINE2(req_sharedmem)(struct tcb *t, sys_arg_t size, sys_arg_t flags)
 	if (ERR_CODE(start))
 		return_args1(t, start);
 
-	return_args3(t, OK, start, size);
+	return_args2(t, OK, start);
 }
 
 /**
@@ -185,5 +185,5 @@ SYSCALL_DEFINE3(ref_sharedmem)(struct tcb *t, sys_arg_t tid, sys_arg_t addr,
 	if (ERR_CODE(start))
 		return_args1(t, start);
 
-	return_args3(t, OK, start, size);
+	return_args2(t, OK, start);
 }

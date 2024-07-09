@@ -34,15 +34,15 @@ stat_t poweroff(enum poweroff_type type)
 	/** \todo this only shuts down the cpu itself, but may leave the SOC
 	 * active. Should read from fdt poweroff and syscon-poweroff etc */
 	switch (type) {
-	case SHUTDOWN:
+	case SYS_SHUTDOWN:
 		sbi_system_reset(SBI_SHUTDOWN, SBI_NO_REASON);
 		return ERR_MISC;
 
-	case COLD_REBOOT:
+	case SYS_COLD_REBOOT:
 		sbi_system_reset(SBI_COLD_REBOOT, SBI_NO_REASON);
 		return ERR_MISC;
 
-	case WARM_REBOOT:
+	case SYS_WARM_REBOOT:
 		sbi_system_reset(SBI_WARM_REBOOT, SBI_NO_REASON);
 		return ERR_MISC;
 	};

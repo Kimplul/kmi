@@ -6,6 +6,7 @@
  * riscv64 main
  */
 
+#include <kmi/syscalls.h>
 #include <kmi/utils.h>
 #include <arch/arch.h>
 #include "csr.h"

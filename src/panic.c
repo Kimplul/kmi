@@ -6,6 +6,7 @@
  * Kernel panic handler implementation.
  */
 
+#include <kmi/syscalls.h>
 #include <kmi/power.h>
 #include <kmi/debug.h>
 
@@ -17,7 +18,7 @@ void kernel_panic(void *pc, void *addr, long cause)
 
 	info("attempting to reboot\n");
 
-	poweroff(COLD_REBOOT);
+	poweroff(SYS_COLD_REBOOT);
 
 	/* spin if poweroff failed for some reason */
 	error("reboot failed, spinning in place\n");

@@ -7,6 +7,7 @@
  * subsystems.
  */
 
+#include <kmi/syscalls.h>
 #include <kmi/regions.h>
 #include <kmi/assert.h>
 #include <kmi/pmem.h>

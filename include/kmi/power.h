@@ -10,21 +10,9 @@
  * host machines.
  */
 
+#include <kmi/syscalls.h>
 #include <kmi/types.h>
 #include <kmi/attrs.h>
-
-/** Types of powering off. Still unclear what difference there is between warm
- * and cold reboot. */
-enum poweroff_type {
-	/** Shut down. */
-	SHUTDOWN,
-
-	/** Cold or complete reboot. */
-	COLD_REBOOT,
-
-	/** Warm or partial reboot. */
-	WARM_REBOOT
-};
 
 /**
  * Power off the system.

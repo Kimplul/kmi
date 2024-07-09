@@ -47,7 +47,7 @@ SYSCALL_DEFINE5(create)(struct tcb *t, sys_arg_t func,
 	set_return(c, func);
 
 	c->notify_id = t->notify_id;
-	return_args2(t, OK, c->tid);
+	return_args1(t, c->tid);
 }
 
 /**
@@ -78,10 +78,10 @@ SYSCALL_DEFINE0(fork)(struct tcb *t)
 
 	/* prepare args for when we eventually swap to the new proc, giving
 	 * parent ID as third return value */
-	set_args3(n, OK, 0, get_eproc(t)->pid);
+	set_args2(n, 0, get_eproc(t)->pid);
 
 	n->notify_id = c->notify_id;
-	return_args2(t, OK, n->pid);
+	return_args1(t, n->pid);
 }
 
 /**
@@ -161,8 +161,17 @@ SYSCALL_DEFINE2(spawn)(struct tcb *t, sys_arg_t bin, sys_arg_t interp)
 	if (!n)
 		return_args1(t, ERR_OOMEM);
 
+	/** @todo copy over bin and interp into new process, this is not enough */
 	n->notify_id = c->notify_id;
-	return_args2(t, prepare_proc(n, bin, interp), n->pid);
+	stat_t ret = OK;
+	if ((ret = prepare_proc(n, bin, interp))) {
+		/* this kills the thread */
+		orphanize(t);
+		unorphanize(t);
+		return_args1(t, ret);
+	}
+
+	return_args1(t, n->pid);
 }
 
 /**
