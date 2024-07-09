@@ -179,7 +179,6 @@ SYSCALL_DEFINE3(ref_sharedmem)(struct tcb *t, sys_arg_t tid, sys_arg_t addr,
 	if (!r || zombie(r))
 		return_args1(t, ERR_INVAL);
 
-	size_t size = 0;
 	flags = sanitize_uvflags(flags);
 	vm_t start = ref_shared_uvmem(r, c, addr, flags);
 	if (ERR_CODE(start))

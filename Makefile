@@ -55,6 +55,7 @@ RM	= rm
 
 .PHONY: clean
 clean:
+	$(MAKE) -C tests clean
 	$(RM) -rf $(CLEANUP)
 
 .PHONY: clean_run

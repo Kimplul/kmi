@@ -7,6 +7,7 @@
  * _save_context.
  */
 
+#include <kmi/syscalls.h>
 #include <kmi/utils.h>
 #include <kmi/uapi.h>
 #include "../kernel/regs.h"
@@ -59,12 +60,6 @@ void asm_offsets()
 	OFFSETOF(t2, struct riscv_regs);
 	OFFSETOF(s0, struct riscv_regs);
 	OFFSETOF(s1, struct riscv_regs);
-	OFFSETOF(a0, struct riscv_regs);
-	OFFSETOF(a1, struct riscv_regs);
-	OFFSETOF(a2, struct riscv_regs);
-	OFFSETOF(a3, struct riscv_regs);
-	OFFSETOF(a4, struct riscv_regs);
-	OFFSETOF(a5, struct riscv_regs);
 	OFFSETOF(a6, struct riscv_regs);
 	OFFSETOF(a7, struct riscv_regs);
 	OFFSETOF(s2, struct riscv_regs);
@@ -81,14 +76,14 @@ void asm_offsets()
 	OFFSETOF(t4, struct riscv_regs);
 	OFFSETOF(t5, struct riscv_regs);
 	OFFSETOF(t6, struct riscv_regs);
+	OFFSETOF(a0, struct riscv_regs);
+	OFFSETOF(a1, struct riscv_regs);
+	OFFSETOF(a2, struct riscv_regs);
+	OFFSETOF(a3, struct riscv_regs);
+	OFFSETOF(a4, struct riscv_regs);
+	OFFSETOF(a5, struct riscv_regs);
 	SIZEOF(registers, struct riscv_regs);
 
-	OFFSETOF(s, struct sys_ret);
-	OFFSETOF(ar0, struct sys_ret);
-	OFFSETOF(ar1, struct sys_ret);
-	OFFSETOF(ar2, struct sys_ret);
-	OFFSETOF(ar3, struct sys_ret);
-	OFFSETOF(ar4, struct sys_ret);
 	SIZEOF(sys_ret, struct sys_ret);
 
 	OFFSETOF(exec, struct tcb);
