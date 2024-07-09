@@ -113,6 +113,8 @@ static struct mem_region *__insert_free_region(struct mem_region_root *r,
 		}
 
 		else if (start < t->start) {
+			/* note that blocks with smaller addresses go to the
+			 * left */
 			n = sp_left(n);
 			d = SP_LEFT;
 		}
@@ -165,7 +167,8 @@ static struct mem_region *__insert_used_region(struct mem_region_root *r,
 	return m;
 }
 
-stat_t init_region(struct mem_region_root *r, vm_t start, size_t arena_size)
+stat_t init_region(struct mem_region_root *r, vm_t start, size_t arena_size,
+                   size_t reserved)
 {
 	/* convert bytes to pages */
 	start = __page(start);
@@ -173,8 +176,11 @@ stat_t init_region(struct mem_region_root *r, vm_t start, size_t arena_size)
 	struct mem_region *m = get_mem_node();
 	m->start = start;
 	m->end = start + arena_size;
-	__insert_free_region(r, m);
 
+	r->reserved = __page(reserved);
+	r->start = m->start;
+	r->end = m->end;
+	__insert_free_region(r, m);
 	return OK;
 }
 
@@ -311,15 +317,44 @@ struct mem_region *find_free_region(struct mem_region_root *r, size_t size,
 	size_t offset = __page(po_align(__addr(size)));
 	struct mem_region *quick_best = 0;
 	struct sp_node *n = sp_root(&r->free_regions);
-	while (n) {
+
+	/* always go right, both to find a larger block and a higher
+	 * address (generally avoid going towards the NULL page) */
+	for (; n; n = sp_right(n)) {
 		struct mem_region *t = mem_container(n);
 		vm_t start = align_up(t->start, offset);
-
 		size_t qsize = t->end - t->start;
 
 		size_t bsize = 0;
 		if (t->end >= start)
 			bsize = t->end - start;
+
+		/* handle reserved region first */
+		if (start < r->start + r->reserved) {
+			/* we would have to map reserved pages, go to next node
+			 * if one exists */
+			if (sp_right(n))
+				continue;
+
+			/* we're the only free region left to check,
+			 * are we large enough to carve a chunk out of? */
+			size_t offset = r->reserved - t->start;
+			if (size < qsize - offset)
+				return quick_best;
+
+			/* we are, so let's set the alignment to match that at
+			 * least some parts of this block should be skipped */
+
+			/* try to use page order alignment if possible */
+			if (size <= bsize - offset) {
+				*align = start - t->start;
+				return t;
+			}
+
+			/* otherwise, carve out a block at the top of this node. */
+			*align = t->end - size;
+			return t;
+		}
 
 		if (!quick_best && size <= qsize)
 			quick_best = t;
@@ -328,8 +363,6 @@ struct mem_region *find_free_region(struct mem_region_root *r, size_t size,
 			*align = start - t->start;
 			return t;
 		}
-
-		n = sp_right(n);
 	}
 
 	return quick_best;

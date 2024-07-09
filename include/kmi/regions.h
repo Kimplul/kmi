@@ -54,6 +54,17 @@ void destroy_mem_nodes();
 
 /** Root of memory region. */
 struct mem_region_root {
+	/** How many pages are reserved, i.e. will never be allocated by \ref
+	 * alloc_region(), they have to explicitly be requested for by
+	 * \ref alloc_fixed_region(). */
+	size_t reserved;
+
+	/** Helper for reserved calculations. */
+	vm_t start;
+
+	/** Currently unused. */
+	vm_t end;
+
 	/** Sp-tree of free regions. */
 	struct sp_root free_regions;
 
@@ -99,10 +110,14 @@ struct mem_region {
  * @param r Memory region root to initialize.
  * @param start Start of memory arena.
  * @param arena_size Size of memory arena.
+ * @param reserved Size of reserved area. The reserved area will never be
+ * allocated from with \ref alloc_region(), the user has to explicitly ask to
+ * use that region.
  * @return \ref OK on success.
  * \todo Document error codes when I actually implement them properly.
  */
-stat_t init_region(struct mem_region_root *r, vm_t start, size_t arena_size);
+stat_t init_region(struct mem_region_root *r, vm_t start, size_t arena_size,
+                   size_t reserved);
 
 /**
  * Destroy memory region subsystem instance.
@@ -211,6 +226,7 @@ struct mem_region *find_closest_used_region(struct mem_region_root *r,
 
 /**
  * Find best region that fulfills requested parameters.
+ * Respects the reserved region of \p r.
  *
  * @param r Memory region root.
  * @param size Size of free region.

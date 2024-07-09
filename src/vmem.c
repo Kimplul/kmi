@@ -18,19 +18,10 @@ stat_t init_uvmem(struct tcb *t)
 {
 	t->uvmem.owner = t->tid;
 	t->uvmem.vmem = t->proc.vmem;
-
-	stat_t ret = OK;
-	if ((ret = init_region(&t->uvmem.region, UVMEM_START, UVMEM_END)))
-		return ret;
-
-	/* if a user really wants to use the first page for something, they'll
-	 * have to free it first, 'accepting' that no null-page is dangerous. */
-	size_t size = 0;
-	vm_t v = alloc_fixed_region(&t->uvmem.region,
-	                            UVMEM_START, BASE_PAGE_SIZE, &size,
-	                            MR_NONBACKED);
-	assert(v == UVMEM_START && size == BASE_PAGE_SIZE);
-	return OK;
+	/* reserve 64KiB (arbitrary number but should be large enough that
+	 * nobody accidentally indexes above NULL enough to find real memory) */
+	return init_region(&t->uvmem.region, UVMEM_START,
+	                   UVMEM_END - UVMEM_START, SZ_64K);
 }
 
 /**
@@ -132,8 +123,8 @@ static vm_t __clone_shared_region(struct tcb *d, struct tcb *s,
 	if (ERR_CODE(v))
 		return v;
 
-	stat_t res = clone_region(d->uvmem.vmem, s->uvmem.vmem, start, v, size,
-	                          flags);
+	stat_t res = clone_region(d->uvmem.vmem, s->uvmem.vmem,
+	                          start, v, size, flags);
 	if (res == OK)
 		return v;
 

@@ -24,8 +24,8 @@ stat_t init_devmem(pm_t ram_base, pm_t ram_top)
 	/* -1 being the effective highest address possible */
 	size_t post_pages = __pages(-1) - ram_pages - pre_pages;
 
-	init_region(&pre_ram, 0, pre_pages);
-	init_region(&post_ram, ram_top, post_pages);
+	init_region(&pre_ram, 0, pre_pages, 0);
+	init_region(&post_ram, ram_top, post_pages, 0);
 	return OK;
 }
 

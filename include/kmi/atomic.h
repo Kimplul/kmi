@@ -404,7 +404,7 @@ typedef _Atomic __UINTMAX_TYPE__ atomic_uintmax_t;
  */
 #define atomic_compare_exchange_weak(obj, val, des)                            \
 	atomic_compare_exchange_weak_explicit(obj, val, des, __ATOMIC_SEQ_CST, \
-	                                      __ATOMIC_SEQ_CST)
+					      __ATOMIC_SEQ_CST)
 
 /**
  * Explicit atomic in-place addition.

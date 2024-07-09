@@ -251,18 +251,18 @@
  */
 #define align_down(x, y)                             \
 	_Generic((x), signed char                    \
-	         : align_down_c, signed short        \
-	         : align_down_s, signed int          \
-	         : align_down_i, signed long         \
-	         : align_down_l, signed long long    \
-	         : align_down_ll,                    \
+		 : align_down_c, signed short        \
+		 : align_down_s, signed int          \
+		 : align_down_i, signed long         \
+		 : align_down_l, signed long long    \
+		 : align_down_ll,                    \
                                                      \
-	         unsigned char                       \
-	         : align_down_uc, unsigned short     \
-	         : align_down_us, unsigned int       \
-	         : align_down_ui, unsigned long      \
-	         : align_down_ul, unsigned long long \
-	         : align_down_ull)((x), (y))
+		 unsigned char                       \
+		 : align_down_uc, unsigned short     \
+		 : align_down_us, unsigned int       \
+		 : align_down_ui, unsigned long      \
+		 : align_down_ul, unsigned long long \
+		 : align_down_ull)((x), (y))
 
 /**
  * Helper macro for defining type specific aligning.
@@ -385,18 +385,18 @@ DEFINE_ALIGN_DOWN(ull, unsigned long long);
  */
 #define align_up(x, y)                             \
 	_Generic((x), signed char                  \
-	         : align_up_c, signed short        \
-	         : align_up_s, signed int          \
-	         : align_up_i, signed long         \
-	         : align_up_l, signed long long    \
-	         : align_up_ll,                    \
+		 : align_up_c, signed short        \
+		 : align_up_s, signed int          \
+		 : align_up_i, signed long         \
+		 : align_up_l, signed long long    \
+		 : align_up_ll,                    \
                                                    \
-	         unsigned char                     \
-	         : align_up_uc, unsigned short     \
-	         : align_up_us, unsigned int       \
-	         : align_up_ui, unsigned long      \
-	         : align_up_ul, unsigned long long \
-	         : align_up_ull)((x), (y))
+		 unsigned char                     \
+		 : align_up_uc, unsigned short     \
+		 : align_up_us, unsigned int       \
+		 : align_up_ui, unsigned long      \
+		 : align_up_ul, unsigned long long \
+		 : align_up_ull)((x), (y))
 
 /**
  * Helper macro for defining type specific aligning.
@@ -515,18 +515,18 @@ DEFINE_ALIGN_UP(ull, unsigned long long);
  */
 #define is_aligned(x, y)                             \
 	_Generic((x), signed char                    \
-	         : is_aligned_c, signed short        \
-	         : is_aligned_s, signed int          \
-	         : is_aligned_i, signed long         \
-	         : is_aligned_l, signed long long    \
-	         : is_aligned_ll,                    \
+		 : is_aligned_c, signed short        \
+		 : is_aligned_s, signed int          \
+		 : is_aligned_i, signed long         \
+		 : is_aligned_l, signed long long    \
+		 : is_aligned_ll,                    \
                                                      \
-	         unsigned char                       \
-	         : is_aligned_uc, unsigned short     \
-	         : is_aligned_us, unsigned int       \
-	         : is_aligned_ui, unsigned long      \
-	         : is_aligned_ul, unsigned long long \
-	         : is_aligned_ll)((x), (y))
+		 unsigned char                       \
+		 : is_aligned_uc, unsigned short     \
+		 : is_aligned_us, unsigned int       \
+		 : is_aligned_ui, unsigned long      \
+		 : is_aligned_ul, unsigned long long \
+		 : is_aligned_ll)((x), (y))
 
 /**
  * Helper macro for defining type specific alignment checks.
