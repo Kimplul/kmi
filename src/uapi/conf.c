@@ -76,6 +76,10 @@ SYSCALL_DEFINE2(get_conf)(struct tcb *t, sys_arg_t param, sys_arg_t d0)
 		val = order_size(d0);
 		break;
 
+	case CONF_MAX_THREADS:
+		val = max_tcbs();
+		break;
+
 	default:
 		return_args1(t, ERR_NF);
 	}

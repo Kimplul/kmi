@@ -26,8 +26,8 @@
 /** Thread ID to start looking from when allocating new ID. */
 static id_t start_tid = 0;
 
-/** Total number of possible thread IDs. */
-static id_t num_tids;
+/** Maximum number of concurrently active threads. */
+static id_t num_tcbs;
 
 /** Pointer to array of \ref tcb structures. Length of the array is \c num_tids.*/
 static struct tcb **tcbs;
@@ -40,14 +40,19 @@ static struct tcb **tcbs;
  */
 static struct tcb *__cpu_tcb[MAX_CPUS] = { 0 };
 
+size_t max_tcbs()
+{
+	return num_tcbs;
+}
+
 void init_tcbs()
 {
 	/* MM_O1 is 2MiB on riscv64, so 262144 different possible thread ids.
 	 * Should be enough, if we're really strapped for memory I might try
 	 * something smaller but this is fine for now. */
 	tcbs = (struct tcb **)alloc_page(MM_O1);
-	num_tids = order_size(MM_O1) / sizeof(struct tcb *);
-	assert(is_powerof2(num_tids));
+	num_tcbs = order_size(MM_O1) / sizeof(struct tcb *);
+	assert(is_powerof2(num_tcbs));
 	memset(tcbs, 0, order_size(MM_O1));
 }
 
@@ -74,10 +79,10 @@ static id_t __alloc_tid(struct tcb *t)
 		if (i == stop_tid)
 			return ERR_NF;
 
-		if (tcbs[i & (num_tids - 1)] || i == 0)
+		if (tcbs[i & (num_tcbs - 1)] || i == 0)
 			continue;
 
-		tcbs[i & (num_tids - 1)] = t;
+		tcbs[i & (num_tcbs - 1)] = t;
 		start_tid = i + 1;
 		return i;
 	}
@@ -369,7 +374,7 @@ struct tcb *get_tcb(id_t tid)
 	if (tid <= 0)
 		return NULL;
 
-	struct tcb *t = tcbs[tid & (num_tids - 1)];
+	struct tcb *t = tcbs[tid & (num_tcbs - 1)];
 	if (!t)
 		return NULL;
 

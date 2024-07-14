@@ -258,6 +258,15 @@ enum conf_param {
 	 * \c R
 	 */
 	CONF_PAGE_SIZE,
+
+	/**
+	 * Maximum number of threads active at the same time.
+	 * Can be used by userspace to build a pretty fast hashmaps of thread
+	 * IDs to whatever, see \ref get_tcb().
+	 * Guaranteed to be some power of 2.
+	 * \c R
+	 */
+	CONF_MAX_THREADS,
 };
 
 /** Capabilities of process. */

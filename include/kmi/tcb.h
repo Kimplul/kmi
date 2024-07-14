@@ -199,6 +199,11 @@ struct tcb {
 void init_tcbs();
 
 /**
+ * @return Maximum number of threads active at the same time.
+ */
+size_t max_tcbs();
+
+/**
  * Destroy thread control subsystem.
  */
 void destroy_tcbs();
