@@ -369,7 +369,14 @@ struct tcb *get_tcb(id_t tid)
 	if (tid <= 0)
 		return NULL;
 
-	return tcbs[tid & (num_tids - 1)];
+	struct tcb *t = tcbs[tid & (num_tids - 1)];
+	if (!t)
+		return NULL;
+
+	if (t->tid != tid)
+		return NULL;
+
+	return t;
 }
 
 void set_return(struct tcb *t, vm_t v)
