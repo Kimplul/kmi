@@ -15,7 +15,6 @@
  *
  * @param t Current tcb.
  * @param tid Thread ID whose capabilities to set.
- * @param off Offset of capability, multiple of \c bits(cap).
  * @param caps Mask of capabilities to set.
  * @return \ref OK on success, \ref ERR_INVAL on invalid input.
  */
@@ -37,7 +36,6 @@ SYSCALL_DEFINE2(set_cap)(struct tcb *t, sys_arg_t tid, sys_arg_t caps)
  *
  * @param t Current tcb.
  * @param tid Thread ID whose capabilities to get.
- * @param off Offset of capability, multiple of \c bits(cap).
  * @return \ref OK, capabilities.
  */
 SYSCALL_DEFINE1(get_cap)(struct tcb *t, sys_arg_t tid)

@@ -446,7 +446,7 @@ typedef union {
 #define NULL 0
 
 /* some common types used throughout the kernel */
-/** Status, used with codes in \ref status_codes. */
+/** Status, used with codes in \ref sys_status. */
 typedef int_fast8_t stat_t;
 
 /** ID of something. @todo should this be signed? Linux etc seems to assume it

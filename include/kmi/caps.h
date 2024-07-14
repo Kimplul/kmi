@@ -28,7 +28,6 @@
  * Clear capabilities.
  *
  * @param x Capabilities to modify.
- * @param o Offset.
  * @param c Capabilities to set.
  */
 #define clear_caps(x, c) clear_bits(x, c)

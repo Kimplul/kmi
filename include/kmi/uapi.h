@@ -741,7 +741,7 @@ SYSCALL_DECLARE2(set_cap, tid, caps);
  *
  * Returns \ref OK, capabilities.
  */
-SYSCALL_DECLARE1(cap_get, tid);
+SYSCALL_DECLARE1(get_cap, tid);
 
 /**
  * Clear capabilities.
@@ -808,7 +808,7 @@ SYSCALL_DECLARE0(sleep);
  * Request to handle IRQ.
  *
  * @param t Current tcb.
- * @param id ID if IRQ to handle.
+ * @param id ID of IRQ to handle.
  * @param b Unused.
  * @param c Unused.
  * @param d Unused.
@@ -818,6 +818,18 @@ SYSCALL_DECLARE0(sleep);
  * @todo document error codes better.
  */
 SYSCALL_DECLARE1(irq_req, id);
+
+/**
+ * Remove handled IRQ.
+ *
+ * @param t Current tcb.
+ * @param id ID of IRQ to stop handling.
+ * @param b Unused.
+ * @param c Unused.
+ * @param d Unused.
+ * @param e Unused.
+ */
+SYSCALL_DECLARE1(free_irq, id);
 
 /**
  * Request that a thread exits, i.e. removes itself from the thread list and

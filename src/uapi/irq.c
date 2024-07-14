@@ -15,7 +15,7 @@
  * @param t Current tcb.
  * @param id Which IRQ number to register.
  *
- * @return OK on success, non-zero otherwise.
+ * @return \ref OK on success, non-zero otherwise.
  */
 SYSCALL_DEFINE1(irq_req)(struct tcb *t, sys_arg_t id)
 {
@@ -28,6 +28,13 @@ SYSCALL_DEFINE1(irq_req)(struct tcb *t, sys_arg_t id)
 	return_args1(t, register_irq(t, id));
 }
 
+/**
+ * Actual IRQ freeing syscall handler.
+ *
+ * @param t Current tcb.
+ * @param id ID of IRQ to free.
+ * @return \ref OK on success, non-zero otherwise.
+ */
 SYSCALL_DEFINE1(free_irq)(struct tcb *t, sys_arg_t id)
 {
 	if (!has_cap(t->caps, CAP_IRQ))

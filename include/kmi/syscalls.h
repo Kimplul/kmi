@@ -260,6 +260,7 @@ enum conf_param {
 	CONF_PAGE_SIZE,
 };
 
+/** Capabilities of process. */
 enum sys_cap {
 	/** Thread is allowed to set capabilities of other threads. */
 	CAP_CAPS = (1 << 0),
