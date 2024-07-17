@@ -6,6 +6,7 @@
 **/gen/*
 docs/output
 deps.mk
+tests.mk
 *.img
 initrd
 init
