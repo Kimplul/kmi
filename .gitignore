@@ -10,6 +10,7 @@ deps.mk
 initrd
 init
 build
+reports
 
 # keep gitkeep files wherever they are
 !.gitkeep

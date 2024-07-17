@@ -18,7 +18,8 @@ ASSERTFLAGS	!= [ "$(ASSERT)" != "0" ] \
 			|| echo
 
 USE_LLVM	!= [ "$(LLVM)" -a "$(LLVM)" != "0" ] \
-			&& echo "1"
+			&& echo "1" \
+			|| echo ""
 
 DEPFLAGS	= -MT $@ -MMD -MP -MF $@.d
 LINTFLAGS	= -fsyntax-only

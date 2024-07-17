@@ -1,0 +1,31 @@
+#!/bin/sh
+
+NAME=
+PROGS=
+while getopts "n:p:" opt; do
+	case "$opt" in
+		n) NAME="$OPTARG";;
+		p) PROGS="$PROGS $OPTARG";;
+		*) echo "unrecognised option -$OPTARG" >&2; exit 1;;
+	esac
+done
+
+if [ -z "$NAME" ]; then
+	echo "No name given for tests" >&2; exit 2;
+fi
+
+if [ -z "$PROGS" ]; then
+	echo "No programs to add to initrd" >&2; exit 3;
+fi
+
+echo "build/$NAME/initrd: build/$NAME/init \$(COMMON) \$(KMI)"		>> tests.mk
+echo "	echo build/$NAME/init | \$(GEN_INITRD) build/$NAME/initrd"	>> tests.mk
+echo "reports/$NAME/log: build/$NAME/initrd"				>> tests.mk
+echo "	mkdir -p reports/$NAME"						>> tests.mk
+echo "	rm -f reports/$NAME/*"						>> tests.mk
+echo "	timeout --foreground 30s \$(QEMU) \
+	build/$NAME/initrd > reports/$NAME/log" >> tests.mk
+
+echo "TESTS += $NAME"			>> tests.mk
+echo ".PHONY: do-$NAME"			>> tests.mk
+echo "do-$NAME: reports/$NAME/log"	>> tests.mk
