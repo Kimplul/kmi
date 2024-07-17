@@ -1,9 +1,0 @@
-label: gpt
-label-id: DBD1F99F-BFA3-D448-828F-0B505DF81F17
-device: rootfs.img
-unit: sectors
-first-lba: 2048
-last-lba: 20446
-sector-size: 512
-
-rootfs.img1 : start=        2048, size=       18399, type=0FC63DAF-8483-4772-8E79-3D69D8477DE4, uuid=B129DB0D-F225-5C48-AA6D-DD8C049FA72C
