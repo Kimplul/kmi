@@ -43,9 +43,7 @@ using essentially any precompiled u-boot as a bootloader, but requires some
 extra effort by the user to manage loading different parts to where they should
 go. See `docs/visionfive2.md` for an example.
 
-+ `run`: Load a test program into `qemu` and run it. Requires some outside support at
-the moment, please see [kmi-example](https://github.com/Kimplul/kmi-example).
-This command might eventually be moved out of this repo.
++ `check`: Run tests.
 
 + `clean/clean_docs/clean_run/clean_all`: Clean compile artefacts, clean documentation
 artefacts, clean run artefacts and clean all artefacts, respectively.
