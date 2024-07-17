@@ -1,32 +1,28 @@
 # this could be done better
-RELEASE		?= 0
-OPTFLAGS	!= [ "$(RELEASE)" != "0" ] \
+CFLAGS		?=
+
+OPTFLAGS	!= [ "$(RELEASE)" -a "$(RELEASE)" != "0" ] \
 			&& echo "-O2 -flto=auto" \
 			|| echo "-O0"
 
-DEBUG		?= 1
 DEBUGFLAGS	!= [ "$(DEBUG)" != "0" ] \
 			&& echo "-DDEBUG=1" \
 			|| echo "-DNDEBUG=1"
 
-GENERIC_UBOOT	?= 0
-UBOOTFLAGS	!= [ "$(GENERIC_UBOOT)" != "0" ] \
+UBOOTFLAGS	!= [ "$(GENERIC_UBOOT)" -a "$(GENERIC_UBOOT)" != "0" ] \
 			&& echo "-DGENERIC_UBOOT=1" \
 			|| echo
 
-ASSERT		?= 1
 ASSERTFLAGS	!= [ "$(ASSERT)" != "0" ] \
 			&& echo "-DASSERT=1" \
 			|| echo
 
+USE_LLVM	!= [ "$(LLVM)" -a "$(LLVM)" != "0" ] \
+			&& echo "1"
+
 DEPFLAGS	= -MT $@ -MMD -MP -MF $@.d
 LINTFLAGS	= -fsyntax-only
 PREPROCESS	= -E
-
-LLVM		?= 0
-LDFLAGS		!= [ "$(LLVM)" = "0" ] \
-			&& echo -static-libgcc -lgcc \
-			|| echo
 
 BUILD		= build
 ARCH_KERN_BUILD	= $(BUILD)/kernel/arch/$(ARCH)
@@ -38,11 +34,11 @@ all: kmi.bin
 ARCH		?= riscv64
 CROSS_COMPILE	?= $(ARCH)-unknown-elf-
 
-OBJCOPY		!= [ "$(LLVM)" != "0" ] \
+OBJCOPY		!= [ "$(USE_LLVM)" ] \
 			&& echo llvm-objcopy \
 			|| echo $(CROSS_COMPILE)objcopy
 
-COMPILER	!= [ "$(LLVM)" != "0" ] \
+COMPILER	!= [ "$(USE_LLVM)" ] \
 			&& echo clang --target="$(CROSS_COMPILE)" \
 			|| echo $(CROSS_COMPILE)gcc
 

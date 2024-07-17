@@ -52,6 +52,11 @@ associated program. Easy. (started)
 		be visible from cur_tcb() when in an RPC? should I use some kind
 		of effective tid instead of cur_tcb()?)
 + Export VM flags to userspace, separate header or something?
++ Get core count? It's technically speaking available from the fdt but could be
+limited by the NR_CPUS macro, so it might be a good idea to export as a CONF_*
++ The node subsystem might benefit from larger-than-base-page sizes, for example
+  the RISC-V V extension allows up to 262 144 bytes of register space (though it
+  seems unlikely that anyone actually uses that many but still)
 
 !!! FUTURE:
 + Cache locality?
