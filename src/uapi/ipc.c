@@ -62,7 +62,7 @@ enum ipc_flags {
  * @param r Process to migrate to.
  * @param s RPC stack regions to mark inaccessible.
  */
-static void finalize_rpc(struct tcb *t, struct tcb *r, vm_t s)
+static inline void finalize_rpc(struct tcb *t, struct tcb *r, vm_t s)
 {
 	clone_uvmem(r->proc.vmem, t->rpc.vmem);
 	set_return(t, r->callback);
@@ -84,7 +84,7 @@ static void finalize_rpc(struct tcb *t, struct tcb *r, vm_t s)
  * @param flags Kind of IPC we're doing.
  * @return RPC stack difference that should be passed to finalize_rpc().
  */
-static vm_t enter_rpc(struct tcb *t, struct sys_ret a,
+static inline vm_t enter_rpc(struct tcb *t, struct sys_ret a,
                       enum ipc_flags flags)
 {
 	/* reuse current rpc stack location if we're being kicked */
@@ -131,7 +131,7 @@ static vm_t enter_rpc(struct tcb *t, struct sys_ret a,
  * @return \c true if there's enough stack left to safely do migration,
  * \c false otherwise.
  */
-static bool __enough_rpc_stack(struct tcb *t)
+static inline bool __enough_rpc_stack(struct tcb *t)
 {
 	/* get top of call stack */
 	vm_t top = rpc_position(t);
@@ -410,7 +410,6 @@ SYSCALL_DEFINE5(ipc_kick)(struct tcb *t, sys_arg_t pid,
                           sys_arg_t d0, sys_arg_t d1, sys_arg_t d2,
                           sys_arg_t d3)
 {
-	enable_irqs();
 	do_ipc(t, pid, d0, d1, d2, d3, IPC_FORWARD | IPC_TAIL);
 }
 
