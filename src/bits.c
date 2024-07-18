@@ -17,7 +17,13 @@ __weak uint16_t __bswap16(const uint16_t u)
 	return (u & 0xff00) >> 8 | (u & 0x00ff) << 8;
 }
 
-uint16_t __bswaphi2(uint16_t u)
+/**
+ * Wrapper for gcc builtins, if arch doesn't have it.
+ *
+ * @param u Value to byteswap.
+ * @return \p u byteswapped.
+ */
+__used uint16_t __bswaphi2(uint16_t u)
 {
 	return __bswap16(u);
 }
@@ -29,7 +35,13 @@ __weak uint32_t __bswap32(const uint32_t u)
 	       (u & 0x0000ff00) << 8 | (u & 0x000000ff) << 24;
 }
 
-uint32_t __bswapsi2(uint32_t u)
+/**
+ * Wrapper for gcc builtins, if arch doesn't have it.
+ *
+ * @param u Value to byteswap.
+ * @return \p u byteswapped.
+ */
+__used uint32_t __bswapsi2(uint32_t u)
 {
 	return __bswap32(u);
 }
@@ -47,7 +59,13 @@ __weak uint64_t __bswap64(const uint64_t u)
 	        (u & 0x00000000000000ffULL) << 56;
 }
 
-uint64_t __bswapdi2(uint64_t u)
+/**
+ * Wrapper for gcc builtins, if arch doesn't have it.
+ *
+ * @param u Value to byteswap.
+ * @return \p u byteswapped.
+ */
+__used uint64_t __bswapdi2(uint64_t u)
 {
 	return __bswap64(u);
 }

@@ -62,6 +62,7 @@ void handle_syscall(sys_arg_t syscall, sys_arg_t a, sys_arg_t b,
 	case SYS_FREE_TIMER: sys_free_timer(t, a, b, c, d, e); break;
 	case SYS_IPC_REQ: sys_ipc_req(t, a, b, c, d, e); break;
 	case SYS_IPC_FWD: sys_ipc_fwd(t, a, b, c, d, e); break;
+	case SYS_IPC_TAIL: sys_ipc_tail(t, a, b, c, d, e); break;
 	case SYS_IPC_KICK: sys_ipc_kick(t, a, b, c, d, e); break;
 	case SYS_IPC_RESP: sys_ipc_resp(t, a, b, c, d, e); break;
 	case SYS_IPC_GHOST: sys_ipc_ghost(t, a, b, c, d, e); break;

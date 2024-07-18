@@ -165,6 +165,12 @@ static inline id_t sys_req_abs_timer(uint64_t ticks)
 #define sys_ipc_fwd3(pid, d0, d1, d2) syscall4(SYS_IPC_FWD, pid, d0, d1, d2)
 #define sys_ipc_fwd4(pid, d0, d1, d2, d3) syscall5(SYS_IPC_FWD, pid, d0, d1, d2, d3)
 
+#define sys_ipc_tail0(pid) syscall1(SYS_IPC_TAIL, pid)
+#define sys_ipc_tail1(pid, d0) syscall2(SYS_IPC_TAIL, pid, d0)
+#define sys_ipc_tail2(pid, d0, d1) syscall3(SYS_IPC_TAIL, pid, d0, d1)
+#define sys_ipc_tail3(pid, d0, d1, d2) syscall4(SYS_IPC_TAIL, pid, d0, d1, d2)
+#define sys_ipc_tail4(pid, d0, d1, d2, d3) syscall5(SYS_IPC_TAIL, pid, d0, d1, d2, d3)
+
 #define sys_ipc_kick0(pid) syscall1(SYS_IPC_KICK, pid)
 #define sys_ipc_kick1(pid, d0) syscall2(SYS_IPC_KICK, pid, d0)
 #define sys_ipc_kick2(pid, d0, d1) syscall3(SYS_IPC_KICK, pid, d0, d1)

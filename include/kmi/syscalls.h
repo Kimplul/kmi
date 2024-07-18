@@ -87,12 +87,16 @@ enum sys_code {
 	/** @name IPC. */
 	/** @{ */
 	/** Send IPC request as client. */
-	SYS_IPC_REQ,   /* IPC request to server */
+	SYS_IPC_REQ,
 
 	/** Forward IPC request from client. */
 	SYS_IPC_FWD,
 
-	/** Kick request handling to someone else. */
+	/** Tail call, i.e. 'do this for me and then return to whoever called
+	 * me" */
+	SYS_IPC_TAIL,
+
+	/** Kick request handling to someone else. Forwards AND does a tailcall. */
 	SYS_IPC_KICK,
 
 	/** IPC response from server. */

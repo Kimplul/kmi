@@ -45,8 +45,13 @@ struct stack_diff {
 };
 
 /** Enumerator for IPC kind. Used by do_ipc(). */
-enum ipc_kind {
-	IPC_REQ, IPC_FWD, IPC_KICK
+enum ipc_flags {
+	/** Reuse current rpc stack location. Effectively also means that the
+	 * caller gets a response from whoever is called instead of the current
+	 * process. */
+	IPC_TAIL = (1 << 0),
+	/** Don't update the effective ID. */
+	IPC_FORWARD = (1 << 1)
 };
 
 /**
@@ -76,14 +81,14 @@ static void finalize_rpc(struct tcb *t, struct tcb *r, vm_t s)
  *
  * @param t Thread to migrate.
  * @param a RPC arguments.
- * @param kind Kind of IPC we're doing. Essentially toggles kick boolean.
+ * @param flags Kind of IPC we're doing.
  * @return RPC stack difference that should be passed to finalize_rpc().
  */
 static vm_t enter_rpc(struct tcb *t, struct sys_ret a,
-                      enum ipc_kind kind)
+                      enum ipc_flags flags)
 {
 	/* reuse current rpc stack location if we're being kicked */
-	vm_t rpc_stack = (kind == IPC_KICK &&
+	vm_t rpc_stack = (is_set(flags, IPC_TAIL) &&
 	                  is_rpc(t)) ? t->rpc_stack : rpc_position(t);
 
 	struct call_ctx *ctx = (struct call_ctx *)(rpc_stack) - 1;
@@ -138,6 +143,7 @@ static bool __enough_rpc_stack(struct tcb *t)
 
 /**
  * Actually run notification handler, no ifs or buts.
+ * Always enables irqs.
  *
  * @param t Current thread.
  * @param r Process where notification handler is.
@@ -167,20 +173,21 @@ static __noreturn void __run_notify(struct tcb *t, struct tcb *r)
 	 * ("pid 0"), and we are notifying the current thread */
 	vm_t s = enter_rpc(t,
 	                   SYS_RET5(0, t->tid, code, flags, t->eid),
-	                   IPC_REQ);
+	                   0);
 
 	finalize_rpc(t, r, s);
 
 	clear_bits(t->notify_flags, flags);
 
+	enable_irqs();
 	bkl_unlock();
 	ret_userspace_fast();
 	unreachable();
 }
 
-void notify(struct tcb *t, enum notify_flag flag)
+void notify(struct tcb *t, enum notify_flag flags)
 {
-	set_bits(t->notify_flags, flag);
+	set_bits(t->notify_flags, flags);
 
 	if (!t->notify_flags)
 		return;
@@ -217,6 +224,10 @@ void notify(struct tcb *t, enum notify_flag flag)
 /**
  * Jump back to process where rpc came from, assuming such a thing exists.
  * If we're queued for a notification, jump to it instead.
+
+ * Note that leave_rpc() doesn't enable irqs, as it might be used to
+ * cancel a halfway started rpc in do_ipc(), in which case we want to
+ * return back to the process with irqs in the same state as before.
  *
  * @param t Thread to do return migration on.
  * @param a Arguments to pass along.
@@ -279,12 +290,15 @@ static void leave_rpc(struct tcb *t, struct sys_ret a)
  * @param d1 IPC argument 1.
  * @param d2 IPC argument 2.
  * @param d3 IPC argument 3.
- * @param kind Which kind of IPC to perform.
+ * @param flags Which kind of IPC to perform.
  *
  * Returns \ref ERR_OOMEM if there isn't enough IPC stack left, \ref ERR_INVAL
  * if the the target process doesn't exist, \ref ERR_NOINIT if the target
  * process hasn't defined a callback. Otherwise \ref OK and whatever the target
  * process sends back.
+ *
+ * Enables irqs if the ipc is succesful, otherwise leaves them in the state they
+ * were when entering.
  *
  * @todo should all static functions have double underscores? I seem to be
  * inconsistent.
@@ -295,12 +309,12 @@ static void do_ipc(struct tcb *t,
                    sys_arg_t d1,
                    sys_arg_t d2,
                    sys_arg_t d3,
-                   enum ipc_kind kind)
+                   enum ipc_flags flags)
 {
 	if (unlikely(!__enough_rpc_stack(t)))
 		return_args1(t, ERR_OOMEM);
 
-	vm_t s = enter_rpc(t, SYS_RET6(t->eid, t->tid, d0, d1, d2, d3), kind);
+	vm_t s = enter_rpc(t, SYS_RET6(t->eid, t->tid, d0, d1, d2, d3), flags);
 
 	struct tcb *r = get_tcb(pid);
 	if (unlikely(!r || !is_proc(r))) {
@@ -318,13 +332,14 @@ static void do_ipc(struct tcb *t,
 		return;
 	}
 
-	if (kind != IPC_REQ)
+	if (!is_set(flags, IPC_FORWARD))
 		t->eid = t->pid;
 
 	finalize_rpc(t, r, s);
 	/* I tested out passing the return values as arguments to
 	 * ret_userspace_fast, but apparently that causes enough stack shuffling
 	 * to be slower overall. */
+	enable_irqs();
 	bkl_unlock();
 	ret_userspace_fast();
 }
@@ -337,13 +352,12 @@ static void do_ipc(struct tcb *t,
  * @param d1 IPC argument 1.
  * @param d2 IPC argument 2.
  * @param d3 IPC argument 3.
- * @return When succesful: OK, thread id of the caller and the arguments as-is.
+ * @return When succesful: OK, thread id of the handler and the arguments as-is.
  */
 SYSCALL_DEFINE5(ipc_req)(struct tcb *t, sys_arg_t pid,
                          sys_arg_t d0, sys_arg_t d1, sys_arg_t d2, sys_arg_t d3)
 {
-	enable_irqs();
-	do_ipc(t, pid, d0, d1, d2, d3, IPC_REQ);
+	do_ipc(t, pid, d0, d1, d2, d3, 0);
 }
 
 /**
@@ -355,13 +369,30 @@ SYSCALL_DEFINE5(ipc_req)(struct tcb *t, sys_arg_t pid,
  * @param d1 IPC argument 1.
  * @param d2 IPC argument 2.
  * @param d3 IPC argument 3.
- * @return When succesful: OK, thread id of the caller and the arguments as-is.
+ * @return When succesful: OK, thread id of the handler and the arguments as-is.
  */
 SYSCALL_DEFINE5(ipc_fwd)(struct tcb *t, sys_arg_t pid,
                          sys_arg_t d0, sys_arg_t d1, sys_arg_t d2, sys_arg_t d3)
 {
-	enable_irqs();
-	do_ipc(t, pid, d0, d1, d2, d3, IPC_FWD);
+	do_ipc(t, pid, d0, d1, d2, d3, IPC_FORWARD);
+}
+
+/**
+ * IPC tail call syscall handler.
+ *
+ * @param t Current tcb.
+ * @param pid Process to request RPC to.
+ * @param d0 IPC argument 0.
+ * @param d1 IPC argument 1.
+ * @param d2 IPC argument 2.
+ * @param d3 IPC argument 3.
+ * @return When succesful: OK, thread ID of the handler and the arguments as-is.
+ */
+SYSCALL_DEFINE5(ipc_tail)(struct tcb *t, sys_arg_t pid,
+                          sys_arg_t d0, sys_arg_t d1, sys_arg_t d2,
+                          sys_arg_t d3)
+{
+	do_ipc(t, pid, d0, d1, d2, d3, IPC_TAIL);
 }
 
 /**
@@ -373,14 +404,14 @@ SYSCALL_DEFINE5(ipc_fwd)(struct tcb *t, sys_arg_t pid,
  * @param d1 IPC argument 1.
  * @param d2 IPC argument 2.
  * @param d3 IPC argument 3.
- * @return When succesful: OK, thread id of the caller and the arguments as-is.
+ * @return When succesful: OK, thread id of the handler and the arguments as-is.
  */
 SYSCALL_DEFINE5(ipc_kick)(struct tcb *t, sys_arg_t pid,
                           sys_arg_t d0, sys_arg_t d1, sys_arg_t d2,
                           sys_arg_t d3)
 {
 	enable_irqs();
-	do_ipc(t, pid, d0, d1, d2, d3, IPC_KICK);
+	do_ipc(t, pid, d0, d1, d2, d3, IPC_FORWARD | IPC_TAIL);
 }
 
 /**
@@ -443,6 +474,5 @@ SYSCALL_DEFINE1(notify)(struct tcb *t, sys_arg_t tid){
 	/* set args, if notify swaps us out we pick them up the next time this
 	 * thread is scheduled */
 	set_args1(t, OK);
-	enable_irqs();
 	notify(r, NOTIFY_SIGNAL);
 }

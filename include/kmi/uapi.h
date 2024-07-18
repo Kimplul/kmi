@@ -513,9 +513,24 @@ SYSCALL_DECLARE5(ipc_req, pid, d0, d1, d2, d3);
 SYSCALL_DECLARE5(ipc_fwd, pid, d0, d1, d2, d3);
 
 /**
+ * Tail syscall.
+ *
+ * Requests that the current process doesn't get returned to in an rpc stack.
+ *
+ * @param t Current tcb.
+ * @param pid Tail target process.
+ * @param d0 First argument.
+ * @param d1 Second argument.
+ * @param d2 Third argument.
+ * @param d3 Fourth argument.
+ */
+SYSCALL_DECLARE5(ipc_tail, pid, d0, d1, d2, d3);
+
+/**
  * Kicking syscall.
- * Kicks the handling of an IPC req/fwd to someone else, jumping over the
- * current process at ipc_resp().
+ * Kicks the handling of an IPC  to someone else, jumping over the
+ * current process at ipc_resp(). Effectively does a forward and a tail at the
+ * same time.
  *
  * I'm imagining that this is useful in cases where an init process connects a
  * client to another server, and kicks the actual request handling to the
