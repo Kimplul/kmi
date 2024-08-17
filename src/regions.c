@@ -374,6 +374,9 @@ struct mem_region *find_first_region(struct mem_region_root *r)
 	/* get used region with smallest address, likely also close to the start
 	 * of the linked list */
 	struct mem_region *m = find_closest_used_region(r, 0);
+	if (!m)
+		return NULL;
+
 	while (m->prev) {
 		m = m->prev;
 	}

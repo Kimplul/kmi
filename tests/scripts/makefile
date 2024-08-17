@@ -32,7 +32,7 @@ include tests.mk
 
 .PHONY: check
 check: $(TESTS)
-	@for d in reports/* ; do				\
+	@cd reports; for d in * ; do				\
 		if [ ! -f "$$d/OK" ]; then			\
 			echo "BROKEN: $$d" ;			\
 		elif [ "$$(tail -n1 $$d/OK)" != "OK" ]; then	\

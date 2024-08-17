@@ -12,6 +12,7 @@
  */
 
 #include <kmi/sp_tree.h>
+#include <kmi/assert.h>
 
 /**
  * Basic BST left turn.
@@ -24,6 +25,8 @@ static void __sp_turn_left(struct sp_node *n)
 {
 	struct sp_node *l = sp_left(n);
 	struct sp_node *p = sp_paren(n);
+
+	assert(l);
 
 	sp_paren(l) = sp_paren(n);
 	sp_left(n) = sp_right(l);
@@ -52,6 +55,8 @@ static void __sp_turn_right(struct sp_node *n)
 {
 	struct sp_node *r = sp_right(n);
 	struct sp_node *p = sp_paren(n);
+
+	assert(r);
 
 	sp_paren(r) = sp_paren(n);
 	sp_right(n) = sp_left(r);
