@@ -9,15 +9,17 @@ START(pid, tid, d0, d1, d2, d3)
 	UNUSED(d2);
 	UNUSED(d3);
 
+	const long nallocs = 200000;
 	printf("allocating space for pointers...\n");
-	/* 12 MiB / 4K */
-	void **allocs = sys_req_mem(200 * sizeof(void *), VM_W | VM_R);
+	/* 128 MiB / 4K */
+	void **allocs = sys_req_mem(nallocs * sizeof(void *), VM_W | VM_R);
 	check(allocs, "initial allocation failed\n");
 
 	printf("allocating memory until we run out...\n");
 
 	long i = 0;
 	while (1) {
+		check(i < nallocs, "not enough pointers for malloc test\n");
 		char *p = sys_req_mem(1, VM_W | VM_R);
 		if (!p)
 			break;
