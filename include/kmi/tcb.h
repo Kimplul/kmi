@@ -36,7 +36,7 @@ struct tcb;
  * @param t Thread to check.
  * @return \c true if thread is in RPC, \c false otherwise.
  */
-#define is_rpc(t) (t->rid != t->pid)
+#define is_rpc(t) (!rpc_stack_empty(t->rpc_stack))
 
 /**
  * Get the effective process thread of current thread.

@@ -628,7 +628,7 @@ void mark_rpc_valid(struct tcb *t, vm_t bottom)
 	struct vmem *b = t->arch.rpc_leaf;
 	int bottom_idx = t->arch.rpc_idx;
 	int top_idx = (bottom - RPC_STACK_BASE) / BASE_PAGE_SIZE;
-	assert(bottom_idx < top_idx);
+	assert(bottom_idx <= top_idx);
 
 	while (top_idx != bottom_idx) {
 		pm_t *pte = (pm_t *)&b->leaf[bottom_idx];
