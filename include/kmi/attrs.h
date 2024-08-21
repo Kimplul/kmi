@@ -50,6 +50,8 @@
 /** Don't inline function. */
 #define __noinline __attribute__((noinline))
 
+#define __inline inline __attribute__((always_inline))
+
 /** Function should not return. */
 #define __noreturn __attribute__((noreturn))
 

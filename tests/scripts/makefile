@@ -20,6 +20,7 @@ QEMU		:= qemu-system-$(ARCH) -machine virt -kernel ../kmi.bin \
 		   -monitor none \
 		   -nographic \
 		   -no-reboot \
+		   -m 128M \
 		   -initrd
 
 KMI		:= ../kmi.bin

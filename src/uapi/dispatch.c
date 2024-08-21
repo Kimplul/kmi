@@ -93,5 +93,6 @@ void handle_syscall(sys_arg_t syscall, sys_arg_t a, sys_arg_t b,
 
 	if (check_canary(t)) {
 		bug("Syscall %zu overwrote stack canary\n", syscall);
+		set_canary(t);
 	}
 }

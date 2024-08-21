@@ -111,7 +111,9 @@ static pm_t __zero_if(bool populate, pm_t cont, size_t size)
  */
 static size_t __get_set_size(struct mm_bucket *bucket)
 {
-	return sizeof(bucket->bmap[0]) + bucket->bits / 8;
+	return align_up(sizeof(bucket->bmap[0])
+	                + (bucket->bits + 1) / sizeof(void *),
+	                sizeof(void *));
 }
 
 /**
@@ -149,7 +151,7 @@ static size_t __get_set_index(struct mm_bucket *bucket, struct mm_bmap *bmap)
 static void __attach_set(struct mm_bucket *bucket, struct mm_bmap *bmap)
 {
 	/* already attached */
-	if (bmap->next)
+	if (bmap->next || bucket->head == bmap)
 		return;
 
 	bmap->next = bucket->head;
@@ -174,6 +176,9 @@ static void __detach_set(struct mm_bucket *bucket, struct mm_bmap *bmap)
 
 	if (bmap->prev)
 		bmap->prev->next = bmap->next;
+
+	bmap->next = NULL;
+	bmap->prev = NULL;
 }
 
 /**
@@ -271,6 +276,8 @@ static pm_t __alloc_page(enum mm_order order)
 		__get_bit(bucket, a, &set, &bit);
 
 		bmap = __get_set(bucket, set);
+		bmap->next = NULL;
+		bmap->prev = NULL;
 		bmap->used = 0;
 		bitmap_clear_all(bmap->bits, bmap->size);
 		__attach_set(bucket, bmap);
@@ -376,7 +383,9 @@ static pm_t __maybe_populate_bucket(size_t n, pm_t cont, enum mm_order order,
 		bucket->head = NULL;
 	}
 
-	size_t set_size = sizeof(struct mm_bmap) + bits / 8;
+	size_t set_size = align_up(sizeof(struct mm_bmap)
+	                           + (bits + 1) / sizeof(void *),
+	                           sizeof(void *));
 
 	cont += sizeof(struct mm_bucket);
 

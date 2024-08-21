@@ -85,7 +85,7 @@ static inline void finalize_rpc(struct tcb *t, struct tcb *r, vm_t s)
  * @return RPC stack difference that should be passed to finalize_rpc().
  */
 static inline vm_t enter_rpc(struct tcb *t, struct sys_ret a,
-                      enum ipc_flags flags)
+                             enum ipc_flags flags)
 {
 	/* reuse current rpc stack location if we're being kicked */
 	vm_t rpc_stack = (is_set(flags, IPC_TAIL) &&

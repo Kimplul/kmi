@@ -21,7 +21,7 @@
  *
  * @param n Node to turn left.
  */
-static void __sp_turn_left(struct sp_node *n)
+static __inline void __sp_turn_left(struct sp_node *n)
 {
 	struct sp_node *l = sp_left(n);
 	struct sp_node *p = sp_paren(n);
@@ -51,7 +51,7 @@ static void __sp_turn_left(struct sp_node *n)
  *
  * @param n Node to turn right.
  */
-static void __sp_turn_right(struct sp_node *n)
+static __inline void __sp_turn_right(struct sp_node *n)
 {
 	struct sp_node *r = sp_right(n);
 	struct sp_node *p = sp_paren(n);
@@ -78,7 +78,7 @@ static void __sp_turn_right(struct sp_node *n)
  * @param n Node to calculate balance for.
  * @return Balance of node.
  */
-static int_fast16_t __sp_balance(struct sp_node *n)
+static __inline int_fast16_t __sp_balance(struct sp_node *n)
 {
 	int_fast16_t l = 0;
 	int_fast16_t r = 0;
@@ -98,7 +98,7 @@ static int_fast16_t __sp_balance(struct sp_node *n)
  * @param n Node to calculate highest hint for.
  * @return Highest hint.
  */
-static int_fast16_t __sp_max_hint(struct sp_node *n)
+static __inline int_fast16_t __sp_max_hint(struct sp_node *n)
 {
 	int_fast16_t l = 0;
 	int_fast16_t r = 0;
@@ -121,7 +121,7 @@ static int_fast16_t __sp_max_hint(struct sp_node *n)
  * @param root Root of tree.
  * @param n Node to start balancing operation from.
  */
-static void __sp_update(struct sp_node **root, struct sp_node *n)
+static __inline void __sp_update(struct sp_node **root, struct sp_node *n)
 {
 	while (n) {
 		int b = __sp_balance(n);
@@ -175,7 +175,7 @@ void sp_insert(struct sp_node **root, struct sp_node *p, struct sp_node *n,
  * @param n Node to replace.
  * @param r Node to replace with.
  */
-static void __sp_replace_right(struct sp_node *n, struct sp_node *r)
+static __inline void __sp_replace_right(struct sp_node *n, struct sp_node *r)
 {
 	struct sp_node *p = sp_paren(n);
 	struct sp_node *rp = sp_paren(r);
@@ -212,7 +212,7 @@ static void __sp_replace_right(struct sp_node *n, struct sp_node *r)
  * @param n Node to replace.
  * @param l Node to replace with.
  */
-static void __sp_replace_left(struct sp_node *n, struct sp_node *l)
+static __inline void __sp_replace_left(struct sp_node *n, struct sp_node *l)
 {
 	struct sp_node *p = sp_paren(n);
 	struct sp_node *lp = sp_paren(l);

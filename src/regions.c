@@ -85,8 +85,9 @@ static void free_mem_node(struct mem_region *m)
  * @param m Free memory region to insert.
  * @return \c m.
  */
-static struct mem_region *__insert_free_region(struct mem_region_root *r,
-                                               struct mem_region *m)
+static __inline struct mem_region *__insert_free_region(
+	struct mem_region_root *r,
+	struct mem_region *m)
 {
 	/* this could be simplified by using my gsptrees in kmx, but at least
 	 * this ensures 'inlining' of the condition checking so I'll let it stay
