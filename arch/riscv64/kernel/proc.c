@@ -58,18 +58,18 @@ void run_init(struct tcb *t, vm_t fdt, vm_t initrd)
 	unreachable();
 }
 
-void set_args(struct tcb *t, size_t n, struct sys_ret a)
+void set_ret(struct tcb *t, size_t n, struct sys_ret a)
 {
 	struct riscv_regs *r = (struct riscv_regs *)(t->regs) - 1;
 	if (n >= 1) r->a0 = a.s;
-	if (n >= 2) r->a1 = a.a0;
-	if (n >= 3) r->a2 = a.a1;
-	if (n >= 4) r->a3 = a.a2;
-	if (n >= 5) r->a4 = a.a3;
-	if (n >= 6) r->a5 = a.a4;
+	if (n >= 2) r->a1 = a.id;
+	if (n >= 3) r->a2 = a.a0;
+	if (n >= 4) r->a3 = a.a1;
+	if (n >= 5) r->a4 = a.a2;
+	if (n >= 6) r->a5 = a.a3;
 }
 
-struct sys_ret get_args(struct tcb *t)
+struct sys_ret get_ret(struct tcb *t)
 {
 	struct riscv_regs *r = (struct riscv_regs *)(t->regs) - 1;
 	return SYS_RET6(r->a0, r->a1, r->a2, r->a3, r->a4, r->a5);

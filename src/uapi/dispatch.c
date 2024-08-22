@@ -23,7 +23,7 @@
 SYSCALL_DEFINE0(noop)(struct tcb *t)
 {
 	info("sys_noop\n");
-	set_args1(t, OK);
+	return_args1(t, OK);
 }
 
 /**
@@ -37,7 +37,7 @@ SYSCALL_DEFINE0(noop)(struct tcb *t)
 SYSCALL_DEFINE1(putch)(struct tcb *t, sys_arg_t a)
 {
 	dbg("%c", (char)a);
-	set_args1(t, OK);
+	return_args1(t, OK);
 }
 
 void handle_syscall(sys_arg_t syscall, sys_arg_t a, sys_arg_t b,

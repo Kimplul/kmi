@@ -44,7 +44,7 @@ void unorphanize(struct tcb *t)
 	alloc_stack(t);
 
 	assert(init->callback);
-	set_args4(t, 0, t->tid, SYS_USER_ORPHANED, old_rid);
+	set_ret4(t, 0, t->tid, SYS_USER_ORPHANED, old_rid);
 	set_return(t, init->callback);
 	t->callback = init->callback;
 

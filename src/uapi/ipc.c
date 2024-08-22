@@ -97,7 +97,7 @@ static inline vm_t enter_rpc(struct tcb *t, struct sys_ret a,
 
 	/* try to get rid of args as fast as possible to free up registers for
 	 * later use */
-	set_args(t, 6, a);
+	set_ret(t, 6, a);
 
 	ctx->exec = t->exec;
 	ctx->pid = t->pid;
@@ -239,7 +239,7 @@ static void leave_rpc(struct tcb *t, struct sys_ret a)
 
 	t->regs = ctx->regs;
 	/* again, get rid of args as fast as possible */
-	set_args(t, 6, a);
+	set_ret(t, 6, a);
 
 	struct tcb *r = get_tcb(ctx->pid);
 	while (!r || !is_proc(r) || zombie(r)) {
@@ -254,7 +254,10 @@ static void leave_rpc(struct tcb *t, struct sys_ret a)
 		ctx = (struct call_ctx *)(rpc_stack) - 1;
 
 		r = get_tcb(ctx->pid);
-		set_args1(t, ERR_NF);
+		/* equivalent to return_args1 but without returning so we can
+		 * handle other cases in the loop. */
+		/** @todo is set_args useful? */
+		set_ret2(t, 0, ERR_NF);
 	}
 
 	if (orphan(t) && !is_rpc(t))
@@ -450,7 +453,7 @@ SYSCALL_DEFINE0(ipc_ghost)(struct tcb *t)
 		return_args1(t, ERR_MISC);
 
 	enable_irqs();
-	leave_rpc(t, get_args(t));
+	leave_rpc(t, get_ret(t));
 }
 
 /**

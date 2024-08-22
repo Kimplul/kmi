@@ -43,7 +43,7 @@ SYSCALL_DEFINE5(create)(struct tcb *t, sys_arg_t func,
 	 * function? */
 	alloc_stack(c);
 
-	set_args5(c, c->tid, d0, d1, d2, d3);
+	set_ret5(c, c->tid, d0, d1, d2, d3);
 	set_return(c, func);
 
 	c->notify_id = t->notify_id;
@@ -227,7 +227,7 @@ static void swap(struct tcb *t, struct tcb *s)
 		notify(s, 0);
 
 	/* no notifications, so get register state for new thread */
-	return_args(s, get_args(s));
+	set_ret(s, 6, get_ret(s));
 }
 
 /**

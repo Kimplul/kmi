@@ -341,6 +341,9 @@ struct sys_ret {
 	/** Status. */
 	sys_arg_t s;
 
+	/** Who responded */
+	sys_arg_t id;
+
 	/** First argument. */
 	sys_arg_t a0;
 
@@ -352,9 +355,6 @@ struct sys_ret {
 
 	/** Fourth argument. */
 	sys_arg_t a3;
-
-	/** Fifth argument. */
-	sys_arg_t a4;
 };
 
 #endif /* KMI_SYSCALLS_H */

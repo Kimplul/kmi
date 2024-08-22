@@ -20,14 +20,14 @@
 #include <kmi/uapi.h>
 
 /**
- * Attach argument data to thread.
+ * Attach argument data to thread, to be returned to userspace.
  *
  * @param t Thread that will run after return.
  * @param n How many of the arguments to attach. Might micro-optimize some
  * stuff.
  * @param a Arguments to attach.
  */
-void set_args(struct tcb *t, size_t n, struct sys_ret a);
+void set_ret(struct tcb *t, size_t n, struct sys_ret a);
 
 /**
  * Get argument data attached to thread.
@@ -38,7 +38,7 @@ void set_args(struct tcb *t, size_t n, struct sys_ret a);
  * @param t Thread to read data from.
  * @return Args associated with thread.
  */
-struct sys_ret get_args(struct tcb *t);
+struct sys_ret get_ret(struct tcb *t);
 
 /** \todo Should these be in arch/tcb.h or something? */
 
