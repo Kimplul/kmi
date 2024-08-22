@@ -31,6 +31,10 @@ struct call_ctx {
 
 	/** Current process ID. */
 	id_t pid;
+
+	/** If this frame was due to a notification, which means leaving the
+	 * frame must restore registers as they were */
+	bool notify;
 };
 
 /**
@@ -51,7 +55,8 @@ enum ipc_flags {
 	 * process. */
 	IPC_TAIL = (1 << 0),
 	/** Don't update the effective ID. */
-	IPC_FORWARD = (1 << 1)
+	IPC_FORWARD = (1 << 1),
+	IPC_NOTIFY = (1 << 2),
 };
 
 /**
@@ -102,6 +107,7 @@ static inline vm_t enter_rpc(struct tcb *t, struct sys_ret a,
 	ctx->exec = t->exec;
 	ctx->pid = t->pid;
 	ctx->eid = t->eid;
+	ctx->notify = flags & IPC_NOTIFY;
 	ctx->rpc_stack = rpc_stack;
 
 	/** @todo if we run out of rpc_stack space we should just stop, likely
@@ -173,7 +179,7 @@ static __noreturn void __run_notify(struct tcb *t, struct tcb *r)
 	 * ("pid 0"), and we are notifying the current thread */
 	vm_t s = enter_rpc(t,
 	                   SYS_RET5(0, t->tid, code, flags, t->eid),
-	                   0);
+	                   IPC_NOTIFY);
 
 	finalize_rpc(t, r, s);
 
@@ -239,7 +245,8 @@ static void leave_rpc(struct tcb *t, struct sys_ret a)
 
 	t->regs = ctx->regs;
 	/* again, get rid of args as fast as possible */
-	set_ret(t, 6, a);
+	if (!ctx->notify)
+		set_ret(t, 6, a);
 
 	struct tcb *r = get_tcb(ctx->pid);
 	while (!r || !is_proc(r) || zombie(r)) {
@@ -252,12 +259,13 @@ static void leave_rpc(struct tcb *t, struct sys_ret a)
 
 		rpc_stack = ctx->rpc_stack + BASE_PAGE_SIZE;
 		ctx = (struct call_ctx *)(rpc_stack) - 1;
+		t->regs = ctx->regs;
 
 		r = get_tcb(ctx->pid);
 		/* equivalent to return_args1 but without returning so we can
 		 * handle other cases in the loop. */
-		/** @todo is set_args useful? */
-		set_ret2(t, 0, ERR_NF);
+		if (!ctx->notify)
+			set_args1(t, ERR_NF);
 	}
 
 	if (orphan(t) && !is_rpc(t))
@@ -442,21 +450,6 @@ SYSCALL_DEFINE4(ipc_resp)(struct tcb *t, sys_arg_t d0, sys_arg_t d1,
 }
 
 /**
- * Ghost return, resetting register state.
- *
- * @param t Current tcb.
- * @return The previous registers of thread.
- */
-SYSCALL_DEFINE0(ipc_ghost)(struct tcb *t)
-{
-	if (unlikely(!is_rpc(t)))
-		return_args1(t, ERR_MISC);
-
-	enable_irqs();
-	leave_rpc(t, get_ret(t));
-}
-
-/**
  * Notify syscall handler.
  *
  * \todo Implement.
@@ -465,7 +458,7 @@ SYSCALL_DEFINE0(ipc_ghost)(struct tcb *t)
  * @param tid Thread ID to notify.
  * @return \ref OK and 0.
  */
-SYSCALL_DEFINE1(notify)(struct tcb *t, sys_arg_t tid){
+SYSCALL_DEFINE1(ipc_notify)(struct tcb *t, sys_arg_t tid){
 	if (t->tid != tid && !has_cap(t->caps, CAP_NOTIFY))
 		return_args1(t, ERR_PERM);
 

@@ -115,7 +115,7 @@ struct tcb {
 	/** Memory mapping data. Only relevant in root thread. */
 	struct uvmem uvmem;
 
-	/** Address of callback function in servers. */
+	/** Address of callback function. */
 	vm_t callback;
 
 	/** Address of this thread's stack base. */

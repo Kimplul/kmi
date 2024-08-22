@@ -177,27 +177,45 @@ static inline id_t sys_req_abs_timer(uint64_t ticks)
 #define sys_ipc_kick3(pid, d0, d1, d2) syscall4(SYS_IPC_KICK, pid, d0, d1, d2)
 #define sys_ipc_kick4(pid, d0, d1, d2, d3) syscall5(SYS_IPC_KICK, pid, d0, d1, d2, d3)
 
-#define sys_ipc_resp0() syscall0(SYS_IPC_RESP)
-#define sys_ipc_resp1(d0) syscall1(SYS_IPC_RESP, d0)
-#define sys_ipc_resp2(d0, d1) syscall2(SYS_IPC_RESP, d0, d1)
-#define sys_ipc_resp3(d0, d1, d2) syscall3(SYS_IPC_RESP, d0, d1, d2)
-#define sys_ipc_resp4(d0, d1, d2, d3) syscall4(SYS_IPC_RESP, d0, d1, d2, d3)
-
-#define sys_ipc_ghost0() syscall1(SYS_IPC_GHOST)
-#define sys_ipc_ghost1(d0) syscall2(SYS_IPC_GHOST, d0)
-#define sys_ipc_ghost2(d0, d1) syscall3(SYS_IPC_GHOST, d0, d1)
-#define sys_ipc_ghost3(d0, d1, d2) syscall4(SYS_IPC_GHOST, d0, d1, d2)
-#define sys_ipc_ghost4(d0, d1, d2, d3) syscall5(SYS_IPC_GHOST, d0, d1, d2, d3)
-
 static inline enum sys_status sys_set_handler(id_t tid, id_t pid)
 {
 	struct sys_ret r = syscall2(SYS_SET_HANDLER, tid, pid);
 	return r.s;
 }
 
-static inline enum sys_status sys_notify(id_t tid)
+static inline enum sys_status sys_ipc_notify(id_t tid)
 {
-	struct sys_ret r = syscall1(SYS_NOTIFY, tid);
+	struct sys_ret r = syscall1(SYS_IPC_NOTIFY, tid);
+	return r.s;
+}
+
+static inline enum sys_status sys_ipc_resp0()
+{
+	struct sys_ret r = syscall0(SYS_IPC_RESP);
+	return r.s;
+}
+
+static inline enum sys_status sys_ipc_resp1(sys_arg_t a)
+{
+	struct sys_ret r = syscall1(SYS_IPC_RESP, a);
+	return r.s;
+}
+
+static inline enum sys_status sys_ipc_resp2(sys_arg_t a, sys_arg_t b)
+{
+	struct sys_ret r = syscall2(SYS_IPC_RESP, a, b);
+	return r.s;
+}
+
+static inline enum sys_status sys_ipc_resp3(sys_arg_t a, sys_arg_t b, sys_arg_t c)
+{
+	struct sys_ret r = syscall3(SYS_IPC_RESP, a, b, c);
+	return r.s;
+}
+
+static inline enum sys_status sys_ipc_resp4(sys_arg_t a, sys_arg_t b, sys_arg_t c, sys_arg_t d)
+{
+	struct sys_ret r = syscall4(SYS_IPC_RESP, a, b, c, d);
 	return r.s;
 }
 
@@ -314,11 +332,11 @@ static inline enum sys_status sys_exit()
 int printf(const char *fmt, ...) __printf;
 
 #define error(x, ...)\
-	printf("ERROR: " x # __VA_ARGS__)
+	printf("ERROR: " x, ## __VA_ARGS__)
 
 #define check(x, y, ...)\
 	if (!(x)) {\
-		error(y #__VA_ARGS__);\
+		error(y, ##__VA_ARGS__);\
 		sys_poweroff(SYS_SHUTDOWN);\
 	}
 

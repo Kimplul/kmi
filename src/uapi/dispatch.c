@@ -65,9 +65,8 @@ void handle_syscall(sys_arg_t syscall, sys_arg_t a, sys_arg_t b,
 	case SYS_IPC_TAIL: sys_ipc_tail(t, a, b, c, d, e); break;
 	case SYS_IPC_KICK: sys_ipc_kick(t, a, b, c, d, e); break;
 	case SYS_IPC_RESP: sys_ipc_resp(t, a, b, c, d, e); break;
-	case SYS_IPC_GHOST: sys_ipc_ghost(t, a, b, c, d, e); break;
+	case SYS_IPC_NOTIFY: sys_ipc_notify(t, a, b, c, d, e); break;
 	case SYS_SET_HANDLER: sys_set_handler(t, a, b, c, d, e); break;
-	case SYS_NOTIFY: sys_notify(t, a, b, c, d, e); break;
 	case SYS_CREATE: sys_create(t, a, b, c, d, e); break;
 	case SYS_FORK: sys_fork(t, a, b, c, d, e); break;
 	case SYS_EXEC: sys_exec(t, a, b, c, d, e); break;

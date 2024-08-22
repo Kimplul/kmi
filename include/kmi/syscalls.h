@@ -102,11 +102,8 @@ enum sys_code {
 	/** IPC response from server. */
 	SYS_IPC_RESP,
 
-	/** IPC return without visible side effects. */
-	SYS_IPC_GHOST,
-
 	/** Notify thread, essentially interrupt or signal. */
-	SYS_NOTIFY,
+	SYS_IPC_NOTIFY,
 	/** @} */
 
 	/** @name Process management. */
@@ -191,7 +188,7 @@ enum sys_user {
 
 /** Which notifications have arrived. */
 enum notify_flag {
-	/** A signal (\ref sys_notify()). */
+	/** A signal (\ref sys_ipc_notify()). */
 	NOTIFY_SIGNAL = (1 << 0),
 
 	/** A timer has expired. */

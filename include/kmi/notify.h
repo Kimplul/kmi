@@ -14,8 +14,8 @@
 #include <kmi/tcb.h>
 
 /**
- * Try to send a notification to a thread. Sets up a new rpc call, should be
- * returned from with \ref ipc_ghost() to restore register state.
+ * Try to send a notification to a thread. Sets up a new rpc call and sets
+ * notify flag of the frame to true.
  *
  * If the thread is idle, immediately swap to it.
  *

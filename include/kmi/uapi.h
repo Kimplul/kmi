@@ -552,7 +552,13 @@ SYSCALL_DECLARE5(ipc_tail, pid, d0, d1, d2, d3);
 SYSCALL_DECLARE5(ipc_kick, pid, d0, d1, d2, d3);
 
 /**
- * Response syscall.
+ * Response syscall. If the current rpc frame is a notification frame, the
+ * arguments will be ignored, turned out to be easier to implement than try to
+ * enforce an ipc_ghost(), especially in cases where the root process has
+ * already been killed. Generally this shouldn't be an issue, as the
+ * notification handler is always aware of when it's being called to handle a
+ * notification, and can tailor its ipc_resp() to return zero arguments or
+ * whatever.
  *
  * @param t Current tcb.
  * @param d0 First response argument.
@@ -566,22 +572,6 @@ SYSCALL_DECLARE5(ipc_kick, pid, d0, d1, d2, d3);
 SYSCALL_DECLARE4(ipc_resp, d0, d1, d2, d3);
 
 /**
- * Returns to caller but without changing any visible state. Primarily used when
- * returning from interrupt handlers, like notifications, timers or external
- * devices.
- *
- * @param t Current tcb.
- * @param a Unused.
- * @param b Unused.
- * @param c Unused.
- * @param d Unused.
- * @param e Unused.
- *
- * Return OK.
- */
-SYSCALL_DECLARE0(ipc_ghost);
-
-/**
  * Notify thread syscall.
  *
  * @param t Current tcb.
@@ -593,7 +583,7 @@ SYSCALL_DECLARE0(ipc_ghost);
  *
  * Returns \ref OK and 0.
  */
-SYSCALL_DECLARE1(notify, tid);
+SYSCALL_DECLARE1(ipc_notify, tid);
 /** @} */
 
 /** @name Process handling syscalls. */
