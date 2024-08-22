@@ -57,6 +57,10 @@ limited by the NR_CPUS macro, so it might be a good idea to export as a CONF_*
 + The node subsystem might benefit from larger-than-base-page sizes, for example
   the RISC-V V extension allows up to 262 144 bytes of register space (though it
   seems unlikely that anyone actually uses that many but still)
++ The tests can probably be made a bit more generic, for example we always want
+  to check for any BUG messages and fail if they are found. Also, most tests
+  just check if the last message is OK, and we only really need more complex
+  checking if we need to calculate like memory leaks etc.
 
 !!! FUTURE:
 + Cache locality?
