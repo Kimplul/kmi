@@ -9,7 +9,6 @@ START(pid, tid, d0, d1, d2, d3)
 	UNUSED(d2);
 	UNUSED(d3);
 
-	/** @todo fork until we run out of memory? */
 	check(pid == 0, "illegal pid for init\n");
 	id_t our_id = 0;
 	printf("forking\n");

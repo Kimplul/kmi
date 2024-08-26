@@ -142,7 +142,6 @@ __noreturn void core_bringup(long hartid)
 	alloc_stack(t);
 	/* init is special in that all threads jump to the entrypoint of the
 	 * program */
-	t->callback = init->callback;
 	t->exec = init->exec;
 	t->cpu_id = cpuid;
 	/** @todo this is pretty hacky, should really be a separate function? */

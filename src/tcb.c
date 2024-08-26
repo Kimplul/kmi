@@ -149,6 +149,7 @@ struct tcb *create_thread(struct tcb *p)
 		 * structure, this works on riscv but in the event that other
 		 * systems don't we can easily turn this into a clone_uvmem. */
 		t->proc.vmem = p->proc.vmem;
+		t->callback = p->callback;
 	}
 	else {
 		if (!(t->proc.vmem = create_vmem())) {

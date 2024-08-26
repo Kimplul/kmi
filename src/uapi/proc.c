@@ -42,6 +42,7 @@ SYSCALL_DEFINE5(create)(struct tcb *t, sys_arg_t func,
 	 * core_bringup() is doing, might separate this out into its own
 	 * function? */
 	alloc_stack(c);
+	set_thread(c);
 
 	set_ret5(c, c->tid, d0, d1, d2, d3);
 	set_return(c, func);
