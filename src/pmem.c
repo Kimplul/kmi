@@ -277,6 +277,10 @@ static pm_t __alloc_page(enum mm_order order)
 		__get_bit(bucket, a, &set, &bit);
 
 		bmap = __get_set(bucket, set);
+		/* hmm, I might be running into a compiler bug here. Adding this
+		 * assert makes my error go away, weird. */
+		assert(bmap->size <= order_width(order + 1));
+
 		bmap->next = NULL;
 		bmap->prev = NULL;
 		bmap->used = 0;
