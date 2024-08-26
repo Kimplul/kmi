@@ -23,12 +23,10 @@ do
 	echo "${NAME}_OBJS += ${obj}"				>> tests.mk
 	echo "${dep}:"						>> tests.mk
 	echo "-include ${dep}"					>> tests.mk
-	echo "${obj}: $NAME/${s}"				>> tests.mk
+	echo "${obj}: $NAME/${s} \$(COMMON)"			>> tests.mk
 	echo "	\$(COMPILE_TEST) -c $NAME/${s} -o ${obj}"	>> tests.mk
 done
 
 echo "build/${NAME}/$PROG: \$(${NAME}_OBJS) \$(COMMON)"	>> tests.mk
 echo "	\$(COMPILE_TEST) \$(${NAME}_OBJS) \$(COMMON) \
 		-o build/${NAME}/$PROG"	>> tests.mk
-
-echo "include ${NAME}/check.mk" >> tests.mk

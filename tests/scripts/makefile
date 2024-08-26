@@ -12,7 +12,8 @@ COMPILER	!= [ "$(LLVM)" != "0" ] \
 OBFLAGS		:= -ffreestanding -nostdlib -std=c17 -g
 INCLUDEFLAGS	:= -I ../include -I.
 WARNFLAGS	:= -Wall -Wextra
-COMPILE_TEST	:= $(COMPILER) $(WARNFLAGS) $(INCLUDEFLAGS) $(OBFLAGS)
+DEPFLAGS	= -MT $@ -MMD -MP -MF $@.d
+COMPILE_TEST	= $(COMPILER) $(WARNFLAGS) $(INCLUDEFLAGS) $(DEPFLAGS) $(OBFLAGS)
 
 GEN_INITRD	:= cpio -H newc -o >
 QEMU		:= qemu-system-$(ARCH) -machine virt -kernel ../kmi.bin \
@@ -26,7 +27,7 @@ QEMU		:= qemu-system-$(ARCH) -machine virt -kernel ../kmi.bin \
 KMI		:= ../kmi.bin
 COMMON		:= build/printf.o
 
-build/printf.o: common/printf.c
+build/printf.o: common/printf.c $(KMI)
 	$(COMPILE_TEST) -c common/printf.c -o build/printf.o
 
 include tests.mk
