@@ -466,8 +466,9 @@ vm_t alloc_region(struct mem_region_root *r, size_t size, size_t *actual_size,
 	return alloc_shared_region(r, size, actual_size, flags, 0);
 }
 
-vm_t alloc_fixed_region(struct mem_region_root *r, vm_t start, size_t size,
-                        size_t *actual_size, vmflags_t flags)
+vm_t alloc_shared_fixed_region(struct mem_region_root *r, vm_t start,
+                               size_t size, size_t *actual_size,
+                               vmflags_t flags, id_t pid)
 {
 	size_t asize = align_up(size, BASE_PAGE_SIZE);
 	if (actual_size)
@@ -499,7 +500,13 @@ vm_t alloc_fixed_region(struct mem_region_root *r, vm_t start, size_t size,
 		return 0;
 
 	/* actually start marking region used */
-	return __partition_region(r, m, pages, start - m->start, flags, 0);
+	return __partition_region(r, m, pages, start - m->start, flags, pid);
+}
+
+vm_t alloc_fixed_region(struct mem_region_root *r, vm_t start, size_t size,
+                        size_t *actual_size, vmflags_t flags)
+{
+	return alloc_shared_fixed_region(r, start, size, actual_size, flags, 0);
 }
 
 /**

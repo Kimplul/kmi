@@ -83,8 +83,8 @@ static stat_t __copy_shared_region(struct tcb *d, struct mem_region *m)
 	reference_thread(s);
 
 	size_t size = end - start;
-	vm_t v = alloc_fixed_region(&d->uvmem.region, start, size, &size,
-	                            m->flags);
+	vm_t v = alloc_shared_fixed_region(&d->uvmem.region, start, size, &size,
+	                                   m->flags, m->pid);
 	if (ERR_CODE(v))
 		return v;
 
@@ -155,9 +155,9 @@ static void __free_mapping(struct tcb *t, struct mem_region *m)
 	size_t size = end - start;
 
 	if (m->pid)
-		unmap_fixed_region(t->proc.vmem, start, size);
+		unmap_fixed_region(t->uvmem.vmem, start, size);
 	else
-		unmap_region(t->proc.vmem, start, size);
+		unmap_region(t->uvmem.vmem, start, size);
 }
 
 void clear_uvmem(struct tcb *t)
@@ -165,7 +165,7 @@ void clear_uvmem(struct tcb *t)
 	if (t->uvmem.owner != t->tid)
 		return;
 
-	struct mem_region *m = find_closest_used_region(&t->uvmem.region, 0);
+	struct mem_region *m = find_first_region(&t->uvmem.region);
 	for (; m; m = m->next) {
 		if (is_region_kept(m))
 			continue;
@@ -183,7 +183,7 @@ void purge_uvmem(struct tcb *t)
 	if (t->uvmem.owner != t->tid)
 		return;
 
-	struct mem_region *m = find_closest_used_region(&t->uvmem.region, 0);
+	struct mem_region *m = find_first_region(&t->uvmem.region);
 	for (; m; m = m->next) {
 		if (!is_set(m->flags, MR_USED))
 			continue;
@@ -266,11 +266,13 @@ vm_t alloc_fixed_uvmem(struct tcb *t, vm_t start, size_t size, vmflags_t flags)
 	return v;
 }
 
-vm_t map_fixed_uvmem(struct tcb *t, pm_t start, size_t size, vmflags_t flags)
+vm_t map_shared_fixed_uvmem(struct tcb *t, pm_t start, size_t size,
+                            vmflags_t flags)
 {
 	assert(is_aligned(start, BASE_PAGE_SIZE));
 
-	const vm_t v = alloc_region(&t->uvmem.region, size, &size, flags);
+	const vm_t v = alloc_shared_region(&t->uvmem.region, size, &size, flags,
+	                                   get_rproc(t)->tid);
 	if (ERR_CODE(v))
 		return v;
 

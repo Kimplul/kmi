@@ -309,8 +309,8 @@ stat_t map_vpage(struct vmem *branch, pm_t paddr, vm_t vaddr, vmflags_t flags,
 	}
 
 	size_t idx = vm_to_index(vaddr, top);
-	if (is_branch(
-		    branch->leaf[idx])) /* something has gone terribly wrong? */
+	if (is_branch(branch->leaf[idx]))
+		/* something has gone terribly wrong? */
 		__destroy_branch(branch->leaf[idx]);
 
 	branch->leaf[idx] =
@@ -442,6 +442,9 @@ struct vmem *init_vmem(void *fdt)
 	UNUSED(fdt);
 
 	struct vmem *b = create_vmem();
+	if (!b)
+		return NULL;
+
 	__populate_dmap(b);
 	/* update which memory branch to use */
 	use_vmem(b);
@@ -451,6 +454,9 @@ struct vmem *init_vmem(void *fdt)
 struct vmem *create_vmem()
 {
 	struct vmem *b = (struct vmem *)alloc_page(MM_KPAGE);
+	if (!b)
+		return NULL;
+
 	memset(b, 0, MM_KPAGE_SIZE);
 	populate_kvmem(b);
 	return b;
@@ -463,7 +469,17 @@ void use_vmem(struct vmem *b)
 
 void destroy_vmem(struct vmem *b)
 {
-	__destroy_branch(b);
+	if (!b)
+		return;
+
+	/* don't free kernel mapping as that one is guaranteed to be statically
+	 * allocated */
+	for (size_t i = 0; i < KERNEL_PAGE; ++i) {
+		if (is_branch(b->leaf[i]))
+			__destroy_branch((struct vmem *)pte_addr(b->leaf[i]));
+	}
+
+	free_page(MM_KPAGE, (pm_t)b);
 }
 
 /**
@@ -484,6 +500,7 @@ static void map_kernel(struct vmem *b)
 	if (addr < 0)
 		addr = addr - VM_KERNEL + get_load_addr();
 
+	/* branch */
 	b->leaf[KERNEL_PAGE] = (struct vmem *)to_pte((pm_t)addr, VM_V);
 }
 
@@ -546,7 +563,7 @@ size_t max_rpc_size()
 	return SZ_512K;
 }
 
-void setup_rpc_stack(struct tcb *t)
+stat_t setup_rpc_stack(struct tcb *t)
 {
 	/* by default rpc stack is marked inaccessible to generate segfaults on
 	 * access so as to ease stack usage tracking */
@@ -554,13 +571,23 @@ void setup_rpc_stack(struct tcb *t)
 
 	for (size_t i = 0; i < rpc_pages; ++i) {
 		pm_t page = alloc_page(BASE_PAGE);
-		map_vpage(t->rpc.vmem, page,
-		          RPC_STACK_BASE + BASE_PAGE_SIZE * i,
-		          flags, BASE_PAGE);
+		if (!page)
+			return ERR_OOMEM;
 
-		map_vpage(t->proc.vmem, page,
-		          RPC_STACK_BASE + BASE_PAGE_SIZE * i,
-		          flags, BASE_PAGE);
+		/* map both into rpc and proc spaces so we can write to the
+		 * current stack frame directly. Especially important when
+		 * returning from an rpc. Technically means that we could leak
+		 * memory if map_vpage() for proc.vmem allocates more and more
+		 * pages, but good enough for now. */
+		if (map_vpage(t->rpc.vmem, page,
+		              RPC_STACK_BASE + BASE_PAGE_SIZE * i,
+		              flags, BASE_PAGE))
+			return ERR_OOMEM;
+
+		if (map_vpage(t->proc.vmem, page,
+		              RPC_STACK_BASE + BASE_PAGE_SIZE * i,
+		              flags, BASE_PAGE))
+			return ERR_OOMEM;
 	}
 
 	/* we allocated a second order page for rpc stack usage */
@@ -573,14 +600,17 @@ void setup_rpc_stack(struct tcb *t)
 	                                              NULL);
 	/* we count downward in base pages */
 	t->arch.rpc_idx = rpc_pages;
+	return OK;
 }
 
 void destroy_rpc_stack(struct tcb *t)
 {
 	for (size_t i = 0; i < rpc_pages; ++i) {
 		pm_t page = 0; enum mm_order order = BASE_PAGE;
-		stat_vpage(t->rpc.vmem, RPC_STACK_BASE + BASE_PAGE_SIZE * i,
-		           &page, &order, NULL);
+		if (stat_vpage(t->rpc.vmem, RPC_STACK_BASE + BASE_PAGE_SIZE * i,
+		               &page, &order, NULL))
+			return;
+
 		free_page(order, page);
 	}
 }

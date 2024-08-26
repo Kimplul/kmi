@@ -129,7 +129,8 @@ void destroy_uvmem(struct tcb *r);
  * the start of \p base, not necessarily the start of the allocation.
  * If this should be freed, remember to align down to the base page size.
  */
-vm_t map_fixed_uvmem(struct tcb *r, pm_t base, size_t size, vmflags_t flags);
+vm_t map_shared_fixed_uvmem(struct tcb *r, pm_t base, size_t size,
+                            vmflags_t flags);
 
 /**
  * Clone process memory.

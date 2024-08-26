@@ -65,14 +65,14 @@ stat_t init_proc(void *fdt, vm_t *proc_fdt, vm_t *proc_initrd)
 	/** \todo start one thread per core, with special handling for init in
 	 * that each thread starts at the entry point of init? */
 
-	*proc_fdt = map_fixed_uvmem(t,
-	                            (pm_t)fdt, fdt_totalsize(fdt),
-	                            MR_SHARED | VM_V | VM_R | VM_U);
+	*proc_fdt = map_shared_fixed_uvmem(t,
+	                                   (pm_t)fdt, fdt_totalsize(fdt),
+	                                   VM_V | VM_R | VM_U);
 
 	pm_t initrd = (pm_t)__va(get_initrdbase(fdt));
-	*proc_initrd = map_fixed_uvmem(t,
-	                               initrd, get_initrdsize(fdt),
-	                               MR_SHARED | VM_V | VM_R | VM_U);
+	*proc_initrd = map_shared_fixed_uvmem(t,
+	                                      initrd, get_initrdsize(fdt),
+	                                      VM_V | VM_R | VM_U);
 
 	info("mapped fdt at %lx\n", *proc_fdt);
 	info("mapped initrd at %lx\n", *proc_initrd);

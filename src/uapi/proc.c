@@ -41,7 +41,11 @@ SYSCALL_DEFINE5(create)(struct tcb *t, sys_arg_t func,
 	/** @todo there's quite a bit of overlap between this and what
 	 * core_bringup() is doing, might separate this out into its own
 	 * function? */
-	alloc_stack(c);
+	if (alloc_stack(c)) {
+		destroy_thread(c);
+		return_args1(t, ERR_OOMEM);
+	}
+
 	set_thread(c);
 
 	set_ret5(c, c->tid, d0, d1, d2, d3);

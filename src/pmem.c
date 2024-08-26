@@ -235,6 +235,7 @@ static bool __free_page(enum mm_order order, pm_t addr)
 	struct mm_bmap *bmap = __get_set(bucket, set);
 	bmap->used--;
 
+	assert(bitmap_is_set(bmap->bits, bit));
 	bitmap_clear(bmap->bits, bit);
 	__attach_set(bucket, bmap);
 

@@ -32,7 +32,7 @@ void tcb_assign(struct tcb *t);
  *
  * @param t Thread whose RPC stack should be set up.
  */
-void setup_rpc_stack(struct tcb *t);
+stat_t setup_rpc_stack(struct tcb *t);
 
 /**
  * Free memory backing rpc stack.

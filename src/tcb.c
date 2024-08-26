@@ -106,6 +106,7 @@ stat_t alloc_stack(struct tcb *t)
 {
 	/* get parent process */
 	struct tcb *p = get_tcb(t->eid);
+	assert(p);
 
 	t->thread_stack = __setup_thread_stack(p, thread_stack_size());
 	if (!t->thread_stack)
@@ -171,16 +172,33 @@ struct tcb *create_thread(struct tcb *p)
 	t->eid = t->pid;
 	t->rid = p->rid;
 
+	/* hmm, the rest of this function is maybe a bit too difficult to follow
+	 * for my liking. Will have to think about ways to make the logic more
+	 * easy to follow */
 	if (!(t->rpc.vmem = create_vmem())) {
-		if (likely(p))
+		if (likely(p)) {
+			free_page(MM_O0, bottom);
 			return NULL;
+		}
 
 		destroy_vmem(t->proc.vmem);
 		free_page(MM_O0, bottom);
 		return NULL;
 	}
 
-	setup_rpc_stack(t);
+	if (setup_rpc_stack(t)) {
+		destroy_rpc_stack(t);
+		destroy_vmem(t->rpc.vmem);
+		if (likely(p)) {
+			free_page(MM_O0, bottom);
+			return NULL;
+		}
+
+		destroy_vmem(t->proc.vmem);
+		free_page(MM_O0, bottom);
+		return NULL;
+	}
+
 	reference_thread(p);
 
 	t->regs = (vm_t)t;
