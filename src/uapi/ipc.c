@@ -71,7 +71,7 @@ static inline void finalize_rpc(struct tcb *t, struct tcb *r, vm_t s)
 {
 	clone_uvmem(r->proc.vmem, t->rpc.vmem);
 	set_return(t, r->callback);
-	reference_proc(r);
+	reference_thread(r);
 	t->pid = r->rid;
 
 	/* make sure updates are visible when swapping to the new virtual memory */
@@ -446,6 +446,7 @@ SYSCALL_DEFINE4(ipc_resp)(struct tcb *t, sys_arg_t d0, sys_arg_t d1,
 	/* inform requester who answered (pid) in the case of the request being
 	 * kicked forward */
 	enable_irqs();
+	unreference_thread(get_cproc(t));
 	leave_rpc(t, SYS_RET6(OK, t->pid, d0, d1, d2, d3));
 }
 

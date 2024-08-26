@@ -71,7 +71,6 @@ void handle_syscall(sys_arg_t syscall, sys_arg_t a, sys_arg_t b,
 	case SYS_FORK: sys_fork(t, a, b, c, d, e); break;
 	case SYS_EXEC: sys_exec(t, a, b, c, d, e); break;
 	case SYS_SPAWN: sys_spawn(t, a, b, c, d, e); break;
-	case SYS_KILL: sys_kill(t, a, b, c, d, e); break;
 	case SYS_SWAP: sys_swap(t, a, b, c, d, e); break;
 	case SYS_SET_CONF: sys_set_conf(t, a, b, c, d, e); break;
 	case SYS_GET_CONF: sys_get_conf(t, a, b, c, d, e); break;

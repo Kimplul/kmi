@@ -249,12 +249,6 @@ static inline id_t sys_spawn(uintptr_t bin, uintptr_t interp)
 	return r.s;
 }
 
-static inline enum sys_status sys_kill(id_t pid)
-{
-	struct sys_ret r = syscall1(SYS_KILL, pid);
-	return r.s;
-}
-
 static inline enum sys_status sys_swap(id_t tid)
 {
 	struct sys_ret r = syscall1(SYS_SWAP, tid);
@@ -323,9 +317,9 @@ static inline enum sys_status sys_detach(id_t tid)
 	return r.s;
 }
 
-static inline enum sys_status sys_exit()
+static inline enum sys_status sys_exit(id_t tid)
 {
-	struct sys_ret r = syscall0(SYS_EXIT);
+	struct sys_ret r = syscall1(SYS_EXIT, tid);
 	return r.s;
 }
 

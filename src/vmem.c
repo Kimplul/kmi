@@ -46,10 +46,10 @@ static stat_t __copy_mapped_region(struct tcb *d, struct tcb *s,
 	if (ERR_CODE(v))
 		return v;
 
+	assert(v == start);
+
 	if (is_set(m->flags, MR_NONBACKED))
 		return v;
-
-	assert(v == start);
 
 	/* note that we use uvmem.vmem instead of proc.vmem, this is just to
 	 * make sure that zombies don't eat our brains */
@@ -80,7 +80,7 @@ static stat_t __copy_shared_region(struct tcb *d, struct mem_region *m)
 	vm_t start = m->start * BASE_PAGE_SIZE;
 	vm_t end = m->end * BASE_PAGE_SIZE;
 
-	reference_proc(s);
+	reference_thread(s);
 
 	size_t size = end - start;
 	vm_t v = alloc_fixed_region(&d->uvmem.region, start, size, &size,
@@ -115,7 +115,7 @@ static vm_t __clone_shared_region(struct tcb *d, struct tcb *s,
 	vm_t start = m->start * BASE_PAGE_SIZE;
 	vm_t end = m->end * BASE_PAGE_SIZE;
 
-	reference_proc(s);
+	reference_thread(s);
 
 	size_t size = end - start;
 	vm_t v = alloc_shared_region(&d->uvmem.region, size, &size,
@@ -129,7 +129,7 @@ static vm_t __clone_shared_region(struct tcb *d, struct tcb *s,
 		return v;
 
 	/* cleanup on error */
-	unreference_proc(s);
+	unreference_thread(s);
 	free_region(&d->uvmem.region, v);
 	unmap_fixed_region(d->uvmem.vmem, v, size);
 	return res;
@@ -145,7 +145,7 @@ static void __free_mapping(struct tcb *t, struct mem_region *m)
 {
 	struct tcb *owner = get_tcb(m->pid);
 	if (owner)
-		unreference_proc(owner);
+		unreference_thread(owner);
 
 	if (is_set(m->flags, MR_NONBACKED))
 		return;

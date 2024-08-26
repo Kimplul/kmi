@@ -29,15 +29,15 @@ void unorphanize(struct tcb *t)
 
 	/* attach to init process */
 	struct tcb *init = get_tcb(1);
-	reference_proc(init);
+	reference_thread(init);
+
+	free_stack(t);
+	reset_rpc_stack(t);
 
 	id_t old_rid = t->rid;
 	t->rid = 1;
 	t->pid = 1;
 	t->eid = 1;
-
-	free_stack(t);
-	reset_rpc_stack(t);
 
 	t->proc = init->proc;
 	use_vmem(t->proc.vmem);

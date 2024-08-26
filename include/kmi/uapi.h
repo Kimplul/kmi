@@ -656,19 +656,6 @@ SYSCALL_DECLARE2(exec, bin, interp);
 SYSCALL_DECLARE2(spawn, bin, interp);
 
 /**
- * Kill syscall. Requests that all memory in process \p pid is freed and all
- * threads are orphaned. If \p pid is not a process, nothing is done.
- *
- * @param t Current tcb.
- * @param pid Thread ID to kill. 0 if self.
- * @param b Unused.
- * @param c Unused.
- * @param d Unused.
- * @param e Unused.
- */
-SYSCALL_DECLARE1(kill, pid);
-
-/**
  * Swap syscall.
  *
  * Swap currently running thread.

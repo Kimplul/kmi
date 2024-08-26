@@ -120,7 +120,7 @@ stat_t alloc_stack(struct tcb *t)
 
 void free_stack(struct tcb *t)
 {
-	free_uvmem(t, t->thread_stack);
+	free_uvmem(get_proc(t), t->thread_stack);
 }
 
 struct tcb *create_thread(struct tcb *p)
@@ -180,7 +180,7 @@ struct tcb *create_thread(struct tcb *p)
 	}
 
 	setup_rpc_stack(t);
-	reference_proc(p);
+	reference_thread(p);
 
 	t->regs = (vm_t)t;
 
@@ -235,15 +235,9 @@ struct tcb *create_proc(struct tcb *p)
 static stat_t __destroy_thread_data(struct tcb *t)
 {
 	assert(t->refcount == 0);
+	assert(zombie(t));
 
 	/* remove ourselves from the thread pool */
-	/** @todo this should be at the top of the function, and be wrapped in
-	 * some kind of lock that checks that nobody reads the value while we're
-	 * setting it to zero. get_tcb() should accordingly increment the
-	 * reference count atomically. Also, an unget_tcb() is needed to
-	 * decrement the reference count I guess? if we didn't have the BKL that
-	 * is
-	 */
 	tcbs[t->tid] = 0;
 
 	/* forcefully free last struggling bits of memory, assuming we own the
@@ -259,14 +253,10 @@ static stat_t __destroy_thread_data(struct tcb *t)
 stat_t destroy_thread(struct tcb *t)
 {
 	assert(tcbs);
-	assert(!is_proc(t));
-
-	/* mark us as zombies */
-	set_bits(t->state, TCB_ZOMBIE);
-	t->rid = 0;
+	assert(t->tid != 1);
 
 	/* remove reference to root process */
-	unreference_proc(get_rproc(t));
+	unreference_thread(get_rproc(t));
 
 	free_stack(t);
 
@@ -282,27 +272,18 @@ stat_t destroy_thread(struct tcb *t)
 	 * let the handler check if the thread is still interested in the
 	 * interrupt */
 
-	/* someone still relies on us existing, don't actually free thread data
-	 * quite yet */
-	if (t->refcount)
-		return OK;
+	/* mark us as zombies */
+	set_bits(t->state, TCB_ZOMBIE);
+	t->rid = 0;
 
-	return __destroy_thread_data(t);
+	unreference_thread(t);
+	return OK;
 }
 
 stat_t destroy_proc(struct tcb *p)
 {
 	assert(tcbs);
 	assert(is_proc(p));
-
-	/** @todo currently we don't care who else is in the address space when
-	 * we start freeing stuff, one fairly simple way to deal with this is to
-	 * just not care. A thread that tries to access some bit of freed memory
-	 * will cause a segfault (eventually at least), and we can just check in
-	 * the segfault handler if the thread has become orphaned.
-	 * Currently no segfault handler exists, though. */
-
-	set_bits(p->state, TCB_ZOMBIE);
 
 	/* clear all privately owned memory regions, keep shared ones alive for
 	 * now */
@@ -313,25 +294,23 @@ stat_t destroy_proc(struct tcb *p)
 	return OK;
 }
 
-void reference_proc(struct tcb *p)
+void reference_thread(struct tcb *t)
 {
-	if (!p)
+	if (!t)
 		return;
 
-	assert(is_proc(p));
-	p->refcount++;
+	t->refcount++;
 }
 
-void unreference_proc(struct tcb *p)
+void unreference_thread(struct tcb *t)
 {
-	if (!p)
+	if (!t)
 		return;
 
-	assert(is_proc(p));
-	p->refcount--;
-	if (zombie(p) && p->refcount == 0) {
-		dbg("thread %ld is completely destroyed\n", (long)p->tid);
-		__destroy_thread_data(p);
+	t->refcount--;
+	if (t->refcount == 0) {
+		info("thread %ld is completely destroyed\n", (long)t->tid);
+		__destroy_thread_data(t);
 	}
 }
 

@@ -175,29 +175,6 @@ SYSCALL_DEFINE2(spawn)(struct tcb *t, sys_arg_t bin, sys_arg_t interp)
 }
 
 /**
- * Kill syscall handler.
- *
- * @param t Current tcb.
- * @param pid Process to kill.
- * \todo Implement.
- *
- * @return ERR_PERM if not capable to kill, otherwise OK.
- */
-SYSCALL_DEFINE1(kill)(struct tcb *t, sys_arg_t pid)
-{
-	struct tcb *c = get_cproc(t);
-	if (!(has_cap(c->caps, CAP_PROC)))
-		return_args1(t, ERR_PERM);
-
-	struct tcb *r = get_tcb(pid);
-	if (is_proc(r))
-		return_args1(t, ERR_INVAL);
-
-	destroy_proc(r);
-	return_args1(t, OK);
-}
-
-/**
  * Actual worker of swapping between threads.
  * Assumes that both \p t and \p s exist and that \p s isn't a zombie or
  * currently running.
@@ -215,7 +192,7 @@ static void swap(struct tcb *t, struct tcb *s)
 	enable_irqs();
 
 	if (!is_rpc(s) && orphan(s)) {
-		orphanize(s);
+		unorphanize(s);
 		return;
 	}
 
@@ -242,6 +219,12 @@ static void swap(struct tcb *t, struct tcb *s)
  */
 SYSCALL_DEFINE1(exit)(struct tcb *t, sys_arg_t tid)
 {
+	/* init thread is not allowed to exit */
+	/** @todo what about other possible threads start at init, are they
+	 * allowed to exit? I guess? */
+	if (t->tid == 1)
+		return_args1(t, ERR_INVAL);
+
 	if (tid != 0) {
 		struct tcb *s = get_tcb(tid);
 		if (!s)
@@ -284,17 +267,7 @@ SYSCALL_DEFINE1(detach)(struct tcb *t, sys_arg_t tid)
 	if (!o || orphan(o))
 		return_args1(t, ERR_INVAL);
 
-	struct tcb *r = get_tcb(o->rid);
-	if (r)
-		unreference_proc(r);
-
 	orphanize(o);
-
-	/* generally the thread shouldn't do anything with this information, but
-	 * it fits really nicely into the notification framework so just do it
-	 */
-	notify(o, NOTIFY_ORPHANED);
-
 	return_args1(t, OK);
 }
 

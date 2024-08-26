@@ -120,9 +120,6 @@ enum sys_code {
 	/** Execute new binary in new process space. */
 	SYS_SPAWN,
 
-	/** Kill thread. */
-	SYS_KILL,
-
 	/** Switch running process. */
 	SYS_SWAP,
 

@@ -354,27 +354,28 @@ bool running(struct tcb *t);
 bool zombie(struct tcb *t);
 
 /**
- * Add a reference to a process.
+ * Add a reference to a thread.
  * Instead of lists of threads that belong to a process, we give the process'
  * owning thread a reference counter. When a process is killed, a 'dead' bit is
  * set, and the thread that owns the process is unreferenced. All data
  * associated with the process can immediately be freed, but the tid is still
- * reserved until the reference count reaches zero.
+ * reserved until the reference count reaches zero. In this sense, a process is
+ * seen as some memory that some thread happens to own.
  *
  * We have to make sure that all ways a process might be entered check that the
  * process is still alive, and unmapping pages causes other threads to update
  * their page tables as well. Then if a segfault happens, we can check if it was
  * due to being in a dead process. This is still largely TODO.
  *
- * @param p Process to reference.
+ * @param t Thread to reference.
  */
-void reference_proc(struct tcb *p);
+void reference_thread(struct tcb *t);
 
 /**
- * Unreference a process.
+ * Unreference a thread.
  *
- * @param p Process to unreference.
+ * @param t Thread to unreference.
  */
-void unreference_proc(struct tcb *p);
+void unreference_thread(struct tcb *t);
 
 #endif /* KMI_TCB_H */
