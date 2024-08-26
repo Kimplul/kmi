@@ -258,7 +258,7 @@ static void __destroy_branch(struct vmem *b)
 			__destroy_branch((struct vmem *)pte_addr(b->leaf[i]));
 	}
 
-	free_page(MM_KPAGE, (pm_t)__pa(b));
+	free_page(MM_KPAGE, (pm_t)b);
 }
 
 /**
