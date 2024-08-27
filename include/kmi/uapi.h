@@ -826,8 +826,6 @@ SYSCALL_DECLARE1(free_irq, id);
 /**
  * Request that a thread exits, i.e. removes itself from the thread list and
  * frees all kernel data associated with thread.
- * Note that similarly to \ref kill(), some shared resources may cause the
- * thread to stay around until their reference counts go to zero.
  *
  * @param t Current tcb.
  * @param tid Thread to swap to once the current thread no longer exists. 0 for

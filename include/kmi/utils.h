@@ -18,7 +18,7 @@
  * @return \c a if \c a >= 0, \c -a otherwise.
  * \sideeffects
  */
-#define ABS(a) (a < 0 ? -a : a)
+#define ABS(a) ((a) < 0 ? -(a) : (a))
 
 /**
  * Get the larger of two values.

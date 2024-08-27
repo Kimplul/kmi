@@ -155,6 +155,20 @@ vm_t alloc_shared_region(struct mem_region_root *r, size_t size,
                          size_t *actual_size,
                          vmflags_t flags, id_t pid);
 
+/**
+ * Allocate a shred memory region at a fixed virtual address and associate it with
+ * some other process.
+ *
+ * Will allocate region of at least \c size bytes, with best possible location.
+ *
+ * @param r Memory region root.
+ * @param start Start of region to allocate.
+ * @param size Size of region to allocate.
+ * @param actual_size Size of region that was allocated.
+ * @param flags Memory flags.
+ * @param pid Process to associate with region.
+ * @return Address of allocated region on success, otherwise \c NULL.
+ */
 vm_t alloc_shared_fixed_region(struct mem_region_root *r, vm_t start,
                                size_t size,
                                size_t *actual_size, vmflags_t flags, id_t pid);

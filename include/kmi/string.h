@@ -182,12 +182,12 @@ void *memchr(const void *ptr, int val, size_t num);
 
 /**
  * Copy memory byte for byte.
- * \c dst may not overlap \c src.
+ * \p dst may not overlap \p src.
  *
  * @param dst Destination of copy.
  * @param src Source of copy.
  * @param num Number of bytes to copy.
- * @return \c dst.
+ * @return \p dst.
  */
 void *memcpy(void * restrict dst, const void * restrict src, size_t num);
 

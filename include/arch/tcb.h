@@ -31,6 +31,7 @@ void tcb_assign(struct tcb *t);
  * Set up RPC stack in a way that is convenient for the underlying architecture.
  *
  * @param t Thread whose RPC stack should be set up.
+ * @return OK on success, non-zero otherwise.
  */
 stat_t setup_rpc_stack(struct tcb *t);
 
