@@ -9,6 +9,7 @@
 #include <kmi/string.h>
 #include <kmi/types.h>
 #include <kmi/attrs.h>
+#include <kmi/utils.h>
 
 /* we need to undef the macros in string.h, otherwise the names get mangled */
 #undef strcpy
@@ -258,18 +259,6 @@ __weak size_t strnlen(const char *str, size_t num)
 	return (size_t)(s1 - str) - 1;
 }
 
-#undef memset
-__weak __used void *memset(void *ptr, int value, size_t num)
-{
-	char *p = ptr;
-	char c = value;
-
-	while (num--)
-		*(p++) = c;
-
-	return ptr;
-}
-
 #undef memchr
 __weak void *memchr(const void *ptr, int val, size_t num)
 {
@@ -286,10 +275,92 @@ __weak void *memchr(const void *ptr, int val, size_t num)
 	return (void *)(p1 - 1);
 }
 
+/** @defgroup group1 Optimized specializations
+ *
+ * The two most used memory operations get their special optimized versions for
+ * aligned manipulations, which is what the vast majority of our huge operations
+ * like page zeroing are.
+ *
+ * @{
+ */
+
+/** How many longs per iteration we want to process. An address and size must be
+ * aligned to MAGIC_NUMBER * sizeof(long) bytes. */
+#define MAGIC_NUMBER 8
+
+/**
+ * Optimized version of memcpy() for big regions.
+ * All parameters must be aligned to MAGIC_NUMBER * sizeof(long).
+ *
+ * @param dst Destination to copy to.
+ * @param src Source to copy from.
+ * @param num Number of bytes to copy.
+ * @return dst
+ */
+static inline void *__aligned_memcpy(long *restrict dst,
+                                     const long *restrict src, size_t num)
+{
+	size_t count = num / sizeof(long);
+	for (size_t i = 0; i < count; i += MAGIC_NUMBER) {
+		dst[i + 0] = src[i + 0];
+		dst[i + 1] = src[i + 1];
+		dst[i + 2] = src[i + 2];
+		dst[i + 3] = src[i + 3];
+		dst[i + 4] = src[i + 4];
+		dst[i + 5] = src[i + 5];
+		dst[i + 6] = src[i + 6];
+		dst[i + 7] = src[i + 7];
+		/* would be kind of cool if there was some kind of forced unrolling,
+		 * as we need to do MAGIC_NUMBER of steps, preferably even with
+		 * optimizations disabled. For now I guess just be careful that
+		 * MAGIC_NUMBER matches the number of steps within loop */
+	}
+
+	return dst;
+}
+
+/**
+ * Optimized version of memset() for big regions.
+ * \p ptr and \p num must be aligned to MAGIC_NUMBER * sizeof(long).
+ *
+ * @param ptr Destination to write to.
+ * @param value Value (converted to unsigned char) to write.
+ * @param num Number of bytes to write.
+ * @return ptr
+ */
+static inline void *__aligned_memset(long *ptr, int value, size_t num)
+{
+	long bits = 0;
+	for (size_t i = 0; i < sizeof(long) / sizeof(unsigned char); ++i)
+		bits |= ((unsigned char)value) << i * CHAR_BIT;
+
+	size_t count = num / sizeof(long);
+	for (size_t i = 0; i < count; i += MAGIC_NUMBER) {
+		ptr[i + 0] = bits;
+		ptr[i + 1] = bits;
+		ptr[i + 2] = bits;
+		ptr[i + 3] = bits;
+		ptr[i + 4] = bits;
+		ptr[i + 5] = bits;
+		ptr[i + 6] = bits;
+		ptr[i + 7] = bits;
+	}
+
+	return ptr;
+}
+
+/** @} */
+
 #undef memcpy
 __weak __used void *memcpy(void * restrict dst, const void * restrict src,
                            size_t num)
 {
+
+	if (is_aligned((uintptr_t)dst, sizeof(long) * MAGIC_NUMBER)
+	    && is_aligned((uintptr_t)src, sizeof(long) * MAGIC_NUMBER)
+	    && is_aligned(num, sizeof(long) * MAGIC_NUMBER))
+		return __aligned_memcpy(dst, src, num);
+
 	const char *m1 = (const char *)src;
 	char *m2 = (char *)dst;
 
@@ -298,6 +369,23 @@ __weak __used void *memcpy(void * restrict dst, const void * restrict src,
 
 	return dst;
 }
+
+#undef memset
+__weak __used void *memset(void *ptr, int value, size_t num)
+{
+	if (is_aligned((uintptr_t)ptr, sizeof(long) * MAGIC_NUMBER)
+	    && is_aligned(num, sizeof(long) * MAGIC_NUMBER))
+		return __aligned_memset(ptr, value, num);
+
+	char *p = ptr;
+	char c = value;
+
+	while (num--)
+		*(p++) = c;
+
+	return ptr;
+}
+
 
 #undef memmove
 __weak void *memmove(void *dst, const void *src, size_t num)
