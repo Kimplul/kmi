@@ -284,9 +284,10 @@ struct mem_region *find_closest_used_region(struct mem_region_root *r,
 	if (!n)
 		return mem_container(sp_root(&r->free_regions));
 
+	size_t ref = __page(start);
 	while (n) {
 		struct mem_region *t = mem_container(n);
-		size_t d = ABS((ssize_t)start - (ssize_t)t->start);
+		size_t d = ABS((ssize_t)ref - (ssize_t)t->start);
 
 		if (d == 0) /* exact match */
 			return t;
@@ -296,7 +297,7 @@ struct mem_region *find_closest_used_region(struct mem_region_root *r,
 			md = d;
 		}
 
-		if (start < t->start)
+		if (ref < t->start)
 			n = sp_left(n);
 		else
 			n = sp_right(n);
@@ -475,15 +476,15 @@ vm_t alloc_shared_fixed_region(struct mem_region_root *r, vm_t start,
 		*actual_size = asize;
 
 	size_t pages = __page(asize);
-	start = __page(start);
+	size_t ref = __page(start);
 
 	struct mem_region *m = find_closest_used_region(r, start);
 	if (!m)
 		return 0;
 
 	/* locate actual region where start is between the region start and end */
-	while (!((m->start <= start) && (start < m->end))) {
-		if (start > m->start)
+	while (!((m->start <= ref) && (ref < m->end))) {
+		if (ref > m->start)
 			m = m->next;
 		else
 			m = m->prev;
@@ -496,11 +497,11 @@ vm_t alloc_shared_fixed_region(struct mem_region_root *r, vm_t start,
 		return 0;
 
 	/* region is too small */
-	if (start + pages > m->end)
+	if (ref + pages > m->end)
 		return 0;
 
 	/* actually start marking region used */
-	return __partition_region(r, m, pages, start - m->start, flags, pid);
+	return __partition_region(r, m, pages, ref - m->start, flags, pid);
 }
 
 vm_t alloc_fixed_region(struct mem_region_root *r, vm_t start, size_t size,
