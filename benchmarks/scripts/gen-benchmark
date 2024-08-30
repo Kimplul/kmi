@@ -1,0 +1,32 @@
+#!/bin/sh
+
+NAME=
+while getopts "n:p:" opt; do
+	case "$opt" in
+		n) NAME="$OPTARG";;
+		*) echo "unrecognised options -$OPTARG" >&2; exit 1;
+	esac
+done
+
+obj="build/${NAME}/init.o"
+dep="${obj}.d"
+
+echo "${dep}:"							>> benchmarks.mk
+echo "-include ${dep}"						>> benchmarks.mk
+echo "${obj}: $NAME/${s}"					>> benchmarks.mk
+echo "	mkdir -p build/$NAME"					>> benchmarks.mk
+echo "	\$(COMPILE_BENCHMARK) -c $NAME/init.c -o ${obj}"	>> benchmarks.mk
+
+echo "build/${NAME}/initrd: ${obj} \$(COMMON)"			>> benchmarks.mk
+echo "	\$(COMPILE_BENCHMARK) ${obj} \
+	\$(COMMON) -o build/${NAME}/init"			>> benchmarks.mk
+
+echo "	echo build/${NAME}/init | \
+	\$(GEN_INITRD) build/${NAME}/initrd"			>> benchmarks.mk
+
+echo "BENCHMARKS += ${NAME}"					>> benchmarks.mk
+echo ".PHONY: ${NAME}"						>> benchmarks.mk
+echo "${NAME}: build/${NAME}/initrd"				>> benchmarks.mk
+echo "	mkdir -p reports/${NAME}"				>> benchmarks.mk
+echo "	timeout --foreground 30s \
+	\$(QEMU) build/${NAME}/initrd > reports/${NAME}/log"	>> benchmarks.mk

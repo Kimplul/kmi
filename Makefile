@@ -6,6 +6,10 @@ all: setup
 check: all
 	$(MAKE) -C tests check
 
+.PHONY: benchmark
+benchmark: all
+	$(MAKE) -C benchmarks benchmark
+
 # this kicks all unrecognised targets to the client script.
 # note that trying to compile individual files, e.g.
 #
@@ -57,6 +61,14 @@ RM	= rm
 clean:
 	$(MAKE) -C tests clean
 	$(RM) -rf $(CLEANUP)
+
+.PHONY: clean_tests
+clean_tests:
+	$(MAKE) -C tests clean
+
+.PHONY: clean_benchmarks
+clean_benchmarks:
+	$(MAKE) -C benchmarks clean
 
 .PHONY: clean_run
 clean_run:

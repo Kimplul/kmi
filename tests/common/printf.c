@@ -1,5 +1,8 @@
 #include <stdarg.h>
-#include "test.h"
+#include <kmi/types.h>
+
+#include "printf.h"
+#include "sys.h"
 
 /* Directly copied from src/debug.c, which was copied from
  * https://github.com/mpaland/printf/blob/master/printf.c
