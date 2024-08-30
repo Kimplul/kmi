@@ -9,11 +9,13 @@ COMPILER	!= [ "$(LLVM)" != "0" ] \
 			&& echo clang --target="$(CROSS_COMPILE)" \
 			|| echo $(CROSS_COMPILE)gcc
 
-OBFLAGS		:= -ffreestanding -nostdlib -std=c17 -g
+include common/arch/$(ARCH)/source.mk
+
+OBFLAGS		:= -ffreestanding -nostdlib -std=c17 -g -O2
 INCLUDEFLAGS	:= -I ../include -I.
 WARNFLAGS	:= -Wall -Wextra
 DEPFLAGS	= -MT $@ -MMD -MP -MF $@.d
-COMPILE_TEST	= $(COMPILER) $(WARNFLAGS) $(INCLUDEFLAGS) $(DEPFLAGS) $(OBFLAGS)
+COMPILE_TEST	= $(COMPILER) $(WARNFLAGS) $(INCLUDEFLAGS) $(DEPFLAGS) $(OBFLAGS) $(ARCH_FLAGS)
 
 GEN_INITRD	:= cpio -H newc -o >
 QEMU		:= qemu-system-$(ARCH) -machine virt -kernel ../kmi.bin \

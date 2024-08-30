@@ -2,7 +2,7 @@ KERNEL_LOCAL	!= echo $(ARCH_SOURCE)/kernel/*.[cS]
 KERNEL_SOURCES	:= $(KERNEL_SOURCES) $(KERNEL_LOCAL)
 
 # this doesn't work for rv32, but fine for now */
-ARCH_CFLAGS	:= $(ARCH_CFLAGS) -mcmodel=medany
+ARCH_CFLAGS	:= $(ARCH_CFLAGS) -mcmodel=medany -march=rv64imac_zicsr -mabi=lp64
 
 include $(ARCH_SOURCE)/asm/source.mk
 
