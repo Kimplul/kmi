@@ -124,6 +124,59 @@ void free_stack(struct tcb *t)
 	free_uvmem(get_proc(t), t->thread_stack);
 }
 
+static stat_t __init_free_thread(struct tcb *t)
+{
+	if (!(t->proc.vmem = create_vmem()))
+		return ERR_OOMEM;
+
+	if (init_uvmem(t)) {
+		destroy_vmem(t->proc.vmem);
+		return ERR_OOMEM;
+	}
+
+	if (!(t->rpc.vmem = create_vmem())) {
+		destroy_vmem(t->proc.vmem);
+		return NULL;
+	}
+
+	if (setup_rpc_stack(t)) {
+		destroy_rpc_stack(t);
+		destroy_vmem(t->rpc.vmem);
+		destroy_vmem(t->proc.vmem);
+		return ERR_OOMEM;
+	}
+
+	t->pid = t->tid;
+	t->eid = t->tid;
+	t->rid = t->tid;
+	/* callback is set later */
+	return OK;
+}
+
+static stat_t __init_owned_thread(struct tcb *p, struct tcb *t)
+{
+	t->eid = p->rid;
+	t->pid = p->rid;
+	t->rid = p->rid;
+	/** @todo I'm assuming two threads can share the same vmem
+	 * structure, this works on riscv but in the event that other
+	 * systems don't we can easily turn this into a clone_uvmem. */
+	t->proc.vmem = p->proc.vmem;
+	t->callback = p->callback;
+
+	if (!(t->rpc.vmem = create_vmem()))
+		return NULL;
+
+	if (setup_rpc_stack(t)) {
+		destroy_rpc_stack(t);
+		destroy_vmem(t->rpc.vmem);
+		return ERR_OOMEM;
+	}
+
+	reference_thread(p);
+	return OK;
+}
+
 struct tcb *create_thread(struct tcb *p)
 {
 	assert(tcbs);
@@ -144,65 +197,18 @@ struct tcb *create_thread(struct tcb *p)
 	t->tid = tid;
 	t->state = 0;
 
-	if (likely(p)) {
-		t->pid = p->pid;
-		/** @todo I'm assuming two threads can share the same vmem
-		 * structure, this works on riscv but in the event that other
-		 * systems don't we can easily turn this into a clone_uvmem. */
-		t->proc.vmem = p->proc.vmem;
-		t->callback = p->callback;
-	}
-	else {
-		if (!(t->proc.vmem = create_vmem())) {
-			free_page(MM_O0, bottom);
-			return NULL;
-		}
+	stat_t r = OK;
+	if (p) r = __init_owned_thread(p, t);
+	else   r = __init_free_thread(t);
 
-		if (init_uvmem(t)) {
-			destroy_vmem(t->proc.vmem);
-			free_page(MM_O0, bottom);
-			return NULL;
-		}
-
-		t->pid = t->tid;
-		t->rid = t->tid;
-		p = t;
-	}
-
-	t->eid = t->pid;
-	t->rid = p->rid;
-
-	/* hmm, the rest of this function is maybe a bit too difficult to follow
-	 * for my liking. Will have to think about ways to make the logic more
-	 * easy to follow */
-	if (!(t->rpc.vmem = create_vmem())) {
-		if (likely(p)) {
-			free_page(MM_O0, bottom);
-			return NULL;
-		}
-
-		destroy_vmem(t->proc.vmem);
+	if (r) {
 		free_page(MM_O0, bottom);
 		return NULL;
 	}
 
-	if (setup_rpc_stack(t)) {
-		destroy_rpc_stack(t);
-		destroy_vmem(t->rpc.vmem);
-		if (likely(p)) {
-			free_page(MM_O0, bottom);
-			return NULL;
-		}
-
-		destroy_vmem(t->proc.vmem);
-		free_page(MM_O0, bottom);
-		return NULL;
-	}
-
-	reference_thread(p);
 
 	t->regs = (vm_t)t;
-
+	reference_thread(t);
 	set_canary(t);
 	return t;
 }
@@ -251,7 +257,7 @@ struct tcb *create_proc(struct tcb *p)
  * @param t Thread whose data to destroy.
  * @return \ref OK.
  */
-static stat_t __destroy_thread_data(struct tcb *t)
+static void __destroy_thread_data(struct tcb *t)
 {
 	assert(t->refcount == 0);
 	assert(zombie(t));
@@ -266,7 +272,6 @@ static stat_t __destroy_thread_data(struct tcb *t)
 	/* free associated kernel stack and the structure itself */
 	vm_t bottom = align_down((vm_t)t, order_size(MM_O0));
 	free_page(MM_O0, (pm_t)bottom);
-	return OK;
 }
 
 stat_t destroy_thread(struct tcb *t)
@@ -275,7 +280,10 @@ stat_t destroy_thread(struct tcb *t)
 	assert(t->tid != 1);
 
 	/* remove reference to root process */
-	unreference_thread(get_rproc(t));
+	struct tcb *r = get_rproc(t);
+	if (r != t)
+		/* if we're our own root process, we unreference ourselves later */
+		unreference_thread(r);
 
 	free_stack(t);
 
@@ -327,10 +335,10 @@ void unreference_thread(struct tcb *t)
 		return;
 
 	t->refcount--;
-	if (t->refcount == 0) {
-		info("thread %ld is completely destroyed\n", (long)t->tid);
+	if (t->refcount == 0)
 		__destroy_thread_data(t);
-	}
+
+	assert(t->refcount >= 0);
 }
 
 /* weak to allow optimisation on risc-v, but provide fallback for future */

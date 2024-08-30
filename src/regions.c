@@ -34,7 +34,9 @@ void destroy_mem_nodes()
  */
 static struct mem_region *get_mem_node()
 {
-	return (struct mem_region *)get_node(&root);
+	struct mem_region *r = get_node(&root);
+	memset(r, 0, sizeof(struct mem_region));
+	return r;
 }
 
 /**
@@ -178,6 +180,7 @@ stat_t init_region(struct mem_region_root *r, vm_t start, size_t arena_size,
 	struct mem_region *m = get_mem_node();
 	m->start = start;
 	m->end = start + arena_size;
+	m->flags = 0;
 
 	r->reserved = __page(reserved);
 	r->start = m->start;
