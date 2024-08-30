@@ -78,6 +78,8 @@ struct mem_region_root {
  * track of free and used regions, respectively. All regions are chained
  * together with a doubly linked list, so that the next region's start address
  * should be the current region's end address.
+ *
+ * Note that addresses are expressed in pages!
  */
 struct mem_region {
 	/** Sp-tree node slot. */
@@ -97,6 +99,11 @@ struct mem_region {
 
 	/** In shared regions, mark the other pid that shared the region. */
 	id_t pid;
+
+	union {
+		vm_t shaddr;
+		size_t refcount;
+	};
 
 	/** Memory region flags, both access as well as metadata. \see MR_USED,
 	 * MR_SHARED, MR_OWNED, MR_COW, MR_KEEP. */

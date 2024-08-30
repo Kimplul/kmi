@@ -440,6 +440,9 @@ static vm_t __partition_region(struct mem_region_root *r, struct mem_region *m,
 	m->start = start;
 	m->flags = flags;
 	m->pid = pid;
+	if (m->pid == 0)
+		m->refcount = 1;
+
 	mark_region_used(m->flags);
 	__insert_used_region(r, m);
 	return __addr(start);

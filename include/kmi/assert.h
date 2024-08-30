@@ -18,6 +18,7 @@
  * Catastrophic assertions warn about the assertion and crash the kernel.
  */
 
+#include <kmi/power.h>
 #include <kmi/debug.h>
 #include <kmi/utils.h>
 
@@ -35,6 +36,7 @@
 		if (unlikely(!(x))) {                        \
 			error("assertion failed: " #x "\n"); \
 			while (1) {                          \
+				poweroff(SYS_COLD_REBOOT);   \
 			}                                    \
 		}                                            \
 	} while (0);

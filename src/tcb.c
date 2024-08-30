@@ -199,7 +199,7 @@ struct tcb *create_thread(struct tcb *p)
 
 	stat_t r = OK;
 	if (p) r = __init_owned_thread(p, t);
-	else   r = __init_free_thread(t);
+	else r = __init_free_thread(t);
 
 	if (r) {
 		free_page(MM_O0, bottom);

@@ -63,6 +63,37 @@ static stat_t __copy_mapped_region(struct tcb *d, struct tcb *s,
 	return res;
 }
 
+static void reference_mem(struct tcb *d, struct tcb *s, vm_t ref, vm_t orig)
+{
+	struct mem_region *src = find_used_region(&s->uvmem.region, orig);
+	assert(src);
+
+	struct mem_region *dst = find_used_region(&d->uvmem.region, ref);
+	assert(dst);
+
+	assert(dst->pid == s->rid);
+	dst->shaddr = orig;
+	src->refcount++;
+
+	reference_thread(s);
+}
+
+static void __free_mapping(struct tcb *t, struct mem_region *m);
+
+static void unreference_mem(struct tcb *s, vm_t addr)
+{
+	struct mem_region *src = find_used_region(&s->uvmem.region, addr);
+	assert(src);
+
+	assert(src->refcount >= 1);
+	if (--src->refcount == 0) {
+		__free_mapping(s, src);
+		free_known_region(&s->uvmem.region, src);
+	}
+
+	unreference_thread(s);
+}
+
 /**
  * Copy shared regions to new process. In these cases, we want to both allocate
  * a fixed region and map some fixed physical memory.
@@ -80,7 +111,6 @@ static stat_t __copy_shared_region(struct tcb *d, struct mem_region *m)
 	vm_t start = m->start * BASE_PAGE_SIZE;
 	vm_t end = m->end * BASE_PAGE_SIZE;
 
-	reference_thread(s);
 
 	size_t size = end - start;
 	vm_t v = alloc_shared_fixed_region(&d->uvmem.region, start, size, &size,
@@ -91,8 +121,10 @@ static stat_t __copy_shared_region(struct tcb *d, struct mem_region *m)
 	assert(v == start);
 	stat_t res = clone_region(d->uvmem.vmem, s->uvmem.vmem, start, v, size,
 	                          m->flags);
-	if (res == OK)
+	if (res == OK) {
+		reference_mem(d, s, v, v);
 		return OK;
+	}
 
 	/* cleanup on error */
 	free_region(&d->uvmem.region, v);
@@ -115,8 +147,6 @@ static vm_t __clone_shared_region(struct tcb *d, struct tcb *s,
 	vm_t start = m->start * BASE_PAGE_SIZE;
 	vm_t end = m->end * BASE_PAGE_SIZE;
 
-	reference_thread(s);
-
 	size_t size = end - start;
 	vm_t v = alloc_shared_region(&d->uvmem.region, size, &size,
 	                             MR_NONBACKED | m->flags, s->rid);
@@ -125,18 +155,19 @@ static vm_t __clone_shared_region(struct tcb *d, struct tcb *s,
 
 	stat_t res = clone_region(d->uvmem.vmem, s->uvmem.vmem,
 	                          start, v, size, flags);
-	if (res == OK)
+	if (res == OK) {
+		reference_mem(d, s, v, start);
 		return v;
+	}
 
 	/* cleanup on error */
-	unreference_thread(s);
 	free_region(&d->uvmem.region, v);
 	unmap_fixed_region(d->uvmem.vmem, v, size);
 	return res;
 }
 
 /**
- * Unmap and free private memory region.
+ * Unmap and free memory region.
  *
  * @param t Current thread.
  * @param m Memory region to free.
@@ -145,7 +176,7 @@ static void __free_mapping(struct tcb *t, struct mem_region *m)
 {
 	struct tcb *owner = get_tcb(m->pid);
 	if (owner)
-		unreference_thread(owner);
+		unreference_mem(owner, m->shaddr);
 
 	if (is_set(m->flags, MR_NONBACKED))
 		return;
@@ -172,6 +203,17 @@ void clear_uvmem(struct tcb *t)
 
 		if (!is_set(m->flags, MR_USED))
 			continue;
+
+		if (m->pid == 0 && m->refcount > 1) {
+			/* we own this shared region and it's used by someone
+			 * else so we can't outright free it yet, but remove our
+			 * 'reference' to it so the refcount reaches zero when all
+			 * referees unmap it, instead of waiting for this thread to be
+			 * completely destroyed.
+			 * */
+			m->refcount--;
+			continue;
+		}
 
 		__free_mapping(t, m);
 		free_known_region(&t->uvmem.region, m);
@@ -272,7 +314,7 @@ vm_t map_shared_fixed_uvmem(struct tcb *t, pm_t start, size_t size,
 	assert(is_aligned(start, BASE_PAGE_SIZE));
 
 	const vm_t v = alloc_shared_region(&t->uvmem.region, size, &size, flags,
-	                                   get_rproc(t)->tid);
+	                                   0);
 	if (ERR_CODE(v))
 		return v;
 
@@ -353,6 +395,9 @@ stat_t free_uvmem(struct tcb *r, vm_t va)
 	struct mem_region *m = find_used_region(&r->uvmem.region, va);
 	if (!m)
 		return ERR_NF;
+
+	if (m->pid == 0 && m->refcount > 1)
+		return ERR_INVAL;
 
 	__free_mapping(r, m);
 	free_known_region(&r->uvmem.region, m);

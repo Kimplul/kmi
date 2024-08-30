@@ -29,6 +29,7 @@ SYSCALL_DEFINE2(req_mem)(struct tcb *t, sys_arg_t size, sys_arg_t flags)
 	if (ERR_CODE(start))
 		return_args1(t, start);
 
+	flush_tlb_all();
 	return_args2(t, OK, start);
 }
 
@@ -52,6 +53,7 @@ SYSCALL_DEFINE3(req_fixmem)(struct tcb *t, sys_arg_t fixed, sys_arg_t size,
 	if (ERR_CODE(start))
 		return_args1(t, start);
 
+	flush_tlb_all();
 	return_args2(t, OK, start);
 }
 
@@ -75,6 +77,7 @@ SYSCALL_DEFINE1(free_mem)(struct tcb *t, sys_arg_t start)
 	if (!(status = free_devmem(r, start)))
 		return_args1(t, OK);
 
+	flush_tlb_all();
 	return_args1(t, status);
 }
 
@@ -102,6 +105,7 @@ SYSCALL_DEFINE3(req_pmem)(struct tcb *t, sys_arg_t paddr, sys_arg_t size,
 	if (ERR_CODE(start))
 		return_args1(t, start);
 
+	flush_tlb_all();
 	return_args2(t, OK, start);
 }
 
@@ -131,6 +135,7 @@ SYSCALL_DEFINE2(req_page)(struct tcb *t, sys_arg_t size, sys_arg_t flags)
 	if (ERR_CODE(start))
 		return_args1(t, start);
 
+	flush_tlb_all();
 	return_args4(t, OK, start, addr, asize);
 }
 
@@ -154,6 +159,7 @@ SYSCALL_DEFINE2(req_sharedmem)(struct tcb *t, sys_arg_t size, sys_arg_t flags)
 	if (ERR_CODE(start))
 		return_args1(t, start);
 
+	flush_tlb_all();
 	return_args2(t, OK, start);
 }
 
@@ -184,5 +190,6 @@ SYSCALL_DEFINE3(ref_sharedmem)(struct tcb *t, sys_arg_t tid, sys_arg_t addr,
 	if (ERR_CODE(start))
 		return_args1(t, start);
 
+	flush_tlb_all();
 	return_args2(t, OK, start);
 }

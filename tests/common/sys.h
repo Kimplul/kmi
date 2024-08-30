@@ -86,9 +86,10 @@ static inline void *sys_ref_sharedmem(id_t tid, uintptr_t addr, vmflags_t flags)
 	return (void *)r.a0;
 }
 
-static inline void sys_free_mem(uintptr_t start)
+static inline enum sys_status sys_free_mem(uintptr_t start)
 {
-	syscall1(SYS_FREE_MEM, start);
+	struct sys_ret r = syscall1(SYS_FREE_MEM, start);
+	return r.s;
 }
 
 static inline uint64_t sys_timebase()
