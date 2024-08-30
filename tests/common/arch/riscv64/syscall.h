@@ -16,31 +16,37 @@ static inline struct sys_ret syscall(size_t n,
         register long a4 __asm__ ("a4") = arg4;
         register long a5 __asm__ ("a5") = arg5;
 
-#define OUTPUTS "+r" (a0), "=r" (a1), "=r" (a2), "=r" (a3), "=r" (a4), "=r" (a5)
+#define OUTPUTS "=r" (a0), "=r" (a1), "=r" (a2), "=r" (a3), "=r" (a4), "=r" (a5)
+#define CLOBBERS \
+        "a6", "a7", \
+        "t0", "t1", "t2", "t3", "t4", "t5", "t6", \
+        "memory"
 
         if (n == 1)
-                __asm__ volatile ("ecall" : OUTPUTS : "r" (a0));
+                __asm__ volatile ("ecall" : OUTPUTS : "r" (a0) : CLOBBERS);
 
         else if (n == 2)
-                __asm__ volatile ("ecall" : OUTPUTS : "r" (a0), "r" (a1));
+                __asm__ volatile ("ecall" : OUTPUTS : "r" (a0), "r" (a1) : CLOBBERS);
 
         else if (n == 3)
-                __asm__ volatile ("ecall" : OUTPUTS : "r" (a0), "r" (a1),
-                                  "r" (a2));
+                __asm__ volatile ("ecall" : OUTPUTS
+                                : "r" (a0), "r" (a1), "r" (a2)
+                                : CLOBBERS);
 
         else if (n == 4)
                 __asm__ volatile ("ecall" : OUTPUTS
-                                  : "r" (a0), "r" (a1), "r" (a2), "r" (a3));
+                                  : "r" (a0), "r" (a1), "r" (a2), "r" (a3)
+                                  : CLOBBERS);
 
         else if (n == 5)
                 __asm__ volatile ("ecall" : OUTPUTS
-                                  : "r" (a0), "r" (a1), "r" (a2), "r" (a3),
-                                  "r" (a4));
+                                  : "r" (a0), "r" (a1), "r" (a2), "r" (a3), "r" (a4)
+                                  : CLOBBERS);
 
         else if (n == 6)
                 __asm__ volatile ("ecall" : OUTPUTS
-                                  : "r" (a0), "r" (a1), "r" (a2), "r" (a3),
-                                  "r" (a4), "r" (a5));
+                                  : "r" (a0), "r" (a1), "r" (a2), "r" (a3), "r" (a4), "r" (a5)
+                                  : CLOBBERS);
 
 #undef OUTPUTS
 

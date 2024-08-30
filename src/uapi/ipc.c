@@ -283,13 +283,15 @@ static void leave_rpc(struct tcb *t, struct sys_ret a)
 	if (t->notify_flags)
 		notify(t, 0);
 
-	if (is_rpc(t)) {
+	if (is_rpc(t))
 		use_vmem(t->rpc.vmem);
-		return;
-	}
+	else
+		use_vmem(t->proc.vmem);
 
-	/* notification didn't take, return back to process normally */
-	use_vmem(t->proc.vmem);
+	if (!ctx->notify) {
+		bkl_unlock();
+		ret_userspace_partial();
+	}
 }
 
 /**

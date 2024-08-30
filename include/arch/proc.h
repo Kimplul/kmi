@@ -127,5 +127,6 @@ __noreturn void run_init(struct tcb *t, vm_t fdt, vm_t initrd);
  * so I'm not too worried.
  */
 __noreturn void ret_userspace_fast();
+__noreturn void ret_userspace_partial();
 
 #endif /* KMI_ARCH_PROC_H */

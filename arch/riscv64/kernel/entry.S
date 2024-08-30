@@ -20,27 +20,31 @@
 /* we can go back to relaxed mode if we want */
 .option pop
 
-.macro save_args
+.macro save_caller
 	sr      a0, offsetof_a0(sp)
 	sr      a1, offsetof_a1(sp)
 	sr      a2, offsetof_a2(sp)
 	sr      a3, offsetof_a3(sp)
 	sr      a4, offsetof_a4(sp)
 	sr      a5, offsetof_a5(sp)
+	sr      a6, offsetof_a6(sp)
+	sr      a7, offsetof_a7(sp)
+	sr      t0, offsetof_t0(sp)
+	sr      t1, offsetof_t1(sp)
+	sr      t2, offsetof_t2(sp)
+	sr      t3, offsetof_t3(sp)
+	sr      t4, offsetof_t4(sp)
+	sr      t5, offsetof_t5(sp)
+	sr      t6, offsetof_t6(sp)
 .endm
 
-.macro save_regs
+.macro save_callee
 	/* save registers */
 	sr      ra, offsetof_ra(sp)
 	sr	gp, offsetof_gp(sp)
 	sr	tp, offsetof_tp(sp)
-	sr      t0, offsetof_t0(sp)
-	sr      t1, offsetof_t1(sp)
-	sr      t2, offsetof_t2(sp)
 	sr      s0, offsetof_s0(sp)
 	sr	s1, offsetof_s1(sp)
-	sr      a6, offsetof_a6(sp)
-	sr      a7, offsetof_a7(sp)
 	sr	s2, offsetof_s2(sp)
 	sr	s3, offsetof_s3(sp)
 	sr	s4, offsetof_s4(sp)
@@ -49,10 +53,7 @@
 	sr	s7, offsetof_s7(sp)
 	sr	s8, offsetof_s8(sp)
 	sr	s9, offsetof_s9(sp)
-	sr	s10,offsetof_s10(sp)
-	sr	s11,offsetof_s11(sp)
-	sr      t3, offsetof_t3(sp)
-	sr      t4, offsetof_t4(sp)
+	/* s10 and s11 always saved */
 .endm
 
 .global handle_trap
@@ -72,37 +73,37 @@ continue_trap:
 	addi	sp, sp, -sizeof_registers
 	csrrw	tp, CSR_SSCRATCH, tp
 
-	sr      t5, offsetof_t5(sp)
-	sr      t6, offsetof_t6(sp)
+	sr      s10, offsetof_s10(sp)
+	sr      s11, offsetof_s11(sp)
 
 	/* get current tcb into tp and set scratch to 0 so we can figure out if
 	 * exception occured in kernel or userspace */
 	csrrw tp, CSR_SSCRATCH, x0
-	lr	t5, offsetof_arch(tp)
-	sr	t5, offsetof_sp(sp)
+	lr	s10, offsetof_arch(tp)
+	sr	s10, offsetof_sp(sp)
 
 	/* load supervisor cause */
-	csrr t5, CSR_SCAUSE
+	csrr s10, CSR_SCAUSE
 	/* interrupts fall through, exceptions jump */
 	/* (leading 1 means the value is interpreted as negative) */
-	bge t5, zero, handle_exception
+	bge s10, zero, handle_exception
 
-	save_regs
-	save_args
+	save_callee
+	save_caller
 
-	mv a0, t5
+	mv a0, s10
 	call riscv_handle_interrupt
 
 	j _load_context
 
 handle_exception:
-	li t6, EXC_SYSCALL
+	li s11, EXC_SYSCALL
 	/* system exceptions fall through, syscalls and ipis jump */
 	/* temp, at some point we want to handle system exceptions as well */
-	beq t5, t6, handle_dispatch
+	beq s10, s11, handle_dispatch
 
-	save_regs
-	save_args
+	save_callee
+	save_caller
 
 	csrr a0, CSR_SEPC
 	csrr a1, CSR_STVAL
@@ -114,21 +115,21 @@ handle_exception:
 	j	_load_context
 
 handle_dispatch:
-	li	t5, SYS_IPC_RESP
-	bne	a0, t5, slow_dispatch
+	li	s10, SYS_IPC_RESP
+	bne	a0, s10, slow_dispatch
 	/* we're a sys_ipc_resp */
-	lw	t5, offsetof_rid(tp)
-	lw	t6, offsetof_pid(tp)
+	lw	s10, offsetof_rid(tp)
+	lw	s11, offsetof_pid(tp)
 	/* we're in an rpc, so we can skip saving the rest of the registers */
-	beq	t5, t6, fast_dispatch
+	beq	s10, s11, fast_dispatch
 
 slow_dispatch:
-	save_regs
+	save_callee
 
 fast_dispatch:
 	/* store execution continuation point */
-	csrr    t5, CSR_SEPC
-	sr	t5, offsetof_exec(tp)
+	csrr    s10, CSR_SEPC
+	sr	s10, offsetof_exec(tp)
 	/* jump to C */
 	call	dispatch
 	/* if we had a thread switch, load kernel stack of current thread and
@@ -137,8 +138,8 @@ fast_dispatch:
 	lr	sp, offsetof_regs(tp)
 	addi	sp, sp, -sizeof_registers
 	/* set execution continuation */
-	lr	t5, offsetof_exec(tp)
-	csrw	CSR_SEPC, t5
+	lr	s10, offsetof_exec(tp)
+	csrw	CSR_SEPC, s10
 
 _load_context:
 	/* restore registers besides possible return value, assume instruction
@@ -180,6 +181,43 @@ _load_context:
 	lr	sp, offsetof_sp(sp)
 
 	/* assume supervisor for now */
+	sret
+
+.global ret_userspace_partial
+ret_userspace_partial:
+	lr	sp, offsetof_regs(tp)
+	addi	sp, sp, -sizeof_registers
+
+	lr	s10, offsetof_exec(tp)
+	csrw	CSR_SEPC, s10
+
+	csrw CSR_SSCRATCH, tp
+
+	lr	s0, offsetof_s0(sp)
+	lr	a0, offsetof_a0(sp)
+	lr      a1, offsetof_a1(sp)
+	lr      a2, offsetof_a2(sp)
+	lr      a3, offsetof_a3(sp)
+	lr      a4, offsetof_a4(sp)
+	lr      a5, offsetof_a5(sp)
+	lr	s0, offsetof_s0(sp)
+	lr	s1, offsetof_s1(sp)
+	lr	s2, offsetof_s2(sp)
+	lr	s3, offsetof_s3(sp)
+	lr	s4, offsetof_s4(sp)
+	lr	s5, offsetof_s5(sp)
+	lr	s6, offsetof_s6(sp)
+	lr	s7, offsetof_s7(sp)
+	lr	s8, offsetof_s8(sp)
+	lr	s9, offsetof_s9(sp)
+	lr	s10, offsetof_s10(sp)
+	lr	s11, offsetof_s11(sp)
+	lr      ra, offsetof_ra(sp)
+	lr	gp, offsetof_gp(sp)
+	lr	tp, offsetof_tp(sp)
+
+	lr	sp, offsetof_sp(sp)
+
 	sret
 
 .global ret_userspace_fast
