@@ -47,6 +47,8 @@ static void __map_exec(struct tcb *t, vm_t bin, uint8_t ei_c, vm_t phstart,
                        size_t phnum, size_t phsize)
 {
 	assert(t && is_proc(t));
+	/* temporarily visit process virtual memory */
+	use_vmem(t->proc.vmem);
 
 	/** \todo take alignment into consideration? */
 	/** \todo take overlapping memory regions into account, probably mostly
@@ -91,6 +93,8 @@ static void __map_exec(struct tcb *t, vm_t bin, uint8_t ei_c, vm_t phstart,
 		   mod_vpage(t->b_r, va, paddr, uvflags);
 		 */
 	}
+
+	use_vmem(t->rpc.vmem);
 }
 
 /**

@@ -86,6 +86,7 @@ __noreturn void kernel(void *fdt, uintptr_t load_addr, struct vmem *d)
 	init_proc(fdt, &proc_fdt, &proc_initrd);
 
 	/* lock kernel since we're about to start other threads as well */
+	bkl_init();
 	bkl_lock();
 	/* try to bring up other cores on system */
 	smp_bringup(d, fdt);

@@ -14,7 +14,7 @@ serial and ethernet booting, but I haven't looked into how they work.
 
 2. Create three partitions on an SD card of your choice:
 ```
-sudo sgdisk --clean \
+sudo sgdisk \
 	     --new=1:4096:8191 --change-name=1:"spl" --typecode=1:2E54B353-1271-4842-806F-E436D6AF6985 \
 	     --new=2:8192:16383 --change-name=2:"uboot" --typecode=2:5B193300-FC78-40CD-8002-E86C45580B47 \
 	     --new=3:16384:0 --change-name=3:"data" \

@@ -42,15 +42,14 @@ void run_init(struct tcb *t, vm_t fdt, vm_t initrd)
 {
 	csr_write(CSR_SSCRATCH, t);
 	csr_write(CSR_SEPC, t->callback);
-	/* gcc gives a warning 'the value of the stack pointer after an asm
-	 * statement must be the same as it was before the statement', so this
-	 * is technically speaking undefined behavior, I think.
-	 *
-	 * Could be fixed with a separate pure asm run_init, but I guess this
-	 * works for now.
-	 */
-	vm_t stack_top = t->thread_stack + t->thread_stack_size;
-	info("jumping to %lx\n", (long)t->callback);
+
+	/* reference main virtual memory */
+	struct tcb *r = get_rproc(t);
+	clone_uvmem(r->proc.vmem, t->rpc.vmem);
+	flush_tlb_all();
+
+	vm_t stack_top = t->rpc_stack - BASE_PAGE_SIZE;
+	info("jumping to %lx with sp = %lx\n", (long)t->callback, stack_top);
 
 	bkl_unlock();
 	riscv_run_init(0, t->tid, SYS_USER_SPAWNED, fdt, initrd, 1, stack_top);

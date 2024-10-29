@@ -39,8 +39,8 @@ void unorphanize(struct tcb *t)
 	t->pid = 1;
 	t->eid = 1;
 
-	t->proc = init->proc;
-	use_vmem(t->proc.vmem);
+	clone_uvmem(init->proc.vmem, t->rpc.vmem);
+	use_vmem(t->rpc.vmem);
 	alloc_stack(t);
 
 	assert(init->callback);

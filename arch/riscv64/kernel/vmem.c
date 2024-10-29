@@ -538,7 +538,7 @@ vm_t setup_kernel_io(struct vmem *b, vm_t paddr)
 }
 #endif
 
-void clone_uvmem(struct vmem * restrict r, struct vmem * restrict b)
+void clone_uvmem(struct vmem *r, struct vmem *b)
 {
 	size_t i = 0;
 	for (; i < CSTACK_PAGE; ++i) {
@@ -574,20 +574,11 @@ stat_t setup_rpc_stack(struct tcb *t)
 		if (!page)
 			return ERR_OOMEM;
 
-		/* map both into rpc and proc spaces so we can write to the
-		 * current stack frame directly. Especially important when
-		 * returning from an rpc. Technically means that we could leak
-		 * memory if map_vpage() for proc.vmem allocates more and more
-		 * pages, but good enough for now. */
 		if (map_vpage(t->rpc.vmem, page,
 		              RPC_STACK_BASE + BASE_PAGE_SIZE * i,
 		              flags, BASE_PAGE))
 			return ERR_OOMEM;
 
-		if (map_vpage(t->proc.vmem, page,
-		              RPC_STACK_BASE + BASE_PAGE_SIZE * i,
-		              flags, BASE_PAGE))
-			return ERR_OOMEM;
 	}
 
 	/* we allocated a second order page for rpc stack usage */

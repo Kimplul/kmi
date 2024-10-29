@@ -12,6 +12,11 @@
 /** The Big Kernel Lock. */
 static spinlock_t bkl = 0;
 
+void bkl_init()
+{
+	bkl = 0;
+}
+
 void bkl_lock()
 {
 	spin_lock(&bkl);

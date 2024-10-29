@@ -22,6 +22,27 @@ struct tcb;
 
 #include <arch/tcb.h>
 
+/** Structure for maintaining the required context data for an rpc call. */
+struct call_ctx {
+	/** Execution continuation point. */
+	vm_t exec;
+
+	/** Position in rpc stack. */
+	vm_t rpc_stack;
+
+	/** Effective process ID. */
+	id_t eid;
+
+	/** Current process ID. */
+	id_t pid;
+
+	/** If this frame was due to a notification, which means leaving the
+	 * frame must restore registers as they were */
+	bool notify;
+
+	/* register save area follows this in the stack */
+};
+
 /**
  * Check if thread is process thread.
  *

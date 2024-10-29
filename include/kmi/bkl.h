@@ -12,6 +12,8 @@
 
 #include <kmi/lock.h>
 
+void bkl_init();
+
 /** Lock the Big Kernel Lock. */
 void bkl_lock();
 

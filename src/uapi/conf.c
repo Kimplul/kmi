@@ -12,6 +12,7 @@
 #include <kmi/sizes.h>
 #include <kmi/uapi.h>
 #include <kmi/conf.h>
+#include <kmi/bkl.h>
 #include <arch/irq.h>
 
 #include <arch/proc.h>
@@ -160,5 +161,10 @@ SYSCALL_DEFINE0(sleep)(struct tcb *t)
 
 	/* presumably we want to wake up on an interrupt */
 	enable_irqs();
-	return_args1(t, sleep());
+
+	bkl_unlock();
+	stat_t r = sleep();
+	bkl_lock();
+
+	return_args1(t, r);
 }

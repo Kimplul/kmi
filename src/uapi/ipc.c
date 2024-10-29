@@ -15,28 +15,6 @@
 #include <kmi/irq.h>
 #include <kmi/conf.h>
 
-/** Structure for maintaining the required context data for an rpc call. */
-struct call_ctx {
-	/** Execution continuation point. */
-	vm_t exec;
-
-	/** Register save area. */
-	vm_t regs;
-
-	/** Position in rpc stack. */
-	vm_t rpc_stack;
-
-	/** Effective process ID. */
-	id_t eid;
-
-	/** Current process ID. */
-	id_t pid;
-
-	/** If this frame was due to a notification, which means leaving the
-	 * frame must restore registers as they were */
-	bool notify;
-};
-
 /**
  * Represents difference between where rpc stack was before rpc call and during.
  * Used to figure out which areas should be marked inaccessible.
@@ -76,7 +54,6 @@ static inline void finalize_rpc(struct tcb *t, struct tcb *r, vm_t s)
 
 	/* make sure updates are visible when swapping to the new virtual memory */
 	mark_rpc_invalid(t, s);
-	use_vmem(t->rpc.vmem);
 }
 
 /**
@@ -93,11 +70,10 @@ static inline vm_t enter_rpc(struct tcb *t, struct sys_ret a,
                              enum ipc_flags flags)
 {
 	/* reuse current rpc stack location if we're being kicked */
-	vm_t rpc_stack = (is_set(flags, IPC_TAIL) &&
-	                  is_rpc(t)) ? t->rpc_stack : rpc_position(t);
+	vm_t rpc_stack = (is_set(flags, IPC_TAIL) && is_rpc(t))
+				? t->rpc_stack : rpc_position(t);
 
 	struct call_ctx *ctx = (struct call_ctx *)(rpc_stack) - 1;
-	ctx->regs = t->regs;
 	t->regs = (vm_t)ctx;
 
 	/* try to get rid of args as fast as possible to free up registers for
@@ -242,8 +218,8 @@ static void leave_rpc(struct tcb *t, struct sys_ret a)
 {
 	vm_t rpc_stack = t->rpc_stack + BASE_PAGE_SIZE;
 	struct call_ctx *ctx = (struct call_ctx *)(rpc_stack) - 1;
+	t->regs = (vm_t)ctx;
 
-	t->regs = ctx->regs;
 	/* again, get rid of args as fast as possible */
 	if (!ctx->notify)
 		set_ret(t, 6, a);
@@ -259,7 +235,7 @@ static void leave_rpc(struct tcb *t, struct sys_ret a)
 
 		rpc_stack = ctx->rpc_stack + BASE_PAGE_SIZE;
 		ctx = (struct call_ctx *)(rpc_stack) - 1;
-		t->regs = ctx->regs;
+		t->regs = (vm_t)ctx;
 
 		r = get_tcb(ctx->pid);
 		/* equivalent to return_args1 but without returning so we can
@@ -282,11 +258,6 @@ static void leave_rpc(struct tcb *t, struct sys_ret a)
 	/* notification queued, try to run it */
 	if (t->notify_flags)
 		notify(t, 0);
-
-	if (is_rpc(t))
-		use_vmem(t->rpc.vmem);
-	else
-		use_vmem(t->proc.vmem);
 
 	if (!ctx->notify) {
 		bkl_unlock();

@@ -179,7 +179,7 @@ void destroy_vmem(struct vmem *b);
  * @param r Source virtual memory of clone.
  * @param b Destination virtual memory of clone.
  */
-void clone_uvmem(struct vmem * restrict r, struct vmem * restrict b);
+void clone_uvmem(struct vmem *r, struct vmem *b);
 
 /**
  * Jump into kernelspace from a physical address space.

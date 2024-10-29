@@ -90,38 +90,22 @@ static id_t __alloc_tid(struct tcb *t)
 	return ERR_NF;
 }
 
-/**
- * Setup thread stack.
- *
- * @param t Thread to setup stack for.
- * @param bytes Minimum size of stack.
- * @return Base of allocated stack.
- */
-static vm_t __setup_thread_stack(struct tcb *t, size_t bytes)
-{
-	return alloc_uvmem(t, bytes, VM_V | VM_R | VM_W | VM_U);
-}
-
 stat_t alloc_stack(struct tcb *t)
 {
 	/* get parent process */
 	struct tcb *p = get_tcb(t->eid);
 	assert(p);
 
-	t->thread_stack = __setup_thread_stack(p, thread_stack_size());
-	if (!t->thread_stack)
+	if (setup_rpc_stack(t))
 		return ERR_OOMEM;
 
-	/** \todo this only allows for a global stack size, what if a user wants
-	 * per thread stack sizes? I guess allocate them yourself in userspace
-	 * or something? */
-	t->thread_stack_size = thread_stack_size();
+	t->regs = t->rpc_stack - sizeof(struct call_ctx);
 	return OK;
 }
 
 void free_stack(struct tcb *t)
 {
-	free_uvmem(get_proc(t), t->thread_stack);
+	destroy_rpc_stack(t);
 }
 
 static stat_t __init_free_thread(struct tcb *t)
@@ -158,10 +142,9 @@ static stat_t __init_owned_thread(struct tcb *p, struct tcb *t)
 	t->eid = p->rid;
 	t->pid = p->rid;
 	t->rid = p->rid;
-	/** @todo I'm assuming two threads can share the same vmem
-	 * structure, this works on riscv but in the event that other
-	 * systems don't we can easily turn this into a clone_uvmem. */
-	t->proc.vmem = p->proc.vmem;
+
+	/* someone else owns our vmem */
+	t->proc.vmem = NULL;
 	t->callback = p->callback;
 
 	if (!(t->rpc.vmem = create_vmem()))
@@ -207,7 +190,9 @@ struct tcb *create_thread(struct tcb *p)
 	}
 
 
-	t->regs = (vm_t)t;
+	struct tcb *parent = get_rproc(t);
+	clone_uvmem(parent->proc.vmem, t->rpc.vmem);
+
 	reference_thread(t);
 	set_canary(t);
 	return t;
@@ -370,7 +355,7 @@ void use_tcb(struct tcb *t)
 
 	__cpu_tcb[t->cpu_id] = t;
 
-	use_vmem(t->proc.vmem);
+	use_vmem(t->rpc.vmem);
 }
 
 struct tcb *get_tcb(id_t tid)
