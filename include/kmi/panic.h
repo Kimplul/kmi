@@ -4,6 +4,8 @@
 #ifndef KMI_PANIC_H
 #define KMI_PANIC_H
 
+#include <kmi/attrs.h>
+
 /**
  * @file panic.h
  * Kernel panic handler.
@@ -19,5 +21,7 @@
  * @param cause Possible error code associated with panic. Page fault, etc.
  */
 __noreturn void kernel_panic(void *pc, void *addr, long cause);
+
+__noreturn void unhandled_panic(void *pc, void *addr, long cause);
 
 #endif /* KMI_PANIC_H */

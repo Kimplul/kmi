@@ -90,24 +90,6 @@ static id_t __alloc_tid(struct tcb *t)
 	return ERR_NF;
 }
 
-stat_t alloc_stack(struct tcb *t)
-{
-	/* get parent process */
-	struct tcb *p = get_tcb(t->eid);
-	assert(p);
-
-	if (setup_rpc_stack(t))
-		return ERR_OOMEM;
-
-	t->regs = t->rpc_stack - sizeof(struct call_ctx);
-	return OK;
-}
-
-void free_stack(struct tcb *t)
-{
-	destroy_rpc_stack(t);
-}
-
 static stat_t __init_free_thread(struct tcb *t)
 {
 	if (!(t->proc.vmem = create_vmem()))
@@ -130,6 +112,7 @@ static stat_t __init_free_thread(struct tcb *t)
 		return ERR_OOMEM;
 	}
 
+	t->regs = t->rpc_stack - sizeof(struct call_ctx);
 	t->pid = t->tid;
 	t->eid = t->tid;
 	t->rid = t->tid;
@@ -156,6 +139,7 @@ static stat_t __init_owned_thread(struct tcb *p, struct tcb *t)
 		return ERR_OOMEM;
 	}
 
+	t->regs = t->rpc_stack - sizeof(struct call_ctx);
 	reference_thread(p);
 	return OK;
 }
@@ -208,16 +192,12 @@ struct tcb *create_thread(struct tcb *p)
 static stat_t __copy_proc(struct tcb *p, struct tcb *n)
 {
 	/** @todo setup rpc stack stuff */
-	/** @todo I think keeping track of userspace stack stuff is unnecessary,
-	 * unless we want unlimited stack size but that sounds dumb. Anycase, we
-	 * need to duplicate stack info, whatever we do. */
 	n->exec = p->exec;
 	n->callback = p->callback;
-	n->thread_stack = p->thread_stack;
-	n->thread_stack_size = p->thread_stack_size;
 
 	copy_regs(n, p);
 	copy_caps(n->caps, p->caps);
+	copy_rpc_stack(p, n);
 	return copy_uvmem(n, p);
 }
 
@@ -269,8 +249,6 @@ stat_t destroy_thread(struct tcb *t)
 	if (r != t)
 		/* if we're our own root process, we unreference ourselves later */
 		unreference_thread(r);
-
-	free_stack(t);
 
 	/* free memory backing rpc stack */
 	destroy_rpc_stack(t);

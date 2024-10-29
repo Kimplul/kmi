@@ -31,7 +31,6 @@ void unorphanize(struct tcb *t)
 	struct tcb *init = get_tcb(1);
 	reference_thread(init);
 
-	free_stack(t);
 	reset_rpc_stack(t);
 
 	id_t old_rid = t->rid;
@@ -41,7 +40,6 @@ void unorphanize(struct tcb *t)
 
 	clone_uvmem(init->proc.vmem, t->rpc.vmem);
 	use_vmem(t->rpc.vmem);
-	alloc_stack(t);
 
 	assert(init->callback);
 	set_ret4(t, 0, t->tid, SYS_USER_ORPHANED, old_rid);

@@ -62,6 +62,7 @@ handle_trap:
 	bnez tp, continue_trap
 	/* the trap came from the kernel, should never happen so just panic
 	 * and abort or whatever */
+	csrw CSR_SSCRATCH, x0
 	csrr a0, CSR_SEPC
 	csrr a1, CSR_STVAL
 	csrr a2, CSR_SCAUSE
@@ -92,7 +93,15 @@ continue_trap:
 	save_caller
 
 	mv a0, s10
+	/* get actual kernel stack into sp */
+	mv sp, tp
 	call riscv_handle_interrupt
+
+	lr	sp, offsetof_regs(tp)
+	addi	sp, sp, -sizeof_registers
+	/* set execution continuation */
+	lr	s10, offsetof_exec(tp)
+	csrw	CSR_SEPC, s10
 
 	j _load_context
 
@@ -108,7 +117,14 @@ handle_exception:
 	csrr a0, CSR_SEPC
 	csrr a1, CSR_STVAL
 	csrr a2, CSR_SCAUSE
-	call unhandled_panic
+	mv sp, tp
+	call riscv_handle_exception
+
+	lr	sp, offsetof_regs(tp)
+	addi	sp, sp, -sizeof_registers
+	/* set execution continuation */
+	lr	s10, offsetof_exec(tp)
+	csrw	CSR_SEPC, s10
 
 	j	_load_context
 
@@ -129,6 +145,7 @@ fast_dispatch:
 	csrr    s10, CSR_SEPC
 	sr	s10, offsetof_exec(tp)
 	/* jump to C */
+	mv sp, tp
 	call	dispatch
 	/* if we had a thread switch, load kernel stack of current thread and
 	 * restore its context */

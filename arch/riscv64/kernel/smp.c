@@ -139,7 +139,6 @@ __noreturn void core_bringup(long hartid)
 	struct tcb *t = create_thread(init);
 	assert(t);
 
-	alloc_stack(t);
 	/* init is special in that all threads jump to the entrypoint of the
 	 * program */
 	t->exec = init->exec;

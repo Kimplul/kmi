@@ -38,18 +38,17 @@ SYSCALL_DEFINE5(create)(struct tcb *t, sys_arg_t func,
 	if (!c)
 		return_args1(t, ERR_OOMEM);
 
-	/** @todo there's quite a bit of overlap between this and what
-	 * core_bringup() is doing, might separate this out into its own
-	 * function? */
-	if (alloc_stack(c)) {
-		destroy_thread(c);
-		return_args1(t, ERR_OOMEM);
-	}
+	/* temporarily jump into new thread memory to set arguments */
+	use_vmem(c->rpc.vmem);
 
+	/* this visit is likely not the cheapest thing in the universe, are
+	 * there ways to speed up thread creation? */
 	set_thread(c);
-
 	set_ret5(c, c->tid, d0, d1, d2, d3);
 	set_return(c, func);
+
+	/* return back */
+	use_vmem(t->rpc.vmem);
 
 	c->notify_id = t->notify_id;
 	return_args1(t, c->tid);
@@ -81,9 +80,13 @@ SYSCALL_DEFINE0(fork)(struct tcb *t)
 	if (!n)
 		return_args1(t, ERR_OOMEM);
 
+	/* again, probably not fantastic that we're jumping between address
+	 * spaces like this */
+	use_vmem(n->rpc.vmem);
 	/* prepare args for when we eventually swap to the new proc, giving
 	 * parent ID as third return value */
 	set_args2(n, 0, get_eproc(t)->pid);
+	use_vmem(t->rpc.vmem);
 
 	n->notify_id = c->notify_id;
 	return_args1(t, n->pid);
@@ -189,6 +192,10 @@ SYSCALL_DEFINE2(spawn)(struct tcb *t, sys_arg_t bin, sys_arg_t interp)
  */
 static void swap(struct tcb *t, struct tcb *s)
 {
+	/* set return value for current thread, important to do first since
+	 * use_tcb() switches the register slots, really easy to miss, not great */
+	set_args1(t, OK);
+
 	/* switch over to new thread */
 	use_tcb(s);
 
@@ -200,9 +207,6 @@ static void swap(struct tcb *t, struct tcb *s)
 		unorphanize(s);
 		return;
 	}
-
-	/* set return value for current thread */
-	set_args1(t, OK);
 
 	/* handle possible queued notification */
 	if (s->notify_flags)

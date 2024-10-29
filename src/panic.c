@@ -14,8 +14,8 @@
 void kernel_panic(void *pc, void *addr, long cause)
 {
 	/* could be useful to print out register values as well? */
-	error("thread %d kernel paniced at pc: %p with address %p and cause %lx\n",
-	      cur_tcb()->cpu_id, pc, addr, cause);
+	error("kernel paniced at pc: %p with address %p and cause %lx\n",
+	      pc, addr, cause);
 
 	info("attempting to reboot\n");
 

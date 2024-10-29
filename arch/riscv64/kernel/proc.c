@@ -81,7 +81,7 @@ void set_thread(struct tcb *t)
 	struct riscv_regs *r = (struct riscv_regs *)(t->regs) - 1;
 
 	/* insert important values into register slots */
-	r->sp = (long)t->thread_stack + t->thread_stack_size;
+	r->sp = (long)t->rpc_stack - BASE_PAGE_SIZE;
 }
 
 void set_stack(struct tcb *t, vm_t s)
@@ -99,9 +99,15 @@ vm_t get_stack(struct tcb *t)
 
 void copy_regs(struct tcb *d, struct tcb *s)
 {
-	struct riscv_regs *rd = (struct riscv_regs *)(d->regs) - 1;
-	struct riscv_regs *rs = (struct riscv_regs *)(s->regs) - 1;
-	*rd = *rs;
+	struct riscv_regs rs = *((struct riscv_regs *)(s->regs) - 1);
+	/* again, not a fan of this, I guess we could query the underlying
+	 * physical page? Would that be any faster? */
+	use_vmem(d->rpc.vmem);
+
+	struct riscv_regs *rd = ((struct riscv_regs *)(d->regs) - 1);
+	*rd = rs;
+
+	use_vmem(s->rpc.vmem);
 }
 
 void adjust_ipi(struct tcb *t)

@@ -42,6 +42,8 @@ stat_t setup_rpc_stack(struct tcb *t);
  */
 void destroy_rpc_stack(struct tcb *t);
 
+void copy_rpc_stack(struct tcb *t, struct tcb *c);
+
 /**
  * Reset RPC stack to top.
  *

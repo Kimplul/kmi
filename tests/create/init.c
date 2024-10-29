@@ -4,8 +4,8 @@ static int data = 0;
 
 void callback(id_t tid, int d0, int d1, int d2, int d3)
 {
-	UNUSED(tid);
 	printf("hello from new thread\n");
+	check(tid == 2, "wrond tid\n");
 	check(d0 == 1, "wrong d0\n");
 	check(d1 == 2, "wrond d1\n");
 	check(d2 == 3, "wrong d2\n");

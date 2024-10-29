@@ -563,6 +563,23 @@ size_t max_rpc_size()
 	return SZ_512K;
 }
 
+void copy_rpc_stack(struct tcb *t, struct tcb *c)
+{
+	/* this is of terrible, copying 2MiB for every fork, not
+	 * great. TODO: use the direct pointer to the rpc stack element? */
+	for (size_t i = 0; i < rpc_pages; ++i) {
+		pm_t p1, p2;
+		stat_t ok1 = stat_vpage(t->rpc.vmem, RPC_STACK_BASE + BASE_PAGE_SIZE * i,
+				&p1, NULL, NULL);
+
+		stat_t ok2 = stat_vpage(c->rpc.vmem, RPC_STACK_BASE + BASE_PAGE_SIZE * i,
+				&p2, NULL, NULL);
+
+		assert(ok1 == OK && ok2 == OK);
+		memcpy((void *)p2, (void *)p1, BASE_PAGE_SIZE);
+	}
+}
+
 stat_t setup_rpc_stack(struct tcb *t)
 {
 	/* by default rpc stack is marked inaccessible to generate segfaults on

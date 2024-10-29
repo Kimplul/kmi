@@ -174,4 +174,6 @@ stat_t copy_uvmem(struct tcb *d, struct tcb *s);
  */
 vmflags_t sanitize_uvflags(vmflags_t flags);
 
+void handle_pagefault(vm_t addr);
+
 #endif /* KMI_VMEM_H */

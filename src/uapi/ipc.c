@@ -102,7 +102,6 @@ static inline vm_t enter_rpc(struct tcb *t, struct sys_ret a,
 	 * limit just give it more.
 	 * */
 	t->rpc_stack = new_stack;
-	set_stack(t, new_stack);
 	return new_stack;
 }
 

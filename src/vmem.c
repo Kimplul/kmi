@@ -9,6 +9,7 @@
 #include <kmi/regions.h>
 #include <kmi/assert.h>
 #include <kmi/string.h>
+#include <kmi/panic.h>
 #include <kmi/debug.h>
 #include <kmi/bits.h>
 #include <kmi/vmem.h>
@@ -407,4 +408,26 @@ stat_t free_uvmem(struct tcb *r, vm_t va)
 vmflags_t sanitize_uvflags(vmflags_t flags)
 {
 	return (flags & (VM_R | VM_W | VM_X)) | VM_V | VM_U;
+}
+
+void handle_pagefault(vm_t addr)
+{
+	struct tcb *t = cur_tcb();
+	struct tcb *p = get_cproc(t);
+
+	size_t ref = __page(addr);
+
+	struct mem_region *m = find_closest_used_region(&p->uvmem.region, addr);
+	if (!m || (ref < m->start || ref > m->end) || !is_region_used(m)) {
+		error("cannot handle actual page fault just yet :(\n");
+		kernel_panic(NULL, NULL, 0);
+		return;
+	}
+
+	/* this is a valid address so presumably the proc virtual memory has
+	 * some changes that haven't been reflected over in our rpc virtual
+	 * memory so make them visible */
+	clone_uvmem(p->proc.vmem, t->rpc.vmem);
+	flush_tlb_all();
+	return;
 }

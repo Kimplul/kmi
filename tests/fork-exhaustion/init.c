@@ -11,8 +11,10 @@ START(pid, tid, d0, d1, d2, d3)
 
 	check(pid == 0, "illegal pid for init\n");
 	id_t our_id = 0;
+
+	int counter = 0;
 	while (1) {
-		printf("forking\n");
+		printf("forking %d\n", counter++);
 		id_t new_id = sys_fork(&our_id);
 		if (new_id < 0)
 			break;
