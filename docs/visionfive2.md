@@ -5,12 +5,17 @@
 Ideally I would fork StarFive's u-boot fork and add 'native' support for my
 kernel, but it turns out that their fork is at the time of writing borked and
 I wasn't able to get anything to boot with it. As such, we'll use their prebuilt
-bootloader and boot in a more generic way.
+bootloader and boot in a more generic way. I've used the binaries downloadable
+from https://github.com/starfive-tech/VisionFive2/releases/tag/VF2_v3.0.4,
+although they are a bit old by now and should probably try to update at some
+point.
 
 The following is how to boot with an SD card. The board seems to support
 serial and ethernet booting, but I haven't looked into how they work.
 
-1. Build `kmi` with `GENERIC_UBOOT=1`.
+1. Build `kmi` with `GENERIC_UBOOT=1`. At the moment, SMP is broken on the
+   VisionFive2, so you'll need to comment out `smp_bringup(d, fdt);` in
+   `main.c`.
 
 2. Create three partitions on an SD card of your choice:
 ```
@@ -21,7 +26,7 @@ sudo sgdisk \
 	     /dev/sdX
 ```
 
-3. Prepare partitions with data:
+3. Prepare partitions with data from the GitHub release:
 ```
 sudo dd if=u-boot-spl.bin.normal.out of=/dev/sdX1
 sudo dd if=visionfive2_fw_payload.img of=/dev/sdX2
