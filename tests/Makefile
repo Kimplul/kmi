@@ -6,7 +6,11 @@ check:
 
 SOURCES		!= echo */source.mk
 DO		!= echo -n > tests.mk
+
+TESTS :=
 include $(SOURCES)
+
+DO		!= ./scripts/gen-tests $(TESTS)
 
 RM	?= rm
 

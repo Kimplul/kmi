@@ -92,6 +92,9 @@ continue_trap:
 	save_callee
 	save_caller
 
+	csrr    t0, CSR_SEPC
+	sr	t0, offsetof_exec(tp)
+
 	mv a0, s10
 	/* get actual kernel stack into sp */
 	mv sp, tp
@@ -117,6 +120,7 @@ handle_exception:
 	csrr a0, CSR_SEPC
 	csrr a1, CSR_STVAL
 	csrr a2, CSR_SCAUSE
+	sr   a0, offsetof_exec(tp)
 	mv sp, tp
 	call riscv_handle_exception
 

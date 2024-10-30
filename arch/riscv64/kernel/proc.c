@@ -48,7 +48,8 @@ void run_init(struct tcb *t, vm_t fdt, vm_t initrd)
 	clone_uvmem(r->proc.vmem, t->rpc.vmem);
 	flush_tlb_all();
 
-	vm_t stack_top = t->rpc_stack - BASE_PAGE_SIZE;
+	/* lore, should probably be codified somewhere */
+	vm_t stack_top = get_stack(t);
 	info("jumping to %lx with sp = %lx\n", (long)t->callback, stack_top);
 
 	bkl_unlock();

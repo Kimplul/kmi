@@ -1,5 +1,6 @@
 #include <kmi/types.h>
 #include <kmi/panic.h>
+#include <kmi/debug.h>
 #include <kmi/vmem.h>
 #include <kmi/bkl.h>
 

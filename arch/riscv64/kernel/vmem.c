@@ -12,6 +12,7 @@
 #include <kmi/vmem.h>
 #include <kmi/mem.h>
 #include <kmi/debug.h>
+#include <arch/proc.h>
 #include <arch/cpu.h>
 #include "pages.h"
 #include "arch.h"
@@ -598,7 +599,8 @@ stat_t setup_rpc_stack(struct tcb *t)
 {
 	/* by default rpc stack is marked inaccessible to generate segfaults on
 	 * access so as to ease stack usage tracking */
-	vmflags_t flags = VM_V | VM_R | VM_W | VM_U;
+	vmflags_t flags = VM_V | VM_R |
+	                  VM_W /*| VM_U note how this is missing */;
 
 	for (size_t i = 0; i < rpc_pages; ++i) {
 		pm_t page = alloc_page(BASE_PAGE);
@@ -620,8 +622,12 @@ stat_t setup_rpc_stack(struct tcb *t)
 	t->arch.rpc_leaf = (struct vmem *)__find_vmem(t->rpc.vmem,
 	                                              RPC_STACK_BASE,
 	                                              NULL);
-	/* we count downward in base pages */
-	t->arch.rpc_idx = rpc_pages;
+	/* we count downward in base pages, the top page is *always* reserved */
+	t->arch.rpc_idx = rpc_pages - 1;
+
+	/* mark our stack region inaccessible to userspace */
+	vm_t stack_top = t->rpc_stack - BASE_PAGE_SIZE;
+	set_stack(t, stack_top);
 	return OK;
 }
 
@@ -640,7 +646,7 @@ void destroy_rpc_stack(struct tcb *t)
 void reset_rpc_stack(struct tcb *t)
 {
 	t->rpc_stack = RPC_STACK_BASE + (BASE_PAGE_SIZE * rpc_pages);
-	t->arch.rpc_idx = rpc_pages;
+	t->arch.rpc_idx = rpc_pages - 1;
 }
 
 bool rpc_stack_empty(pm_t addr)
@@ -658,37 +664,85 @@ vm_t rpc_position(struct tcb *t)
 	return RPC_STACK_BASE + (BASE_PAGE_SIZE * t->arch.rpc_idx);
 }
 
-void mark_rpc_invalid(struct tcb *t, vm_t top)
+/* these following stack handling routines are pretty mind-bending
+ * unfortunately, might there be a better way? */
+
+bool in_rpc_stack(struct tcb *t, vm_t addr)
+{
+	return addr >= RPC_STACK_BASE
+	       && addr < RPC_STACK_BASE + BASE_PAGE_SIZE * t->arch.rpc_idx;
+}
+
+void close_rpc(struct tcb *t)
 {
 	struct vmem *b = t->arch.rpc_leaf;
 	int top_idx = t->arch.rpc_idx;
-	int bottom_idx = (top - RPC_STACK_BASE) / BASE_PAGE_SIZE;
-	assert(bottom_idx < top_idx);
 
-	while (top_idx != bottom_idx) {
+	/* absolute max iter count */
+	for (; top_idx < (int)rpc_pages; --top_idx) {
+		/* mark inaccessible until we reach the first inaccessible
+		 * region */
 		pm_t *pte = (pm_t *)&b->leaf[top_idx];
+		if (!(pte_flags(*pte) & VM_U))
+			break;
+
 		/* make page not accessible from userspace */
 		clear_bits(*pte, vp_flags(VM_U));
-		top_idx--;
+	}
+
+	/* make page following closed region accessible so we can avoid an
+	 * unnecessary page fault */
+	pm_t *pte = (pm_t *)&b->leaf[top_idx];
+	set_bits(*pte, vp_flags(VM_U));
+	t->arch.rpc_idx = top_idx;
+}
+
+void shrink_rpc(struct tcb *t)
+{
+	struct vmem *b = t->arch.rpc_leaf;
+	int top_idx = t->arch.rpc_idx;
+
+	for (; top_idx > 0; ++top_idx) {
+		pm_t *pte = (pm_t *)&b->leaf[top_idx];
+		if (!(pte_flags(*pte) & VM_U))
+			break;
+
+		clear_bits(*pte, vp_flags(VM_U));
 	}
 
 	t->arch.rpc_idx = top_idx;
 }
 
-void mark_rpc_valid(struct tcb *t, vm_t bottom)
+void open_rpc(struct tcb *t, vm_t top)
 {
+	assert(is_aligned(top, BASE_PAGE_SIZE));
 	struct vmem *b = t->arch.rpc_leaf;
-	int bottom_idx = t->arch.rpc_idx;
-	int top_idx = (bottom - RPC_STACK_BASE) / BASE_PAGE_SIZE;
-	assert(bottom_idx <= top_idx);
+	int old_idx = t->arch.rpc_idx;
+	int new_idx = (top - RPC_STACK_BASE) / BASE_PAGE_SIZE;
+	assert(new_idx >= old_idx);
 
-	while (top_idx != bottom_idx) {
-		pm_t *pte = (pm_t *)&b->leaf[bottom_idx];
+	/* always stop one before the page index indicated, might be kind of
+	 * easy to mess up */
+	for (int i = old_idx; i < new_idx - 1; ++i) {
+		pm_t *pte = (pm_t *)&b->leaf[i];
+		set_bits(*pte, vp_flags(VM_U));
+	}
+
+	t->arch.rpc_idx = new_idx - 1;
+}
+
+void grow_rpc(struct tcb *t, vm_t top)
+{
+	assert(is_aligned(top, BASE_PAGE_SIZE));
+	struct vmem *b = t->arch.rpc_leaf;
+	int top_idx = t->arch.rpc_idx;
+	int bottom_idx = (top - RPC_STACK_BASE) / BASE_PAGE_SIZE;
+	assert (top_idx >= bottom_idx);
+
+	for (int i = bottom_idx; i < top_idx; ++i) {
+		pm_t *pte = (pm_t *)&b->leaf[i];
 		/* make page accessible from userspace */
 		set_bits(*pte, vp_flags(VM_U));
-		/* clear used bits */
-		clear_bits(*pte, vp_flags(VM_A | VM_D));
-		bottom_idx++;
 	}
 
 	t->arch.rpc_idx = bottom_idx;

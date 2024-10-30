@@ -12,8 +12,9 @@ START(pid, tid, d0, d1, d2, d3)
 		uint64_t timebase = sys_timebase();
 		uint64_t start = sys_ticks();
 
-		for (size_t i = 0; i < 1000; ++i)
+		for (size_t i = 0; i < 1000; ++i) {
 			sys_ipc_req0(1);
+		}
 
 		uint64_t end = sys_ticks();
 		report(start, end, timebase);

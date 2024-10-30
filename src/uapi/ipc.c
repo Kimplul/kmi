@@ -53,7 +53,8 @@ static inline void finalize_rpc(struct tcb *t, struct tcb *r, vm_t s)
 	t->pid = r->rid;
 
 	/* make sure updates are visible when swapping to the new virtual memory */
-	mark_rpc_invalid(t, s);
+	close_rpc(t);
+	set_stack(t, s);
 }
 
 /**
@@ -84,25 +85,9 @@ static inline vm_t enter_rpc(struct tcb *t, struct sys_ret a,
 	ctx->pid = t->pid;
 	ctx->eid = t->eid;
 	ctx->notify = flags & IPC_NOTIFY;
-	ctx->rpc_stack = rpc_stack;
-
-	/** @todo if we run out of rpc_stack space we should just stop, likely
-	 * return a status? except it shouldn't happen after we've run
-	 * enough_rpc_stack(). */
-	vm_t new_stack = rpc_stack - BASE_PAGE_SIZE;
-
-	/** @todo what if each stack is only some number of pages, and if a proc
-	 * goes over the limit is is seen as programming error? Possibly user
-	 * configurable number as well, might actually use the config subsystem
-	 * :D
-	 * In such a case it would probably be smarter to mark all pages
-	 * inaccessible at first, and then mark the first page accessible. If
-	 * the process needs more stack space it'll cause a paging exception,
-	 * we'll handle it separately and if the process isn't going over the
-	 * limit just give it more.
-	 * */
-	t->rpc_stack = new_stack;
-	return new_stack;
+	ctx->rpc_stack = t->rpc_stack;
+	t->rpc_stack = rpc_stack;
+	return rpc_stack - BASE_PAGE_SIZE;
 }
 
 /**
@@ -215,9 +200,9 @@ void notify(struct tcb *t, enum notify_flag flags)
  */
 static void leave_rpc(struct tcb *t, struct sys_ret a)
 {
-	vm_t rpc_stack = t->rpc_stack + BASE_PAGE_SIZE;
+	vm_t rpc_stack = t->rpc_stack;
 	struct call_ctx *ctx = (struct call_ctx *)(rpc_stack) - 1;
-	t->regs = (vm_t)ctx;
+	t->regs = (vm_t)ctx->rpc_stack - sizeof(struct call_ctx);
 
 	/* again, get rid of args as fast as possible */
 	if (!ctx->notify)
@@ -232,9 +217,9 @@ static void leave_rpc(struct tcb *t, struct sys_ret a)
 			break;
 		}
 
-		rpc_stack = ctx->rpc_stack + BASE_PAGE_SIZE;
+		rpc_stack = ctx->rpc_stack;
 		ctx = (struct call_ctx *)(rpc_stack) - 1;
-		t->regs = (vm_t)ctx;
+		t->regs = (vm_t)ctx->rpc_stack - sizeof(struct call_ctx);
 
 		r = get_tcb(ctx->pid);
 		/* equivalent to return_args1 but without returning so we can
@@ -249,7 +234,10 @@ static void leave_rpc(struct tcb *t, struct sys_ret a)
 	set_return(t, ctx->exec);
 	/* if we're returning from a failed rpc, this should essentially be a
 	 * no-op */
-	mark_rpc_valid(t, ctx->rpc_stack);
+	shrink_rpc(t);
+	open_rpc(t, ctx->rpc_stack);
+	flush_tlb_all();
+
 	t->rpc_stack = ctx->rpc_stack;
 	t->pid = ctx->pid;
 	t->eid = ctx->eid;

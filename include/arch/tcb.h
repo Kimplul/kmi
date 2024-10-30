@@ -77,20 +77,71 @@ bool rpc_stack_empty(pm_t addr);
 vm_t rpc_position(struct tcb *t);
 
 /**
- * Mark RPC stack up to \p top accessible from userspace.
+ * Checks whether an address is in the rpc stack.
+ * Currently also serves double-duty to check that the address is currently
+ * inaccessible, but could be made accessible with \ref grow_rpc. Used by
+ * \ref handle_pagefault.
  *
- * @param t Thread whose RPC stack is being modified.
- * @param top Address up to where stack should be accessible from userspace.
+ * @param t tcb to check.
+ * @param addr Address to check.
+ * @return \ref true if the above holds, \ref false otherwise.
  */
-void mark_rpc_valid(struct tcb *t, vm_t top);
+bool in_rpc_stack(struct tcb *t, vm_t addr);
 
 /**
- * Mark RPC stack down to \p bottom inaccessible from userspace.
+ * Shrinks rpc stack down to where the previous reserved area is, so stack looks
+ * something like this:
  *
- * @param t Thread whose RPC stack is being modified.
- * @param bottom Address down to where stack should be inaccessible from
- * userspace.
+ * ```
+ * ctx | user | <
+ * v
+ * ctx | <
+ * ```
+ *
+ * Implementation note: t->arch.rpc_idx now points to ctx.
+ *
+ * @param t tcb to shrink.
  */
-void mark_rpc_invalid(struct tcb *t, vm_t bottom);
+void shrink_rpc(struct tcb *t);
+
+/**
+ * Opens back up a previous stack frame, so
+ * ```
+ * ctx | user | ctx | <
+ * v
+ * ctx | user | <
+ * ```
+ *
+ * @param t tcb to open up again.
+ * @param top Address to where previous ctx is.
+ */
+void open_rpc(struct tcb *t, vm_t top);
+
+/**
+ * Adds more accessible space on the stack, so
+ * ```
+ * ctx | user | <
+ * v
+ * ctx | user | user | <
+ * ```
+ *
+ * @param t tcb whose stack to grow.
+ * @param top Address to grow to.
+ */
+void grow_rpc(struct tcb *t, vm_t top);
+
+/**
+ * Marks all user accessible areas inaccessible, so
+ * ```
+ * ctx | user | <
+ * ctx | ---- | <
+ * ```
+ *
+ * Used by \ref do_ipc to make sure different processes can't mess with
+ * eachother's stacks.
+ *
+ * @param t tcb whose stack should be closed.
+ */
+void close_rpc(struct tcb *t);
 
 #endif /* KMI_ARCH_TCB_H */

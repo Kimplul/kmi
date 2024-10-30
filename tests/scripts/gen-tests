@@ -1,0 +1,29 @@
+#!/bin/sh
+
+mkdir -p $(for d in "${@}"; do echo $d; done | sed "s|^|build/|")
+mkdir -p $(for d in "${@}"; do echo $d; done | sed "s|^|reports/|")
+
+for NAME in "${@}"; do
+	echo "build/$NAME/init.d:"						>> tests.mk
+	echo "-include build/$NAME/init.d"					>> tests.mk
+
+	echo "build/$NAME/init: $NAME/init.c \$(COMMON) \$(KMI)"		>> tests.mk
+	echo "	\$(COMPILE_TEST) $NAME/init.c \$(COMMON) -o build/$NAME/init"	>> tests.mk
+
+	echo "build/$NAME/initrd: build/$NAME/init"				>> tests.mk
+	echo "	echo build/$NAME/init | \$(GEN_INITRD) build/$NAME/initrd"	>> tests.mk
+
+	echo "reports/$NAME/log: build/$NAME/initrd"				>> tests.mk
+	echo "	timeout --foreground 30s \$(QEMU) \
+		build/$NAME/initrd > reports/$NAME/log"				>> tests.mk
+
+	echo "reports/$NAME/OK: reports/$NAME/log"				>> tests.mk
+	echo "	grep 'BUG' reports/$NAME/log \\"				>> tests.mk
+	echo "		&& echo 'BUG' > reports/$NAME/log \\"			>> tests.mk
+	echo "		|| tail -n1 reports/$NAME/log | tr -d '\\\\r' \\"	>> tests.mk
+	echo "		> reports/$NAME/OK"					>> tests.mk
+
+	echo "TESTS += $NAME"							>> tests.mk
+	echo ".PHONY: $NAME"							>> tests.mk
+	echo "$NAME: reports/$NAME/OK"						>> tests.mk
+done

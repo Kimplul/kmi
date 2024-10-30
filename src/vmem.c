@@ -427,9 +427,17 @@ vmflags_t sanitize_uvflags(vmflags_t flags)
 
 void handle_pagefault(vm_t addr)
 {
+	info("page fault at %lx\n", addr);
 	struct tcb *t = cur_tcb();
-	struct tcb *p = get_cproc(t);
 
+	if (in_rpc_stack(t, addr)) {
+		vm_t aligned = align_down(addr, BASE_PAGE_SIZE);
+		grow_rpc(t, aligned);
+		flush_tlb_all();
+		return;
+	}
+
+	struct tcb *p = get_cproc(t);
 	size_t ref = __page(addr);
 
 	struct mem_region *m = find_closest_used_region(&p->uvmem.region, addr);

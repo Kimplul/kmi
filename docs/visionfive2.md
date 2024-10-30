@@ -13,6 +13,9 @@ point.
 The following is how to boot with an SD card. The board seems to support
 serial and ethernet booting, but I haven't looked into how they work.
 
+The SD card should have an empty GPT table, you can create one with
+`fdisk /dev/sdX/`.
+
 1. Build `kmi` with `GENERIC_UBOOT=1`. At the moment, SMP is broken on the
    VisionFive2, so you'll need to comment out `smp_bringup(d, fdt);` in
    `main.c`.

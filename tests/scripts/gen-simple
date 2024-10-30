@@ -28,8 +28,10 @@ echo "	timeout --foreground 30s \$(QEMU) \
 
 echo "TESTS += $NAME"								>> tests.mk
 echo ".PHONY: $NAME"								>> tests.mk
-echo "$NAME: reports/$NAME/log"							>> tests.mk
+echo "reports/$NAME/OK: reports/$NAME/log"					>> tests.mk
 echo "	grep 'BUG' reports/$NAME/log \\"					>> tests.mk
 echo "		&& echo 'BUG' > reports/$NAME/log \\"				>> tests.mk
 echo "		|| tail -n1 reports/$NAME/log | tr -d '\\\\r' \\"		>> tests.mk
 echo "		> reports/$NAME/OK"						>> tests.mk
+
+echo "$NAME: reports/$NAME/OK" >> tests.mk
