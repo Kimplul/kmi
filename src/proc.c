@@ -56,6 +56,8 @@ stat_t init_proc(void *fdt, vm_t *proc_fdt, vm_t *proc_initrd)
 	 * save them here before we switch */
 	use_tcb(t);
 
+	set_stack(t, t->rpc_stack - BASE_PAGE_SIZE);
+
 	/* allocate stacks etc after ELF file to make sure nothing of importance
 	 * clashes */
 	stat_t ret = prepare_proc(t, get_init_base(fdt), 0);
@@ -72,7 +74,6 @@ stat_t init_proc(void *fdt, vm_t *proc_fdt, vm_t *proc_initrd)
 	*proc_initrd = map_shared_fixed_uvmem(t,
 	                                      initrd, get_initrdsize(fdt),
 	                                      VM_V | VM_R | VM_U);
-
 	info("mapped fdt at %lx\n", *proc_fdt);
 	info("mapped initrd at %lx\n", *proc_initrd);
 	return OK;

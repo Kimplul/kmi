@@ -599,8 +599,8 @@ stat_t setup_rpc_stack(struct tcb *t)
 {
 	/* by default rpc stack is marked inaccessible to generate segfaults on
 	 * access so as to ease stack usage tracking */
-	vmflags_t flags = VM_V | VM_R |
-	                  VM_W /*| VM_U note how this is missing */;
+	vmflags_t flags = VM_V | VM_R | VM_W;
+	/* note how VM_U is missing, userspace messing about will be done later */
 
 	for (size_t i = 0; i < rpc_pages; ++i) {
 		pm_t page = alloc_page(BASE_PAGE);
@@ -611,7 +611,6 @@ stat_t setup_rpc_stack(struct tcb *t)
 		              RPC_STACK_BASE + BASE_PAGE_SIZE * i,
 		              flags, BASE_PAGE))
 			return ERR_OOMEM;
-
 	}
 
 	/* we allocated a second order page for rpc stack usage */
@@ -625,9 +624,9 @@ stat_t setup_rpc_stack(struct tcb *t)
 	/* we count downward in base pages, the top page is *always* reserved */
 	t->arch.rpc_idx = rpc_pages - 1;
 
-	/* mark our stack region inaccessible to userspace */
-	vm_t stack_top = t->rpc_stack - BASE_PAGE_SIZE;
-	set_stack(t, stack_top);
+
+	/* point registers to stack */
+	t->regs = t->rpc_stack - sizeof(struct call_ctx);
 	return OK;
 }
 

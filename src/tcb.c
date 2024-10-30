@@ -119,7 +119,6 @@ static stat_t __init_free_thread(struct tcb *t)
 		return ERR_OOMEM;
 	}
 
-	t->regs = t->rpc_stack - sizeof(struct call_ctx);
 	t->pid = t->tid;
 	t->eid = t->tid;
 	t->rid = t->tid;
