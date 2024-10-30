@@ -277,7 +277,7 @@ static pm_t __alloc_page(enum mm_order order)
 		__get_bit(bucket, a, &set, &bit);
 
 		bmap = __get_set(bucket, set);
-		bmap->size = order_width(order + 1);
+		assert(bmap->size != 0 && bmap->size <= order_width(order + 1));
 
 		bmap->next = NULL;
 		bmap->prev = NULL;
@@ -491,6 +491,9 @@ static void __mark_area_used(pm_t base, pm_t top)
 		return;
 	}
 
+	top = align_up(top, BASE_PAGE_SIZE);
+	base = align_down(base, BASE_PAGE_SIZE);
+
 	size_t area_left = top - base;
 	pm_t runner = base;
 	while (area_left >= BASE_PAGE_SIZE) {
@@ -501,6 +504,8 @@ static void __mark_area_used(pm_t base, pm_t top)
 
 	if (area_left != 0)
 		mark_used(BASE_PAGE, runner);
+
+	info("marked [%lx - %lx] reserved\n", base, top);
 }
 
 /** Helper for keeping track of which memory regions to avoid placing data into. */
@@ -548,7 +553,6 @@ static void __mark_reserved(pm_t ram_base, pm_t ram_size, size_t avoid_count,
 
 		pm_t top = base + size;
 		__mark_area_used(base, top);
-		info("marked [%lx - %lx] reserved\n", base, top);
 	}
 }
 

@@ -309,9 +309,7 @@ stat_t map_vpage(struct vmem *branch, pm_t paddr, vm_t vaddr, vmflags_t flags,
 	}
 
 	size_t idx = vm_to_index(vaddr, top);
-	if (is_branch(branch->leaf[idx]))
-		/* something has gone terribly wrong? */
-		__destroy_branch(branch->leaf[idx]);
+	assert(!is_branch(branch->leaf[idx]));
 
 	branch->leaf[idx] =
 		(struct vmem *)to_pte((pm_t)__pa(paddr), vp_flags(flags));
@@ -475,6 +473,20 @@ void destroy_vmem(struct vmem *b)
 	/* don't free kernel mapping as that one is guaranteed to be statically
 	 * allocated */
 	for (size_t i = 0; i < KERNEL_PAGE; ++i) {
+		if (is_branch(b->leaf[i]))
+			__destroy_branch((struct vmem *)pte_addr(b->leaf[i]));
+	}
+
+	free_page(MM_KPAGE, (pm_t)b);
+}
+
+void destroy_rpcmem(struct vmem *b)
+{
+	if (!b)
+		return;
+
+	/* only destroy branches that the rpc vmem is sure to own */
+	for (size_t i = CSTACK_PAGE; i < KERNEL_PAGE; ++i) {
 		if (is_branch(b->leaf[i]))
 			__destroy_branch((struct vmem *)pte_addr(b->leaf[i]));
 	}

@@ -172,6 +172,7 @@ void use_vmem(struct vmem *b);
  * @param b Virtual memory to destroy.
  */
 void destroy_vmem(struct vmem *b);
+void destroy_rpcmem(struct vmem *b);
 
 /**
  * Raw clone user virtual memory.
