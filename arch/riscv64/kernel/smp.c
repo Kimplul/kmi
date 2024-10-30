@@ -99,8 +99,7 @@ void smp_bringup(struct vmem *b, void *fdt)
 		                          BASE_PAGE_SIZE;
 
 		/* fixup physical address of bringup */
-		pm_t bringup = (pm_t)riscv_bringup;
-		bringup = bringup - VM_KERNEL + get_load_addr();
+		pm_t bringup = (pm_t)riscv_bringup - VM_KERNEL + get_load_addr();
 
 		r = sbi_hart_start(hartid, bringup, satp);
 
@@ -148,6 +147,9 @@ __noreturn void core_bringup(long hartid)
 	setup_arch(NULL);
 	tcb_assign(t);
 	use_tcb(t);
+
+	/* now that we're in our own virtual address space, set stack etc. */
+	set_thread(t);
 
 	info("core %ld releasing BKL\n", (long)cpuid);
 	run_init(t, NULL, NULL);

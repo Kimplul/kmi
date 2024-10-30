@@ -7,8 +7,7 @@ kernel, but it turns out that their fork is at the time of writing borked and
 I wasn't able to get anything to boot with it. As such, we'll use their prebuilt
 bootloader and boot in a more generic way. I've used the binaries downloadable
 from https://github.com/starfive-tech/VisionFive2/releases/tag/VF2_v3.0.4,
-although they are a bit old by now and should probably try to update at some
-point.
+although newer versions seem to work as well.
 
 The following is how to boot with an SD card. The board seems to support
 serial and ethernet booting, but I haven't looked into how they work.
@@ -46,11 +45,18 @@ sync
 
 With the SD card ready to go, reset the device and manually run these commands:
 
+0. `fdt set /cpus/cpu@0 status "disabled"`
 1. `fdt move ${fdtaddr} ${fdt_addr_r}`
 2. `load mmc 1:3 0x47000000 kmi.bin`
 3. `load mmc 1:3 0x48000000 initrd`
 4. `fdt chosen 0x48000000 0x48001200`
 5. `go 0x47000000 ${fdt_addr_r}`
+
+Disabling `cpu@0` is necessary because it's a control core, and as such doesn't
+actually participate in booting, but for whatever reason the device tree that
+U-Boot comes with doesn't mark it as such in any way, shape of form. From what I
+can tell, Linux and *BSD seem to use their own FDTs with that core disabled.
+Might be a good idea.
 
 These commands are pretty hard coded and might not work in the future. At least
 currently `${fdt_addr_r}` is `0x46000000`, so you can probably see where the

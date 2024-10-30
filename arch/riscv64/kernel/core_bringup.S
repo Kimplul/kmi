@@ -1,3 +1,4 @@
+#include "../kernel/csr.h"
 #include "asm.h"
 
 /* pic forces core_bringup to be placed in .got that we can access both from
@@ -10,6 +11,9 @@ riscv_bringup:
 	/* immediately switch to virtual memory through argument in a1 */
 	csrw satp, a1
 	sfence.vma
+
+	/* set scratch to zero in case we crash */
+	csrw CSR_SSCRATCH, x0
 
 	/* fetch the stack allocated to us at our hart index in smp_init_stacks */
 	lui t0, %hi(smp_init_stacks)
