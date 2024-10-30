@@ -90,6 +90,13 @@ static id_t __alloc_tid(struct tcb *t)
 	return ERR_NF;
 }
 
+/**
+ * Initialize thread that isn't bound to any parent process, i.e. it will become
+ * a process in itself.
+ *
+ * @param t Partially constructed tcb to construct further.
+ * @return OK/ERR_OOMEM.
+ */
 static stat_t __init_free_thread(struct tcb *t)
 {
 	if (!(t->proc.vmem = create_vmem()))
@@ -102,7 +109,7 @@ static stat_t __init_free_thread(struct tcb *t)
 
 	if (!(t->rpc.vmem = create_vmem())) {
 		destroy_vmem(t->proc.vmem);
-		return NULL;
+		return ERR_OOMEM;
 	}
 
 	if (setup_rpc_stack(t)) {
@@ -120,6 +127,13 @@ static stat_t __init_free_thread(struct tcb *t)
 	return OK;
 }
 
+/**
+ * Initialize thread that is bound to some parent process.
+ *
+ * @param p Parent tcb.
+ * @param t Partially constructed tcb to construct further.
+ * @return OK/ERR_OOMEM.
+ */
 static stat_t __init_owned_thread(struct tcb *p, struct tcb *t)
 {
 	t->eid = p->rid;
@@ -220,7 +234,6 @@ struct tcb *create_proc(struct tcb *p)
  * Destroy data associated with thread.
  *
  * @param t Thread whose data to destroy.
- * @return \ref OK.
  */
 static void __destroy_thread_data(struct tcb *t)
 {

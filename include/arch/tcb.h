@@ -42,6 +42,12 @@ stat_t setup_rpc_stack(struct tcb *t);
  */
 void destroy_rpc_stack(struct tcb *t);
 
+/**
+ * Copy over contents in rpc stack from \p t to \p c.
+ *
+ * @param t 'Source'.
+ * @param c 'Destination'-
+ */
 void copy_rpc_stack(struct tcb *t, struct tcb *c);
 
 /**

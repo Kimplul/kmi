@@ -71,7 +71,7 @@ static inline vm_t enter_rpc(struct tcb *t, struct sys_ret a,
 {
 	/* reuse current rpc stack location if we're being kicked */
 	vm_t rpc_stack = (is_set(flags, IPC_TAIL) && is_rpc(t))
-				? t->rpc_stack : rpc_position(t);
+	                        ? t->rpc_stack : rpc_position(t);
 
 	struct call_ctx *ctx = (struct call_ctx *)(rpc_stack) - 1;
 	t->regs = (vm_t)ctx;

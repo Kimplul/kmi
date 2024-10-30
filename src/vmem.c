@@ -64,6 +64,14 @@ static stat_t __copy_mapped_region(struct tcb *d, struct tcb *s,
 	return res;
 }
 
+/**
+ * Reference shared memory, creating a link between the referrer and owner.
+ *
+ * @param d 'Owner' of \p orig.
+ * @param s Referrer of \p ref.
+ * @param ref Address of shared memory reference in \p s.
+ * @param orig Address of shared memory in \p d.
+ */
 static void reference_mem(struct tcb *d, struct tcb *s, vm_t ref, vm_t orig)
 {
 	struct mem_region *src = find_used_region(&s->uvmem.region, orig);
@@ -81,6 +89,13 @@ static void reference_mem(struct tcb *d, struct tcb *s, vm_t ref, vm_t orig)
 
 static void __free_mapping(struct tcb *t, struct mem_region *m);
 
+/**
+ * Unreference memory region at address \p addr.
+ * Also unreferences owning process.
+ *
+ * @param s Reference holder of \p addr.
+ * @param addr Address to unreference. Or would dereference be better?
+ */
 static void unreference_mem(struct tcb *s, vm_t addr)
 {
 	struct mem_region *src = find_used_region(&s->uvmem.region, addr);

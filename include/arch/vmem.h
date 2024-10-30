@@ -167,11 +167,21 @@ struct vmem *create_vmem();
 void use_vmem(struct vmem *b);
 
 /**
- * Destroy virtual memory space.
+ * Completely destroy virtual memory space.
+ * Should only be called for ->proc.vmem, as it is the only one that is sure to
+ * own all nodes.
  *
  * @param b Virtual memory to destroy.
  */
 void destroy_vmem(struct vmem *b);
+
+/**
+ * Destroy 'regular' virtual memory space.
+ * Should be called for ->rpc.vmem, as rpc can have some references that it
+ * doesn't own into ->proc.vmem, and this function is careful not to free those.
+ *
+ * @param b Virtual memory to destroy.
+ */
 void destroy_rpcmem(struct vmem *b);
 
 /**

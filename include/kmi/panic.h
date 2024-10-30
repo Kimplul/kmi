@@ -22,6 +22,16 @@
  */
 __noreturn void kernel_panic(void *pc, void *addr, long cause);
 
+/**
+ * Call on some other, like userspace doing something that we currently can't
+ * deal with. Tries to reboot the system. Failing that, spin.
+ * Ideally registers and kernel state would be printed, but keep things simple
+ * for now.
+ *
+ * @param pc Address where fault occured. Should preferably be in the kernel.
+ * @param addr Possibly associated address.
+ * @param cause Possible error code associated with panic. Page fault, etc.
+ */
 __noreturn void unhandled_panic(void *pc, void *addr, long cause);
 
 #endif /* KMI_PANIC_H */

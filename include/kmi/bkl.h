@@ -12,6 +12,11 @@
 
 #include <kmi/lock.h>
 
+/**
+ * Initialize Big Kernel Lock.
+ * In theory, the BKL being statically initialized to 0 should be enough, but
+ * this feels a bit safer.
+ */
 void bkl_init();
 
 /** Lock the Big Kernel Lock. */

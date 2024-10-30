@@ -174,6 +174,14 @@ stat_t copy_uvmem(struct tcb *d, struct tcb *s);
  */
 vmflags_t sanitize_uvflags(vmflags_t flags);
 
+/**
+ * Handle page faults.
+ * If a page fault was to some legal address, the TLB is repopulated and the
+ * access is attempted again. Kind of like COW.
+ * Otherwise, the process gets killed (TODO)
+ *
+ * @param addr Address that caused a page fault.
+ */
 void handle_pagefault(vm_t addr);
 
 #endif /* KMI_VMEM_H */
