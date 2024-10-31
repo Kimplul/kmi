@@ -15,9 +15,7 @@ serial and ethernet booting, but I haven't looked into how they work.
 The SD card should have an empty GPT table, you can create one with
 `fdisk /dev/sdX/`.
 
-1. Build `kmi` with `GENERIC_UBOOT=1`. At the moment, SMP is broken on the
-   VisionFive2, so you'll need to comment out `smp_bringup(d, fdt);` in
-   `main.c`.
+1. Build `kmi` with `GENERIC_UBOOT=1`.
 
 2. Create three partitions on an SD card of your choice:
 ```
@@ -75,3 +73,12 @@ the end address or the size of the `initrd`.
 
 It should be possible to add the above commands to a script to run
 automatically, though I haven't personally done this yet.
+
+## Note about running benchmarks on real hardware
+
+Currently there's only a single Big Kernel Lock, which is taken by cores when
+they are brought up. This means that if you run a benchmark from `benchmarks/`
+'directly' (`START()` needs some extra accomodations to properly handle the
+extra threads), the benchmark will spend a lot of its time waiting for other
+cores to start running, which has a significant impact on the results. I would
+suggest (for now) to just comment out `smp_bringup` in `main`.
