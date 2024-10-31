@@ -125,6 +125,10 @@ void open_rpc(struct tcb *t, vm_t top);
  * ctx | user | user | <
  * ```
  *
+ * @note \p top is (at least currently) not checked for legitimacy, it is
+ * assumed that \ref in_rpc_stack() has been checked beforehand. Should probably
+ * handle this better.
+ *
  * @param t tcb whose stack to grow.
  * @param top Address to grow to.
  */
