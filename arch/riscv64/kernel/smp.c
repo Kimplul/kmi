@@ -99,7 +99,9 @@ void smp_bringup(struct vmem *b, void *fdt)
 		                          BASE_PAGE_SIZE;
 
 		/* fixup physical address of bringup */
-		pm_t bringup = (pm_t)riscv_bringup - VM_KERNEL + get_load_addr();
+		pm_t bringup = (pm_t)riscv_bringup
+		               - VM_KERNEL
+		               + get_load_addr();
 
 		r = sbi_hart_start(hartid, bringup, satp);
 

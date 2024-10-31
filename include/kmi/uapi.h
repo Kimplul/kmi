@@ -769,6 +769,10 @@ SYSCALL_DECLARE2(set_handler, tid, pid);
  * Power off syscall.
  *
  * Either shut down or reboot system.
+ * At least currently, this should be called with care, requires that the caller has
+ * the POWER capability bit. Does not ensure that all threads are shut down gracefully,
+ * so caller should ensure that nothing else on the system is running when the
+ * shutdown occurs.
  *
  * @param t Current tcb.
  * @param type Type of shutdown. \see poweroff_type.
