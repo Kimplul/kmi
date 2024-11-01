@@ -581,21 +581,13 @@ size_t max_rpc_size()
 
 void copy_rpc_stack(struct tcb *t, struct tcb *c)
 {
-	/* this is of terrible, copying 2MiB for every fork, not
-	 * great. TODO: use the direct pointer to the rpc stack element? */
-	for (size_t i = 0; i < rpc_pages; ++i) {
-		pm_t p1, p2;
-		stat_t ok1 = stat_vpage(t->rpc.vmem,
-		                        RPC_STACK_BASE + BASE_PAGE_SIZE * i,
-		                        &p1, NULL, NULL);
+	pm_t *pte1 = (pm_t *)t->arch.rpc_leaf;
+	pm_t page1 = (pm_t)pte_addr(*pte1);
 
-		stat_t ok2 = stat_vpage(c->rpc.vmem,
-		                        RPC_STACK_BASE + BASE_PAGE_SIZE * i,
-		                        &p2, NULL, NULL);
+	pm_t *pte2 = (pm_t *)c->arch.rpc_leaf;
+	pm_t page2 = (pm_t)pte_addr(*pte2);
 
-		assert(ok1 == OK && ok2 == OK);
-		memcpy((void *)p2, (void *)p1, BASE_PAGE_SIZE);
-	}
+	memcpy((void *)page2, (void *)page1, order_size(MM_O1));
 }
 
 stat_t setup_rpc_stack(struct tcb *t)

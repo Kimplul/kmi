@@ -48,7 +48,7 @@ enum ipc_flags {
 static inline void finalize_rpc(struct tcb *t, struct tcb *r, vm_t s)
 {
 	clone_uvmem(r->proc.vmem, t->rpc.vmem);
-	flush_tlb_all();
+	flush_tlb_full();
 
 	set_return(t, r->callback);
 	reference_thread(r);
@@ -247,7 +247,7 @@ static void leave_rpc(struct tcb *t, struct sys_ret a)
 	 * no-op */
 	t->rpc_stack = ctx->rpc_stack;
 	destroy_rpc(t);
-	flush_tlb_all();
+	flush_tlb_full();
 
 	t->pid = ctx->pid;
 	t->eid = ctx->eid;
