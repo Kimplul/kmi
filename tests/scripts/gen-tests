@@ -18,8 +18,8 @@ for NAME in "${@}"; do
 		build/$NAME/initrd > reports/$NAME/log"				>> tests.mk
 
 	echo "reports/$NAME/OK: reports/$NAME/log"				>> tests.mk
-	echo "	grep 'BUG' reports/$NAME/log \\"				>> tests.mk
-	echo "		&& echo 'BUG' > reports/$NAME/log \\"			>> tests.mk
+	echo "	grep 'BUG|ERROR' reports/$NAME/log \\"				>> tests.mk
+	echo "		&& echo 'NOTOK' > reports/$NAME/log \\"			>> tests.mk
 	echo "		|| tail -n1 reports/$NAME/log | tr -d '\\\\r' \\"	>> tests.mk
 	echo "		> reports/$NAME/OK"					>> tests.mk
 

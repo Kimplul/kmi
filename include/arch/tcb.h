@@ -89,33 +89,31 @@ vm_t rpc_position(struct tcb *t);
 bool in_rpc_stack(struct tcb *t, vm_t addr);
 
 /**
- * Shrinks rpc stack down to where the previous reserved area is, so stack looks
- * something like this:
+ * Reuse current rpc activation.
+ * Effectively marks all stack pages except the first in the 'new' stack
+ * activation inaccessible.
  *
- * ```
- * ctx | user | <
- * v
- * ctx | <
- * ```
- *
- * Implementation note: t->arch.rpc_idx now points to ctx.
- *
- * @param t tcb to shrink.
+ * @param t Current tcb.
  */
-void shrink_rpc(struct tcb *t);
+void reuse_rpc(struct tcb *t);
 
 /**
- * Opens back up a previous stack frame, so
- * ```
- * ctx | user | ctx | <
- * v
- * ctx | user | <
- * ```
+ * Create new rpc activation.
+ * Marks all current stack pages inaccessible, marks the first in the new stack
+ * accessible.
  *
- * @param t tcb to open up again.
- * @param top Address to where previous ctx is.
+ * @param t Current tcb.
  */
-void open_rpc(struct tcb *t, vm_t top);
+void new_rpc(struct tcb *t);
+
+/**
+ * Destroy a stack activation.
+ * Marks all current stack pages inaccessible, and marks all user stack pages in
+ * the previous activation accessible again.
+ *
+ * @param t Current tcb.
+ */
+void destroy_rpc(struct tcb *t);
 
 /**
  * Adds more accessible space on the stack, so
@@ -133,19 +131,5 @@ void open_rpc(struct tcb *t, vm_t top);
  * @param top Address to grow to.
  */
 void grow_rpc(struct tcb *t, vm_t top);
-
-/**
- * Marks all user accessible areas inaccessible, so
- * ```
- * ctx | user | <
- * ctx | ---- | <
- * ```
- *
- * Used by \ref do_ipc to make sure different processes can't mess with
- * eachother's stacks.
- *
- * @param t tcb whose stack should be closed.
- */
-void close_rpc(struct tcb *t);
 
 #endif /* KMI_ARCH_TCB_H */

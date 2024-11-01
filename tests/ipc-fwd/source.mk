@@ -1,0 +1,1 @@
+TESTS	+= ipc-fwd

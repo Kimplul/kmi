@@ -44,16 +44,22 @@ enum ipc_flags {
  * @param t Thread to migrate.
  * @param r Process to migrate to.
  * @param s RPC stack regions to mark inaccessible.
+ * @param flags What kind of IPC we're doing.
  */
-static inline void finalize_rpc(struct tcb *t, struct tcb *r, vm_t s)
+static inline void finalize_rpc(struct tcb *t, struct tcb *r, vm_t s,
+                                enum ipc_flags flags)
 {
 	clone_uvmem(r->proc.vmem, t->rpc.vmem);
 	set_return(t, r->callback);
 	reference_thread(r);
 	t->pid = r->rid;
 
-	/* make sure updates are visible when swapping to the new virtual memory */
-	close_rpc(t);
+	if (is_set(flags, IPC_TAIL))
+		reuse_rpc(t);
+	else
+		new_rpc(t);
+
+	flush_tlb_all();
 	set_stack(t, s);
 }
 
@@ -72,8 +78,10 @@ static inline vm_t enter_rpc(struct tcb *t, struct sys_ret a,
 {
 	/* reuse current rpc stack location if we're being kicked */
 	vm_t rpc_stack = (is_set(flags, IPC_TAIL) && is_rpc(t))
-	                        ? t->rpc_stack : rpc_position(t);
+	                        ? t->rpc_stack
+	                        : rpc_position(t);
 
+	/* rpc_stack points to the top of the region */
 	struct call_ctx *ctx = (struct call_ctx *)(rpc_stack) - 1;
 	t->regs = (vm_t)ctx;
 
@@ -81,12 +89,17 @@ static inline vm_t enter_rpc(struct tcb *t, struct sys_ret a,
 	 * later use */
 	set_ret(t, 6, a);
 
-	ctx->exec = t->exec;
-	ctx->pid = t->pid;
-	ctx->eid = t->eid;
-	ctx->notify = flags & IPC_NOTIFY;
-	ctx->rpc_stack = t->rpc_stack;
-	t->rpc_stack = rpc_stack;
+	if (!is_set(flags, IPC_TAIL)) {
+		/* if we're doing a tail call, we don't need to update any of
+		 * these things */
+		ctx->rpc_stack = t->rpc_stack;
+		t->rpc_stack = rpc_stack;
+		ctx->exec = t->exec;
+		ctx->pid = t->pid;
+		ctx->eid = t->eid;
+		ctx->notify = flags & IPC_NOTIFY;
+	}
+
 	return rpc_stack - BASE_PAGE_SIZE;
 }
 
@@ -141,7 +154,7 @@ static __noreturn void __run_notify(struct tcb *t, struct tcb *r)
 	                   SYS_RET5(0, t->tid, code, flags, t->eid),
 	                   IPC_NOTIFY);
 
-	finalize_rpc(t, r, s);
+	finalize_rpc(t, r, s, 0);
 
 	clear_bits(t->notify_flags, flags);
 
@@ -234,11 +247,10 @@ static void leave_rpc(struct tcb *t, struct sys_ret a)
 	set_return(t, ctx->exec);
 	/* if we're returning from a failed rpc, this should essentially be a
 	 * no-op */
-	shrink_rpc(t);
-	open_rpc(t, ctx->rpc_stack);
+	t->rpc_stack = ctx->rpc_stack;
+	destroy_rpc(t);
 	flush_tlb_all();
 
-	t->rpc_stack = ctx->rpc_stack;
 	t->pid = ctx->pid;
 	t->eid = ctx->eid;
 
@@ -282,10 +294,11 @@ static void do_ipc(struct tcb *t,
                    sys_arg_t d3,
                    enum ipc_flags flags)
 {
-	if (unlikely(!__enough_rpc_stack(t)))
+	if (!is_set(flags, IPC_TAIL) && !__enough_rpc_stack(t))
 		return_args1(t, ERR_OOMEM);
 
-	vm_t s = enter_rpc(t, SYS_RET6(t->eid, t->tid, d0, d1, d2, d3), flags);
+	id_t id = is_set(flags, IPC_FORWARD) ? t->eid : t->pid;
+	vm_t s = enter_rpc(t, SYS_RET6(id, t->tid, d0, d1, d2, d3), flags);
 
 	struct tcb *r = get_tcb(pid);
 	if (unlikely(!r || !is_proc(r))) {
@@ -306,7 +319,7 @@ static void do_ipc(struct tcb *t,
 	if (!is_set(flags, IPC_FORWARD))
 		t->eid = t->pid;
 
-	finalize_rpc(t, r, s);
+	finalize_rpc(t, r, s, flags);
 	/* I tested out passing the return values as arguments to
 	 * ret_userspace_fast, but apparently that causes enough stack shuffling
 	 * to be slower overall. */
@@ -345,7 +358,11 @@ SYSCALL_DEFINE5(ipc_req)(struct tcb *t, sys_arg_t pid,
 SYSCALL_DEFINE5(ipc_fwd)(struct tcb *t, sys_arg_t pid,
                          sys_arg_t d0, sys_arg_t d1, sys_arg_t d2, sys_arg_t d3)
 {
-	do_ipc(t, pid, d0, d1, d2, d3, IPC_FORWARD);
+	/* I guess it's fine to check our rpc status and choose flags based on
+	 * that, though the path is starting to get a bit convoluted with a
+	 * bunch of conditionals that I might want to have a look at getting rid
+	 * of at some point, to speed things up a little bit. */
+	do_ipc(t, pid, d0, d1, d2, d3, is_rpc(t) ? IPC_FORWARD : 0);
 }
 
 /**
@@ -363,7 +380,7 @@ SYSCALL_DEFINE5(ipc_tail)(struct tcb *t, sys_arg_t pid,
                           sys_arg_t d0, sys_arg_t d1, sys_arg_t d2,
                           sys_arg_t d3)
 {
-	do_ipc(t, pid, d0, d1, d2, d3, IPC_TAIL);
+	do_ipc(t, pid, d0, d1, d2, d3, is_rpc(t) ? IPC_TAIL : 0);
 }
 
 /**
@@ -381,7 +398,7 @@ SYSCALL_DEFINE5(ipc_kick)(struct tcb *t, sys_arg_t pid,
                           sys_arg_t d0, sys_arg_t d1, sys_arg_t d2,
                           sys_arg_t d3)
 {
-	do_ipc(t, pid, d0, d1, d2, d3, IPC_FORWARD | IPC_TAIL);
+	do_ipc(t, pid, d0, d1, d2, d3, is_rpc(t) ? IPC_FORWARD | IPC_TAIL : 0);
 }
 
 /**

@@ -623,7 +623,7 @@ stat_t setup_rpc_stack(struct tcb *t)
 	                                              NULL);
 	/* we count downward in base pages, the top page is *always* reserved */
 	t->arch.rpc_idx = rpc_pages - 1;
-
+	/** @todo we could mark the first stack page accessible here already */
 
 	/* point registers to stack */
 	t->regs = t->rpc_stack - sizeof(struct call_ctx);
@@ -672,15 +672,36 @@ bool in_rpc_stack(struct tcb *t, vm_t addr)
 	       && addr < RPC_STACK_BASE + BASE_PAGE_SIZE * t->arch.rpc_idx;
 }
 
-void close_rpc(struct tcb *t)
+void reuse_rpc(struct tcb *t)
 {
 	struct vmem *b = t->arch.rpc_leaf;
 	int top_idx = t->arch.rpc_idx;
 
-	/* absolute max iter count */
-	for (; top_idx < (int)rpc_pages; --top_idx) {
+	const int max = rpc_pages - 1;
+	for (; top_idx < max; --top_idx) {
+		pm_t *pte = (pm_t *)&b->leaf[top_idx];
+		if (!(pte_flags(*pte) & VM_U))
+			break;
+
+		clear_bits(*pte, vp_flags(VM_U));
+	}
+
+	/* top_idx is our 'current' kernel region, so mark page following it
+	 * user accessible to avoid page fault on entry */
+	t->arch.rpc_idx = top_idx + 1;
+	pm_t *pte = (pm_t *)&b->leaf[t->arch.rpc_idx];
+	set_bits(*pte, vp_flags(VM_U));
+}
+
+void new_rpc(struct tcb *t)
+{
+	struct vmem *b = t->arch.rpc_leaf;
+	int top_idx = t->arch.rpc_idx;
+
+	int max = rpc_pages - 1;
+	for (; top_idx < max; --top_idx) {
 		/* mark inaccessible until we reach the first inaccessible
-		 * region */
+		* region, which must be our previous kernel data region */
 		pm_t *pte = (pm_t *)&b->leaf[top_idx];
 		if (!(pte_flags(*pte) & VM_U))
 			break;
@@ -689,45 +710,47 @@ void close_rpc(struct tcb *t)
 		clear_bits(*pte, vp_flags(VM_U));
 	}
 
-	/* make page following closed region accessible so we can avoid an
-	 * unnecessary page fault */
-	pm_t *pte = (pm_t *)&b->leaf[top_idx];
+	/* kernel region, skip */
+	t->arch.rpc_idx--;
+
+	/* user stack start, mark accessible to avoid pagefault on entry */
+	t->arch.rpc_idx--;
+	pm_t *pte = (pm_t *)&b->leaf[t->arch.rpc_idx];
 	set_bits(*pte, vp_flags(VM_U));
-	t->arch.rpc_idx = top_idx;
 }
 
-void shrink_rpc(struct tcb *t)
+void destroy_rpc(struct tcb *t)
 {
 	struct vmem *b = t->arch.rpc_leaf;
 	int top_idx = t->arch.rpc_idx;
 
-	for (; top_idx > 0; ++top_idx) {
+	/* first, mark all 'current' accessible pages unaccessible */
+	int max = rpc_pages - 1;
+	for (; top_idx < max; ++top_idx) {
+		/* mark inaccessible until we reach the first inaccessible
+		* region, which must be our previous kernel data region */
 		pm_t *pte = (pm_t *)&b->leaf[top_idx];
 		if (!(pte_flags(*pte) & VM_U))
 			break;
 
+		/* make page not accessible from userspace */
 		clear_bits(*pte, vp_flags(VM_U));
 	}
 
-	t->arch.rpc_idx = top_idx;
-}
+	/* current kernel data region, skip */
+	top_idx++;
 
-void open_rpc(struct tcb *t, vm_t top)
-{
-	assert(is_aligned(top, BASE_PAGE_SIZE));
-	struct vmem *b = t->arch.rpc_leaf;
-	int old_idx = t->arch.rpc_idx;
-	int new_idx = (top - RPC_STACK_BASE) / BASE_PAGE_SIZE;
-	assert(new_idx >= old_idx);
+	int ctx = (t->rpc_stack - RPC_STACK_BASE) / BASE_PAGE_SIZE;
 
-	/* always stop one before the page index indicated, might be kind of
-	 * easy to mess up */
-	for (int i = old_idx; i < new_idx - 1; ++i) {
-		pm_t *pte = (pm_t *)&b->leaf[i];
+	/* now mark previous rpc user region accessible again */
+	/* prev_ctx is page where our kernel context is, so we need to stop one
+	 * before it */
+	for (; top_idx < ctx - 1; ++top_idx) {
+		pm_t *pte = (pm_t *)&b->leaf[top_idx];
 		set_bits(*pte, vp_flags(VM_U));
 	}
 
-	t->arch.rpc_idx = new_idx - 1;
+	t->arch.rpc_idx = ctx - 1;
 }
 
 void grow_rpc(struct tcb *t, vm_t top)
