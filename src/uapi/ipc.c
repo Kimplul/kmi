@@ -38,37 +38,17 @@ enum ipc_flags {
 };
 
 /**
- * Now that we know we're doing an rpc, clone virtual memories and do
- * the slow stuff.
- *
- * @param t Thread to migrate.
- * @param r Process to migrate to.
- * @param flags What kind of IPC we're doing.
- */
-static inline void finalize_rpc(struct tcb *t, struct tcb *r, vm_t s)
-{
-	clone_uvmem(r->proc.vmem, t->rpc.vmem);
-	flush_tlb_full();
-
-	set_return(t, r->callback);
-	reference_thread(r);
-	t->pid = r->rid;
-
-	set_stack(t, s);
-}
-
-/**
  * Optimistically assume we're going to take the rpc and do some preparations
  * for it. Most notably, write the arguments as early as possible to
  * free up registers for the compiler to play with.
  *
  * @param t Thread to migrate.
+ * @param r Process to migrate to.
  * @param a RPC arguments.
  * @param flags Kind of IPC we're doing.
- * @return RPC stack difference that should be passed to finalize_rpc().
  */
-static inline vm_t enter_rpc(struct tcb *t, struct sys_ret a,
-                             enum ipc_flags flags)
+static __inline void enter_rpc(struct tcb *t, struct tcb *r, struct sys_ret a,
+                               enum ipc_flags flags)
 {
 	/* reuse current rpc stack location if we're being kicked */
 	vm_t rpc_stack = (is_set(flags, IPC_TAIL) && is_rpc(t))
@@ -98,7 +78,17 @@ static inline vm_t enter_rpc(struct tcb *t, struct sys_ret a,
 		reuse_rpc(t);
 	}
 
-	return rpc_stack - BASE_PAGE_SIZE;
+
+	set_stack(t, rpc_stack - BASE_PAGE_SIZE);
+	clone_uvmem(r->proc.vmem, t->rpc.vmem);
+	flush_tlb_full();
+
+	if (!is_set(flags, IPC_FORWARD))
+		t->eid = t->pid;
+
+	set_return(t, r->callback);
+	reference_thread(r);
+	t->pid = r->rid;
 }
 
 /**
@@ -148,11 +138,7 @@ static __noreturn void __run_notify(struct tcb *t, struct tcb *r)
 
 	/* signal to whoever is receiving us that we're from the kernel
 	 * ("pid 0"), and we are notifying the current thread */
-	vm_t s = enter_rpc(t,
-	                   SYS_RET5(0, t->tid, code, flags, t->eid),
-	                   IPC_NOTIFY);
-
-	finalize_rpc(t, r, s);
+	enter_rpc(t, r, SYS_RET5(0, t->tid, code, flags, t->eid), IPC_NOTIFY);
 
 	clear_bits(t->notify_flags, flags);
 
@@ -295,29 +281,13 @@ static void do_ipc(struct tcb *t,
 	if (!is_set(flags, IPC_TAIL) && !__enough_rpc_stack(t))
 		return_args1(t, ERR_OOMEM);
 
-	id_t id = is_set(flags, IPC_FORWARD) ? t->eid : t->pid;
-	vm_t s = enter_rpc(t, SYS_RET6(id, t->tid, d0, d1, d2, d3), flags);
-
 	struct tcb *r = get_tcb(pid);
-	if (unlikely(!r || !is_proc(r))) {
-		leave_rpc(t, SYS_RET1(ERR_INVAL));
-		return;
-	}
+	if (unlikely(!r || !is_proc(r) || zombie(r)))
+		return_args1(t, ERR_INVAL);
 
-	if (unlikely(zombie(r))) {
-		leave_rpc(t, SYS_RET1(ERR_INVAL));
-		return;
-	}
+	id_t id = is_set(flags, IPC_FORWARD) ? t->eid : t->pid;
+	enter_rpc(t, r, SYS_RET6(id, t->tid, d0, d1, d2, d3), flags);
 
-	if (unlikely(!r->callback)) {
-		leave_rpc(t, SYS_RET1(ERR_NOINIT));
-		return;
-	}
-
-	if (!is_set(flags, IPC_FORWARD))
-		t->eid = t->pid;
-
-	finalize_rpc(t, r, s);
 	/* I tested out passing the return values as arguments to
 	 * ret_userspace_fast, but apparently that causes enough stack shuffling
 	 * to be slower overall. */
