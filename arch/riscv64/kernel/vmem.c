@@ -690,7 +690,7 @@ void reuse_rpc(struct tcb *t)
 	set_bits(*pte, vp_flags(VM_U));
 }
 
-void new_rpc(struct tcb *t)
+inline void new_rpc(struct tcb *t)
 {
 	struct vmem *b = t->arch.rpc_leaf;
 	int top_idx = t->arch.rpc_idx;
@@ -716,7 +716,7 @@ void new_rpc(struct tcb *t)
 	set_bits(*pte, vp_flags(VM_U));
 }
 
-void destroy_rpc(struct tcb *t)
+inline void destroy_rpc(struct tcb *t)
 {
 	struct vmem *b = t->arch.rpc_leaf;
 	int top_idx = t->arch.rpc_idx;
@@ -750,7 +750,7 @@ void destroy_rpc(struct tcb *t)
 	t->arch.rpc_idx = ctx - 2;
 }
 
-void grow_rpc(struct tcb *t, vm_t top)
+inline void grow_rpc(struct tcb *t, vm_t top)
 {
 	assert(is_aligned(top, BASE_PAGE_SIZE));
 	struct vmem *b = t->arch.rpc_leaf;

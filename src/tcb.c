@@ -344,7 +344,7 @@ void use_tcb(struct tcb *t)
 	use_vmem(t->rpc.vmem);
 }
 
-struct tcb *get_tcb(id_t tid)
+inline struct tcb *get_tcb(id_t tid)
 {
 	assert(tcbs);
 
