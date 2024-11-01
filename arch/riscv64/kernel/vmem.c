@@ -297,6 +297,9 @@ stat_t map_vpage(struct vmem *branch, pm_t paddr, vm_t vaddr, vmflags_t flags,
 	while (top != order) {
 		size_t idx = vm_to_index(vaddr, top);
 
+		/* what if we create one high-level page and a low-level page
+		 * doesn't have enough memory? I think that situation would fail
+		 * the unit tests I currently have */
 		if (__unused((pm_t)branch->leaf[idx])) {
 			struct vmem *leaf = __create_leaf();
 			if (!leaf)
@@ -602,25 +605,28 @@ stat_t setup_rpc_stack(struct tcb *t)
 	vmflags_t flags = VM_V | VM_R | VM_W;
 	/* note how VM_U is missing, userspace messing about will be done later */
 
-	for (size_t i = 0; i < rpc_pages; ++i) {
-		pm_t page = alloc_page(BASE_PAGE);
-		if (!page)
-			return ERR_OOMEM;
+	pm_t page = alloc_page(MM_O1);
+	if (!page)
+		return ERR_OOMEM;
 
-		if (map_vpage(t->rpc.vmem, page,
-		              RPC_STACK_BASE + BASE_PAGE_SIZE * i,
-		              flags, BASE_PAGE))
-			return ERR_OOMEM;
+	if (map_vpage(t->rpc.vmem, page, RPC_STACK_BASE, flags, BASE_PAGE)) {
+		free_page(MM_O1, page);
+		return ERR_OOMEM;
 	}
 
-	/* we allocated a second order page for rpc stack usage */
-	t->rpc_stack = RPC_STACK_BASE + order_size(MM_O1);
-
-	/* slightly hacky maybe but we know the first pte is at RPC_STACK_BASE,
-	 * which means that it must also be the leaf */
 	t->arch.rpc_leaf = (struct vmem *)__find_vmem(t->rpc.vmem,
 	                                              RPC_STACK_BASE,
 	                                              NULL);
+
+	for (size_t i = 0; i < rpc_pages; ++i) {
+		t->arch.rpc_leaf->leaf[i] = (struct vmem *)to_pte(
+			(pm_t)__pa(page + i * BASE_PAGE_SIZE),
+			vp_flags(flags)
+			);
+	}
+
+	t->rpc_stack = RPC_STACK_BASE + order_size(MM_O1);
+
 	/* we count downward in base pages, the top page is *always* reserved */
 	t->arch.rpc_idx = rpc_pages - 1;
 	/** @todo we could mark the first stack page accessible here already */
@@ -632,14 +638,9 @@ stat_t setup_rpc_stack(struct tcb *t)
 
 void destroy_rpc_stack(struct tcb *t)
 {
-	for (size_t i = 0; i < rpc_pages; ++i) {
-		pm_t page = 0; enum mm_order order = BASE_PAGE;
-		if (stat_vpage(t->rpc.vmem, RPC_STACK_BASE + BASE_PAGE_SIZE * i,
-		               &page, &order, NULL))
-			return;
-
-		free_page(order, page);
-	}
+	pm_t *pte = (pm_t *)t->arch.rpc_leaf;
+	pm_t page = (pm_t)pte_addr(*pte);
+	free_page(MM_O1, page);
 }
 
 void reset_rpc_stack(struct tcb *t)

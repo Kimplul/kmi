@@ -113,7 +113,6 @@ static stat_t __init_free_thread(struct tcb *t)
 	}
 
 	if (setup_rpc_stack(t)) {
-		destroy_rpc_stack(t);
 		destroy_rpcmem(t->rpc.vmem);
 		destroy_vmem(t->proc.vmem);
 		return ERR_OOMEM;
@@ -147,7 +146,6 @@ static stat_t __init_owned_thread(struct tcb *p, struct tcb *t)
 		return NULL;
 
 	if (setup_rpc_stack(t)) {
-		destroy_rpc_stack(t);
 		destroy_rpcmem(t->rpc.vmem);
 		return ERR_OOMEM;
 	}

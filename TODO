@@ -51,7 +51,6 @@ associated program. Easy. (started)
 + Start working on proper context swaps and RPC swaps. (which thread ID should
 		be visible from cur_tcb() when in an RPC? should I use some kind
 		of effective tid instead of cur_tcb()?)
-+ Export VM flags to userspace, separate header or something?
 + Get core count? It's technically speaking available from the fdt but could be
 limited by the NR_CPUS macro, so it might be a good idea to export as a CONF_*
 + The node subsystem might benefit from larger-than-base-page sizes, for example
@@ -61,6 +60,9 @@ limited by the NR_CPUS macro, so it might be a good idea to export as a CONF_*
   to check for any BUG messages and fail if they are found. Also, most tests
   just check if the last message is OK, and we only really need more complex
   checking if we need to calculate like memory leaks etc.
+
++ grow_rpc() shouldn't exceed limits
++ handle_pagefault() should kill processes that have no good reason to pagefault
 
 !!! FUTURE:
 + Cache locality?

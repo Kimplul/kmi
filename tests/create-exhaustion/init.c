@@ -10,8 +10,9 @@ START(pid, tid, d0, d1, d2, d3)
 	UNUSED(d3);
 
 	size_t old_ram = 0;
+	int count = 0;
 	while (1) {
-		printf("creating new thread\n");
+		printf("creating new thread %d\n", count++);
 		id_t new_thread = sys_create((uintptr_t)_start, 1, 2, 3, 4);
 		if (new_thread < 0)
 			break;
