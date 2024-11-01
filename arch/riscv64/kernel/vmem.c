@@ -367,7 +367,7 @@ void flush_tlb(uintptr_t addr)
 
 void flush_tlb_full()
 {
-	__asm__ volatile ("sfence.vma %0\n" : : "r" (0) : "memory");
+	__asm__ volatile ("sfence.vma\n" ::: "memory");
 }
 
 void flush_tlb_all()
