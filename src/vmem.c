@@ -433,7 +433,7 @@ void handle_pagefault(vm_t addr)
 	if (in_rpc_stack(t, addr)) {
 		vm_t aligned = align_down(addr, BASE_PAGE_SIZE);
 		grow_rpc(t, aligned);
-		flush_tlb_all();
+		flush_tlb_full();
 		return;
 	}
 
@@ -451,6 +451,6 @@ void handle_pagefault(vm_t addr)
 	 * some changes that haven't been reflected over in our rpc virtual
 	 * memory so make them visible */
 	clone_uvmem(p->proc.vmem, t->rpc.vmem);
-	flush_tlb_all();
+	flush_tlb_full();
 	return;
 }
