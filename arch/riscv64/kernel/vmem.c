@@ -641,13 +641,13 @@ void destroy_rpc_stack(struct tcb *t)
 
 void reset_rpc_stack(struct tcb *t)
 {
-	t->rpc_stack = RPC_STACK_BASE + (BASE_PAGE_SIZE * rpc_pages);
+	t->rpc_stack = RPC_STACK_BASE + (BASE_PAGE_SIZE * order_size(MM_O1));
 	t->arch.rpc_idx = rpc_pages - 1;
 }
 
 bool rpc_stack_empty(pm_t addr)
 {
-	return addr == RPC_STACK_BASE + (BASE_PAGE_SIZE * rpc_pages);
+	return addr == RPC_STACK_BASE + order_size(MM_O1);
 }
 
 
@@ -674,7 +674,7 @@ void reuse_rpc(struct tcb *t)
 	struct vmem *b = t->arch.rpc_leaf;
 	int top_idx = t->arch.rpc_idx;
 
-	const int max = rpc_pages - 1;
+	int max = rpc_pages - 1;
 	for (; top_idx < max; --top_idx) {
 		pm_t *pte = (pm_t *)&b->leaf[top_idx];
 		if (!(pte_flags(*pte) & VM_U))
