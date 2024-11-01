@@ -58,8 +58,6 @@ stat_t init_proc(void *fdt, vm_t *proc_fdt, vm_t *proc_initrd)
 
 	set_stack(t, t->rpc_stack - BASE_PAGE_SIZE);
 
-	/* allocate stacks etc after ELF file to make sure nothing of importance
-	 * clashes */
 	stat_t ret = prepare_proc(t, get_init_base(fdt), 0);
 	assert(ret == OK);
 

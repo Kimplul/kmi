@@ -43,23 +43,17 @@ enum ipc_flags {
  *
  * @param t Thread to migrate.
  * @param r Process to migrate to.
- * @param s RPC stack regions to mark inaccessible.
  * @param flags What kind of IPC we're doing.
  */
-static inline void finalize_rpc(struct tcb *t, struct tcb *r, vm_t s,
-                                enum ipc_flags flags)
+static inline void finalize_rpc(struct tcb *t, struct tcb *r, vm_t s)
 {
 	clone_uvmem(r->proc.vmem, t->rpc.vmem);
+	flush_tlb_all();
+
 	set_return(t, r->callback);
 	reference_thread(r);
 	t->pid = r->rid;
 
-	if (is_set(flags, IPC_TAIL))
-		reuse_rpc(t);
-	else
-		new_rpc(t);
-
-	flush_tlb_all();
 	set_stack(t, s);
 }
 
@@ -90,14 +84,18 @@ static inline vm_t enter_rpc(struct tcb *t, struct sys_ret a,
 	set_ret(t, 6, a);
 
 	if (!is_set(flags, IPC_TAIL)) {
-		/* if we're doing a tail call, we don't need to update any of
-		 * these things */
 		ctx->rpc_stack = t->rpc_stack;
 		t->rpc_stack = rpc_stack;
 		ctx->exec = t->exec;
 		ctx->pid = t->pid;
 		ctx->eid = t->eid;
 		ctx->notify = flags & IPC_NOTIFY;
+		new_rpc(t);
+	}
+	else {
+		/* if we're doing a tail call, we don't need to update any of
+		 * the above things */
+		reuse_rpc(t);
 	}
 
 	return rpc_stack - BASE_PAGE_SIZE;
@@ -154,7 +152,7 @@ static __noreturn void __run_notify(struct tcb *t, struct tcb *r)
 	                   SYS_RET5(0, t->tid, code, flags, t->eid),
 	                   IPC_NOTIFY);
 
-	finalize_rpc(t, r, s, 0);
+	finalize_rpc(t, r, s);
 
 	clear_bits(t->notify_flags, flags);
 
@@ -319,7 +317,7 @@ static void do_ipc(struct tcb *t,
 	if (!is_set(flags, IPC_FORWARD))
 		t->eid = t->pid;
 
-	finalize_rpc(t, r, s, flags);
+	finalize_rpc(t, r, s);
 	/* I tested out passing the return values as arguments to
 	 * ret_userspace_fast, but apparently that causes enough stack shuffling
 	 * to be slower overall. */

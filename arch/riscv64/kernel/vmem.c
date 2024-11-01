@@ -605,6 +605,10 @@ stat_t setup_rpc_stack(struct tcb *t)
 	vmflags_t flags = VM_V | VM_R | VM_W;
 	/* note how VM_U is missing, userspace messing about will be done later */
 
+	/* don't generate interrupt on first access, since it'll come from
+	 * inside the kernel and we can't handle that */
+	flags |= VM_A | VM_D;
+
 	pm_t page = alloc_page(MM_O1);
 	if (!page)
 		return ERR_OOMEM;
@@ -751,7 +755,7 @@ void destroy_rpc(struct tcb *t)
 		set_bits(*pte, vp_flags(VM_U));
 	}
 
-	t->arch.rpc_idx = ctx - 1;
+	t->arch.rpc_idx = ctx - 2;
 }
 
 void grow_rpc(struct tcb *t, vm_t top)
