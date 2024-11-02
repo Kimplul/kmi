@@ -236,6 +236,15 @@ struct mem_region *find_first_region(struct mem_region_root *r);
  */
 struct mem_region *find_used_region(struct mem_region_root *r, vm_t start);
 
+/**
+ * Find used memory region inside which \p addr is.
+ * Note the significant difference from \ref find_used_region which requires the
+ * address to exactly match the start of a region.
+ *
+ * @param r Memory region root.
+ * @param addr Address to look for.
+ * @return Pointer to owning memory region or \c NULL if no such exists.
+ */
 struct mem_region *find_addr_region(struct mem_region_root *r, vm_t addr);
 
 /**

@@ -34,12 +34,13 @@ static uint8_t __elf_to_uvflags(uint8_t elf_flags)
 }
 
 static stat_t __elf_map_section(struct tcb *t,
-		vm_t va, size_t vaz,
-		vm_t vf, size_t vfz,
-		uint8_t flags)
+                                vm_t va, size_t vaz,
+                                vm_t vf, size_t vfz,
+                                uint8_t flags)
 {
 	size_t region_size;
-	vm_t v = alloc_fixed_region(&t->uvmem.region, va, vaz, &region_size, flags);
+	vm_t v = alloc_fixed_region(&t->uvmem.region, va, vaz, &region_size,
+	                            flags);
 	if (!v)
 		return ERR_INVAL;
 
@@ -59,7 +60,9 @@ static stat_t __elf_map_section(struct tcb *t,
 			memcpy((void *)page, (void *)(vf + runner), z);
 		}
 
-		if (map_vpage(t->proc.vmem, page, va + runner, flags, BASE_PAGE)) {
+		if (map_vpage(t->proc.vmem,
+		              page, va + runner,
+		              flags, BASE_PAGE)) {
 			free_page(BASE_PAGE, page);
 			return ERR_OOMEM;
 		}
@@ -77,17 +80,16 @@ static stat_t __elf_map_section(struct tcb *t,
  * @param phstart Program header start.
  * @param phnum Number of program header entries.
  * @param phsize Size of page header entry.
+ * @param OK on success, something else otherwise.
  */
 static stat_t __map_exec(struct tcb *t,
-		vm_t bin,
-		uint8_t ei_c,
-		vm_t phstart,
-                size_t phnum,
-		size_t phsize)
+                         vm_t bin,
+                         uint8_t ei_c,
+                         vm_t phstart,
+                         size_t phnum,
+                         size_t phsize)
 {
 	assert(t && is_proc(t));
-	/* temporarily visit process virtual memory */
-	use_vmem(t->proc.vmem);
 
 	/* create empty vmem so we don't have to worry about possible overlaps */
 	struct vmem *new_vmem = create_vmem();
@@ -106,7 +108,6 @@ static stat_t __map_exec(struct tcb *t,
 		destroy_vmem(new_vmem);
 		t->uvmem = old_uvmem;
 		t->proc.vmem = old_vmem;
-		use_vmem(t->rpc.vmem);
 		return ERR_OOMEM;
 	}
 
@@ -133,7 +134,6 @@ static stat_t __map_exec(struct tcb *t,
 
 			t->proc.vmem = old_vmem;
 			t->uvmem = old_uvmem;
-			use_vmem(t->rpc.vmem);
 			return ERR_OOMEM;
 		}
 	}
@@ -146,7 +146,6 @@ static stat_t __map_exec(struct tcb *t,
 
 	t->proc.vmem = new_vmem;
 	t->uvmem = new_uvmem;
-	use_vmem(t->rpc.vmem);
 	return OK;
 }
 

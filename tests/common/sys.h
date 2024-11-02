@@ -240,7 +240,7 @@ static inline enum sys_status sys_exec(uintptr_t bin, uintptr_t interp)
 /* negative IDs mean errors */
 static inline id_t sys_spawn(uintptr_t bin, uintptr_t interp)
 {
-	struct sys_ret r = syscall2(SYS_EXEC, bin, interp);
+	struct sys_ret r = syscall2(SYS_SPAWN, bin, interp);
 	return r.s;
 }
 

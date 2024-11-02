@@ -330,7 +330,7 @@ vm_t map_shared_fixed_uvmem(struct tcb *t, pm_t start, size_t size,
 	assert(is_aligned(start, BASE_PAGE_SIZE));
 
 	const vm_t v = alloc_shared_region(&t->uvmem.region,
-			size, &size, flags, 0);
+	                                   size, &size, flags, 0);
 	if (!v)
 		return 0;
 

@@ -25,8 +25,6 @@ stat_t prepare_proc(struct tcb *t, vm_t bin, vm_t interp)
 		return ERR_INVAL;
 
 	t->callback = entry;
-	set_thread(t);
-	set_return(t, entry);
 	return OK;
 }
 
@@ -56,6 +54,8 @@ stat_t init_proc(void *fdt, vm_t *proc_fdt, vm_t *proc_initrd)
 	 * save them here before we switch */
 	use_tcb(t);
 
+	set_thread(t);
+	set_return(t, t->callback);
 	set_stack(t, t->rpc_stack - BASE_PAGE_SIZE);
 
 	stat_t ret = prepare_proc(t, get_init_base(fdt), 0);

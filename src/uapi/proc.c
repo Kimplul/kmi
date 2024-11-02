@@ -128,7 +128,11 @@ SYSCALL_DEFINE2(exec)(struct tcb *t, sys_arg_t bin, sys_arg_t interp)
 	if (prepare_proc(t, bin, interp))
 		return_args1(t, ERR_INVAL);
 
+	set_thread(t);
+	set_return(t, t->callback);
 	set_ret4(t, 0, t->tid, SYS_USER_SPAWNED, t->pid);
+
+	flush_tlb_full();
 }
 
 /**
@@ -150,15 +154,23 @@ SYSCALL_DEFINE2(spawn)(struct tcb *t, sys_arg_t bin, sys_arg_t interp)
 	if (!n)
 		return_args1(t, ERR_OOMEM);
 
-	/** @todo copy over bin and interp into new process, this is not enough */
 	n->notify_id = c->notify_id;
-	stat_t ret = OK;
-	if ((ret = prepare_proc(n, bin, interp))) {
+	if (prepare_proc(n, bin, interp)) {
 		/* this kills the thread */
 		orphanize(t);
 		unorphanize(t);
-		return_args1(t, ret);
+		return_args1(t, ERR_INVAL);
 	}
+
+	/** @todo should permissions be transferred? Probably, not but now there
+	 * is a slightly annoying asymmetry between fork+exec vs spawn... */
+
+	/* temporarily switch to new thread to manipulate stack */
+	use_tcb(n);
+	set_thread(n);
+	set_return(n, n->callback);
+	set_ret4(n, 0, n->tid, SYS_USER_SPAWNED, n->pid);
+	use_tcb(t);
 
 	return_args1(t, n->pid);
 }
