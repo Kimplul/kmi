@@ -32,10 +32,13 @@ QEMU		:= qemu-system-$(ARCH) -machine virt -kernel ../kmi.bin \
 		   -initrd
 
 KMI		:= ../kmi.bin
-COMMON		:= build/printf.o
+COMMON		:= build/printf.o build/string.o
 
 build/printf.o: common/printf.c $(KMI)
 	$(COMPILE_BENCHMARK) -c common/printf.c -o build/printf.o
+
+build/string.o: common/string.c $(KMI)
+	$(COMPILE_BENCHMARK) -c common/string.c -o build/string.o
 
 BENCHMARKS :=
 include benchmarks.mk

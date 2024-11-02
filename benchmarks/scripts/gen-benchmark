@@ -1,32 +1,45 @@
 #!/bin/sh
 
 NAME=
+PROGS=
 while getopts "n:p:" opt; do
 	case "$opt" in
 		n) NAME="$OPTARG";;
+		p) PROGS="$PROGS $OPTARG";;
 		*) echo "unrecognised options -$OPTARG" >&2; exit 1;
 	esac
 done
 
-obj="build/${NAME}/init.o"
-dep="${obj}.d"
+mkdir -p "build/$NAME"
 
-echo "${dep}:"							>> benchmarks.mk
-echo "-include ${dep}"						>> benchmarks.mk
-echo "${obj}: $NAME/${s}"					>> benchmarks.mk
-echo "	mkdir -p build/$NAME"					>> benchmarks.mk
-echo "	\$(COMPILE_BENCHMARK) -c $NAME/init.c -o ${obj}"	>> benchmarks.mk
+if [ -z "$NAME" ]; then
+	echo "No name given for benchmark" >&2; exit 2;
+fi
 
-echo "build/${NAME}/initrd: ${obj} \$(COMMON)"			>> benchmarks.mk
-echo "	\$(COMPILE_BENCHMARK) ${obj} \
-	\$(COMMON) -o build/${NAME}/init"			>> benchmarks.mk
+if [ -z "$PROGS" ]; then
+	echo "No programs to add to initrd" >&2; exit 3;
+fi
 
-echo "	echo build/${NAME}/init | \
-	\$(GEN_INITRD) build/${NAME}/initrd"			>> benchmarks.mk
+for p in $PROGS
+do
+	dep="build/${NAME}/${p}.d"
 
-echo "BENCHMARKS += ${NAME}"					>> benchmarks.mk
-echo ".PHONY: ${NAME}"						>> benchmarks.mk
-echo "${NAME}: build/${NAME}/initrd"				>> benchmarks.mk
-echo "	mkdir -p reports/${NAME}"				>> benchmarks.mk
+	echo "${NAME}_PROGS += build/${NAME}/${p}"			>> benchmarks.mk
+	echo "${dep}:"							>> benchmarks.mk
+	echo "-include ${dep}"						>> benchmarks.mk
+	echo "build/${NAME}/${p}: $NAME/$p.c \$(COMMON)"		>> benchmarks.mk
+	echo "	\$(COMPILE_BENCHMARK) $NAME/${p}.c \$(COMMON) \\"	>> benchmarks.mk
+	echo "		-o build/${NAME}/${p}"				>> benchmarks.mk
+done
+
+echo "build/${NAME}/initrd: \$(${NAME}_PROGS) \$(COMMON) \$(KMI)"	>> benchmarks.mk
+echo "	for p in \$(${NAME}_PROGS); do \\"				>> benchmarks.mk
+echo "		echo \$\$p; \\"						>> benchmarks.mk
+echo "	done | \$(GEN_INITRD) build/$NAME/initrd"			>> benchmarks.mk
+
+echo "BENCHMARKS += ${NAME}"						>> benchmarks.mk
+echo ".PHONY: ${NAME}"							>> benchmarks.mk
+echo "${NAME}: build/${NAME}/initrd"					>> benchmarks.mk
+echo "	mkdir -p reports/${NAME}"					>> benchmarks.mk
 echo "	timeout --foreground 30s \
-	\$(QEMU) build/${NAME}/initrd > reports/${NAME}/log"	>> benchmarks.mk
+	\$(QEMU) build/${NAME}/initrd > reports/${NAME}/log"		>> benchmarks.mk

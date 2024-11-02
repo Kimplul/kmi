@@ -1,1 +1,1 @@
-DO != ./scripts/gen-benchmark -n ipc-req
+DO != ./scripts/gen-benchmark -n ipc-req -p init

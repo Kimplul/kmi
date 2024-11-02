@@ -1,1 +1,1 @@
-DO != ./scripts/gen-benchmark -n fork
+DO != ./scripts/gen-benchmark -n fork -p init
