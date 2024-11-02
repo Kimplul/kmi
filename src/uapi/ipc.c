@@ -61,7 +61,7 @@ static __inline void enter_rpc(struct tcb *t, struct tcb *r, struct sys_ret a,
 
 	/* try to get rid of args as fast as possible to free up registers for
 	 * later use */
-	set_ret(t, 6, a);
+	set_ret_fast(t, a);
 
 	if (!is_set(flags, IPC_TAIL)) {
 		ctx->rpc_stack = t->rpc_stack;
@@ -79,7 +79,7 @@ static __inline void enter_rpc(struct tcb *t, struct tcb *r, struct sys_ret a,
 	}
 
 
-	set_stack(t, rpc_stack - BASE_PAGE_SIZE);
+	set_stack_fast(t, rpc_stack - BASE_PAGE_SIZE);
 	clone_uvmem(r->proc.vmem, t->rpc.vmem);
 	flush_tlb_full();
 
@@ -203,7 +203,7 @@ static void leave_rpc(struct tcb *t, struct sys_ret a)
 
 	/* again, get rid of args as fast as possible */
 	if (!ctx->notify)
-		set_ret(t, 6, a);
+		set_ret_fast(t, a);
 
 	struct tcb *r = get_tcb(ctx->pid);
 	while (!r || !is_proc(r) || zombie(r)) {

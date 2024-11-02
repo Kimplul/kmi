@@ -16,81 +16,8 @@
 #include <arch/cpu.h>
 #include "pages.h"
 #include "arch.h"
+#include "pte.h"
 #include "csr.h"
-
-/**
- * Get page table entry physical page number.
- *
- * @param pte Page table entry.
- * @return Corresponding physical page number.
- */
-#define pte_ppn(pte) (((pm_t)(pte)) >> 10)
-
-/**
- * Get page table entry flags.
- *
- * @param pte Page table entry.
- * @return Corresponding flags.
- */
-#define pte_flags(pte) (((pm_t)(pte)) & 0xff)
-
-/**
- * Convert physical memory address to page table entry.
- *
- * @param p Physical memory address.
- * @param f Flags to use.
- * @return Corresponding page table entry.
- */
-#define to_pte(p, f) ((((p) >> page_shift()) << 10) | (f))
-
-/**
- * Get physical address in page table entry.
- *
- * @param pte Page table entry.
- * @return Corresponding physical address.
- */
-#define pte_paddr(pte) (pte_ppn(pte) << page_shift())
-
-/**
- * Get virtual address in page table entry.
- *
- * @param pte Page table entry.
- * @return Corresponding virtual address.
- */
-#define pte_addr(pte) __va(pte_paddr(pte))
-
-/**
- * Virtual memory address to page order index.
- *
- * @param a Virtual address.
- * @param o Order of page.
- * @return Corresponding page index.
- */
-#define vm_to_index(a, o) (pm_to_index(a, o))
-
-/**
- * Check if page table entry is active.
- *
- * @param pte Page table entry.
- * @return \c 0 if entry is not active, non-zero otherwise.
- */
-#define is_active(pte) (pte_flags(pte) &VM_V)
-
-/**
- * Check if page table entry is a leaf.
- *
- * @param pte Page table entry.
- * @return \c 0 if entry is not leaf, non-zero otherwise.
- */
-#define is_leaf(pte) (is_active(pte) && (pte_flags(pte) & ~VM_V))
-
-/**
- * Check if page table entry is a branch.
- *
- * @param pte Page table entry.
- * @return \c 0 if entry is not branch, non-zero otherwise.
- */
-#define is_branch(pte) (is_active(pte) && !(pte_flags(pte) & ~VM_V))
 
 /**
  * Gravestone marker.
@@ -607,6 +534,8 @@ stat_t setup_rpc_stack(struct tcb *t)
 	if (!page)
 		return ERR_OOMEM;
 
+	t->arch.rpc_page = page;
+
 	if (map_vpage(t->rpc.vmem, page, RPC_STACK_BASE, flags, BASE_PAGE)) {
 		free_page(MM_O1, page);
 		return ERR_OOMEM;
@@ -636,9 +565,7 @@ stat_t setup_rpc_stack(struct tcb *t)
 
 void destroy_rpc_stack(struct tcb *t)
 {
-	pm_t *pte = (pm_t *)t->arch.rpc_leaf;
-	pm_t page = (pm_t)pte_addr(*pte);
-	free_page(MM_O1, page);
+	free_page(MM_O1, t->arch.rpc_page);
 }
 
 void reset_rpc_stack(struct tcb *t)

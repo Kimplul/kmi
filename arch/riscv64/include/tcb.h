@@ -19,6 +19,9 @@ struct arch_tcbd {
 	/** RPC stack page table leaf node. */
 	struct vmem *rpc_leaf;
 
+	/** O1 page that contains the whole stack */
+	pm_t rpc_page;
+
 	/** Index into \p rpc_leaf with the lowest accessed page so far in a
 	 * certain context. */
 	int rpc_idx;

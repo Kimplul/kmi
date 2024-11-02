@@ -46,17 +46,11 @@ SYSCALL_DEFINE5(create)(struct tcb *t, sys_arg_t func,
 	if (!n)
 		return_args1(t, ERR_OOMEM);
 
-	/* temporarily jump into new thread memory to set arguments */
-	use_vmem(n->rpc.vmem);
-
 	/* this visit is likely not the cheapest thing in the universe, are
 	 * there ways to speed up thread creation? */
 	set_thread(n);
 	set_ret5(n, n->tid, d0, d1, d2, d3);
 	set_return(n, func);
-
-	/* return back */
-	use_vmem(t->rpc.vmem);
 
 	n->notify_id = t->notify_id;
 	return_args1(t, n->tid);
@@ -91,13 +85,9 @@ SYSCALL_DEFINE0(fork)(struct tcb *t)
 	if (!n)
 		return_args1(t, ERR_OOMEM);
 
-	/* again, probably not fantastic that we're jumping between address
-	 * spaces like this */
-	use_vmem(n->rpc.vmem);
 	/* prepare args for when we eventually swap to the new proc, giving
 	 * parent ID as third return value */
 	set_args2(n, 0, get_eproc(t)->pid);
-	use_vmem(t->rpc.vmem);
 
 	n->notify_id = c->notify_id;
 	return_args1(t, n->pid);
@@ -180,12 +170,9 @@ SYSCALL_DEFINE2(spawn)(struct tcb *t, sys_arg_t bin, sys_arg_t interp)
 	/** @todo should permissions be transferred? Probably, not but now there
 	 * is a slightly annoying asymmetry between fork+exec vs spawn... */
 
-	/* temporarily switch to new thread to manipulate stack */
-	use_vmem(n->rpc.vmem);
 	set_thread(n);
 	set_return(n, n->callback);
 	set_ret4(n, 0, n->tid, SYS_USER_SPAWNED, n->pid);
-	use_vmem(t->rpc.vmem);
 
 	return_args1(t, n->pid);
 }

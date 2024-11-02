@@ -93,10 +93,9 @@ static stat_t __map_exec(struct tcb *t,
 
 	/* create empty vmem so we don't have to worry about possible overlaps */
 	struct vmem *new_vmem = create_vmem();
-	if (!new_vmem) {
-		use_vmem(t->rpc.vmem);
+	if (!new_vmem)
 		return ERR_OOMEM;
-	}
+
 	struct vmem *old_vmem = t->proc.vmem;
 	t->proc.vmem = new_vmem;
 

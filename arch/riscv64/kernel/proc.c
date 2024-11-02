@@ -15,6 +15,7 @@
 #include <arch/proc.h>
 
 #include "regs.h"
+#include "pte.h"
 #include "csr.h"
 
 /** Assembly implementation for actually jumping to the init process, defined in
@@ -58,9 +59,35 @@ void run_init(struct tcb *t, vm_t fdt, vm_t initrd)
 	unreachable();
 }
 
-void set_ret(struct tcb *t, size_t n, struct sys_ret a)
+/**
+ * Safely calculate where t->regs actually is, so we can access the rpc stack
+ * even without being in the same address space. Allows us to avoid doing some
+ * cache flushes in src/uapi/proc.c.
+ *
+ * @param t Thread whose registers we want to access.
+ * @return The physical address of the current registers.
+ */
+static __inline pm_t __physical_regs(struct tcb *t)
+{
+	pm_t offset = (vm_t)t->regs - RPC_STACK_BASE;
+	return t->arch.rpc_page + offset;
+}
+
+void set_ret_fast(struct tcb *t, struct sys_ret a)
 {
 	struct riscv_regs *r = (struct riscv_regs *)(t->regs) - 1;
+	r->a0 = a.s;
+	r->a1 = a.id;
+	r->a2 = a.a0;
+	r->a3 = a.a1;
+	r->a4 = a.a2;
+	r->a5 = a.a3;
+}
+
+void set_ret(struct tcb *t, size_t n, struct sys_ret a)
+{
+	pm_t regs = __physical_regs(t);
+	struct riscv_regs *r = (struct riscv_regs *)(regs) - 1;
 	if (n >= 1) r->a0 = a.s;
 	if (n >= 2) r->a1 = a.id;
 	if (n >= 3) r->a2 = a.a0;
@@ -71,15 +98,17 @@ void set_ret(struct tcb *t, size_t n, struct sys_ret a)
 
 struct sys_ret get_ret(struct tcb *t)
 {
-	struct riscv_regs *r = (struct riscv_regs *)(t->regs) - 1;
+	pm_t regs = __physical_regs(t);
+	struct riscv_regs *r = (struct riscv_regs *)(regs) - 1;
 	return SYS_RET6(r->a0, r->a1, r->a2, r->a3, r->a4, r->a5);
 }
 
 void set_thread(struct tcb *t)
 {
+	pm_t regs = __physical_regs(t);
 	/* get location of registers in memory */
 	/** \todo check alignment, should be fine but just to be sure */
-	struct riscv_regs *r = (struct riscv_regs *)(t->regs) - 1;
+	struct riscv_regs *r = (struct riscv_regs *)(regs) - 1;
 
 	/* insert important values into register slots */
 	r->sp = (long)t->rpc_stack - BASE_PAGE_SIZE;
@@ -88,27 +117,32 @@ void set_thread(struct tcb *t)
 void set_stack(struct tcb *t, vm_t s)
 {
 	/** @todo also set frame pointer on architectures that need it? */
+	pm_t regs = __physical_regs(t);
+	struct riscv_regs *r = (struct riscv_regs *)(regs) - 1;
+	r->sp = s;
+}
+
+void set_stack_fast(struct tcb *t, vm_t s)
+{
 	struct riscv_regs *r = (struct riscv_regs *)(t->regs) - 1;
 	r->sp = s;
 }
 
 vm_t get_stack(struct tcb *t)
 {
-	struct riscv_regs *r = (struct riscv_regs *)(t->regs) - 1;
+	pm_t regs = __physical_regs(t);
+	struct riscv_regs *r = (struct riscv_regs *)(regs) - 1;
 	return r->sp;
 }
 
 void copy_regs(struct tcb *d, struct tcb *s)
 {
-	struct riscv_regs rs = *((struct riscv_regs *)(s->regs) - 1);
-	/* again, not a fan of this, I guess we could query the underlying
-	 * physical page? Would that be any faster? */
-	use_vmem(d->rpc.vmem);
+	pm_t rgs = __physical_regs(s);
+	pm_t rgd = __physical_regs(d);
 
-	struct riscv_regs *rd = ((struct riscv_regs *)(d->regs) - 1);
-	*rd = rs;
-
-	use_vmem(s->rpc.vmem);
+	struct riscv_regs *rs = (struct riscv_regs *)(rgs) - 1;
+	struct riscv_regs *rd = (struct riscv_regs *)(rgd) - 1;
+	*rd = *rs;
 }
 
 void adjust_ipi(struct tcb *t)

@@ -7,6 +7,11 @@
 /**
  * @file proc.h
  * Arch-specific process related stuff.
+ *
+ * Note that all functions except *_fast may not assume that the rpc stack is
+ * mapped into the current address space, so they might have to do some extra
+ * calculations to find the underlying physical stack or something along those
+ * lines.
  */
 
 #if defined(__riscv)
@@ -28,6 +33,16 @@
  * @param a Arguments to attach.
  */
 void set_ret(struct tcb *t, size_t n, struct sys_ret a);
+
+/**
+ * Attach argument data to thread, to be returned to userspace.
+ * Must only be called when cur_tcb() == t. Currently only used by do_ipc() so
+ * no need to figure out how many registers to set, just set them all.
+ *
+ * @param t Current thread.
+ * @param a Values to place in return registers.
+ */
+void set_ret_fast(struct tcb *t, struct sys_ret a);
 
 /**
  * Get argument data attached to thread.
@@ -60,6 +75,16 @@ void set_thread(struct tcb *t);
  * @param s Stack to give to thread.
  */
 void set_stack(struct tcb *t, vm_t s);
+
+/**
+ * Set userspace stack, but do it very quickly.
+ * Must only be called when cur_tcb() == t, allowing us to do a fast but 'unsafe'
+ * direct write to the rpc stack.
+ *
+ * @param t Current thread.
+ * @param s Address to place into the stack register.
+ */
+void set_stack_fast(struct tcb *t, vm_t s);
 
 /**
  * Get current userspace stack.
