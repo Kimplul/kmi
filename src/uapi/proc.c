@@ -154,11 +154,15 @@ SYSCALL_DEFINE2(spawn)(struct tcb *t, sys_arg_t bin, sys_arg_t interp)
 	if (!n)
 		return_args1(t, ERR_OOMEM);
 
+	/** @todo there's currently a kind of silly thing where create_proc()
+	 * creates a new thread and calls init_uvmem() on it, and now the elf
+	 * loader called from prepare_proc() moves that uvmem aside, calls
+	 * init_uvmem() again and finally destroys the old uvmem (assuming
+	 * everything went as it was supposed to). Might have to rething these
+	 * internal APIs a bit, but for now this ~works~. */
 	n->notify_id = c->notify_id;
 	if (prepare_proc(n, bin, interp)) {
-		/* this kills the thread */
-		orphanize(t);
-		unorphanize(t);
+		destroy_proc(n);
 		return_args1(t, ERR_INVAL);
 	}
 
