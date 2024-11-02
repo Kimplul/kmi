@@ -241,6 +241,16 @@ struct mem_region *find_used_region(struct mem_region_root *r, vm_t start)
 	return 0;
 }
 
+struct mem_region *find_addr_region(struct mem_region_root *r, vm_t addr)
+{
+	size_t ref = __page(addr);
+	struct mem_region *m = find_closest_used_region(r, addr);
+	if (!m || (ref < m->start || ref > m->end) || !is_region_used(m))
+		return NULL;
+
+	return m;
+}
+
 /**
  * Create memory region.
  *

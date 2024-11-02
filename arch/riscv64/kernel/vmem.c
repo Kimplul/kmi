@@ -313,10 +313,12 @@ stat_t map_vpage(struct vmem *branch, pm_t paddr, vm_t vaddr, vmflags_t flags,
 	}
 
 	size_t idx = vm_to_index(vaddr, top);
-	assert(!is_branch(branch->leaf[idx]));
+	if (!__unused((pm_t)branch->leaf[idx]))
+		return ERR_INVAL;
 
-	branch->leaf[idx] =
-		(struct vmem *)to_pte((pm_t)__pa(paddr), vp_flags(flags));
+	branch->leaf[idx] = (struct vmem *)to_pte(
+		(pm_t)__pa(paddr),
+		vp_flags(flags));
 
 	__add_graves(root, vm_to_index(vaddr, max_order()));
 	return OK;

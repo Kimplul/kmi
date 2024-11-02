@@ -96,6 +96,9 @@ static struct cpio_header *__find_file(const char *c, const char *fname,
 			continue;
 
 		char *name = (char *)(cp + 1);
+		if (strcmp(name, "TAILER!!!") == 0)
+			return NULL;
+
 		if (fname[0] != '/')
 			name += namelen - (fname_len + 1); /* match ending */
 

@@ -1,1 +1,1 @@
-TEST	+= fork
+TESTS	+= fork

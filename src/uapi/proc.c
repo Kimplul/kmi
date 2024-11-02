@@ -108,46 +108,27 @@ SYSCALL_DEFINE2(exec)(struct tcb *t, sys_arg_t bin, sys_arg_t interp)
 		return_args1(t, ERR_PERM);
 
 	/* exec is only allowed if we own all our own resources */
-	if (t->refcount)
+	if (t->refcount != 1)
 		return_args1(t, ERR_INVAL);
 
 	/* mark binary to be kept */
-	struct mem_region *b = find_used_region(&t->uvmem.region, bin);
+	struct mem_region *b = find_addr_region(&t->uvmem.region, bin);
 	if (!b)
 		return_args1(t, ERR_ADDR);
 
-	set_bit(b->flags, MR_KEEP);
-
-	struct mem_region *i = 0;
+	struct mem_region *i = NULL;
 	if (interp) {
 		/* mark interpreter to be kept */
-		i = find_used_region(&t->uvmem.region, interp);
+		i = find_addr_region(&t->uvmem.region, interp);
 		if (!i)
-			return_args1(t, ERR_INVAL);
+			return_args1(t, ERR_ADDR);
 
-		set_bit(i->flags, MR_KEEP);
 	}
 
-	/* free everything except regions to be kept */
-	clear_uvmem(t);
+	if (prepare_proc(t, bin, interp))
+		return_args1(t, ERR_INVAL);
 
-	/* restore to normal */
-	clear_bit(b->flags, MR_KEEP);
-	if (interp)
-		clear_bit(b->flags, MR_KEEP);
-
-	/* should hopefully never actually fail, but if it does, we don't really
-	 * have any choice but to kill the thread. */
-	if (prepare_proc(t, bin, interp)) {
-		/* this kills the thread */
-		orphanize(t);
-		unorphanize(t);
-		/* should never be reached as we control the thread so we should
-		 * be able to directly jump to pid 1 */
-		assert(false);
-	}
-
-	return_args4(t, 0, t->tid, SYS_USER_SPAWNED, t->pid);
+	set_ret4(t, 0, t->tid, SYS_USER_SPAWNED, t->pid);
 }
 
 /**

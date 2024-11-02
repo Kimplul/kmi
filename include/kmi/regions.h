@@ -236,6 +236,8 @@ struct mem_region *find_first_region(struct mem_region_root *r);
  */
 struct mem_region *find_used_region(struct mem_region_root *r, vm_t start);
 
+struct mem_region *find_addr_region(struct mem_region_root *r, vm_t addr);
+
 /**
  * Find used memory region closest to \c start.
  * Useful when you don't necessarily need the exact region, just something close

@@ -33,6 +33,41 @@ static uint8_t __elf_to_uvflags(uint8_t elf_flags)
 	return uvflags;
 }
 
+static stat_t __elf_map_section(struct tcb *t,
+		vm_t va, size_t vaz,
+		vm_t vf, size_t vfz,
+		uint8_t flags)
+{
+	size_t region_size;
+	vm_t v = alloc_fixed_region(&t->uvmem.region, va, vaz, &region_size, flags);
+	if (!v)
+		return ERR_INVAL;
+
+	assert(v == align_down(va, BASE_PAGE_SIZE));
+
+	for (size_t runner = 0; runner < vaz; runner += BASE_PAGE_SIZE) {
+		pm_t page = alloc_page(BASE_PAGE);
+		if (!page)
+			return ERR_OOMEM;
+
+		/* always zero out pages */
+		memset((void *)page, 0, BASE_PAGE_SIZE);
+
+		/* sometimes fill page with actual data */
+		if (runner < vfz) {
+			size_t z = MIN(BASE_PAGE_SIZE, vfz - runner);
+			memcpy((void *)page, (void *)(vf + runner), z);
+		}
+
+		if (map_vpage(t->proc.vmem, page, va + runner, flags, BASE_PAGE)) {
+			free_page(BASE_PAGE, page);
+			return ERR_OOMEM;
+		}
+	}
+
+	return OK;
+}
+
 /**
  * Map ELF executable.
  *
@@ -43,58 +78,76 @@ static uint8_t __elf_to_uvflags(uint8_t elf_flags)
  * @param phnum Number of program header entries.
  * @param phsize Size of page header entry.
  */
-static void __map_exec(struct tcb *t, vm_t bin, uint8_t ei_c, vm_t phstart,
-                       size_t phnum, size_t phsize)
+static stat_t __map_exec(struct tcb *t,
+		vm_t bin,
+		uint8_t ei_c,
+		vm_t phstart,
+                size_t phnum,
+		size_t phsize)
 {
 	assert(t && is_proc(t));
 	/* temporarily visit process virtual memory */
 	use_vmem(t->proc.vmem);
 
+	/* create empty vmem so we don't have to worry about possible overlaps */
+	struct vmem *new_vmem = create_vmem();
+	if (!new_vmem) {
+		use_vmem(t->rpc.vmem);
+		return ERR_OOMEM;
+	}
+	struct vmem *old_vmem = t->proc.vmem;
+	t->proc.vmem = new_vmem;
+
+	/* create new uvmem for same reason */
+	struct uvmem old_uvmem = t->uvmem;
+	t->uvmem = (struct uvmem){0};
+
+	if (init_uvmem(t)) {
+		destroy_vmem(new_vmem);
+		t->uvmem = old_uvmem;
+		t->proc.vmem = old_vmem;
+		use_vmem(t->rpc.vmem);
+		return ERR_OOMEM;
+	}
+
 	/** \todo take alignment into consideration? */
-	/** \todo take overlapping memory regions into account, probably mostly
-	 * by keeping track of previously allocated area and seeing if the
-	 * segment fits into it */
-	/** \todo check if p_memsz is larger than p_filesz, the segment should be
-	 * filled with zeroes. */
-	/** \todo in general, make this a lot more clean. */
 	/* useful bit of info: all segments are sorted in ascending order of p_vaddr */
 	vm_t runner = phstart;
-	vmflags_t default_flags = VM_V | VM_R | VM_W | VM_X | VM_U;
 	for (size_t i = 0; i < phnum; ++i, runner += phsize) {
 		if (program_header_prop(ei_c, runner, p_type) != PT_LOAD)
 			continue;
 
+		/* where to map section in virtual memory */
 		vm_t va = program_header_prop(ei_c, runner, p_vaddr);
 		size_t vsz = program_header_prop(ei_c, runner, p_memsz);
 
-		vm_t start = alloc_fixed_uvmem(t, va, vsz, default_flags);
-		if (!start)
-			return; /* out of memory or something */
-
-		info("mapped ELF section to %lx\n", (long)start);
+		/* where section is in binary */
+		vm_t vf = bin + program_header_prop(ei_c, runner, p_offset);
+		vm_t vfz = program_header_prop(ei_c, runner, p_filesz);
 
 		uint8_t elf_flags = program_header_prop(ei_c, runner, p_flags);
 		uint8_t uvflags = __elf_to_uvflags(elf_flags);
 
-		map_region(t->proc.vmem, start, vsz, max_order(),
-		           default_flags);
-		memset((void *)start, 0, vsz);
+		if (__elf_map_section(t, va, vsz, vf, vfz, uvflags)) {
+			destroy_uvmem(t);
 
-		vm_t vo = bin + program_header_prop(ei_c, runner, p_offset);
-		vm_t vfz = program_header_prop(ei_c, runner, p_filesz);
-		memcpy((void *)va, (void *)vo, vfz);
-
-		/* skip while testing
-		 * \todo: also fix, this modifies only the first region. Create new
-		 * function?
-		 *
-		   pm_t paddr = 0;
-		   stat_vpage(t->b_r, va, &paddr, 0, 0);
-		   mod_vpage(t->b_r, va, paddr, uvflags);
-		 */
+			t->proc.vmem = old_vmem;
+			t->uvmem = old_uvmem;
+			use_vmem(t->rpc.vmem);
+			return ERR_OOMEM;
+		}
 	}
 
+	/* destroy old uvmem (kind of annoying to have it so agressively tied to
+	 * the tcb but I guess it's find for now) */
+	struct uvmem new_uvmem = t->uvmem;
+	t->uvmem = old_uvmem;
+	destroy_uvmem(t);
+
+	t->proc.vmem = new_vmem;
+	t->uvmem = new_uvmem;
 	use_vmem(t->rpc.vmem);
+	return OK;
 }
 
 /**
@@ -140,7 +193,9 @@ static vm_t __prepare_proc(struct tcb *t, uint8_t ei_c, vm_t elf, vm_t interp)
 
 	vm_t entry = elf_header_prop(ei_c, elf, e_entry);
 	if (e_type == ET_EXEC) {
-		__map_exec(t, elf, ei_c, phstart, phnum, phsize);
+		if (__map_exec(t, elf, ei_c, phstart, phnum, phsize))
+			return 0;
+
 		return entry;
 	} else {
 		vm_t o = __map_dyn(t, elf, ei_c, phstart, phnum, phsize);

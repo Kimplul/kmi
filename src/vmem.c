@@ -166,8 +166,8 @@ static vm_t __clone_shared_region(struct tcb *d, struct tcb *s,
 	size_t size = end - start;
 	vm_t v = alloc_shared_region(&d->uvmem.region, size, &size,
 	                             MR_NONBACKED | m->flags, s->rid);
-	if (ERR_CODE(v))
-		return v;
+	if (!v)
+		return 0;
 
 	stat_t res = clone_region(d->uvmem.vmem, s->uvmem.vmem,
 	                          start, v, size, flags);
@@ -329,10 +329,10 @@ vm_t map_shared_fixed_uvmem(struct tcb *t, pm_t start, size_t size,
 {
 	assert(is_aligned(start, BASE_PAGE_SIZE));
 
-	const vm_t v = alloc_shared_region(&t->uvmem.region, size, &size, flags,
-	                                   0);
-	if (ERR_CODE(v))
-		return v;
+	const vm_t v = alloc_shared_region(&t->uvmem.region,
+			size, &size, flags, 0);
+	if (!v)
+		return 0;
 
 	stat_t ret = OK;
 	if ((ret = map_fixed_region(t->proc.vmem, v, start, size, flags))) {
@@ -438,10 +438,8 @@ void handle_pagefault(vm_t addr)
 	}
 
 	struct tcb *p = get_cproc(t);
-	size_t ref = __page(addr);
-
-	struct mem_region *m = find_closest_used_region(&p->uvmem.region, addr);
-	if (!m || (ref < m->start || ref > m->end) || !is_region_used(m)) {
+	struct mem_region *m = find_addr_region(&p->uvmem.region, addr);
+	if (!m) {
 		error("cannot handle actual page fault just yet :(\n");
 		kernel_panic(NULL, NULL, 0);
 		return;
