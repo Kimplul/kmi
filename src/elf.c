@@ -162,24 +162,17 @@ static stat_t __map_exec(struct tcb *t,
 	return OK;
 }
 
-/**
- * Map ELF dynamic object.
- *
- * @param t Thread space to work in.
- * @param bin Address of binary to map.
- * @param ei_c ELF identity class.
- * @param phstart Program header start.
- * @param phnum Number of program header entries.
- * @param phsize Size of page header entry.
- * @return Base of dynamic mapping.
- */
-static vm_t __map_dyn(struct tcb *t, vm_t bin, uint8_t ei_c, vm_t phstart,
-                      size_t phnum, size_t phsize)
+static vm_t __prepare_exec(struct tcb *t, uint8_t ei_c, vm_t elf)
 {
-	/** \todo this path should only be taken when no PT_INTERP is defined, as
-	 * making sure ld is loaded should be done in userspace. Maybe a bit
-	 * hacky, I know.*/
-	return 0;
+	vm_t phstart = ptradd(elf, elf_header_prop(ei_c, elf, e_phoff));
+	size_t phnum = elf_header_prop(ei_c, elf, e_phnum);
+	size_t phsize = elf_header_prop(ei_c, elf, e_phentsize);
+
+	vm_t entry = elf_header_prop(ei_c, elf, e_entry);
+	if (__map_exec(t, elf, ei_c, phstart, phnum, phsize))
+		return 0;
+
+	return entry;
 }
 
 /**
@@ -195,24 +188,19 @@ static vm_t __map_dyn(struct tcb *t, vm_t bin, uint8_t ei_c, vm_t phstart,
  */
 static vm_t __prepare_proc(struct tcb *t, uint8_t ei_c, vm_t elf, vm_t interp)
 {
+	UNUSED(interp);
+
 	short e_type = elf_header_prop(ei_c, elf, e_type);
-	if (e_type != ET_DYN && e_type != ET_EXEC)
+
+	if (e_type == ET_EXEC)
+		return __prepare_exec(t, ei_c, elf);
+
+	if (e_type == ET_DYN) {
+		bug("dynamic elf not currently implemented\n");
 		return 0;
-
-	vm_t phstart = ptradd(elf, elf_header_prop(ei_c, elf, e_phoff));
-	size_t phnum = elf_header_prop(ei_c, elf, e_phnum);
-	size_t phsize = elf_header_prop(ei_c, elf, e_phentsize);
-
-	vm_t entry = elf_header_prop(ei_c, elf, e_entry);
-	if (e_type == ET_EXEC) {
-		if (__map_exec(t, elf, ei_c, phstart, phnum, phsize))
-			return 0;
-
-		return entry;
-	} else {
-		vm_t o = __map_dyn(t, elf, ei_c, phstart, phnum, phsize);
-		return o + entry;
 	}
+
+	return 0;
 }
 
 /* sets up all memory regions etc, returns the entry address */
