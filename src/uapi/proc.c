@@ -34,24 +34,32 @@
 SYSCALL_DEFINE5(create)(struct tcb *t, sys_arg_t func,
                         sys_arg_t d0, sys_arg_t d1, sys_arg_t d2, sys_arg_t d3)
 {
-	struct tcb *c = create_thread(t);
-	if (!c)
+	struct tcb *c = get_cproc(t);
+	if (!(has_cap(c->caps, CAP_PROC)))
+		return_args1(t, ERR_PERM);
+
+	/* add thread to the effective process */
+	struct tcb *e = get_eproc(t);
+	assert(e);
+
+	struct tcb *n = create_thread(e);
+	if (!n)
 		return_args1(t, ERR_OOMEM);
 
 	/* temporarily jump into new thread memory to set arguments */
-	use_vmem(c->rpc.vmem);
+	use_vmem(n->rpc.vmem);
 
 	/* this visit is likely not the cheapest thing in the universe, are
 	 * there ways to speed up thread creation? */
-	set_thread(c);
-	set_ret5(c, c->tid, d0, d1, d2, d3);
-	set_return(c, func);
+	set_thread(n);
+	set_ret5(n, n->tid, d0, d1, d2, d3);
+	set_return(n, func);
 
 	/* return back */
 	use_vmem(t->rpc.vmem);
 
-	c->notify_id = t->notify_id;
-	return_args1(t, c->tid);
+	n->notify_id = t->notify_id;
+	return_args1(t, n->tid);
 }
 
 /**
@@ -76,7 +84,10 @@ SYSCALL_DEFINE0(fork)(struct tcb *t)
 	if (!(has_cap(c->caps, CAP_PROC)))
 		return_args1(t, ERR_PERM);
 
-	struct tcb *n = create_proc(get_eproc(t));
+	struct tcb *e = get_eproc(t);
+	assert(e);
+
+	struct tcb *n = create_proc(e);
 	if (!n)
 		return_args1(t, ERR_OOMEM);
 
@@ -111,7 +122,7 @@ SYSCALL_DEFINE2(exec)(struct tcb *t, sys_arg_t bin, sys_arg_t interp)
 	if (t->refcount != 1)
 		return_args1(t, ERR_INVAL);
 
-	/* mark binary to be kept */
+	/* check that bin is at least some kind of valid pointer */
 	struct mem_region *b = find_addr_region(&t->uvmem.region, bin);
 	if (!b)
 		return_args1(t, ERR_ADDR);
@@ -170,11 +181,11 @@ SYSCALL_DEFINE2(spawn)(struct tcb *t, sys_arg_t bin, sys_arg_t interp)
 	 * is a slightly annoying asymmetry between fork+exec vs spawn... */
 
 	/* temporarily switch to new thread to manipulate stack */
-	use_tcb(n);
+	use_vmem(n->rpc.vmem);
 	set_thread(n);
 	set_return(n, n->callback);
 	set_ret4(n, 0, n->tid, SYS_USER_SPAWNED, n->pid);
-	use_tcb(t);
+	use_vmem(t->rpc.vmem);
 
 	return_args1(t, n->pid);
 }
@@ -225,6 +236,10 @@ static void swap(struct tcb *t, struct tcb *s)
  */
 SYSCALL_DEFINE1(exit)(struct tcb *t, sys_arg_t tid)
 {
+	struct tcb *c = get_proc(t);
+	if (!(has_cap(c->caps, CAP_PROC)))
+		return_args1(t, ERR_PERM);
+
 	/* init thread is not allowed to exit */
 	/** @todo what about other possible threads start at init, are they
 	 * allowed to exit? I guess? */

@@ -205,6 +205,8 @@ static vm_t __prepare_proc(struct tcb *t, uint8_t ei_c, vm_t elf, vm_t interp)
 /* sets up all memory regions etc, returns the entry address */
 vm_t load_elf(struct tcb *t, vm_t elf, vm_t interp)
 {
+	/** @todo check that all of elf is in memory, theoretically we could be
+	 * passed like half an elf object? */
 	struct elf_ident *i = (struct elf_ident *)elf;
 	if (i->ei_magic != cpu_to_be32(EI_MAGIC))
 		return 0;
