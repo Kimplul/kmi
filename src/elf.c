@@ -33,6 +33,17 @@ static uint8_t __elf_to_uvflags(uint8_t elf_flags)
 	return uvflags;
 }
 
+/**
+ * Helper for actually copying ELF data into memory.
+ *
+ * @param t Process whose virtual memory to work in.
+ * @param va Virtual address to where we should write things.
+ * @param vaz Size of section in virtual memory.
+ * @param vf Address of ELF section from where to read things.
+ * @param vfz Size of section in file.
+ * @param flags Flags to use for section mapping.
+ * @return OK.
+ */
 static stat_t __elf_map_section(struct tcb *t,
                                 vm_t va, size_t vaz,
                                 vm_t vf, size_t vfz,
@@ -80,7 +91,7 @@ static stat_t __elf_map_section(struct tcb *t,
  * @param phstart Program header start.
  * @param phnum Number of program header entries.
  * @param phsize Size of page header entry.
- * @param OK on success, something else otherwise.
+ * @return OK on success, something else otherwise.
  */
 static stat_t __map_exec(struct tcb *t,
                          vm_t bin,
@@ -91,7 +102,10 @@ static stat_t __map_exec(struct tcb *t,
 {
 	assert(t && is_proc(t));
 
-	/* create empty vmem so we don't have to worry about possible overlaps */
+	/* create empty vmem to work in, allows us to build a new 'copy'
+	 * with the required ELF sections mapped. On success, we can just
+	 * swap out the wanted vmem for the new one, and on error, just
+	 * delete the working vmem. */
 	struct vmem *new_vmem = create_vmem();
 	if (!new_vmem)
 		return ERR_OOMEM;
