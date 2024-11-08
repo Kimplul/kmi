@@ -79,4 +79,4 @@ clean_docs:
 	$(RM) -rf docs/output
 
 .PHONY: clean_all
-clean_all: clean clean_run clean_docs
+clean_all: clean clean_run clean_docs clean_tests clean_benchmarks
