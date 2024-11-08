@@ -162,6 +162,14 @@ static stat_t __map_exec(struct tcb *t,
 	return OK;
 }
 
+/**
+ * Map static binary.
+ *
+ * @param t Process to map binary in.
+ * @param ei_c Elf class.
+ * @param elf Address of static binary.
+ * @return Entry address or NULL.
+ */
 static vm_t __prepare_exec(struct tcb *t, uint8_t ei_c, vm_t elf)
 {
 	vm_t phstart = ptradd(elf, elf_header_prop(ei_c, elf, e_phoff));
