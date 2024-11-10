@@ -1,7 +1,7 @@
 # kmi
 
 `kmi` is a ***K*** ernel with ***MI*** grating threads I've been writing as a hobby project.
-To see it in action, have a look at [kmi-example](https://github.com/Kimplul/kmi-example).
+For an overview of the project, see https://metanimi.dy.fi/blog/kmi/.
 
 Currently the kernel has been run on `qemu` with the `virt` board and on a
 StarFive VisionFive2 with RISC-V 64 bit. There is some code for
@@ -45,9 +45,13 @@ go. See `docs/visionfive2.md` for an example.
 
 + `check`: Run tests.
 
-+ `clean/clean_docs/clean_run/clean_all`: Clean compile artefacts, clean documentation
-artefacts, clean run artefacts and clean all artefacts, respectively.
-Note that `clean_run` and `clean_all` may need root privileges.
++ `benchmark`: Run some benchmarks for core functionality. Runs in `qemu` so
+  results should be taken with a massive pinch of salt, but can give some
+  indication of how much work is being done.
+
++ `clean{_docs,_tests,_benchmarks,_all}`: Clean compile artefacts, clean documentation
+artefacts, clean test artefacts, clean benchmark artefacts and and clean all artefacts,
+respectively.
 
 The kernel should now also support Qemu's `-kernel` flag, meaning something like
 ```
