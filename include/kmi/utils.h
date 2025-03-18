@@ -153,8 +153,12 @@
 #if __has_builtin(__builtin_offsetof)
 #define offsetof(type, member) __builtin_offsetof(type, member)
 #else
+
+#if !defined(offsetof)
 #define offsetof(type, member) ((uintptr_t) &((type *)0)->member)
 #endif
+
+#endif /* __has_builtin(__builtin_offsetof) */
 
 /**
  * Signal to the compiler that some expression is likely to be true.
