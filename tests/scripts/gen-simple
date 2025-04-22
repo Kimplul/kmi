@@ -10,7 +10,7 @@ while getopts "n:p:" opt; do
 	esac
 done
 
-mkdir -p "build/$NAME"
+mkdir -p "build/$NAME" "reports/$NAME"
 
 if [ -z "$NAME" ]; then
 	echo "No name given for tests" >&2; exit 2;
@@ -20,35 +20,29 @@ if [ -z "$PROGS" ]; then
 	echo "No programs to add to initrd" >&2; exit 3;
 fi
 
-for p in $PROGS
-do
-	dep="build/${NAME}/${p}.d"
+for p in $PROGS; do dep="build/${NAME}/${p}.d"; cat << ENDRULES >> tests.mk
 
-	echo "${NAME}_PROGS += build/${NAME}/${p}"			>> tests.mk
-	echo "${dep}:"							>> tests.mk
-	echo "-include ${dep}"						>> tests.mk
-	echo "build/${NAME}/${p}: $NAME/$p.c \$(COMMON)"		>> tests.mk
-	echo "	\$(COMPILE_TEST) $NAME/${p}.c \$(COMMON) \\"		>> tests.mk
-	echo "		-o build/${NAME}/${p}"				>> tests.mk
+${NAME}_PROGS += build/${NAME}/${p}
+${dep}:
+-include ${dep}
+
+build/${NAME}/${p}: $NAME/$p.c \$(COMMON)
+	\$(COMPILE_TEST) $NAME/${p}.c \$(COMMON) -o build/${NAME}/${p}
+
+ENDRULES
 done
 
-echo "build/$NAME/initrd: \$(${NAME}_PROGS) \$(COMMON) \$(KMI)"		>> tests.mk
-echo "	for p in \$(${NAME}_PROGS); do \\"				>> tests.mk
-echo "		echo \$\$p; \\"						>> tests.mk
-echo "	done | \$(GEN_INITRD) build/$NAME/initrd"			>> tests.mk
+cat << ENDRULES >> tests.mk
 
-echo "reports/$NAME/log: build/$NAME/initrd"				>> tests.mk
-echo "	mkdir -p reports/$NAME"						>> tests.mk
-echo "	rm -f reports/$NAME/*"						>> tests.mk
-echo "	timeout --foreground 30s \$(QEMU) \\"				>> tests.mk
-echo "	build/$NAME/initrd > reports/$NAME/log"				>> tests.mk
+build/$NAME/initrd: \$(${NAME}_PROGS) \$(COMMON) \$(KMI)
+	for p in \$(${NAME}_PROGS); do echo \$\$p; done \\
+		| \$(GEN_INITRD) build/$NAME/initrd
 
-echo "TESTS += $NAME"								>> tests.mk
-echo ".PHONY: $NAME"								>> tests.mk
-echo "reports/$NAME/OK: reports/$NAME/log"					>> tests.mk
-echo "	grep 'BUG' reports/$NAME/log \\"					>> tests.mk
-echo "		&& echo 'BUG' > reports/$NAME/log \\"				>> tests.mk
-echo "		|| tail -n1 reports/$NAME/log | tr -d '\\\\r' \\"		>> tests.mk
-echo "		> reports/$NAME/OK"						>> tests.mk
+reports/$NAME/log: build/$NAME/initrd
+	timeout --foreground 30s \$(QEMU) build/$NAME/initrd > reports/$NAME/log
 
-echo "$NAME: reports/$NAME/OK" >> tests.mk
+TESTS += $NAME
+.PHONY: $NAME
+$NAME: reports/$NAME/log
+
+ENDRULES

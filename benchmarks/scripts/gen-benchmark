@@ -10,7 +10,7 @@ while getopts "n:p:" opt; do
 	esac
 done
 
-mkdir -p "build/$NAME"
+mkdir -p "build/$NAME" "reports/$NAME"
 
 if [ -z "$NAME" ]; then
 	echo "No name given for benchmark" >&2; exit 2;
@@ -20,26 +20,24 @@ if [ -z "$PROGS" ]; then
 	echo "No programs to add to initrd" >&2; exit 3;
 fi
 
-for p in $PROGS
-do
-	dep="build/${NAME}/${p}.d"
+for p in $PROGS; do dep="build/${NAME}/${p}.d"; cat << ENDRULES >> benchmarks.mk
+${NAME}_PROGS += build/${NAME}/${p}
+${dep}:
+-include ${dep}
+build/${NAME}/${p}: $NAME/$p.c \$(COMMON)
+	\$(COMPILE_BENCHMARK) $NAME/${p}.c \$(COMMON) -o build/${NAME}/${p}
 
-	echo "${NAME}_PROGS += build/${NAME}/${p}"			>> benchmarks.mk
-	echo "${dep}:"							>> benchmarks.mk
-	echo "-include ${dep}"						>> benchmarks.mk
-	echo "build/${NAME}/${p}: $NAME/$p.c \$(COMMON)"		>> benchmarks.mk
-	echo "	\$(COMPILE_BENCHMARK) $NAME/${p}.c \$(COMMON) \\"	>> benchmarks.mk
-	echo "		-o build/${NAME}/${p}"				>> benchmarks.mk
+ENDRULES
 done
 
-echo "build/${NAME}/initrd: \$(${NAME}_PROGS) \$(COMMON) \$(KMI)"	>> benchmarks.mk
-echo "	for p in \$(${NAME}_PROGS); do \\"				>> benchmarks.mk
-echo "		echo \$\$p; \\"						>> benchmarks.mk
-echo "	done | \$(GEN_INITRD) build/$NAME/initrd"			>> benchmarks.mk
+cat << ENDRULES >> benchmarks.mk
+build/${NAME}/initrd: \$(${NAME}_PROGS) \$(COMMON) \$(KMI)
+	for p in \$(${NAME}_PROGS); do echo \$\$p; done \\
+		| \$(GEN_INITRD) build/$NAME/initrd
 
-echo "BENCHMARKS += ${NAME}"						>> benchmarks.mk
-echo ".PHONY: ${NAME}"							>> benchmarks.mk
-echo "${NAME}: build/${NAME}/initrd"					>> benchmarks.mk
-echo "	mkdir -p reports/${NAME}"					>> benchmarks.mk
-echo "	timeout --foreground 30s \
-	\$(QEMU) build/${NAME}/initrd > reports/${NAME}/log"		>> benchmarks.mk
+BENCHMARKS += ${NAME}
+.PHONY: ${NAME}
+${NAME}: build/${NAME}/initrd
+	timeout --foreground 30s \$(QEMU) build/${NAME}/initrd > reports/${NAME}/log
+
+ENDRULES

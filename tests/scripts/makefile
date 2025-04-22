@@ -40,11 +40,12 @@ include tests.mk
 
 .PHONY: check
 check: $(TESTS)
-	@cd reports; for d in * ; do				\
-		if [ ! -f "$$d/OK" ]; then			\
-			echo "BROKEN: $$d" ;			\
-		elif [ "$$(tail -n1 $$d/OK)" != "OK" ]; then	\
-			echo "FAIL: $$d" ;			\
-		fi						\
+	@cd reports; for d in * ; do						\
+		if [ ! -f "$$d/log" ]; then					\
+			echo "BROKEN: $$d" ;					\
+		elif grep 'BUG|ERR' $$d/log					\
+		     || [ "$$(tail -n1 $$d/log | tr -d '\r')" != "OK" ]; then	\
+			echo "FAIL: $$d" ;					\
+		fi								\
 	done
 	@echo "Done."

@@ -20,18 +20,23 @@ shift $((OPTIND - 1))
 # create all subdirectories
 mkdir -p $(echo "${@}" | tr ' ' '\n' | sed "s|[^/]*$||;s|^|${BUILD}/|" | uniq)
 
-for s in ${@}
-do
-	obj="${BUILD}/${s%.*}.o"
-	lint="${obj}.l"
-	dep="${obj}.d"
+for s in ${@}; do
+obj="${BUILD}/${s%.*}.o"
+lint="${obj}.l"
+dep="${obj}.d"
 
-	echo "${PREFIX}OBJS += ${obj}"			>> deps.mk
-	echo "${PREFIX}LINTS += ${lint}"		>> deps.mk
-	echo "${dep}:"					>> deps.mk
-	echo "-include ${dep}"				>> deps.mk
-	echo "${obj}: ${s}"				>> deps.mk
-	echo "	\$(${COMPILE}) -c ${s} -o ${obj}"	>> deps.mk
-	echo "${lint}: ${s}"				>> deps.mk
-	echo "	\$(${LINT}) -c ${s} -o /dev/null"	>> deps.mk
+cat << ENDRULES >> deps.mk
+
+${PREFIX}OBJS += ${obj}
+${PREFIX}LINTS += ${lint}
+${dep}:
+-include ${dep}
+
+${obj}: ${s}
+	\$(${COMPILE}) -c ${s} -o ${obj}
+
+${lint}: ${s}
+	\$(${LINT}) -c ${s} -o /dev/null
+
+ENDRULES
 done
